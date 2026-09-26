@@ -14,6 +14,8 @@
 // useLembaga.js: konstanta itu hardcoded dan tak mengenal lembaga yang Kyai tambah
 // belakangan (mis. "Majelis Isyraf Tarbawy").
 
+import { opsiSelectTersimpan } from './pilihanTersimpan'
+
 // Nama lembaga dari baris master/lembaga (bentuknya bisa string, {lembaga}, atau {nama}).
 export function namaLembaga(l) {
   if (!l) return ''
@@ -117,12 +119,10 @@ export function opsiJabatanTambahan(opsi, utama, tambahan) {
  * select-nya tampil KOSONG, dan karena ber-`required` browser menolak simpan dengan balon
  * kecil — guru itu tak bisa disunting sama sekali tanpa mengganti jabatannya. Dicocokkan
  * PERSIS (bukan abai huruf) karena `<select>` sendiri mencocokkan persis.
+ * v.1.4.6 gel. 2: aturannya kini milik utils/pilihanTersimpan (dipakai layar lain juga).
  */
 export function opsiJabatanUtama(opsi, utama) {
-  const out = Array.isArray(opsi) ? [...opsi] : []
-  const u = utama == null ? '' : String(utama)
-  if (u.trim() && !out.includes(u)) out.unshift(u)
-  return out
+  return opsiSelectTersimpan(opsi, utama)
 }
 
 /**

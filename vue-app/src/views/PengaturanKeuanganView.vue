@@ -1270,15 +1270,18 @@
               <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
                 >Jabatan</label
               >
+              <!-- v.1.4.6: chip = master + nilai tersimpan yang tak ada di master (bertanda). -->
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="j in jabatanScopeOptions"
-                  :key="'sj-' + j"
+                  v-for="c in chipJb.jabatan"
+                  :key="'sj-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgJb.scope.jabatan.includes(j))"
-                  @click="toggleScope('jabatan', j)"
+                  :class="chipCls(scopeDipilih(dlgJb.scope, 'jabatan', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('jabatan') : undefined"
+                  @click="toggleScope('jabatan', c.nilai)"
                 >
-                  {{ j }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -1288,13 +1291,15 @@
               >
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="l in lembagaScopeOptions"
-                  :key="'sl-' + l"
+                  v-for="c in chipJb.lembaga"
+                  :key="'sl-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgJb.scope.lembaga.includes(l))"
-                  @click="toggleScope('lembaga', l)"
+                  :class="chipCls(scopeDipilih(dlgJb.scope, 'lembaga', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('lembaga') : undefined"
+                  @click="toggleScope('lembaga', c.nilai)"
                 >
-                  {{ l }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -1304,13 +1309,15 @@
               >
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="s in shiftScopeOptions"
-                  :key="'ss-' + s.id"
+                  v-for="c in chipJb.shift"
+                  :key="'ss-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgJb.scope.shift.includes(s.id))"
-                  @click="toggleScope('shift', s.id)"
+                  :class="chipCls(scopeDipilih(dlgJb.scope, 'shift', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('shift') : undefined"
+                  @click="toggleScope('shift', c.nilai)"
                 >
-                  {{ s.label }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -1365,6 +1372,19 @@
                 </button>
               </div>
               <div v-if="(dlgJb.scope.guru_ids || []).length > 0 || dlgJbPilihGuru">
+                <!-- v.1.4.6: orang tersimpan yang tak ada di daftar guru aktif di bawah. -->
+                <div v-if="guruLuarJb.length" class="flex flex-wrap gap-1 mb-1.5">
+                  <button
+                    v-for="c in guruLuarJb"
+                    :key="'jb-gl-' + c.nilai"
+                    type="button"
+                    :class="chipCls(true, true)"
+                    :title="JUDUL_GURU_LUAR"
+                    @click="toggleGuruJb(c.nilai)"
+                  >
+                    <i class="fas fa-user-slash mr-1"></i>{{ c.label }}
+                  </button>
+                </div>
                 <input
                   v-model="dlgJbGuruSearch"
                   type="text"
@@ -2043,15 +2063,18 @@
               <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
                 >Jabatan</label
               >
+              <!-- v.1.4.6: chip = master + nilai tersimpan yang tak ada di master (bertanda). -->
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="j in jabatanScopeOptions"
-                  :key="'tj-j-' + j"
+                  v-for="c in chipTj.jabatan"
+                  :key="'tj-j-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgTj.scope.jabatan.includes(j))"
-                  @click="toggleScopeTj('jabatan', j)"
+                  :class="chipCls(scopeDipilih(dlgTj.scope, 'jabatan', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('jabatan') : undefined"
+                  @click="toggleScopeTj('jabatan', c.nilai)"
                 >
-                  {{ j }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -2061,13 +2084,15 @@
               >
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="l in lembagaScopeOptions"
-                  :key="'tj-l-' + l"
+                  v-for="c in chipTj.lembaga"
+                  :key="'tj-l-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgTj.scope.lembaga.includes(l))"
-                  @click="toggleScopeTj('lembaga', l)"
+                  :class="chipCls(scopeDipilih(dlgTj.scope, 'lembaga', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('lembaga') : undefined"
+                  @click="toggleScopeTj('lembaga', c.nilai)"
                 >
-                  {{ l }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -2077,13 +2102,15 @@
               >
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="sh in shiftScopeOptions"
-                  :key="'tj-s-' + sh.id"
+                  v-for="c in chipTj.shift"
+                  :key="'tj-s-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgTj.scope.shift.includes(sh.id))"
-                  @click="toggleScopeTj('shift', sh.id)"
+                  :class="chipCls(scopeDipilih(dlgTj.scope, 'shift', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('shift') : undefined"
+                  @click="toggleScopeTj('shift', c.nilai)"
                 >
-                  {{ sh.label }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -2118,6 +2145,19 @@
                 Batasi ke orang tertentu ({{ dlgTj.scope.guru_ids.length }} dipilih)
               </label>
               <div v-if="dlgTjPilihGuru" class="mt-2 space-y-2">
+                <!-- v.1.4.6: orang tersimpan yang tak ada di daftar guru aktif di bawah. -->
+                <div v-if="guruLuarTj.length" class="flex flex-wrap gap-1">
+                  <button
+                    v-for="c in guruLuarTj"
+                    :key="'tj-gl-' + c.nilai"
+                    type="button"
+                    :class="chipCls(true, true)"
+                    :title="JUDUL_GURU_LUAR"
+                    @click="toggleGuruTj(c.nilai)"
+                  >
+                    <i class="fas fa-user-slash mr-1"></i>{{ c.label }}
+                  </button>
+                </div>
                 <input
                   v-model="dlgTjGuruSearch"
                   type="text"
@@ -2341,15 +2381,18 @@
               <label class="text-[10px] font-bold text-[var(--text-secondary)] mb-1 block"
                 >Jabatan</label
               >
+              <!-- v.1.4.6: chip = master + nilai tersimpan yang tak ada di master (bertanda). -->
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="j in jabatanScopeOptions"
-                  :key="'pt-j-' + j"
+                  v-for="c in chipPt.jabatan"
+                  :key="'pt-j-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgPt.scope.jabatan.includes(j))"
-                  @click="toggleScopePt('jabatan', j)"
+                  :class="chipCls(scopeDipilih(dlgPt.scope, 'jabatan', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('jabatan') : undefined"
+                  @click="toggleScopePt('jabatan', c.nilai)"
                 >
-                  {{ j }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -2359,13 +2402,15 @@
               >
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="l in lembagaScopeOptions"
-                  :key="'pt-l-' + l"
+                  v-for="c in chipPt.lembaga"
+                  :key="'pt-l-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgPt.scope.lembaga.includes(l))"
-                  @click="toggleScopePt('lembaga', l)"
+                  :class="chipCls(scopeDipilih(dlgPt.scope, 'lembaga', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('lembaga') : undefined"
+                  @click="toggleScopePt('lembaga', c.nilai)"
                 >
-                  {{ l }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -2375,13 +2420,15 @@
               >
               <div class="flex flex-wrap gap-1">
                 <button
-                  v-for="sh in shiftScopeOptions"
-                  :key="'pt-s-' + sh.id"
+                  v-for="c in chipPt.shift"
+                  :key="'pt-s-' + c.nilai"
                   type="button"
-                  :class="chipCls(dlgPt.scope.shift.includes(sh.id))"
-                  @click="toggleScopePt('shift', sh.id)"
+                  :class="chipCls(scopeDipilih(dlgPt.scope, 'shift', c.nilai), c.luarPilihan)"
+                  :title="c.luarPilihan ? judulChipLuar('shift') : undefined"
+                  @click="toggleScopePt('shift', c.nilai)"
                 >
-                  {{ sh.label }}
+                  <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+                  }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
                 </button>
               </div>
             </div>
@@ -2416,6 +2463,19 @@
                 Batasi ke orang tertentu ({{ dlgPt.scope.guru_ids.length }} dipilih)
               </label>
               <div v-if="dlgPtPilihGuru" class="mt-2 space-y-2">
+                <!-- v.1.4.6: orang tersimpan yang tak ada di daftar guru aktif di bawah. -->
+                <div v-if="guruLuarPt.length" class="flex flex-wrap gap-1">
+                  <button
+                    v-for="c in guruLuarPt"
+                    :key="'pt-gl-' + c.nilai"
+                    type="button"
+                    :class="chipCls(true, true)"
+                    :title="JUDUL_GURU_LUAR"
+                    @click="toggleGuruPt(c.nilai)"
+                  >
+                    <i class="fas fa-user-slash mr-1"></i>{{ c.label }}
+                  </button>
+                </div>
                 <input
                   v-model="dlgPtGuruSearch"
                   type="text"
@@ -3721,6 +3781,16 @@ import {
 } from '@/utils/bisyarohScope'
 import { shiftList, shiftLabelOf } from '@/utils/shiftMaster'
 import { namaLembaga } from '@/utils/jabatanUnit'
+// v.1.4.6: yang TERSIMPAN harus TERLIHAT — chip scope ikut menampilkan nilai di luar master.
+import {
+  chipTersimpan,
+  tercentang,
+  alihkan,
+  abaiHuruf,
+  persis,
+  labelGuruLuar
+} from '@/utils/pilihanTersimpan'
+import { isGuruAktif } from '@/utils/guruScope'
 import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga, isSekolahLembaga } from '@/composables/useLembaga'
@@ -3793,7 +3863,9 @@ async function ambilSantriAktifScoped() {
 }
 
 const settingsStore = useSettingsStore()
-const { guruRaw } = useGuru()
+// v.1.4.6: `loading` untuk guruScopeLuarAktif — sebelum data guru termuat, semua orang di
+//   scope akan tampak "tak ada di data guru".
+const { guruRaw, loading: guruMemuat } = useGuru()
 const { lembagaRaw } = useLembaga()
 // v.1.1.9: jabatan (+units) utk opsi scope Jenis Bisyaroh
 const jabatanItems = ref([])
@@ -3907,12 +3979,17 @@ const labelJk = (arr) =>
   !arr || arr.length === 0
     ? '—'
     : arr.map((k) => (k === 'P' ? 'Perempuan' : 'Laki-laki')).join(', ')
-const chipCls = (aktif) =>
+// v.1.4.6: `luar` = nilai tersimpan yang tak ada di master — kuning bergaris putus, supaya
+//   terbaca "masih ikut menyaring, tapi pilihannya sudah tak ada". Selalu tampak menyala:
+//   ia hanya muncul SELAMA tersimpan, dan hilang begitu dilepas.
+const chipCls = (aktif, luar = false) =>
   [
     'px-2 py-1 rounded-md text-[11px] font-bold border transition',
-    aktif
-      ? 'bg-teal-600 text-white border-teal-600'
-      : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
+    luar
+      ? 'border-dashed border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+      : aktif
+        ? 'bg-teal-600 text-white border-teal-600'
+        : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
   ].join(' ')
 
 // Opsi scope: jabatan dari master/jabatan, lembaga dari master/lembaga, shift dari Master Shift.
@@ -3926,6 +4003,54 @@ const lembagaScopeOptions = computed(() =>
 )
 const shiftScopeOptions = computed(() => shiftList(settingsStore.settings || {}))
 const shiftLabelById = (id) => shiftLabelOf(settingsStore.settings || {}, id)
+
+// v.1.4.6 gel. 2 (27 Sep 2026): yang TERSIMPAN harus TERLIHAT. Chip scope dulu dibangun HANYA dari
+//   master, jadi jabatan/lembaga/shift yang dihapus atau diganti nama di master tetap
+//   tersimpan di scope tanpa chip: deretannya tampak kosong ("kosongkan = semua") padahal
+//   scope-nya terbatas, dan tak ada yang bisa diklik untuk melepasnya. Kini nilai seperti itu
+//   ikut jadi chip bertanda "tak ada di master".
+// Pembandingnya = pembanding MESIN (bisyarohScope.jenisKenaGuru), supaya chip yang menyala
+//   berarti persis "mesin bayar ikut menyaring dengan ini": jabatan & lembaga abai huruf
+//   (cocokKriteria), shift persis (Set.has atas id Master Shift — id-nya slug huruf kecil).
+//   Dulu tanda tercentangnya `includes` peka huruf: "Pj Ptpt" hasil impor tampak mati di chip
+//   "PJ PTPT", padahal mesin tetap menyaring dengannya.
+const kunciScope = (kunci) => (kunci === 'shift' ? persis : abaiHuruf)
+const scopeDipilih = (scope, kunci, nilai) => tercentang(scope?.[kunci], nilai, kunciScope(kunci))
+const JUDUL_LUAR_MASTER = {
+  jabatan: 'Master Jabatan',
+  lembaga: 'Master Lembaga',
+  shift: 'Master Shift'
+}
+const judulChipLuar = (kunci) =>
+  `Tersimpan di scope, tapi tak ada lagi di ${JUDUL_LUAR_MASTER[kunci]} (dihapus atau diganti ` +
+  'nama). Mesin bayar masih menyaring dengannya — klik untuk melepas.'
+function chipScopeDari(scope) {
+  return {
+    jabatan: chipTersimpan(jabatanScopeOptions.value, scope?.jabatan, { kunci: abaiHuruf }),
+    lembaga: chipTersimpan(lembagaScopeOptions.value, scope?.lembaga, { kunci: abaiHuruf }),
+    shift: chipTersimpan(shiftScopeOptions.value, scope?.shift, {
+      nilaiOf: (s) => s.id,
+      labelOf: (s) => s.label,
+      kunci: persis
+    })
+  }
+}
+// Orang di scope yang tak ada di daftar pilihan (yang hanya berisi guru aktif): guru yang
+//   sudah nonaktif/terhapus tetap tersimpan & terhitung "(N)" tanpa bisa dilihat atau dilepas
+//   satu per satu. Ditampilkan di atas daftar, apa pun kata kuncinya.
+function guruScopeLuarAktif(ids) {
+  if (guruMemuat.value) return []
+  return chipTersimpan((guruRaw.value || []).filter(isGuruAktif), ids, {
+    nilaiOf: (g) => String(g.id),
+    kunci: persis,
+    labelLuar: (id) => labelGuruLuar(guruRaw.value, id)
+  }).filter((c) => c.luarPilihan)
+}
+const JUDUL_GURU_LUAR =
+  'Tersimpan di scope, tapi tak ada di daftar guru aktif (nonaktif atau terhapus). Selama ' +
+  'masih tersimpan, jenis ini hanya berlaku untuk orang-orang yang dipilih — klik untuk melepas.'
+const chipJb = computed(() => chipScopeDari(dlgJb.value?.scope))
+const guruLuarJb = computed(() => guruScopeLuarAktif(dlgJb.value?.scope?.guru_ids))
 
 // Peringatan: >1 jenis '× hadir' mengenai shift yang sama → nominal DIJUMLAHKAN.
 const tumpangTindihJenis = computed(() =>
@@ -3978,12 +4103,11 @@ function openJenisBisyarohDialog(j, idx) {
   dlgJbGuruSearch.value = ''
   dlgJbOpen.value = true
 }
+// v.1.4.6: dilepas menurut pembanding mesin (lihat kunciScope) — dulu `indexOf` persis, jadi
+//   mengeklik chip "PJ PTPT" yang tampak menyala karena "Pj Ptpt" tersimpan malah MENAMBAH
+//   kembaran baru, bukan melepasnya.
 function toggleScope(kunci, nilai) {
-  const cur = [...(dlgJb.value.scope[kunci] || [])]
-  const i = cur.indexOf(nilai)
-  if (i >= 0) cur.splice(i, 1)
-  else cur.push(nilai)
-  dlgJb.value.scope[kunci] = cur
+  dlgJb.value.scope[kunci] = alihkan(dlgJb.value.scope[kunci], nilai, kunciScope(kunci))
 }
 function simpanJenisBisyaroh() {
   const j = dlgJb.value
@@ -4425,12 +4549,11 @@ const dlgTjGuruCari = computed(() => {
     )
   return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 80)
 })
+// v.1.4.6: chip & pelepasannya memakai aturan yang sama dengan Jenis Bisyaroh (toggleScope).
+const chipTj = computed(() => chipScopeDari(dlgTj.value?.scope))
+const guruLuarTj = computed(() => guruScopeLuarAktif(dlgTj.value?.scope?.guru_ids))
 function toggleScopeTj(kunci, nilai) {
-  const cur = [...(dlgTj.value.scope[kunci] || [])]
-  const i = cur.indexOf(nilai)
-  if (i >= 0) cur.splice(i, 1)
-  else cur.push(nilai)
-  dlgTj.value.scope[kunci] = cur
+  dlgTj.value.scope[kunci] = alihkan(dlgTj.value.scope[kunci], nilai, kunciScope(kunci))
 }
 /** Matikan pembatasan per-orang = KOSONGKAN daftarnya, jangan cuma menyembunyikan —
  *  daftar tersembunyi yang masih terisi tetap menyaring saat disimpan. */
@@ -4530,12 +4653,11 @@ const dlgPtGuruCari = computed(() => {
     )
   return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''))).slice(0, 80)
 })
+// v.1.4.6: sama dengan toggleScope / toggleScopeTj.
+const chipPt = computed(() => chipScopeDari(dlgPt.value?.scope))
+const guruLuarPt = computed(() => guruScopeLuarAktif(dlgPt.value?.scope?.guru_ids))
 function toggleScopePt(kunci, nilai) {
-  const cur = [...(dlgPt.value.scope[kunci] || [])]
-  const i = cur.indexOf(nilai)
-  if (i >= 0) cur.splice(i, 1)
-  else cur.push(nilai)
-  dlgPt.value.scope[kunci] = cur
+  dlgPt.value.scope[kunci] = alihkan(dlgPt.value.scope[kunci], nilai, kunciScope(kunci))
 }
 /** Matikan pembatasan per-orang = KOSONGKAN daftarnya (lihat setPilihGuruTj). */
 function setPilihGuruPt(nyala) {

@@ -9,6 +9,8 @@ import { subscribeDoc, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { namaLembaga, normalizeUnits } from '@/utils/jabatanUnit'
+// v.1.4.6: yang TERSIMPAN harus TERLIHAT — unit di luar master ikut jadi chip.
+import { chipTersimpan, tercentang, alihkan, abaiHuruf } from '@/utils/pilihanTersimpan'
 
 const toast = useToast()
 const confirmDlg = useConfirm()
@@ -156,15 +158,22 @@ function editItem(idx) {
   form.idx = idx
 }
 
+// v.1.4.6 gel. 2 (27 Sep 2026): yang TERSIMPAN harus TERLIHAT. Chip unit dulu dibangun HANYA dari
+//   master/lembaga, jadi unit yang lembaganya sudah dihapus / diganti nama tetap tersimpan
+//   tanpa chip — tak terlihat, tak bisa dilepas, padahal jabatan ber-unit tunggal terus
+//   mengisikannya otomatis ke lembaga guru. Kini ia ikut jadi chip bertanda.
+// Pembandingnya abai huruf & spasi tepi, sama dengan pembaca unit (jabatanUnit `_key`).
+const pilihanUnit = computed(() =>
+  chipTersimpan(unitOptions.value, form.units, { kunci: abaiHuruf })
+)
+const JUDUL_UNIT_LUAR =
+  'Tersimpan di jabatan ini, tapi tak ada lagi di Master Data › Lembaga (dihapus atau ' +
+  'diganti nama). Masih dibaca form guru — klik untuk melepas.'
 function toggleUnit(nama) {
-  const cur = [...form.units]
-  const i = cur.findIndex((x) => x.toLowerCase() === String(nama).toLowerCase())
-  if (i >= 0) cur.splice(i, 1)
-  else cur.push(nama)
-  form.units = cur
+  form.units = alihkan(form.units, nama, abaiHuruf)
 }
 function unitDipilih(nama) {
-  return form.units.some((x) => x.toLowerCase() === String(nama).toLowerCase())
+  return tercentang(form.units, nama, abaiHuruf)
 }
 
 async function simpan() {
@@ -316,25 +325,39 @@ const sorted = computed(() =>
           >Unit / Lembaga Tugas</label
         >
         <div
-          v-if="unitOptions.length === 0"
+          v-if="pilihanUnit.length === 0"
           class="text-xs italic text-[var(--text-tertiary)] py-2"
         >
           Belum ada lembaga di Master Data › Lembaga.
         </div>
+        <!-- v.1.4.6: chip = master/lembaga + unit tersimpan yang tak ada di master (bertanda). -->
         <div v-else class="flex flex-wrap gap-1.5">
           <button
-            v-for="u in unitOptions"
-            :key="u"
+            v-for="c in pilihanUnit"
+            :key="c.nilai"
             type="button"
             :class="[
               'px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
-              unitDipilih(u)
-                ? 'bg-indigo-600 text-white border-indigo-700'
-                : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-indigo-50 dark:hover:bg-indigo-900/30'
+              c.luarPilihan
+                ? 'border-dashed border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                : unitDipilih(c.nilai)
+                  ? 'bg-indigo-600 text-white border-indigo-700'
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-indigo-50 dark:hover:bg-indigo-900/30'
             ]"
-            @click="toggleUnit(u)"
+            :title="c.luarPilihan ? JUDUL_UNIT_LUAR : undefined"
+            @click="toggleUnit(c.nilai)"
           >
-            <i :class="['fas mr-1', unitDipilih(u) ? 'fa-check' : 'fa-building']"></i>{{ u }}
+            <i
+              :class="[
+                'fas mr-1',
+                c.luarPilihan
+                  ? 'fa-triangle-exclamation'
+                  : unitDipilih(c.nilai)
+                    ? 'fa-check'
+                    : 'fa-building'
+              ]"
+            ></i
+            >{{ c.label }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
           </button>
         </div>
         <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1.5">

@@ -15,10 +15,23 @@ import { useLembaga, isSekolahLembaga } from '@/composables/useLembaga'
 import { namaLembaga } from '@/utils/jabatanUnit'
 import { guruAktifSaja } from '@/utils/guruScope'
 import { bacaMateriTes, NILAI_MAKS_DEFAULT, NILAI_MIN_LULUS_DEFAULT } from '@/utils/tesSekolah'
+// v.1.4.6: yang TERSIMPAN harus TERLIHAT — penguji/kelas/lembaga di luar pilihan ikut tampil.
+import {
+  chipTersimpan,
+  tersimpanDalamPilihan,
+  tercentang,
+  alihkan,
+  abaiHuruf,
+  persis,
+  opsiSelectTersimpan,
+  labelGuruLuar
+} from '@/utils/pilihanTersimpan'
 
 const toast = useToast()
 const confirmDlg = useConfirm()
-const { guruRaw } = useGuru()
+// v.1.4.6: `loading` ikut diambil — selama data guru belum termuat, penguji tersimpan belum
+//   boleh dinilai "tak ada di data guru" (lihat pilihanPenguji).
+const { guruRaw, loading: guruMemuat } = useGuru()
 const { lembagaRaw } = useLembaga()
 
 const items = ref([])
@@ -50,8 +63,10 @@ const sekolahOptions = computed(() =>
 )
 
 // Kelas yang tersedia untuk lembaga yang sedang dipilih di form.
+// v.1.4.6: lembaganya dicari abai huruf, sama dengan mesin tes (tesSekolah.samaTeks).
 const kelasOptions = computed(() => {
-  const l = (lembagaRaw.value || []).find((x) => namaLembaga(x) === form.lembaga_sekolah)
+  const k = abaiHuruf(form.lembaga_sekolah)
+  const l = (lembagaRaw.value || []).find((x) => abaiHuruf(namaLembaga(x)) === k)
   return Array.isArray(l?.kelas) ? l.kelas.filter(Boolean) : []
 })
 
@@ -63,8 +78,62 @@ const guruOptions = computed(() =>
     .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || '')))
 )
 
+// v.1.4.6: nama dicari di SELURUH data guru — dulu hanya di guru aktif, jadi penguji yang
+//   sudah nonaktif tampil sebagai id mentah di tabel.
 function namaGuru(id) {
-  return guruOptions.value.find((g) => String(g.id) === String(id))?.nama || id
+  const aktif = guruOptions.value.find((g) => persis(g.id) === persis(id))
+  if (aktif) return aktif.nama
+  return guruMemuat.value ? id : labelGuruLuar(guruRaw.value, id)
+}
+
+// ── v.1.4.6 gel. 2 (27 Sep 2026): yang TERSIMPAN harus TERLIHAT ───────────────
+// Chip dulu dibangun HANYA dari pilihan hidup, jadi penguji yang sudah dinonaktifkan dan
+//   kelas yang diganti nama / dihapus di master tetap tersimpan tanpa chip — tak terlihat,
+//   tak bisa dilepas. Lebih buruk lagi, syarat "minimal 1 penguji" menghitung daftar
+//   MENTAH, sehingga materi yang satu-satunya pengujinya sudah nonaktif tetap lolos simpan
+//   padahal tak seorang pun bisa menilainya. Kini nilai seperti itu ikut jadi chip bertanda,
+//   dan syaratnya hanya menghitung penguji yang masih aktif.
+// Pembanding = pembanding mesin tes (utils/tesSekolah): penguji persis per id
+//   (materiSayaSebagaiPenguji), kelas abai huruf (samaTeks).
+const KUNCI_FORM = { kelas: abaiHuruf, penguji: persis }
+// Selama data guru belum termuat, SEMUA penguji tersimpan akan tampak "tak ada di data
+//   guru" — jadi daftar chipnya ditahan sampai datanya ada (perilaku lama: kosong saat memuat).
+const pilihanPenguji = computed(() =>
+  guruMemuat.value
+    ? []
+    : chipTersimpan(guruOptions.value, form.penguji, {
+        nilaiOf: (g) => String(g.id),
+        labelOf: (g) => g.nama,
+        kunci: persis,
+        labelLuar: (id) => labelGuruLuar(guruRaw.value, id)
+      })
+)
+const pengujiAktif = computed(() =>
+  tersimpanDalamPilihan(guruOptions.value, form.penguji, {
+    nilaiOf: (g) => String(g.id),
+    kunci: persis
+  })
+)
+const pilihanKelas = computed(() =>
+  chipTersimpan(kelasOptions.value, form.kelas, { kunci: abaiHuruf })
+)
+// `<select>` Lembaga: nilai tersimpan di luar pilihan (diganti nama, dihapus, atau tipenya
+//   bukan sekolah lagi) ikut jadi <option>. Tanpa itu select-nya tampak "— pilih —" padahal
+//   form tetap memegang lembaga lama — dan menyimpannya diam-diam.
+const pilihanLembagaSekolah = computed(() =>
+  opsiSelectTersimpan(sekolahOptions.value, form.lembaga_sekolah)
+)
+const JUDUL_PENGUJI_LUAR =
+  'Tersimpan sebagai penguji, tapi tak ada di daftar guru aktif (nonaktif atau terhapus) — ' +
+  'tak bisa menilai. Klik untuk melepas.'
+const JUDUL_KELAS_LUAR =
+  'Tersimpan di materi ini, tapi tak ada di daftar kelas lembaga ini (diganti nama atau ' +
+  'dihapus di master). Masih menyaring santri — klik untuk melepas.'
+function adaPengujiAktif(it) {
+  return tersimpanDalamPilihan(guruOptions.value, it?.penguji, {
+    nilaiOf: (g) => String(g.id),
+    kunci: persis
+  }).length
 }
 
 const form = reactive({
@@ -104,14 +173,10 @@ function editItem(idx) {
 }
 
 function toggleDalam(arrName, nilai) {
-  const cur = [...form[arrName]]
-  const i = cur.findIndex((x) => String(x).toLowerCase() === String(nilai).toLowerCase())
-  if (i >= 0) cur.splice(i, 1)
-  else cur.push(nilai)
-  form[arrName] = cur
+  form[arrName] = alihkan(form[arrName], nilai, KUNCI_FORM[arrName])
 }
 function terpilih(arrName, nilai) {
-  return form[arrName].some((x) => String(x).toLowerCase() === String(nilai).toLowerCase())
+  return tercentang(form[arrName], nilai, KUNCI_FORM[arrName])
 }
 
 // Ganti lembaga -> kelas yang sudah dipilih jadi tak relevan. Dibersihkan supaya
@@ -140,9 +205,14 @@ async function simpan() {
   const nama = form.nama.trim()
   if (!nama) return toast.warning('Nama materi wajib diisi')
   if (!form.lembaga_sekolah) return toast.warning('Pilih lembaga sekolah dulu')
-  if (form.penguji.length === 0)
+  // v.1.4.6: yang dihitung penguji yang masih AKTIF — penguji nonaktif tak bisa menilai.
+  //   Selama data guru belum termuat, "aktif" belum bisa dinilai: tunda, jangan menolak keliru.
+  if (guruMemuat.value) return toast.warning('Data guru belum termuat — tunggu sebentar')
+  if (pengujiAktif.value.length === 0)
     return toast.warning(
-      'Pilih minimal 1 guru penguji — tanpa itu tesnya tak bisa dinilai siapa pun'
+      form.penguji.length > 0
+        ? 'Penguji yang tersimpan sudah tidak aktif — pilih minimal 1 guru penguji yang aktif'
+        : 'Pilih minimal 1 guru penguji — tanpa itu tesnya tak bisa dinilai siapa pun'
     )
   const maks = Number(form.nilai_maks)
   const minLulus = Number(form.nilai_min_lulus)
@@ -244,7 +314,10 @@ async function hapus(idx) {
             @change="onGantiLembaga"
           >
             <option value="">— pilih —</option>
-            <option v-for="l in sekolahOptions" :key="l" :value="l">{{ l }}</option>
+            <!-- v.1.4.6: lembaga tersimpan di luar pilihan tetap jadi <option> (bertanda). -->
+            <option v-for="l in pilihanLembagaSekolah" :key="l" :value="l">
+              {{ l }}{{ sekolahOptions.includes(l) ? '' : ' (tak ada di pilihan)' }}
+            </option>
           </select>
         </div>
       </div>
@@ -258,24 +331,29 @@ async function hapus(idx) {
         <p v-if="!form.lembaga_sekolah" class="text-xs text-[var(--text-tertiary)] italic">
           Pilih lembaga dulu.
         </p>
-        <p v-else-if="kelasOptions.length === 0" class="text-xs text-[var(--text-tertiary)] italic">
+        <!-- v.1.4.6: "berlaku untuk semua" hanya benar bila memang tak ada kelas tersimpan. -->
+        <p v-else-if="pilihanKelas.length === 0" class="text-xs text-[var(--text-tertiary)] italic">
           Lembaga ini belum punya daftar kelas — materi akan berlaku untuk semua santrinya.
         </p>
         <div v-else class="flex flex-wrap gap-1.5">
           <button
-            v-for="k in kelasOptions"
-            :key="k"
+            v-for="c in pilihanKelas"
+            :key="c.nilai"
             type="button"
-            :aria-pressed="terpilih('kelas', k)"
+            :aria-pressed="terpilih('kelas', c.nilai)"
+            :title="c.luarPilihan ? JUDUL_KELAS_LUAR : undefined"
             :class="[
               'px-2.5 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer',
-              terpilih('kelas', k)
-                ? 'bg-teal-600 text-white border-teal-700'
-                : 'bg-[var(--bg-card)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-950'
+              c.luarPilihan
+                ? 'border-dashed border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                : terpilih('kelas', c.nilai)
+                  ? 'bg-teal-600 text-white border-teal-700'
+                  : 'bg-[var(--bg-card)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-950'
             ]"
-            @click="toggleDalam('kelas', k)"
+            @click="toggleDalam('kelas', c.nilai)"
           >
-            {{ k }}
+            <i v-if="c.luarPilihan" class="fas fa-triangle-exclamation mr-1"></i>{{ c.label
+            }}<span v-if="c.luarPilihan" class="font-normal"> · tak ada di master</span>
           </button>
         </div>
       </div>
@@ -285,23 +363,34 @@ async function hapus(idx) {
         <span class="block text-[10px] font-bold uppercase tracking-wider mb-1">
           Guru Penguji <span class="normal-case font-normal">(boleh lebih dari satu)</span>
         </span>
+        <!-- v.1.4.6: chip = guru aktif + penguji tersimpan yang sudah nonaktif/terhapus. -->
         <div class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
           <button
-            v-for="g in guruOptions"
-            :key="g.id"
+            v-for="c in pilihanPenguji"
+            :key="c.nilai"
             type="button"
-            :aria-pressed="terpilih('penguji', g.id)"
+            :aria-pressed="terpilih('penguji', c.nilai)"
+            :title="c.luarPilihan ? JUDUL_PENGUJI_LUAR : undefined"
             :class="[
               'px-2.5 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer',
-              terpilih('penguji', g.id)
-                ? 'bg-indigo-600 text-white border-indigo-700'
-                : 'bg-[var(--bg-card)] border-[var(--border-default)] hover:bg-indigo-50 dark:hover:bg-indigo-950'
+              c.luarPilihan
+                ? 'border-dashed border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                : terpilih('penguji', c.nilai)
+                  ? 'bg-indigo-600 text-white border-indigo-700'
+                  : 'bg-[var(--bg-card)] border-[var(--border-default)] hover:bg-indigo-50 dark:hover:bg-indigo-950'
             ]"
-            @click="toggleDalam('penguji', g.id)"
+            @click="toggleDalam('penguji', c.nilai)"
           >
-            {{ g.nama }}
+            <i v-if="c.luarPilihan" class="fas fa-user-slash mr-1"></i>{{ c.label }}
           </button>
         </div>
+        <p
+          v-if="!guruMemuat && form.penguji.length > 0 && pengujiAktif.length === 0"
+          class="text-[11px] text-amber-700 dark:text-amber-300 mt-1"
+        >
+          <i class="fas fa-triangle-exclamation mr-1"></i>Tak ada penguji yang masih aktif — materi
+          ini belum bisa dinilai siapa pun.
+        </p>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -408,6 +497,14 @@ async function hapus(idx) {
             </td>
             <td class="px-3 py-2.5 text-xs">
               {{ it.penguji.map(namaGuru).join(', ') || '—' }}
+              <!-- v.1.4.6: materi lama yang semua pengujinya sudah nonaktif. -->
+              <span
+                v-if="!guruMemuat && it.penguji.length > 0 && !adaPengujiAktif(it)"
+                class="block text-[10px] text-amber-700 dark:text-amber-300"
+              >
+                <i class="fas fa-triangle-exclamation mr-0.5" aria-hidden="true"></i>tak ada penguji
+                aktif
+              </span>
             </td>
             <td class="px-3 py-2.5 text-xs whitespace-nowrap">
               maks {{ it.nilai_maks }} · lulus &ge;{{ it.nilai_min_lulus }}
