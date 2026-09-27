@@ -20,22 +20,113 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.6] — 2026-09-27 — Yang tersimpan kini terlihat di tiga layar lagi: scope bisyaroh/tunjangan/potongan, unit jabatan, dan penguji materi tes
+## [v.1.4.6] — 2026-09-27 — Absen dari mesin HiView yang tak terkirim bisa ditambal dari berkas mesin, dan mesin yang diam kini diperingatkan
 
-**SIAP RILIS** — `versionCode` 146 / `versionName` `v.1.4.6`. **SATU rilis, DUA gelombang** (26–27
+**SIAP RILIS** — `versionCode` 146 / `versionName` `v.1.4.6`. **SATU rilis, TIGA gelombang** (26–27
 Sep 2026). **Tanpa migrasi Supabase, tanpa perubahan edge function.** Urutannya: **deploy web →
 rebuild AAB → rilis Electron.**
 
-Gelombang, bukan nomor baru: dicek 27 Sep 2026, v.1.4.6 belum tayang di jalur mana pun yang
-mengunci nomor — web di `ammuonline.web.app` masih melayani `app-version.json` versi 145 (terakhir
-diubah 23 Sep), Electron "Latest" di GitHub masih 1.4.5, dan AAB vc146 belum diunggah ke Play
-(Kyai). `versionCode` 146 masih utuh.
+Gelombang, bukan nomor baru: dicek ulang 27 Sep 2026 malam, v.1.4.6 belum tayang di jalur mana
+pun yang mengunci nomor — web di `ammuonline.web.app` masih melayani `app-version.json` versi 145
+(terakhir diubah 23 Sep), Electron "Latest" di GitHub masih 1.4.5, dan AAB vc146 belum diunggah ke
+Play (Kyai). `versionCode` 146 masih utuh. Gelombang 1–2 sudah di-push (`805e32a`) tapi web belum
+di-deploy, jadi tak ada deploy ulang yang tertunggak.
 
 Nomor baru, BUKAN gelombang v.1.4.5: Electron 1.4.5 sudah berstatus "Latest" di GitHub sejak
 23 Sep 2026 (tag `v1.4.5` = `9eaba48`, jadi ketiga gelombangnya sudah ikut), dan AAB vc145 sedang
 ditinjau Play (26 Sep 2026) — `versionCode` itu sudah hangus.
 
-Kedua gelombang diuji bersama: 111 berkas / 1.700 tes lulus, `vite build` sukses.
+Ketiga gelombang diuji bersama: 112 berkas / 1.735 tes lulus, `vite build` sukses.
+
+### Latar — "absen per tgl 25 terhitung alpa padahal gurunya sudah hadir"
+
+Kyai, 26 Sep 2026: _"absensi guru kan dihitung dari 25-25, ini hubungannya dg bisyaroh, bukan
+absennya, jadi yg terjadi sekarang absen per tgl 25 terhitung alpa padahal gurunya sudah absen dan
+hadir."_ Matriks Absensi Guru menampilkan A untuk semua guru mulai Jumat 25 Sep, tetap A walau
+dimuat ulang.
+
+**Aplikasinya benar; datanya yang tak pernah tiba.** Diperiksa lewat SQL Editor (27 Sep):
+
+- Tarikan matriks utuh — tab Riwayat "3221 record" = hitungan SQL baris ber-`data->>'tanggal'`
+  September. Tabel tak punya kolom riil `tanggal` yang bisa menimpa isi `data`.
+- Baris bersumber `hiview` 75 / 70 / 60 per hari pada 22–24 Sep, lalu **nol** pada 25 & 26 Sep;
+  sumber lain (fingerprint Revo, perbaikan manual, pengajuan, gabungan) tetap mengalir.
+- `hiview_scan_log`: kiriman terakhir **Kamis 24 Sep 17:44:31 WIB** — event _exception_ (`major=2`)
+  yang tiba 82 detik terlambat (biasanya ±11 detik). Sesudahnya tak ada kiriman apa pun: scan,
+  event non-absen (biasanya ratusan per hari), bahkan yang ditolak pun tidak. Tak ada baris yang
+  salah tanggal, tak ada yang dihapus (`audit_log`).
+- Fungsi `hiview-absen` hidup: GET menjawab `ok`, POST tanpa kunci ditolak 401 oleh fungsinya
+  sendiri (satu log `401 k=ABSENT` ±27 Sep dini hari itu probe pemeriksaan ini).
+
+Jadi mesin berhenti mencapai server (daya/jaringan) atau mengirim tanpa kunci `?k=` yang benar —
+401 terjadi sebelum Jejak sempat mencatat. Penanganannya di mesin, bukan di kode. Jendela bisyaroh
+25→24 BUKAN penyebabnya — tapi baris yang hilang ikut memotong bisyaroh Oktober (jendela 25 Sep–
+24 Okt), jadi harus ditambal sebelum slip terbit 1–2 Nov. Gelombang ini menambah dua alat:
+
+### Added — Tambal dari Log Mesin HiView (Absensi Guru › Impor)
+
+Tab Impor lama tak bisa dipakai: ia menuntut lembar yang sudah disusun (`tanggal`/PIN/`jam`/`shift`,
+shift bawaan "pagi") dan tak menurunkan shift maupun jam pulang. Kartu baru di atasnya membaca
+**berkas ekspor mentah** mesin (.xlsx atau .csv) — `utils/logMesinHiview` (murni):
+
+- Kolom dikenali dari daftar sinonim Inggris/Indonesia ("Employee ID" / "ID Karyawan" / "Person ID",
+  "Time" / "Waktu", "Date" + "Time" terpisah, laporan ringkas "Check-In"/"Check-Out"). "No." sengaja
+  tak pernah dianggap PIN. Hasil pengenalannya ditulis di pratinjau; bila gagal, judul kolom yang ADA
+  disebutkan beserta nama yang harus dipakai.
+- Tanggal: sel tanggal Excel (komponen UTC = isi sel), nomor seri & pecahan jam, ISO ber-zona
+  (dikonversi ke WIB — `…T23:45Z` = 06:45 WIB esok harinya), DD/MM vs MM/DD diputuskan per berkas
+  dari nilai yang tak ambigu (tanpa bukti → DD/MM, ditandai), nama bulan, AM/PM.
+- Autentikasi gagal & orang asing dilewati; PIN yang nol depannya dibuang Excel ("59" = "0059")
+  dicocokkan bila menunjuk SATU guru saja. `.xls` lama belum terbaca (simpan ulang sebagai .xlsx).
+
+Scan lalu diproses dengan aturan yang SAMA dengan kiriman langsung. Pengelompokannya (scan terawal di
+window = masuk, sisanya kandidat pulang) dipindah APA ADANYA dari `useFingerprintSync` ke
+`utils/scanMesin.kelompokkanScan` — sinkron Revo kini memanggilnya, perilakunya tak berubah — supaya
+tambal HiView tak pernah memilih jam masuk yang berbeda.
+
+Kebijakan tulisnya sengaja lain: **hanya mengisi slot yang masih kosong** (`rencanaTambalScan`).
+Hari yang ditambal hampir pasti sudah disentuh tangan — sel diperbaiki manual, izin/cuti diajukan,
+mesin Revo mengisi sebagian — jadi baris yang sudah ada dibiarkan apa pun sumbernya dan dilaporkan.
+Yang tetap dikerjakan: jam pulang (MAX, `pilihShiftPulang`) — ke baris baru, atau ke baris lama
+berstatus hadir/terlambat — dan baris "hadir sekolah" guru gabungan dari baris pagi yang baru lahir
+(`hitungBarisAutoGabungan`). Baris baru ber-`source` **`hiview_impor`** (label "Impor HiView",
+kini satu sumber di `utils/absensiRekap.labelSumberAbsen`). Tepat sebelum menulis, baris yang ada
+dibaca ULANG. Aman diulang: berkas yang sama kedua kalinya tak menulis apa pun.
+
+### Added — Peringatan "mesin HiView diam"
+
+Spanduk merah di atas Absensi Guru: _"Mesin HiView tidak mengirim data sejak Kam, 24 Sep 2026 pukul
+17:44 WIB"_, dengan tombol ke Jejak Mesin dan ke penambal. Denyutnya = `created_at` terbaru
+`hiview_scan_log` (satu baris ditarik tiap 10 menit, bukan tabel jejaknya). Aturannya di
+`utils/mesinDiam` (murni), sengaja sempit supaya tak jadi alarm palsu: hanya di **hari kerja**
+(bukan Ahad / libur global), hanya sesudah **jam mulai shift paling awal + 2 jam**, dan hanya bila
+kiriman terakhirnya **sebelum hari ini**. Jejak kosong atau tak terbaca → tak ada peringatan. Tab
+Jejak Mesin kini selalu menulis "Kiriman terakhir dari mesin". Dengan aturan ini spanduknya akan
+muncul Jumat 25 Sep pagi, bukan dua hari kemudian lewat keluhan.
+
+Tes: `tests/unit/tambalLogHiview.test.js` (35 kasus) — pembaca berkas, `kelompokkanScan`,
+`rencanaTambalScan` (cuti & perbaikan manual dibiarkan, jam pulang menempel, gabungan, aman diulang),
+`nilaiMesinDiam` (termasuk kejadian 24→25 Sep), dan penjaga cermin; `scanTanpaAbsen.test.js` lama
+tetap lulus lewat ekspor ulang. Peramban (dev server, semua tulisan Supabase dicegat di klien): CSV
+berbentuk ekspor mesin — baris judul laporan, tanggal DD/MM, autentikasi gagal, orang asing, PIN tak
+dikenal, PIN tanpa nol depan — dibaca 12 baris → 10 scan; klik **Tulis** → dialog konfirmasi → 7 POST
+`absensi_shift_guru` berisi baris yang benar, semuanya tercegat. Spanduk & denyut diperiksa dengan
+keadaan 25 Sep 09:00 disuntikkan.
+
+### Diperiksa, TIDAK diubah
+
+- **Data 25 Sep dst. di produksi belum ditambal** — menunggu berkas ekspor dari mesin; mesinnya
+  sendiri perlu diperiksa di lokasi (daya, jaringan, setelan HTTP Listening, log fungsi di dasbor).
+- **Tab "Impor Data Fingerprint Guru" lama** menawarkan `.csv` di pemilih berkas, tapi
+  `useExcel.importFile` hanya membaca `.xlsx` — CSV berakhir "Parse gagal". Tidak diubah; penambal
+  baru membaca CSV sendiri (`bacaCsv`).
+- **Edge function `hiview-absen`** tidak diubah. Kiriman ber-kunci salah ditolak 401 sebelum Jejak
+  ditulis (hanya muncul di log fungsi). Dibiarkan: mencatat kiriman tak berkunci ke tabel akan
+  membuka tabel jejak untuk diisi siapa pun yang tahu alamat fungsinya.
+
+---
+
+## [v.1.4.6 · gelombang 2] — 2026-09-27 — Yang tersimpan kini terlihat di tiga layar lagi: scope bisyaroh/tunjangan/potongan, unit jabatan, dan penguji materi tes
 
 ### Fixed — nilai tersimpan yang sudah tak ada di master kini tampak, dan bisa dilepas
 

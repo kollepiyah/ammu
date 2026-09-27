@@ -810,7 +810,9 @@ const rilis = [
       'Jabatan yang tersimpan selalu tampak di form guru. Jabatan yang sudah dihapus atau diganti nama di Master Jabatan, atau yang tak sesuai tipe pegawai, dulu membuat pilihan Jabatan Utama tampil kosong sehingga data tak bisa disimpan, dan jabatan tambahan semacam itu tak terlihat sama sekali. Sekarang semuanya tampil dan bisa dilepas.',
       'Batasan Jenis Bisyaroh, Tunjangan, dan Potongan tak lagi bersembunyi. Jenis yang dibatasi ke jabatan, lembaga, atau shift yang kemudian dihapus atau diganti nama dulu tampak "berlaku untuk semua", padahal tetap terbatas. Kini pilihan lama itu tampil berwarna kuning dengan tanda "tak ada di master" dan bisa dilepas, begitu pula orang yang sudah nonaktif di pilihan "Orang tertentu".',
       'Unit jabatan yang lembaganya sudah dihapus tetap tampak di Master Data › Jabatan dan bisa dilepas.',
-      'Materi Tes butuh minimal satu penguji yang masih aktif. Penguji yang sudah nonaktif kini tampak di form dan bisa dilepas, dan materi yang semua pengujinya sudah nonaktif ditandai di daftar.'
+      'Materi Tes butuh minimal satu penguji yang masih aktif. Penguji yang sudah nonaktif kini tampak di form dan bisa dilepas, dan materi yang semua pengujinya sudah nonaktif ditandai di daftar.',
+      'Absen dari mesin HiView yang tak terkirim bisa ditambal. Saat mesin HiView tak tersambung ke server, scan guru tak sampai dan tercatat alpa. Kini berkas ekspor dari mesin bisa diunggah di Absensi Guru › Impor; aplikasi menampilkan pratinjau dulu, lalu hanya mengisi yang masih kosong — izin, cuti, dan perbaikan manual tidak ditimpa.',
+      'Peringatan bila mesin HiView berhenti mengirim. Layar Absensi Guru menampilkan tanda merah bila pada hari kerja mesin belum mengirim apa pun sejak hari sebelumnya, lengkap dengan waktu kiriman terakhirnya.'
     ]
   },
   {

@@ -29,6 +29,16 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   di form dan bisa dilepas; materi yang semua pengujinya sudah nonaktif ditandai di daftar. Kelas dan
   lembaga yang sudah diganti nama juga tetap tampak.
 
+**Baru**
+
+- **Absen dari mesin HiView yang tak terkirim bisa ditambal.** Saat mesin HiView tak tersambung ke
+  server, scan guru tak sampai ke aplikasi dan tercatat alpa. Kini berkas ekspor dari mesin bisa
+  diunggah di Absensi Guru › Impor. Aplikasi menampilkan pratinjau dulu, lalu hanya mengisi hari
+  yang masih kosong — izin, cuti, dan perbaikan manual tidak ditimpa.
+- **Peringatan bila mesin HiView berhenti mengirim.** Layar Absensi Guru menampilkan tanda merah bila
+  pada hari kerja mesin belum mengirim apa pun sejak hari sebelumnya, lengkap dengan waktu kiriman
+  terakhirnya — supaya masalah di mesin ketahuan pagi itu juga.
+
 ---
 
 ## v.1.4.5 — September 2026
