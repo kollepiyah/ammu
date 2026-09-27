@@ -56,6 +56,45 @@
         </div>
       </div>
 
+      <!-- v.1.4.6 gel. 3: mesin HiView diam — scan guru di sana tak sampai, matriks jadi alpa.
+           Aturan kapan muncul: utils/mesinDiam (hari kerja, sesudah jam mulai + tenggang). -->
+      <div
+        v-if="mesinDiam.diam"
+        class="rounded-2xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/20 p-4 flex flex-col md:flex-row md:items-center gap-3"
+      >
+        <div class="flex-1">
+          <p class="text-sm font-black text-rose-800 dark:text-rose-200">
+            <i class="fas fa-satellite-dish mr-1.5"></i>Mesin HiView tidak mengirim data sejak
+            {{ formatTgl(mesinDiam.sejakTanggal) }} pukul {{ mesinDiam.sejakJam }} WIB<template
+              v-if="mesinDiam.hari > 1"
+            >
+              ({{ mesinDiam.hari }} hari)</template
+            >.
+          </p>
+          <p class="text-xs text-rose-700 dark:text-rose-300 mt-1">
+            Scan guru di mesin itu tidak sampai ke aplikasi, jadi matriks menampilkannya sebagai
+            alpa. Periksa daya &amp; jaringan mesin serta setelan HTTP Listening-nya. Hari yang
+            terlewat bisa ditambal dari berkas ekspor mesin.
+          </p>
+        </div>
+        <div class="flex gap-2 flex-wrap shrink-0">
+          <button
+            type="button"
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-300 text-xs font-bold"
+            @click="bukaJejak"
+          >
+            <i class="fas fa-satellite-dish"></i>Jejak Mesin
+          </button>
+          <button
+            type="button"
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
+            @click="tabMode = 'impor'"
+          >
+            <i class="fas fa-file-import"></i>Tambal dari Berkas
+          </button>
+        </div>
+      </div>
+
       <!-- Filter bar -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
@@ -210,6 +249,17 @@
               Semua scan yang sampai ke server — termasuk yang <strong>ditolak</strong> dan
               sebabnya.
             </p>
+            <!-- v.1.4.6 gel. 3: denyut mesin — kiriman terakhir APA PUN yang sampai. -->
+            <p
+              v-if="mesinDiam.sejakTanggal"
+              :class="[
+                'text-[11px] mt-1 font-bold',
+                mesinDiam.diam ? 'text-rose-700 dark:text-rose-300' : 'text-[var(--text-tertiary)]'
+              ]"
+            >
+              <i class="fas fa-heart-pulse mr-1"></i>Kiriman terakhir dari mesin:
+              {{ formatTgl(mesinDiam.sejakTanggal) }} · {{ mesinDiam.sejakJam }} WIB
+            </p>
           </div>
           <div class="flex items-center gap-2">
             <input
@@ -336,6 +386,10 @@
         v-if="tabMode === 'impor'"
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
+        <!-- v.1.4.6 gel. 3: tambal hari yang terlewat saat mesin HiView diam — berkas ekspor
+             mentah, aturan sama dengan kiriman langsung, hanya mengisi yang masih kosong. -->
+        <TambalLogHiview :guru="guruRaw" :settings="settingsStore.settings || {}" class="mb-6" />
+
         <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-3">
           <i class="fas fa-file-import text-cyan-600 mr-2"></i>Impor Data Fingerprint Guru
         </h3>
@@ -1357,7 +1411,8 @@ import {
   geserMinggu,
   gabungRentang,
   selKosong,
-  tambahSel
+  tambahSel,
+  labelSumberAbsen
 } from '@/utils/absensiRekap'
 import { jsPDFFromCDN } from '@/services/pdf'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
@@ -1366,7 +1421,11 @@ import { lembagaKalenderShift, lembagaLabelShift } from '@/utils/lembagaShift'
 // v.1.3.8: "tanggal ini jadwal mengajarnya atau bukan" — guru paruh-waktu tak lagi dialpakan.
 import { guruMasukPada, tanggalBukanJadwal } from '@/utils/jadwalGuru'
 // v.1.4.1: "shift ini sudah dimulai belum" (Kyai, 5 Sep 2026) — sumber tunggal aturan jamnya.
-import { jamJakarta, kunciBelumMulai, setDariKunci } from '@/utils/shiftBerjalan'
+import { jamJakarta, jamMulaiShift, kunciBelumMulai, setDariKunci } from '@/utils/shiftBerjalan'
+// v.1.4.6 gel. 3 (27 Sep 2026): mesin HiView diam sejak 24 Sep 17:44 WIB — peringatannya &
+//   penambal dari berkas ekspor mesin.
+import { nilaiMesinDiam } from '@/utils/mesinDiam'
+import TambalLogHiview from '@/components/absensi/TambalLogHiview.vue'
 // v.21.114.0528: pakai kegiatan composable utk derive hari libur dari event multi-day
 import { useKegiatan } from '@/composables/useKegiatan'
 
@@ -1625,6 +1684,7 @@ async function muatJejak() {
   } finally {
     jejakLoading.value = false
   }
+  muatKirimanTerakhir() // v.1.4.6: denyut mesin ikut disegarkan tiap jejak dimuat ulang
 }
 
 function bukaJejak() {
@@ -1934,19 +1994,8 @@ function statusInfo(status) {
     cls: base + 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
   }
 }
-function sourceLabel(src) {
-  const s = String(src || '').toLowerCase()
-  if (s === 'fingerprint') return 'Fingerprint'
-  if (s === 'fingerprint_import') return 'Impor FP'
-  if (s === 'hiview') return 'HiView'
-  if (s === 'manual_harian') return 'Input manual'
-  if (s === 'manual_perbaikan') return 'Perbaikan manual'
-  if (s === 'pengajuan_guru') return 'Izin/Pengajuan'
-  // v.1.2.1: perjelas — baris sekolah yang OTOMATIS terisi dari scan ngaji pagi guru
-  //   gabungan (jam masuknya = jam scan ngaji, bukan jam masuk sekolah).
-  if (s === 'auto_gabungan') return 'Gabungan (ikut ngaji)'
-  return src || 'manual'
-}
+// v.1.4.6 gel. 3: labelnya kini di utils/absensiRekap (dipakai juga tambal log HiView).
+const sourceLabel = labelSumberAbsen
 // v.1.2.1 (Kyai): baris sekolah auto dari scan ngaji pagi. Jam-nya = jam scan ngaji,
 //   jadi TAMPILAN jam masuk sekolah dikosongkan ('—'). Data tak disentuh.
 function isAutoGabungan(a) {
@@ -2625,11 +2674,54 @@ function segarkanJendelaShift() {
 watch(() => settingsStore.settings, segarkanJendelaShift, { immediate: true })
 const shiftBelumMulaiSet = computed(() => setDariKunci(belumMulaiKunci.value))
 
+// =====================================================
+// v.1.4.6 gel. 3 — PERINGATAN MESIN HIVIEW DIAM (27 Sep 2026)
+//   Kamis 24 Sep 17:44 WIB mesin berhenti mengirim; dua hari kemudian baru ketahuan, lewat
+//   keluhan "sudah absen tapi terhitung alpa". Selama mesin diam, matriks tak bisa
+//   membedakan "guru tak datang" dari "mesin tak mengirim" — keduanya sel kosong. Jejak
+//   scan mencatat SETIAP kiriman yang sampai (termasuk event non-absen), jadi kiriman
+//   terakhirnya = denyut mesin. Kapan "diam" itu pantas diperingatkan: utils/mesinDiam.
+//   Satu baris ditarik tiap 10 menit — bukan tabel jejaknya.
+// =====================================================
+const kirimanTerakhir = ref(null) // ISO `created_at` jejak terbaru; null = belum ada / tak terbaca
+async function muatKirimanTerakhir() {
+  try {
+    const rows = await queryColl('hiview_scan_log', [], [['created_at', 'desc']], 1)
+    kirimanTerakhir.value = rows[0]?.created_at || null
+  } catch {
+    // Tabel belum ada / tak berhak membaca: tak ada dasar untuk memperingatkan apa pun.
+    kirimanTerakhir.value = null
+  }
+}
+const jamKiniWib = ref(jamJakarta())
+const jamMulaiPalingAwal = computed(() => {
+  const s = settingsStore.settings || {}
+  return (
+    shiftList(s)
+      .map((sh) => jamMulaiShift(sh.id, s))
+      .filter(Boolean)
+      .sort()[0] || ''
+  )
+})
+const mesinDiam = computed(() =>
+  nilaiMesinDiam({
+    terakhir: kirimanTerakhir.value,
+    hariIni: hariIniWib.value,
+    jamKini: jamKiniWib.value,
+    hariKerja: !isLiburIso(hariIniWib.value), // tanpa lembaga = libur global (Ahad/manual/kalender)
+    jamMulai: jamMulaiPalingAwal.value
+  })
+)
+
 let denyutHari = null
+let denyutKe = 0
 onMounted(() => {
+  muatKirimanTerakhir()
   denyutHari = setInterval(() => {
     hariIniWib.value = todayJakarta()
+    jamKiniWib.value = jamJakarta()
     segarkanJendelaShift()
+    if (++denyutKe % 10 === 0) muatKirimanTerakhir()
   }, 60000)
 })
 onUnmounted(() => {

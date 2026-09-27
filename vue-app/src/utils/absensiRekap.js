@@ -1,6 +1,23 @@
 // absensiRekap — helper agregasi rekap absensi (Bagian C). SEMUA PURE.
 // Tanggal ISO 'YYYY-MM-DD'. "today" & "libur" di-inject dari view agar deterministik & testable.
 
+// Label manusia untuk `source` baris absensi_shift_guru. v.1.4.6 gel. 3: dipindah dari
+//   AbsensiGuruView supaya tambal log HiView menyebut asal baris dengan kata yang sama.
+export function labelSumberAbsen(src) {
+  const s = String(src || '').toLowerCase()
+  if (s === 'fingerprint') return 'Fingerprint'
+  if (s === 'fingerprint_import') return 'Impor FP'
+  if (s === 'hiview') return 'HiView'
+  if (s === 'hiview_impor') return 'Impor HiView' // v.1.4.6: tambal dari berkas ekspor mesin
+  if (s === 'manual_harian') return 'Input manual'
+  if (s === 'manual_perbaikan') return 'Perbaikan manual'
+  if (s === 'pengajuan_guru') return 'Izin/Pengajuan'
+  // v.1.2.1: perjelas — baris sekolah yang OTOMATIS terisi dari scan ngaji pagi guru
+  //   gabungan (jam masuknya = jam scan ngaji, bukan jam masuk sekolah).
+  if (s === 'auto_gabungan') return 'Gabungan (ikut ngaji)'
+  return src || 'manual'
+}
+
 function pad2(n) {
   return String(n).padStart(2, '0')
 }
