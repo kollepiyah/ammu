@@ -20,6 +20,104 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.7] — 2026-09-30 — Tambal HiView membaca berkas AllReport asli mesin; tagihan yang dibayar lebih tak lagi terjebak di daftar "belum diakui"
+
+**SIAP RILIS** — `versionCode` 147 / `versionName` `v.1.4.7`. **Tanpa migrasi Supabase, tanpa
+perubahan edge function.** Urutannya: **deploy web → rebuild AAB → rilis Electron.**
+
+Nomor baru, BUKAN gelombang v.1.4.6: Electron 1.4.6 sudah berstatus "Latest" di GitHub sejak
+27 Sep 2026 (tag `v1.4.6` = `5020d1d`), dan electron-updater hanya menawarkan versi yang lebih
+tinggi.
+
+Diuji: 112 berkas / 1.754 tes lulus, `vite build` sukses.
+
+### Fixed — Tambal dari Log Mesin HiView menolak berkas ekspor ASLI mesin
+
+Kyai, 30 Sep 2026: mengunggah `AllReport.xlsx` dari flashdisk mesin (`.xls` aslinya disimpan ulang
+sebagai .xlsx, sesuai petunjuk layar) → _"Kolom PIN dan waktu scan tidak dikenali. Judul kolom di
+berkas: Employee ID, Name, Department, Standard, Actual, Times, Duration(min), …"_. v.1.4.6 menebak
+bentuk berkas dari sinonim judul kolom; bentuk yang sesungguhnya baru kali ini terlihat:
+
+- AllReport = buku kerja **20 lembar**: "Attendance Summary" (rekap per orang), "Attendance Record",
+  "Attendance Abnormal0/1", "Attendance Schedule", "NormalShift", dan satu lembar kartu per enam
+  orang ("2", "8", "14", …). `useExcel.importFile` hanya membaca lembar PERTAMA — rekapnya.
+- Jam scan mentah hanya ada di **"Attendance Record"**, berbentuk KISI: baris judul
+  `Employee ID | Name | Department | 1 | 2 | … | 30`, satu baris per orang, sel berisi jam-jam scan
+  hari itu dipisah baris baru (`"07:04\n12:01\n"`, tanpa detik; scan kembar dalam semenit ikut
+  tertulis dua kali). Bulan & tahunnya hanya ada di baris `Made Date:2026/09/01-2026/09/30` di atas
+  tabel.
+- Berkas kedua di flashdisk, `recordList_<serial>.csv`, **terenkripsi** walau berakhiran .csv
+  (entropi 8,0 bit/byte, ekor berpenanda `SECF`) — tak bisa dibaca aplikasi mana pun tanpa sandinya.
+
+Perbaikannya (`utils/logMesinHiview`, murni):
+
+- `useExcel.importSheets` — SEMUA lembar sebagai baris sel mentah; sel gabungan (merge) hanya diambil
+  dari induknya, baris kosong dibuang. `importFile` lama tak diubah (dipakai impor lain).
+- `scanDariKisi` — kisi dikenali dari baris judul ber-PIN dengan ≥ 7 kolom nomor hari bersebelahan.
+  Periode dari sel pertama di atas judul yang memuat dua tanggal (tahun di depan = pasti; tahun di
+  belakang → hari/bulan atau bulan/hari diputuskan oleh kolom harinya). Kolom → tanggal HANYA bila
+  urutannya cocok persis dengan periode (lintas bulan boleh: 25…31, 1…24; kolom sesudah akhir periode
+  diabaikan); tak cocok → `sebab: 'periode'`, tanggal tak pernah ditebak. Jam dibaca dari teks, sel
+  jam Excel, dan AM/PM; jam kembar dalam satu sel dibuang — tanpa itu scan kedua di menit yang sama
+  menjadi jam pulang palsu.
+- `scanDariLembar` — lembar yang menghasilkan scan TERBANYAK dipakai. "Attendance Abnormal" punya
+  Employee ID + Date sehingga lolos sebagai tabel, tapi nol scan — ia kalah. Tanpa lembar ber-scan,
+  pesan galatnya menyebut tiap lembar beserta judul tabelnya (`objekDariCsv` kini jatuh ke baris
+  ber-PIN, bukan judul laporan di baris 1).
+- `tampakBiner` — CSV biner/terenkripsi mendapat pesannya sendiri ("unggah AllReport"), bukan
+  daftar "judul kolom" berisi karakter sampah.
+- Rentang bawaan penambal dimulai dari **hari mesin berhenti mengirim** (prop `sejak` =
+  `mesinDiam.sejakTanggal` selama spanduk "mesin diam" menyala), bukan dari tanggal pertama berkas:
+  AllReport memuat SEBULAN penuh, padahal hari-hari sebelumnya sudah terkirim langsung dan barisnya
+  mungkin sudah diperbaiki tangan. Tetap bisa digeser.
+
+Diuji: 12 tes baru di `tambalLogHiview.test.js` (kisi AllReport tiruan, lintas bulan, periode
+hilang/meleset, pemilihan lembar, ujung ke ujung sampai baris tambal). Dengan berkas ASLI (tak
+di-commit): 82 orang → 2.593 scan unik (2.671 jam tertulis, 78 kembar), 1–30 Sep; 25 Sep 48 orang,
+26 Sep 47, 28 Sep 50, 29 Sep 51, 30 Sep 39 (berkas dibuat 08:06).
+Di peramban tanpa login dengan penulisan Supabase dicegat: pratinjau 24–30 Sep tersusun per tanggal,
+`recordList` dan buku kerja tanpa jam scan memunculkan pesan yang benar, tak satu tulisan pun lolos.
+`.xls` asli mesin masih harus disimpan ulang sebagai .xlsx (ExcelJS tak membaca format BIFF lama).
+
+### Fixed — "Setelah klik Akui, daftar masih tetap ada" (Cek Riwayat vs Tagihan)
+
+Kyai, 30 Sep 2026: _"setelah klik akui, daftar masih tetap ada. karena ada beberapa santri yg
+bayarnya itu memang lebih dari tagihan pada umumnya, kemarin saya kasih arahan TU diedit saja ketika
+proses transaksi. gimana caranya biar gk ribet"_. Layar: "Akui 91 pembayaran", dan barisnya berbunyi
+"tagihan mengakui Rp 200.000 dari Rp 200.000, riwayat mencatat Rp 225.000".
+
+Sebabnya: saat TU menaikkan nominal di kasir, `pelunasanItem` menjepit `terbayar` ke nominal tagihan
+(lunas) sementara buku induk mencatat uang penuhnya. `periksaKecocokanBayar` memasukkan SETIAP
+`riwayat > terbayar` ke `kurangTercatat`, padahal `usulTerbayar` juga dijepit ke nominal — tombol
+Akui menulis angka yang sama, dan barisnya lahir lagi, selamanya.
+
+- Kelompok baru **`lebihBayar`**: tagihan yang tak bertambah bila diakui (`diakui = usulTerbayar −
+  terbayar ≤ 0,5`) — lunas penuh, uangnya lebih. Kartu "Bayar lebih" dan daftarnya sendiri, dengan
+  keterangan "bukan tunggakan, tak perlu diakui". `kurangTercatat` kini hanya yang benar-benar bisa
+  diakui; `kurangTercatatRp` dan konfirmasi Akui memakai `diakui`, bukan selisih mentah (tagihan
+  90rb terbayar 30rb dengan riwayat 100rb bertambah 60rb; 10rb sisanya pindah ke lebihBayar).
+- Tagihan yang sudah terbit SENGAJA tak dinaikkan nominalnya supaya sama dengan uang: baris buku
+  induknya mencatat `tagihan_tambah` sebesar nominal lama, jadi menghapus transaksinya kelak
+  (`rencanaBatalBayar`) akan menyisakan "terbayar" palsu.
+- Jalan "biar gak ribet": **Tarif Khusus per santri** (`nominal_per_santri`, sejak v.95 — menang atas
+  tarif lain di `utils/syahriyah`; POS membaca resolver yang sama). `usulTarifKhusus` memberi satu usul
+  per santri × jenis, tarif = yang dibayar pada periode terakhir; dicentang bawaan hanya bila semua
+  bulannya membayar angka yang sama dan kurang dari 2× nominal (dua kali lipat lebih mungkin bayar
+  dobel / dua bulan sekaligus). Tombol "Pasang N tarif khusus" hanya mengubah daftar jenis T.A.
+  berjalan di layar (`setNominalSantri`); tersimpan lewat "Simpan Semua" dengan penjaga yang sama
+  (`alasanTolakSimpanKeu`). Tagihan yang sudah terbit tak berubah.
+
+Diuji: 7 tes baru di `cocokBayarTagihan.test.js`, termasuk "akui → periksa ulang → daftar kosong".
+Di peramban dengan data rekaan: kartu & daftar "Bayar lebih", centang bawaan (seragam ✓, dobel ✗,
+beda antar bulan ✗, jenis tak ada / sudah terpasang tanpa kotak), dan tombol pasang mengisi
+`nominal_per_santri` tanpa satu tulisan pun ke Supabase.
+
+**Titik versi:** package.json root, vue-app, vue-app-psb, vue-widgets, electron; empat package-lock
+(hanya versi paketnya sendiri); build.gradle (vc147); app-version.json; entri rilis Bantuan;
+CHANGELOG; RELEASE-NOTES.
+
+---
+
 ## [v.1.4.6] — 2026-09-27 — Absen dari mesin HiView yang tak terkirim bisa ditambal dari berkas mesin, dan mesin yang diam kini diperingatkan
 
 **SIAP RILIS** — `versionCode` 146 / `versionName` `v.1.4.6`. **SATU rilis, TIGA gelombang** (26–27

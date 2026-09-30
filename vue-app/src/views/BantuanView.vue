@@ -803,6 +803,15 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
+    versi: 'v.1.4.7',
+    tgl: 'September 2026',
+    items: [
+      'Berkas AllReport dari mesin HiView kini bisa dipakai menambal absen. Sebelumnya berkas itu ditolak dengan pesan "Kolom PIN dan waktu scan tidak dikenali" karena yang terbaca hanya lembar rekapnya; sekarang lembar jam scannya dicari sendiri, dan rentang tanggalnya langsung dimulai dari hari mesin berhenti mengirim.',
+      'Daftar "Tagihan yang uangnya sudah masuk tapi belum diakui" tak lagi muncul terus sesudah diakui. Tagihan yang sudah lunas tapi dibayar lebih dari nominalnya kini dipisah ke kelompok "Bayar lebih" — bukan tunggakan dan tak perlu diakui.',
+      'Tarif Khusus langsung dari daftar "Bayar lebih". Santri yang selalu membayar lebih dari tarif umum bisa dipasangi Tarif Khusus dengan satu tombol lalu Simpan Semua, sehingga tagihan berikutnya terbit dengan nominal itu dan TU tak perlu mengubah nominal di kasir.'
+    ]
+  },
+  {
     versi: 'v.1.4.6',
     tgl: 'September 2026',
     items: [

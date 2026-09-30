@@ -1,6 +1,6 @@
 {
   "name": "ammu-widgets",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "private": true,
   "type": "module",
   "description": "Vue 3 widget bundle untuk Portal Mambaul Ulum legacy app",

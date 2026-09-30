@@ -5,6 +5,29 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.7 — September 2026
+
+**Perbaikan**
+
+- **Berkas AllReport dari mesin HiView kini bisa dipakai menambal absen.** Sebelumnya berkas itu
+  ditolak dengan pesan "Kolom PIN dan waktu scan tidak dikenali", karena yang terbaca hanya lembar
+  rekapnya. Sekarang aplikasi mencari sendiri lembar berisi jam scan. Rentang tanggal yang ditambal
+  langsung dimulai dari hari mesin berhenti mengirim, dan berkas recordList yang terkunci (terenkripsi)
+  diberi keterangan yang jelas.
+- **Daftar "Tagihan yang uangnya sudah masuk tapi belum diakui" tak lagi muncul terus sesudah
+  diakui.** Tagihan yang sudah lunas tapi dibayar lebih dari nominalnya — misalnya santri yang
+  tarifnya memang lebih tinggi — kini dipisah ke kelompok "Bayar lebih": bukan tunggakan dan tak
+  perlu diakui.
+
+**Baru**
+
+- **Tarif Khusus langsung dari daftar "Bayar lebih".** Santri yang selalu membayar lebih dari tarif
+  umum bisa dipasangi Tarif Khusus dengan satu tombol, lalu Simpan Semua. Tagihan bulan berikutnya
+  terbit dengan nominal itu, jadi TU tak perlu lagi mengubah nominal di kasir. Pembayaran yang
+  tampak dobel (dua kali lipat tagihan) sengaja tidak dicentang, supaya diperiksa dulu di Riwayat.
+
+---
+
 ## v.1.4.6 — September 2026
 
 **Perbaikan**
