@@ -349,6 +349,18 @@
                   </p>
                 </div>
                 <div
+                  class="rounded-lg bg-[var(--bg-card)] border border-sky-200 dark:border-sky-800 p-2"
+                >
+                  <p class="text-[9px] uppercase font-bold text-sky-700">Bayar lebih</p>
+                  <p class="text-xl font-black text-sky-700">
+                    {{ cocokHasil.ringkas.lebihBayar }}
+                  </p>
+                  <p class="text-[10px] text-[var(--text-secondary)]">
+                    Rp {{ rp(cocokHasil.ringkas.lebihBayarRp) }} · tagihan sudah lunas, uang yang
+                    diterima lebih — bukan tunggakan
+                  </p>
+                </div>
+                <div
                   class="rounded-lg bg-[var(--bg-card)] border border-amber-200 dark:border-amber-800 p-2"
                 >
                   <p class="text-[9px] uppercase font-bold text-amber-700">Lebih tercatat</p>
@@ -448,6 +460,75 @@
                   …dan {{ cocokHasil.kurangTercatat.length - 25 }} lagi (semua ikut diproses)
                 </p>
               </div>
+
+              <!-- v.1.4.7 (Kyai 30 Sep 2026): "setelah klik akui, daftar masih tetap
+                   ada" — tagihan LUNAS yang uangnya lebih (santri bertarif lebih tinggi, TU
+                   menaikkan nominal di kasir) dulu ikut daftar di atas, padahal tak ada yang
+                   bisa diakui. Jalan keluarnya Tarif Khusus per santri: tagihan berikutnya
+                   terbit dengan nominal yang benar dan TU tak perlu mengedit lagi. -->
+              <details
+                v-if="cocokHasil.lebihBayar.length"
+                class="rounded-lg border border-sky-200 dark:border-sky-800 p-2 text-[11px]"
+              >
+                <summary class="cursor-pointer font-black text-sky-800 dark:text-sky-300">
+                  {{ cocokHasil.lebihBayar.length }} tagihan lunas yang dibayar LEBIH dari
+                  nominalnya — Rp {{ rp(cocokHasil.ringkas.lebihBayarRp) }}
+                </summary>
+                <p class="mt-1 text-[var(--text-secondary)]">
+                  Bukan tunggakan dan tak perlu diakui — tagihannya sudah lunas, uang yang diterima
+                  memang lebih besar. Biasanya santri yang tarifnya lebih tinggi dari umumnya, lalu
+                  TU menaikkan nominal di kasir. Supaya tak perlu diedit tiap bulan, pasang
+                  <b>Tarif Khusus</b> santri itu: tagihan yang terbit sesudah disimpan memakai
+                  nominal tersebut. Tagihan yang sudah terbit tidak berubah.
+                </p>
+                <ul class="mt-2 space-y-1">
+                  <li v-for="u in usulTarif" :key="u.kunci" class="flex items-start gap-2">
+                    <input
+                      v-if="u.jenisCfg && u.terpasang !== u.tarif"
+                      v-model="pilihTarif[u.kunci]"
+                      type="checkbox"
+                      class="mt-0.5 accent-sky-600"
+                    />
+                    <i v-else-if="u.jenisCfg" class="fas fa-circle-check text-sky-600 mt-0.5"></i>
+                    <i v-else class="fas fa-circle-minus text-[var(--text-tertiary)] mt-0.5"></i>
+                    <span class="text-[var(--text-secondary)]">
+                      <b class="text-[var(--text-primary)]">{{ u.nama || u.santriId }}</b> —
+                      {{ u.jenis }}: tagihan Rp {{ rp(u.nominal) }}, dibayar
+                      <b>Rp {{ rp(u.tarif) }}</b> ({{ u.periode.join(', ') }})
+                      <span v-if="!u.jenisCfg" class="italic">
+                        · jenis ini tak ada di daftar T.A. {{ taBerjalan }}</span
+                      >
+                      <span v-else-if="u.terpasang === u.tarif" class="font-bold text-sky-700">
+                        · tarif khusus terpasang</span
+                      >
+                      <template v-else>
+                        <span v-if="u.terpasang" class="italic">
+                          · tarif khusus kini Rp {{ rp(u.terpasang) }}</span
+                        >
+                        <span v-if="u.dobel" class="font-bold text-amber-700">
+                          · ≥ 2× tagihan — mungkin bayar dobel, periksa Riwayat dulu</span
+                        >
+                        <span v-else-if="!u.seragam" class="font-bold text-amber-700">
+                          · nominal berbeda antar bulan</span
+                        >
+                      </template>
+                    </span>
+                  </li>
+                </ul>
+                <div class="mt-2 flex items-center gap-2 flex-wrap">
+                  <button
+                    :disabled="!tarifDipilih.length"
+                    class="px-3 py-1.5 text-[10px] font-black rounded-lg bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50"
+                    @click="pasangTarifKhusus"
+                  >
+                    <i class="fas fa-sliders-h mr-1"></i>Pasang {{ tarifDipilih.length }} tarif
+                    khusus
+                  </button>
+                  <span class="text-[10px] italic text-[var(--text-tertiary)]">
+                    lalu klik "Simpan Semua" di bawah
+                  </span>
+                </div>
+              </details>
 
               <details v-if="cocokHasil.lebihTercatat.length" class="text-[11px]">
                 <summary class="cursor-pointer font-bold text-amber-800 dark:text-amber-300">
@@ -3819,6 +3900,8 @@ import {
   periksaKecocokanBayar,
   payloadTambalKurang,
   payloadSelaraskanStatus,
+  usulTarifKhusus,
+  jenisKunci,
   kodePeriodeBaris,
   SUMBER_BAYAR_SANTRI,
   // v.1.4.3: aturan bayar-di-muka untuk tagihan baru — dicerminkan ke cron (prabayar.ts)
@@ -4292,6 +4375,57 @@ const ringkasYatim = computed(() =>
     .join(' · ')
 )
 
+// v.1.4.7 (Kyai 30 Sep 2026): "ada beberapa santri yg bayarnya itu memang lebih dari
+//   tagihan pada umumnya, kemarin saya kasih arahan TU diedit saja ketika proses transaksi.
+//   gimana caranya biar gk ribet". Usul Tarif Khusus per santri dari tagihan yang dibayar
+//   lebih (utils/cocokBayarTagihan.usulTarifKhusus). Memasangnya hanya mengubah daftar jenis
+//   di layar; tersimpan lewat "Simpan Semua" seperti suntingan tarif lain, dengan penjaga
+//   yang sama (alasanTolakSimpanKeu).
+/** Jenis T.A. berjalan — daftar yang dibaca generator & POS (keuTagihanJenis). */
+function jenisTarifBerjalan(kunci) {
+  return (
+    (jenisByTA.value[taBerjalan.value] || []).find(
+      (j) => jenisKunci(j.label) === kunci || jenisKunci(j.id) === kunci
+    ) || null
+  )
+}
+const usulTarif = computed(() =>
+  usulTarifKhusus(cocokHasil.value?.lebihBayar).map((u) => {
+    const jenisCfg = jenisTarifBerjalan(u.jenisKunci)
+    const terpasang = Number((jenisCfg?.nominal_per_santri || {})[u.santriId] || 0)
+    return { ...u, jenisCfg, terpasang }
+  })
+)
+const pilihTarif = reactive({})
+watch(cocokHasil, () => {
+  for (const k of Object.keys(pilihTarif)) delete pilihTarif[k]
+  for (const u of usulTarif.value) {
+    pilihTarif[u.kunci] = u.yakin && !!u.jenisCfg && u.terpasang !== u.tarif
+  }
+})
+const tarifDipilih = computed(() =>
+  usulTarif.value.filter((u) => pilihTarif[u.kunci] && u.jenisCfg && u.terpasang !== u.tarif)
+)
+function pasangTarifKhusus() {
+  const daftar = tarifDipilih.value
+  if (!daftar.length) return
+  const contoh = daftar.slice(0, 12).map((u) => `• ${u.nama} — ${u.jenis}: Rp ${rp(u.tarif)}`)
+  if (daftar.length > 12) contoh.push(`…dan ${daftar.length - 12} lagi`)
+  if (
+    !confirm(
+      `Pasang tarif khusus untuk ${daftar.length} santri?\n\n${contoh.join('\n')}\n\n` +
+        'Tagihan yang terbit SESUDAH disimpan memakai nominal ini, jadi TU tak perlu mengubah ' +
+        'nominal di kasir lagi. Tagihan yang sudah terbit tidak berubah.'
+    )
+  )
+    return
+  for (const u of daftar) {
+    setNominalSantri(u.jenisCfg, u.santriId, u.tarif)
+    pilihTarif[u.kunci] = false
+  }
+  toast.info(`${daftar.length} tarif khusus siap — klik "Simpan Semua" untuk menyimpan permanen.`)
+}
+
 // v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan: "di POS santrinya terbaca lunas.
 //   padahal tadi sudah dihapus"). Mulai v.1.4.3 menghapus transaksi mengembalikan tagihannya
 //   sendiri (services/hapusBarisKas). Yang TERLANJUR dihapus sebelumnya dibaca lagi dari
@@ -4413,7 +4547,7 @@ async function kembalikanBatalTerlewat() {
 async function tambalKurangTercatat() {
   const daftar = cocokHasil.value?.kurangTercatat || []
   if (!daftar.length || cocokTambalBusy.value || !bolehHapusTagihan.value) return
-  const nilai = daftar.reduce((s, t) => s + Number(t.selisih || 0), 0)
+  const nilai = daftar.reduce((s, t) => s + Number(t.diakui || 0), 0)
   if (
     !confirm(
       `Akui ${daftar.length} pembayaran senilai Rp ${rp(nilai)} ke tagihannya?\n\n` +

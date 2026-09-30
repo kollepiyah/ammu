@@ -20,6 +20,7 @@ import {
   jenisTagihan,
   payloadTambalKurang,
   payloadSelaraskanStatus,
+  usulTarifKhusus,
   alokasiEksplisit,
   petaBayarPerTagihan
 } from '@/utils/cocokBayarTagihan'
@@ -177,6 +178,100 @@ describe('kurangTercatat — "di riwayat sudah bayar, di tagihan masih ada"', ()
     )
     expect(h.kurangTercatat[0].selisih).toBe(100000)
     expect(payloadTambalKurang(h.kurangTercatat[0], 's').status).toBe('lunas')
+  })
+})
+
+describe('lebihBayar — tagihan LUNAS, riwayat mencatat lebih (Kyai 30 Sep 2026)', () => {
+  // "setelah klik akui, daftar masih tetap ada. karena ada beberapa santri yg bayarnya itu
+  //  memang lebih dari tagihan pada umumnya, kemarin saya kasih arahan TU diedit saja ketika
+  //  proses transaksi". Layar: "tagihan mengakui Rp 200.000 dari Rp 200.000, riwayat mencatat
+  //  Rp 225.000" — 91 baris, dan semuanya muncul lagi sesudah tombol Akui.
+  const lunas = tg({ nominal: 200000, terbayar: 200000, status: 'lunas' })
+  const bayarLebih = bi({ tagihan_id: lunas.id, nominal: 225000, tagihan_tambah: 200000 })
+
+  it('bukan "belum diakui": pindah ke lebihBayar, tombol Akui tak menghitungnya', () => {
+    const h = periksaKecocokanBayar([lunas], [bayarLebih])
+    expect(h.kurangTercatat).toEqual([])
+    expect(h.lebihTercatat).toEqual([])
+    expect(h.lebihBayar).toHaveLength(1)
+    expect(h.lebihBayar[0]).toMatchObject({ nominal: 200000, terbayar: 200000, diRiwayat: 225000 })
+    expect(h.lebihBayar[0].selisih).toBe(25000)
+    expect(h.ringkas).toMatchObject({ kurangTercatat: 0, lebihBayar: 1, lebihBayarRp: 25000 })
+  })
+
+  it('akui → periksa ulang: daftar "belum diakui" KOSONG, kelebihannya tinggal di lebihBayar', () => {
+    // Cicilan 50rb tercatat, lalu 150rb lagi yang gagal ditulis ke tagihan: riwayat 200rb untuk
+    //   tagihan 150rb. Yang bisa diakui cuma 100rb; 50rb sisanya kelebihan bayar.
+    const t = tg({ terbayar: 50000, status: 'partial' })
+    const buku = [bi({ id: 'p1', nominal: 50000 }), bi({ id: 'p2', nominal: 150000 })]
+    const h1 = periksaKecocokanBayar([t], buku)
+    expect(h1.kurangTercatat).toHaveLength(1)
+    expect(h1.kurangTercatat[0].diakui).toBe(100000)
+    expect(h1.ringkas.kurangTercatatRp).toBe(100000)
+    const sesudah = { ...t, ...payloadTambalKurang(h1.kurangTercatat[0], 's') }
+    const h2 = periksaKecocokanBayar([sesudah], buku)
+    expect(h2.kurangTercatat).toEqual([])
+    expect(h2.lebihBayar).toHaveLength(1)
+    expect(h2.lebihBayar[0].selisih).toBe(50000)
+  })
+
+  it('nominal 0 (tagihan rusak) tetap boleh diakui sebesar riwayatnya, seperti dulu', () => {
+    const h = periksaKecocokanBayar([tg({ nominal: 0 })], [bi({ nominal: 70000 })])
+    expect(h.kurangTercatat).toHaveLength(1)
+    expect(h.kurangTercatat[0].usulTerbayar).toBe(70000)
+    expect(h.lebihBayar).toEqual([])
+  })
+})
+
+describe('usulTarifKhusus — biar TU tak mengedit nominal di kasir tiap bulan', () => {
+  const lebih = (santriId, nama, kategori, kode, nominal, diRiwayat) => {
+    const [y, m] = kode.split('-')
+    const periode = `${m === '08' ? 'Agustus' : 'September'} ${y}`
+    return {
+      tagihan: { id: `t_${santriId}_${kode}`, santri_id: santriId, kategori, periode },
+      santriId,
+      nama,
+      jenis: kategori,
+      periode,
+      kode,
+      nominal,
+      terbayar: nominal,
+      diRiwayat,
+      selisih: diRiwayat - nominal
+    }
+  }
+
+  it('satu usul per santri × jenis; tarif dari periode terakhir; yakin bila seragam', () => {
+    const u = usulTarifKhusus([
+      lebih('7', 'Raissa', 'Syahriyah Kelas Baca', '2026-09', 40000, 50000),
+      lebih('7', 'Raissa', 'Syahriyah Kelas Baca', '2026-08', 40000, 50000),
+      lebih('3', 'Iffah', 'Syahriyah Sekolah SD', '2026-08', 200000, 225000)
+    ])
+    expect(u.map((x) => [x.nama, x.jenisKunci, x.tarif, x.yakin])).toEqual([
+      ['Iffah', 'syahriyah sekolah sd', 225000, true],
+      ['Raissa', 'syahriyah kelas baca', 50000, true]
+    ])
+    expect(u[1].periode).toEqual(['Agustus 2026', 'September 2026'])
+  })
+
+  it('dua kali lipat tagihan → mungkin bayar dobel, TIDAK dicentang bawaan', () => {
+    const [u] = usulTarifKhusus([
+      lebih('9', 'Nazura', 'Syahriyah Sekolah SD', '2026-09', 200000, 400000)
+    ])
+    expect(u).toMatchObject({ tarif: 400000, dobel: true, seragam: true, yakin: false })
+  })
+
+  it('nominal beda antar bulan → tak seragam, tarif = bulan terakhir, tak dicentang', () => {
+    const [u] = usulTarifKhusus([
+      lebih('4', 'Sinta', 'Fullday', '2026-08', 530000, 550000),
+      lebih('4', 'Sinta', 'Fullday', '2026-09', 550000, 560000)
+    ])
+    expect(u).toMatchObject({ tarif: 560000, nominal: 550000, seragam: false, yakin: false })
+  })
+
+  it('kosong / tanpa santri tak melempar galat', () => {
+    expect(usulTarifKhusus(null)).toEqual([])
+    expect(usulTarifKhusus([{ santriId: '', tagihan: { kategori: 'X' } }])).toEqual([])
   })
 })
 

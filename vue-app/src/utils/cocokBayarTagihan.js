@@ -33,6 +33,8 @@
 //
 //   kurangTercatat  uang ADA di riwayat, tagihan belum mengakuinya  → tunggakan palsu
 //   lebihTercatat   tagihan mengaku terbayar, uangnya TAK ADA di riwayat
+//   lebihBayar      tagihan sudah LUNAS penuh, riwayat mencatat lebih dari nominalnya —
+//                   bukan tunggakan, tak ada yang bisa "diakui" (v.1.4.7)
 //
 // Sengaja hanya MELAPORKAN. Menambal otomatis berarti menulis angka uang atas dasar
 // pencocokan heuristik; keputusan itu milik Kyai, sesudah melihat barisnya satu per satu.
@@ -199,7 +201,7 @@ const AMBANG = 0.5
  *   (ditolak / terhapus). Baris seperti itu = uang di riwayat yang tak pernah sah.
  * @param {Map|object} [opsi.namaSantri] id → nama, untuk melabeli temuan.
  *
- * @returns {{kurangTercatat:Array, lebihTercatat:Array, statusMeleset:Array,
+ * @returns {{kurangTercatat:Array, lebihTercatat:Array, lebihBayar:Array, statusMeleset:Array,
  *   transferYatim:Array, bayarTanpaTagihan:Array, lunasTanpaJejak:Array, ringkas:object}}
  */
 export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
@@ -213,6 +215,7 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
 
   const kurangTercatat = []
   const lebihTercatat = []
+  const lebihBayar = []
   const statusMeleset = []
   const lunasTanpaJejak = []
   const terpakai = new Set()
@@ -287,6 +290,10 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
     const barisSemua = [...(lewatId?.baris || []), ...(lewatSel?.baris || [])]
 
     const selisih = diRiwayat - terbayar
+    // Angka yang SEHARUSNYA tercatat bila temuan ini ditambal. Tak pernah melebihi nominal
+    //   tagihan: kelebihan bayar bukan urusan alat ini dan menuliskannya akan membuat
+    //   tagihan tampak "lebih" di laporan.
+    const usulTerbayar = Math.min(Math.max(terbayar, diRiwayat), nominal || diRiwayat)
     const temuan = {
       tagihan: t,
       santriId: sid,
@@ -299,13 +306,20 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
       diRiwayat,
       selisih: Math.abs(selisih),
       barisBuku: barisSemua.map((b) => b.id).filter(Boolean),
-      // Angka yang SEHARUSNYA tercatat bila temuan ini ditambal. Tak pernah melebihi
-      //   nominal tagihan: kelebihan bayar bukan urusan alat ini dan menuliskannya akan
-      //   membuat tagihan tampak "lebih" di laporan.
-      usulTerbayar: Math.min(Math.max(terbayar, diRiwayat), nominal || diRiwayat)
+      usulTerbayar,
+      // Rupiah yang BENAR-BENAR bertambah di `terbayar` bila temuan ini diakui.
+      diakui: Math.max(0, usulTerbayar - terbayar)
     }
-    if (selisih > AMBANG) kurangTercatat.push(temuan)
-    else if (selisih < -AMBANG) lebihTercatat.push(temuan)
+    if (selisih > AMBANG) {
+      // v.1.4.7 (Kyai 30 Sep 2026): "setelah klik akui, daftar masih tetap ada. karena
+      //   ada beberapa santri yg bayarnya itu memang lebih dari tagihan pada umumnya" — TU
+      //   menaikkan nominal di kasir untuk santri bertarif lebih tinggi. Tagihannya lunas
+      //   penuh, riwayatnya mencatat lebih. Dulu ikut kurangTercatat, padahal mengakuinya tak
+      //   mengubah apa pun (usulTerbayar dijepit ke nominal) — jadi baris itu lahir lagi
+      //   sesudah tombol Akui, selamanya. Yang bisa diakui = yang MENAIKKAN terbayar.
+      if (temuan.diakui > AMBANG) kurangTercatat.push(temuan)
+      else lebihBayar.push(temuan)
+    } else if (selisih < -AMBANG) lebihTercatat.push(temuan)
   }
 
   // Uang yang periodenya jelas tapi TAK punya tagihan sama sekali. Sebagian besar sah
@@ -356,6 +370,7 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
   return {
     kurangTercatat,
     lebihTercatat,
+    lebihBayar,
     statusMeleset,
     transferYatim,
     bayarTanpaTagihan,
@@ -364,9 +379,13 @@ export function periksaKecocokanBayar(tagihanList, bukuInduk, opsi = {}) {
       tagihanDiperiksa: (tagihanList || []).length,
       barisBukuDipakai: peta.size,
       kurangTercatat: kurangTercatat.length,
-      kurangTercatatRp: jumlahRp(kurangTercatat, 'selisih'),
+      // Yang akan diakui, bukan selisih mentah: tagihan 100rb yang terbayar 50rb dengan
+      //   riwayat 120rb hanya bertambah 50rb — 20rb sisanya kelebihan bayar.
+      kurangTercatatRp: jumlahRp(kurangTercatat, 'diakui'),
       lebihTercatat: lebihTercatat.length,
       lebihTercatatRp: jumlahRp(lebihTercatat, 'selisih'),
+      lebihBayar: lebihBayar.length,
+      lebihBayarRp: jumlahRp(lebihBayar, 'selisih'),
       statusMeleset: statusMeleset.length,
       transferYatim: transferYatim.length,
       transferYatimRp: jumlahRp(transferYatim, 'nominal'),
@@ -399,6 +418,69 @@ export function payloadTambalKurang(temuan, stamp) {
 /** Muatan tulis untuk menyelaraskan KOLOM status dengan sisa hasil hitung. */
 export function payloadSelaraskanStatus(temuan) {
   return { status: temuan?.statusHitung || 'belum' }
+}
+
+// ── Tarif khusus dari kelebihan bayar ────────────────────────────────────────
+//
+// Kyai 30 Sep 2026: "ada beberapa santri yg bayarnya itu memang lebih dari tagihan pada
+// umumnya, kemarin saya kasih arahan TU diedit saja ketika proses transaksi. gimana caranya
+// biar gk ribet". Selama tarif santri itu tak dipasang, TU mengubah nominal di kasir TIAP
+// bulan, dan tiap bulan pula baris `lebihBayar` lahir. Tarif Khusus per santri
+// (`nominal_per_santri`, sejak v.95 — menang atas tarif lain di utils/syahriyah) membuat
+// tagihannya terbit dengan nominal yang benar; POS membacanya lewat resolver yang sama.
+//
+// Tagihan yang SUDAH terbit sengaja tak dinaikkan nominalnya: baris buku induknya mencatat
+// `tagihan_tambah` sebesar nominal lama, jadi menghapus transaksinya kelak akan menyisakan
+// "terbayar" palsu (utils/batalBayarTagihan.rencanaBatalBayar).
+
+/**
+ * Satu usul tarif khusus per (santri × jenis) dari daftar lebihBayar.
+ *
+ * `yakin` (dicentang bawaan) hanya bila semua periodenya membayar angka yang SAMA dan angka
+ * itu kurang dari dua kali nominal tagihan. Dua kali lipat atau lebih lebih mungkin bayar
+ * dobel / dua bulan sekaligus — periksa Riwayat dulu, jangan dijadikan tarif.
+ *
+ * @param {Array} lebihBayar hasil periksaKecocokanBayar().lebihBayar
+ * @returns {Array<{kunci:string, santriId:string, nama:string, jenis:string, jenisKunci:string,
+ *   nominal:number, tarif:number, periode:string[], seragam:boolean, dobel:boolean,
+ *   yakin:boolean}>} tarif = yang dibayar pada periode TERAKHIR; urut nama
+ */
+export function usulTarifKhusus(lebihBayar) {
+  const grup = new Map()
+  for (const t of lebihBayar || []) {
+    const jenis = jenisTagihan(t?.tagihan)
+    const sid = String(t?.santriId ?? '')
+    if (!sid || !jenis) continue
+    const kunci = `${sid}|${jenis}`
+    if (!grup.has(kunci)) {
+      grup.set(kunci, { kunci, santriId: sid, nama: t.nama || '', jenis: t.jenis || '', isi: [] })
+    }
+    grup.get(kunci).isi.push(t)
+  }
+  return [...grup.values()]
+    .map((g) => {
+      const isi = [...g.isi].sort((a, b) => String(a.kode).localeCompare(String(b.kode)))
+      const akhir = isi[isi.length - 1]
+      const tarif = Number(akhir.diRiwayat || 0)
+      const seragam = isi.every((t) => Math.abs(Number(t.diRiwayat || 0) - tarif) <= AMBANG)
+      const dobel = isi.some(
+        (t) => Number(t.nominal) > 0 && Number(t.diRiwayat || 0) >= 2 * Number(t.nominal) - AMBANG
+      )
+      return {
+        kunci: g.kunci,
+        santriId: g.santriId,
+        nama: g.nama,
+        jenis: g.jenis,
+        jenisKunci: jenisTagihan(akhir.tagihan),
+        nominal: Number(akhir.nominal || 0),
+        tarif,
+        periode: isi.map((t) => t.periode),
+        seragam,
+        dobel,
+        yakin: seragam && !dobel
+      }
+    })
+    .sort((a, b) => a.nama.localeCompare(b.nama, 'id') || a.jenis.localeCompare(b.jenis, 'id'))
 }
 
 // ── Pembayaran di muka untuk tagihan yang BARU diterbitkan ───────────────────
