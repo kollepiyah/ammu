@@ -14,6 +14,10 @@
 //
 // Pratinjau dulu, tulis sesudah dikonfirmasi. Tepat sebelum menulis, baris yang sudah ada
 // dibaca ULANG — layar ini bisa lama terbuka, dan yang boleh diisi hanya yang MASIH kosong.
+//
+// v.1.4.7 (30 Sep 2026): berkas asli mesin (AllReport) ditolak "kolom PIN dan waktu scan
+// tidak dikenali" — yang terbaca hanya lembar pertamanya, rekap bulanan. Kini semua lembar
+// dibaca dan lembar jam scannya dicari sendiri (utils/logMesinHiview.scanDariLembar).
 import { ref, computed, watch } from 'vue'
 import { queryColl, setOne, mergeOne } from '@/services/db'
 import { useExcel } from '@/composables/useExcel'
@@ -24,7 +28,7 @@ import { guruAktifSaja } from '@/utils/guruScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf } from '@/utils/shiftMaster'
 import { labelSumberAbsen } from '@/utils/absensiRekap'
-import { bacaCsv, objekDariCsv, scanDariBaris, samakanPin } from '@/utils/logMesinHiview'
+import { bacaCsv, scanDariLembar, samakanPin, tampakBiner } from '@/utils/logMesinHiview'
 import {
   kelompokkanScan,
   saringScan,
@@ -36,14 +40,18 @@ import {
 const props = defineProps({
   // SEMUA guru (termasuk nonaktif) — PIN dicocokkan seperti kiriman langsung.
   guru: { type: Array, default: () => [] },
-  settings: { type: Object, default: () => ({}) }
+  settings: { type: Object, default: () => ({}) },
+  // Tanggal mesin berhenti mengirim (spanduk "mesin HiView diam"). Rentang bawaan dimulai di
+  //   sini, bukan di tanggal pertama berkas: AllReport memuat SEBULAN penuh, padahal hari
+  //   sebelumnya sudah terkirim langsung dan barisnya mungkin sudah diperbaiki tangan.
+  sejak: { type: String, default: '' }
 })
 const emit = defineEmits(['selesai'])
 
 // Sumber baris baru — terpisah dari 'hiview' (kiriman langsung) supaya asal-usulnya terbaca.
 const SUMBER = 'hiview_impor'
 
-const { importFile } = useExcel()
+const { importSheets } = useExcel()
 const toast = useToast()
 const confirmDlg = useConfirm()
 
@@ -76,11 +84,16 @@ async function pilihBerkas(ev) {
   }
   membaca.value = true
   try {
-    const rows =
-      ext === 'csv' || ext === 'txt'
-        ? objekDariCsv(bacaCsv(await file.text()))
-        : await importFile(file)
-    const b = scanDariBaris(rows)
+    let lembar
+    if (ext === 'csv' || ext === 'txt') {
+      const teks = await file.text()
+      if (tampakBiner(teks)) {
+        bacaan.value = { ok: false, biner: true, judul: [], daftarLembar: [] }
+        return
+      }
+      lembar = [{ nama: file.name, baris: bacaCsv(teks) }]
+    } else lembar = await importSheets(file)
+    const b = scanDariLembar(lembar)
     b.scans = samakanPin(b.scans, props.guru)
     bacaan.value = b
     if (!b.ok) return
@@ -88,8 +101,9 @@ async function pilihBerkas(ev) {
       .map((s) => pisahWaktuScan(s.timestamp)?.date)
       .filter(Boolean)
       .sort()
+    const awal = tgl[0] || ''
     const akhir = tgl[tgl.length - 1] || ''
-    dari.value = tgl[0] || ''
+    dari.value = props.sejak > awal && props.sejak <= akhir ? props.sejak : awal
     sampai.value = akhir > hariIni ? hariIni : akhir
     await muatAda()
   } catch (e) {
@@ -267,8 +281,9 @@ async function tulis() {
     </h3>
     <p class="text-xs text-[var(--text-secondary)] mb-3 leading-relaxed">
       Untuk hari ketika mesin HiView tak mengirim ke server (lihat tab Jejak Mesin). Unggah berkas
-      <b>ekspor catatan scan / kehadiran</b> dari mesin (.xlsx atau .csv). Scan diproses dengan
-      aturan yang sama dengan kiriman langsung — shift dari jam scan, terlambat, jam pulang — dan
+      <b>AllReport</b> dari flashdisk mesin (.xlsx; bila .xls, buka di Excel lalu Simpan Sebagai
+      .xlsx) — lembar jam scannya dicari sendiri. Scan diproses dengan aturan yang sama dengan
+      kiriman langsung — shift dari jam scan, terlambat, jam pulang — dan
       <b>hanya mengisi yang masih kosong</b>: izin, cuti, dan perbaikan manual tidak ditimpa. Tak
       ada yang ditulis sebelum Anda menekan <b>Tulis</b>.
     </p>
@@ -294,24 +309,66 @@ async function tulis() {
       </span>
     </div>
 
-    <!-- Kolom tak dikenali: sebut judul yang ADA, dan apa yang harus ditulis. -->
+    <!-- Berkas tak terbaca: sebut apa yang ADA di berkas, dan apa yang harus diunggah. -->
     <div
       v-if="bacaan && !bacaan.ok"
       class="mt-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 p-3 text-xs text-rose-800 dark:text-rose-200"
     >
-      <p class="font-bold">
-        <i class="fas fa-triangle-exclamation mr-1"></i>Kolom PIN dan waktu scan tidak dikenali.
-      </p>
-      <p class="mt-1">
-        Judul kolom di berkas: <code>{{ bacaan.judul.join(', ') || '(kosong)' }}</code
-        >. Beri judul <b>PIN</b> dan <b>Waktu</b> (tanggal + jam dalam satu sel) — atau <b>PIN</b>,
-        <b>Tanggal</b>, dan <b>Jam</b> — lalu unggah lagi.
-      </p>
+      <template v-if="bacaan.biner">
+        <p class="font-bold">
+          <i class="fas fa-lock mr-1"></i>Isi berkas ini bukan teks yang bisa dibaca.
+        </p>
+        <p class="mt-1">
+          Ekspor <b>recordList_….csv</b> dari flashdisk mesin memang terkunci (terenkripsi) walau
+          berakhiran .csv. Unggah berkas <b>AllReport</b> dari flashdisk yang sama.
+        </p>
+      </template>
+      <template v-else-if="bacaan.sebab === 'periode'">
+        <p class="font-bold">
+          <i class="fas fa-triangle-exclamation mr-1"></i>Bulan & tahun laporan tidak ditemukan.
+        </p>
+        <p class="mt-1">
+          Lembar <b>"{{ bacaan.lembar }}"</b> berisi jam scan per tanggal, tapi baris periodenya di
+          atas tabel (mis. <code>Made Date:2026/09/01-2026/09/30</code>) hilang atau tak cocok
+          dengan kolom tanggal. Ekspor ulang dari mesin tanpa menyunting bagian atas lembar.
+        </p>
+      </template>
+      <template v-else>
+        <p class="font-bold">
+          <i class="fas fa-triangle-exclamation mr-1"></i>Jam scan tidak ditemukan di berkas ini.
+        </p>
+        <p v-if="bacaan.daftarLembar.length > 1" class="mt-1">
+          Lembar yang dibaca:
+          <template v-for="(l, i) in bacaan.daftarLembar" :key="i"
+            ><template v-if="i">; </template><b>{{ l.nama }}</b
+            ><code v-if="l.judul.length"> ({{ l.judul.join(', ') }})</code></template
+          >.
+        </p>
+        <p v-else class="mt-1">
+          Judul kolom di berkas: <code>{{ bacaan.judul.join(', ') || '(kosong)' }}</code
+          >.
+        </p>
+        <p class="mt-1">
+          Dari mesin HiView, unggah <b>AllReport</b> — lembar "Attendance Record" dibaca otomatis.
+          Berkas susunan sendiri: beri judul <b>PIN</b> dan <b>Waktu</b> (tanggal + jam dalam satu
+          sel) — atau <b>PIN</b>, <b>Tanggal</b>, dan <b>Jam</b> — lalu unggah lagi.
+        </p>
+      </template>
     </div>
 
     <template v-else-if="bacaan">
-      <p class="mt-3 text-[11px] text-[var(--text-secondary)]">
-        Terbaca <b>{{ bacaan.total }}</b> baris → <b>{{ bacaan.scans.length }}</b> scan. PIN dari
+      <p v-if="bacaan.bentuk === 'kisi'" class="mt-3 text-[11px] text-[var(--text-secondary)]">
+        Lembar <b>"{{ bacaan.lembar }}"</b>, {{ fmtTgl(bacaan.periode.dari) }} –
+        {{ fmtTgl(bacaan.periode.sampai) }}: <b>{{ bacaan.total }}</b> orang →
+        <b>{{ bacaan.scans.length }}</b> scan. PIN dari kolom <code>"{{ bacaan.kolom.pin }}"</code>,
+        tanggal dari judul kolom 1, 2, 3, …<template v-if="bacaan.waktuRusak">
+          · {{ bacaan.waktuRusak }} sel tanpa jam terbaca</template
+        >.
+      </p>
+      <p v-else class="mt-3 text-[11px] text-[var(--text-secondary)]">
+        <template v-if="bacaan.daftarLembar?.length > 1"
+          >Lembar <b>"{{ bacaan.lembar }}"</b>: </template
+        >Terbaca <b>{{ bacaan.total }}</b> baris → <b>{{ bacaan.scans.length }}</b> scan. PIN dari
         kolom <code>"{{ bacaan.kolom.pin }}"</code>, waktu dari <code>{{ kolomWaktu }}</code
         ><template v-if="bacaan.tanpaPin"> · {{ bacaan.tanpaPin }} baris tanpa PIN</template
         ><template v-if="bacaan.gagal"> · {{ bacaan.gagal }} autentikasi gagal dilewati</template
@@ -341,6 +398,10 @@ async function tulis() {
           ({{ saring.luarRentang }} scan di luar rentang)
         </span>
       </div>
+      <p v-if="sejak && dari === sejak" class="mt-1 text-[11px] text-[var(--text-secondary)]">
+        <i class="fas fa-circle-info mr-1"></i>Mulai {{ fmtTgl(sejak) }} — hari mesin berhenti
+        mengirim. Tanggal sebelumnya sudah terkirim langsung; geser bila memang perlu ditambal.
+      </p>
       <p v-if="saring?.masaDepan" class="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
         <i class="fas fa-clock mr-1"></i>{{ saring.masaDepan }} scan bertanggal sesudah hari ini
         disisihkan — periksa tanggal & jam di mesin.

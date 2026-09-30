@@ -17,6 +17,9 @@ import {
   bacaCsv,
   objekDariCsv,
   scanDariBaris,
+  scanDariKisi,
+  scanDariLembar,
+  tampakBiner,
   samakanPin
 } from '@/utils/logMesinHiview'
 import {
@@ -211,6 +214,193 @@ describe('scanDariBaris', () => {
     const b = scanDariBaris([{ Nomor: 1, Nama: 'Ahmad', Keterangan: 'x' }])
     expect(b.ok).toBe(false)
     expect(b.judul).toEqual(['Nomor', 'Nama', 'Keterangan'])
+  })
+})
+
+// ── AllReport: berkas ekspor ASLI mesin HiView (30 Sep 2026) ────────────────
+// Kyai mengunggah AllReport.xlsx dari flashdisk mesin dan ditolak "Kolom PIN dan waktu scan
+// tidak dikenali" — yang terbaca hanya lembar pertama, "Attendance Summary" (rekap bulanan).
+// Jam scan ada di lembar "Attendance Record": orang × tanggal, sel berisi jam-jam hari itu.
+// Bentuk di bawah ditiru dari berkas itu (nama & PIN rekaan).
+const hari = (n, isi = {}) => Array.from({ length: n }, (_, i) => isi[i + 1] ?? '')
+const RECORD = [
+  ['Attendance Record'],
+  ['Create Time:2026/09/30 08:06:41'],
+  ['Made Date:2026/09/01-2026/09/30'],
+  ['Employee ID', 'Name', 'Department', ...hari(30).map((_, i) => String(i + 1)), ''],
+  ['14', 'Ahmad', 'Company', ...hari(30, { 24: '06:40\n', 25: '06:12\n11:55\n15:40\n17:05\n' })],
+  ['59', 'Budi', 'Company', ...hari(30, { 25: '06:45\n06:45\n' })],
+  ['99', 'Tamu', 'Company', ...hari(30, { 25: '06:30\n' })],
+  ['25', 'Citra', 'Company', ...hari(30)]
+]
+const SUMMARY = [
+  ['Attendance Summary'],
+  ['Made Date:2026/09/01-2026/09/30'],
+  ['Employee ID', 'Name', 'Department', 'Work Hours', '', 'Late', '', 'Absent(Days)'],
+  ['', '', '', 'Standard', 'Actual', 'Times', 'Duration(min)', ''],
+  ['14', 'Ahmad', 'Company', 0, 0, 2, 170, 14]
+]
+// Punya Employee ID + Date, jadi terbaca sebagai TABEL — tapi tak ada jam scan mentahnya.
+const ABNORMAL = [
+  ['Attendance Abnormal'],
+  ['Employee ID', 'Name', 'Department', 'Date', 'The first', '', 'The Second', ''],
+  ['', '', '', '', 'On', 'Off', 'On', 'Off'],
+  ['14', 'Ahmad', 'Company', '2026/09/25', '--:--', '--:--', '06:12', '--:--']
+]
+
+describe('scanDariKisi — lembar "Attendance Record" (orang × tanggal)', () => {
+  it('tanggal dari kolom + "Made Date"; scan kembar dalam satu sel jadi satu', () => {
+    const b = scanDariKisi(RECORD)
+    expect(b).toMatchObject({
+      ok: true,
+      bentuk: 'kisi',
+      kolom: { pin: 'Employee ID', nama: 'Name' },
+      periode: { dari: '2026-09-01', sampai: '2026-09-30' },
+      total: 4,
+      waktuRusak: 0
+    })
+    expect(b.scans).toEqual([
+      scan('14', '2026-09-24 06:40:00', 'Ahmad'),
+      scan('14', '2026-09-25 06:12:00', 'Ahmad'),
+      scan('14', '2026-09-25 11:55:00', 'Ahmad'),
+      scan('14', '2026-09-25 15:40:00', 'Ahmad'),
+      scan('14', '2026-09-25 17:05:00', 'Ahmad'),
+      scan('59', '2026-09-25 06:45:00', 'Budi'),
+      scan('99', '2026-09-25 06:30:00', 'Tamu')
+    ])
+  })
+
+  it('periode lintas bulan: kolom 25…31, 1…24 mengikuti "Made Date"', () => {
+    const judul = [25, 26, 27, 28, 29, 30, 31, ...Array.from({ length: 24 }, (_, i) => i + 1)]
+    const isi = judul.map((d) => (d === 31 ? '07:01\n' : d === 1 ? '07:02\n' : ''))
+    const b = scanDariKisi([
+      ['Made Date:2026/08/25-2026/09/24'],
+      ['Employee ID', 'Name', ...judul.map(String)],
+      ['14', 'Ahmad', ...isi]
+    ])
+    expect(b.scans.map((s) => s.timestamp)).toEqual(['2026-08-31 07:01:00', '2026-09-01 07:02:00'])
+  })
+
+  it('judul "01"…"31" pada September: kolom sesudah akhir periode diabaikan', () => {
+    const judul = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'))
+    const isi = judul.map((d) => (d === '30' || d === '31' ? '06:05' : ''))
+    const b = scanDariKisi([
+      ['Att. Time: 01/09/2026 ~ 30/09/2026'],
+      ['User ID', ...judul],
+      ['14', ...isi]
+    ])
+    expect(b.periode).toEqual({ dari: '2026-09-01', sampai: '2026-09-30' })
+    expect(b.scans.map((s) => s.timestamp)).toEqual(['2026-09-30 06:05:00'])
+  })
+
+  it('sel jam Excel (Date 30 Des 1899) dan AM/PM ikut terbaca', () => {
+    const b = scanDariKisi([
+      ['Made Date:2026/09/01-2026/09/07'],
+      ['Employee ID', '1', '2', '3', '4', '5', '6', '7'],
+      ['14', new Date(Date.UTC(1899, 11, 30, 6, 45)), '7:05 PM', '', '', '', '', '']
+    ])
+    expect(b.scans.map((s) => s.timestamp)).toEqual(['2026-09-01 06:45:00', '2026-09-02 19:05:00'])
+  })
+
+  it('periode hilang atau tak cocok dengan kolom → ok:false sebab "periode", tak ditebak', () => {
+    const tanpa = scanDariKisi(RECORD.filter((r) => !String(r[0]).startsWith('Made Date')))
+    expect(tanpa).toMatchObject({ ok: false, bentuk: 'kisi', sebab: 'periode', scans: [] })
+    const meleset = scanDariKisi([['Made Date:2026/09/25-2026/10/24'], ...RECORD.slice(3)])
+    expect(meleset).toMatchObject({ ok: false, sebab: 'periode' })
+  })
+
+  it('lembar yang bukan kisi → null (lalu dicoba sebagai tabel)', () => {
+    expect(scanDariKisi(SUMMARY)).toBeNull()
+    expect(
+      scanDariKisi(bacaCsv('Employee ID,Name,Time\n14,Ahmad,2026-09-25 06:12:00\n'))
+    ).toBeNull()
+  })
+})
+
+describe('scanDariLembar — buku kerja: lembar yang paling banyak memuat scan', () => {
+  it('AllReport: "Attendance Record" dipakai, bukan rekap di lembar pertama', () => {
+    const b = scanDariLembar([
+      { nama: 'Attendance Summary', baris: SUMMARY },
+      { nama: 'Attendance Record', baris: RECORD },
+      { nama: 'Attendance Abnormal0', baris: ABNORMAL }
+    ])
+    expect(b).toMatchObject({ ok: true, bentuk: 'kisi', lembar: 'Attendance Record' })
+    expect(b.scans).toHaveLength(7)
+    expect(b.daftarLembar.map((l) => l.nama)).toEqual([
+      'Attendance Summary',
+      'Attendance Record',
+      'Attendance Abnormal0'
+    ])
+  })
+
+  it('satu lembar tabel (bentuk lama & CSV) tetap terbaca seperti dulu', () => {
+    const baris = bacaCsv('Laporan\nEmployee ID;Name;Time\n14;Ahmad;25/09/2026 06:12:00\n')
+    const b = scanDariLembar([{ nama: 'log.csv', baris }])
+    expect(b).toMatchObject({ ok: true, lembar: 'log.csv', kolom: { pin: 'Employee ID' } })
+    expect(b.scans).toEqual([scan('14', '2026-09-25 06:12:00', 'Ahmad')])
+  })
+
+  it('tak ada jam scan di lembar mana pun → ok:false, menyebut lembar & judul tabelnya', () => {
+    const b = scanDariLembar([
+      { nama: 'Attendance Summary', baris: SUMMARY },
+      { nama: 'NormalShift', baris: [['Class Info'], ['ClassNo', 'ClassName', 'The first']] }
+    ])
+    expect(b.ok).toBe(false)
+    // Judul dari baris tabelnya (baris ber-PIN), bukan judul laporan "Attendance Summary".
+    expect(b.daftarLembar[0]).toEqual({
+      nama: 'Attendance Summary',
+      judul: [
+        'Employee ID',
+        'Name',
+        'Department',
+        'Work Hours',
+        'kolom5',
+        'Late',
+        'kolom7',
+        'Absent(Days)'
+      ]
+    })
+  })
+
+  it('ujung ke ujung: kisi AllReport → baris tambal 25 Sep dengan aturan yang sama', () => {
+    const b = scanDariLembar([
+      { nama: 'Attendance Summary', baris: SUMMARY },
+      { nama: 'Attendance Record', baris: RECORD }
+    ])
+    const scans = saringScan(samakanPin(b.scans, GURU), {
+      dari: '2026-09-25',
+      sampai: '2026-09-30',
+      hariIni: '2026-09-30'
+    }).dipakai
+    const k = kelompokkanScan(scans, GURU, SET)
+    expect([...k.takKenal]).toEqual(['99'])
+    const r = rencanaTambalScan({
+      kelompok: k,
+      ada: [],
+      guruAktif: GURU,
+      settings: SET,
+      sumber: 'hiview_impor',
+      waktu: '2026-09-30T02:00:00.000Z'
+    })
+    const baru = Object.fromEntries(r.baru.map((x) => [x.id, x]))
+    expect(baru['shift_g1_2026-09-25_pagi']).toMatchObject({ jam: '06:12', jam_pulang: '11:55' })
+    expect(baru['shift_g1_2026-09-25_sore']).toMatchObject({ jam: '15:40', jam_pulang: '17:05' })
+    // PIN "59" di mesin = "0059" di data guru; scan kembar 06:45 tak membuat jam pulang palsu.
+    expect(baru['shift_g2_2026-09-25_pagi']).toMatchObject({ jam: '06:45', status: 'terlambat' })
+    expect(baru['shift_g2_2026-09-25_pagi'].jam_pulang).toBeUndefined()
+    // 24 Sep di luar rentang tambal.
+    expect(Object.keys(baru).some((id) => id.includes('2026-09-24'))).toBe(false)
+  })
+})
+
+describe('tampakBiner — recordList_*.csv mesin terenkripsi walau berakhiran .csv', () => {
+  it('isi acak (dibaca sebagai teks) dikenali; CSV biasa tidak', () => {
+    const acak = Array.from({ length: 800 }, (_, i) =>
+      i % 3 ? String.fromCharCode(0xfffd) : String.fromCharCode(33 + ((i * 7) % 90))
+    ).join('')
+    expect(tampakBiner(acak)).toBe(true)
+    expect(tampakBiner('Employee ID,Name,Time\r\n14,Ahmad,2026-09-25 06:12:00\r\n')).toBe(false)
+    expect(tampakBiner('')).toBe(false)
   })
 })
 
@@ -467,11 +657,23 @@ describe('cermin: satu aturan, dipasang di layar', () => {
     expect(src).toMatch(/const SUMBER = 'hiview_impor'/)
   })
 
+  it('tambal membaca SEMUA lembar berkas, bukan lembar pertama saja (AllReport, 30 Sep 2026)', () => {
+    const src = baca('vue-app/src/components/absensi/TambalLogHiview.vue')
+    expect(src).toMatch(/await importSheets\(file\)/)
+    expect(src).toMatch(/scanDariLembar\(lembar\)/)
+    expect(src).not.toMatch(/importFile/)
+    expect(baca('vue-app/src/composables/useExcel.js')).toMatch(
+      /return \{ exportSimple, exportStyled, importFile, importSheets \}/
+    )
+  })
+
   it('AbsensiGuruView: peringatan diam, denyut dari jejak, penambal di tab Impor', () => {
     const src = baca('vue-app/src/views/AbsensiGuruView.vue')
     expect(src).toMatch(/v-if="mesinDiam\.diam"/)
     expect(src).toMatch(/queryColl\('hiview_scan_log', \[\], \[\['created_at', 'desc'\]\], 1\)/)
-    expect(src).toMatch(/<TambalLogHiview :guru="guruRaw"/)
+    expect(src).toMatch(/<TambalLogHiview\s+:guru="guruRaw"/)
+    // Rentang bawaan penambal dimulai dari hari mesin berhenti mengirim.
+    expect(src).toMatch(/:sejak="mesinDiam\.diam \? mesinDiam\.sejakTanggal : ''"/)
     // Label sumber satu sumber: tab Riwayat & daftar "sudah terisi" di penambal.
     expect(src).toMatch(/const sourceLabel = labelSumberAbsen/)
     expect(baca('vue-app/src/components/absensi/TambalLogHiview.vue')).toMatch(

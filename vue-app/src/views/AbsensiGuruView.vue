@@ -388,7 +388,12 @@
       >
         <!-- v.1.4.6 gel. 3: tambal hari yang terlewat saat mesin HiView diam — berkas ekspor
              mentah, aturan sama dengan kiriman langsung, hanya mengisi yang masih kosong. -->
-        <TambalLogHiview :guru="guruRaw" :settings="settingsStore.settings || {}" class="mb-6" />
+        <TambalLogHiview
+          :guru="guruRaw"
+          :settings="settingsStore.settings || {}"
+          :sejak="mesinDiam.diam ? mesinDiam.sejakTanggal : ''"
+          class="mb-6"
+        />
 
         <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-3">
           <i class="fas fa-file-import text-cyan-600 mr-2"></i>Impor Data Fingerprint Guru

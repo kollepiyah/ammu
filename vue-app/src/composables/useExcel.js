@@ -257,5 +257,31 @@ export function useExcel() {
     return rows
   }
 
-  return { exportSimple, exportStyled, importFile }
+  /**
+   * v.1.4.7: SEMUA lembar sebagai baris sel mentah — untuk berkas yang isinya tak di
+   * lembar pertama dan tak berbentuk tabel berjudul. Contohnya AllReport mesin HiView: lembar 1
+   * cuma rekap, jam scan di lembar "Attendance Record" (utils/logMesinHiview.scanDariLembar).
+   * Sel gabungan (merge) hanya diambil dari sel induknya; baris kosong dibuang.
+   * @returns {Promise<Array<{ nama: string, baris: any[][] }>>}
+   */
+  async function importSheets(file) {
+    const ExcelJS = await loadExcelJS()
+    const wb = new ExcelJS.Workbook()
+    await wb.xlsx.load(await file.arrayBuffer())
+    return wb.worksheets.map((ws) => {
+      const baris = []
+      ws.eachRow((row) => {
+        const sel = []
+        row.eachCell((cell, colNumber) => {
+          if (cell.isMerged && cell.master !== cell) return
+          sel[colNumber - 1] = unwrapCellValue(cell.value)
+        })
+        const padat = Array.from(sel, (v) => v ?? '')
+        if (padat.some((v) => String(v).trim() !== '')) baris.push(padat)
+      })
+      return { nama: ws.name, baris }
+    })
+  }
+
+  return { exportSimple, exportStyled, importFile, importSheets }
 }

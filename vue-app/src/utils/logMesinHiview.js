@@ -11,6 +11,13 @@
 // hasil pengenalannya DITAMPILKAN di pratinjau — kalau salah tebak, Kyai melihatnya sebelum
 // satu baris pun ditulis.
 //
+// v.1.4.7 (30 Sep 2026): berkas ekspor yang SESUNGGUHNYA (AllReport dari flashdisk mesin)
+// ternyata buku kerja berlembar-lembar, dan jam scannya tidak berbentuk daftar. Lembar pertama
+// "Attendance Summary" hanya rekap per orang — itulah yang dulu dibaca, lalu ditolak. Jam scan
+// ada di lembar "Attendance Record": satu baris per orang, satu kolom per tanggal, sel berisi
+// jam-jam scan hari itu ("07:04\n12:01\n"), bulan & tahunnya di baris "Made Date:…" di atas
+// tabel. Sekarang semua lembar dibaca (scanDariLembar) dan bentuk kisi itu dikenali (scanDariKisi).
+//
 // Semua fungsi PURE.
 
 const pad = (n) => String(n).padStart(2, '0')
@@ -350,14 +357,15 @@ export function bacaCsv(teks) {
 
 /**
  * Baris CSV → objek per judul kolom. Baris judul = baris pertama (dari 10) yang memuat kolom
- * PIN dan waktu/tanggal; berkas yang diawali baris judul laporan tetap terbaca.
+ * PIN dan waktu/tanggal; berkas yang diawali baris judul laporan tetap terbaca. Tanpa baris
+ * seperti itu, baris ber-PIN pertama yang dipakai — supaya pesan "kolom tak dikenali"
+ * menyebut judul tabelnya, bukan judul laporan di baris 1.
  */
 export function objekDariCsv(rows) {
   const list = rows || []
-  let iJudul = list.slice(0, 10).findIndex((r) => {
-    const k = petakanKolom(r)
-    return k.pin && (k.waktu || k.tanggal || k.masuk)
-  })
+  const awal = list.slice(0, 10).map((r) => petakanKolom(r))
+  let iJudul = awal.findIndex((k) => k.pin && (k.waktu || k.tanggal || k.masuk))
+  if (iJudul < 0) iJudul = awal.findIndex((k) => k.pin)
   if (iJudul < 0) iJudul = 0
   const judul = (list[iJudul] || []).map((h, i) => String(h ?? '').trim() || `kolom${i + 1}`)
   return list.slice(iJudul + 1).map((r) => {
@@ -437,6 +445,241 @@ export function scanDariBaris(rows) {
     }
   }
   return hasil
+}
+
+// ── Bentuk KISI: satu baris per orang, satu kolom per tanggal ─────────────────
+// Lembar "Attendance Record" AllReport HiView (30 Sep 2026):
+//   r1  Attendance Record
+//   r3  Create Time:2026/09/30 08:06:41
+//   r4  Made Date:2026/09/01-2026/09/30
+//   r5  Employee ID | Name | Department | 1 | 2 | … | 30
+//   r7  2           | Rahman Fanani | Company | "" | "" | "07:04\n" | … | "07:46\n07:46\n"
+// Hanya jam (tanpa detik) yang tertulis; tanggalnya dari posisi kolom + periode "Made Date".
+
+/** Judul kolom kisi → nomor hari 1–31 ("1", "01", 1); selain itu null. */
+function nomorHari(v) {
+  const s = String(v ?? '').trim()
+  if (!/^\d{1,2}$/.test(s)) return null
+  const n = Number(s)
+  return n >= 1 && n <= 31 ? n : null
+}
+
+/** Deret kolom BERSEBELAHAN terpanjang yang judulnya nomor hari. */
+function deretKolomHari(judul) {
+  let terbaik = []
+  let kini = []
+  ;(judul || []).forEach((v, i) => {
+    const hari = nomorHari(v)
+    if (hari === null) {
+      kini = []
+      return
+    }
+    kini.push({ i, hari })
+    if (kini.length > terbaik.length) terbaik = kini
+  })
+  return terbaik
+}
+
+/**
+ * Periode laporan dari teks seperti "Made Date:2026/09/01-2026/09/30" atau
+ * "Att. Time: 01/09/2026 ~ 30/09/2026". Tahun di depan = pasti; tahun di belakang bisa
+ * hari/bulan atau bulan/hari — kedua tafsiran dikembalikan, kolom hari yang memutuskan.
+ * @returns {Array<{dari:string, sampai:string}>}
+ */
+function calonPeriode(teks) {
+  const tgl = []
+  const re = /(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})|(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/g
+  let m
+  while ((m = re.exec(String(teks ?? ''))) && tgl.length < 2) {
+    if (m[1]) tgl.push([tanggalSah(+m[1], +m[2], +m[3])])
+    else tgl.push([tanggalSah(+m[6], +m[5], +m[4]), tanggalSah(+m[6], +m[4], +m[5])])
+  }
+  if (tgl.length < 2) return []
+  const out = []
+  for (const [i, dari] of tgl[0].entries()) {
+    const sampai = tgl[1][Math.min(i, tgl[1].length - 1)]
+    if (dari && sampai && dari <= sampai) out.push({ dari, sampai })
+  }
+  return out
+}
+
+/**
+ * Kolom hari → tanggal ISO, bila urutannya COCOK persis dengan periode: kolom pertama = tanggal
+ * pertama periode, kolom berikutnya = hari berikutnya (lintas bulan boleh: 25…31, 1…24).
+ * Kolom sisa sesudah akhir periode (mis. "31" pada September) diabaikan. Tak cocok → null;
+ * tanggal tak pernah ditebak.
+ */
+function petaKolomHari(kolomHari, { dari, sampai }) {
+  const peta = new Map()
+  let t = Date.UTC(+dari.slice(0, 4), +dari.slice(5, 7) - 1, +dari.slice(8, 10))
+  for (const { i, hari } of kolomHari) {
+    const d = new Date(t)
+    const iso = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
+    if (iso > sampai) break
+    if (d.getUTCDate() !== hari) return null
+    peta.set(i, iso)
+    t += 86400000
+  }
+  return peta.size ? peta : null
+}
+
+/** Isi satu sel kisi → jam 'HH:MM:SS' unik. Teks "07:04\n12:01", sel jam Excel, pecahan hari. */
+function jamDariSel(v) {
+  if (v === null || v === undefined || v === '') return []
+  if (v instanceof Date || typeof v === 'number') {
+    const w = bacaWaktu(v)
+    return w?.jam && !w.tanggal ? [w.jam] : []
+  }
+  const jam = []
+  for (const m of String(v).matchAll(/(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp][Mm]))?/g)) {
+    const j = jamSah(m[1], m[2], m[3], m[4])
+    if (j) jam.push(j)
+  }
+  return [...new Set(jam)]
+}
+
+/**
+ * Lembar berbentuk kisi (orang × tanggal) → deretan scan, bentuk hasil sama dengan
+ * scanDariBaris ditambah `bentuk: 'kisi'` dan `periode`.
+ * @param {any[][]} baris sel mentah per baris (dari ExcelJS atau bacaCsv)
+ * @returns hasil, atau null bila lembar ini BUKAN kisi (tak ada baris judul ber-PIN dengan
+ *   ≥ 7 kolom nomor hari bersebelahan) — pemanggil lalu mencoba bentuk tabel.
+ */
+export function scanDariKisi(baris) {
+  const list = (baris || []).filter(Array.isArray)
+  let iJudul = -1
+  let judul = []
+  let kolom = null
+  let kolomHari = []
+  for (let r = 0; r < Math.min(15, list.length); r++) {
+    const h = Array.from(list[r], (v) => String(v ?? '').trim())
+    const k = petakanKolom(h)
+    const deret = deretKolomHari(h)
+    if (k.pin && deret.length >= 7) {
+      iJudul = r
+      judul = h
+      kolom = { pin: k.pin, ...(k.nama ? { nama: k.nama } : {}) }
+      kolomHari = deret
+      break
+    }
+  }
+  if (iJudul < 0) return null
+
+  const hasil = {
+    ok: false,
+    bentuk: 'kisi',
+    kolom,
+    judul: judul.filter(Boolean),
+    periode: null,
+    urutan: 'DMY',
+    urutanPasti: true,
+    scans: [],
+    total: 0,
+    tanpaPin: 0,
+    gagal: 0,
+    waktuRusak: 0
+  }
+
+  // Periode: sel pertama di atas judul yang memuat dua tanggal.
+  let peta = null
+  for (let r = 0; r < iJudul && !peta; r++) {
+    for (const sel of list[r]) {
+      for (const p of calonPeriode(sel)) {
+        peta = petaKolomHari(kolomHari, p)
+        if (peta) {
+          hasil.periode = p
+          break
+        }
+      }
+      if (peta) break
+    }
+  }
+  if (!peta) {
+    hasil.sebab = 'periode'
+    return hasil
+  }
+  hasil.ok = true
+
+  const iPin = judul.indexOf(kolom.pin)
+  const iNama = kolom.nama ? judul.indexOf(kolom.nama) : -1
+  for (const r of list.slice(iJudul + 1)) {
+    const pin = String(r[iPin] ?? '').trim()
+    if (!pin) {
+      if (r.some((v) => String(v ?? '').trim() !== '')) hasil.tanpaPin++
+      continue
+    }
+    hasil.total++
+    const nama = iNama >= 0 ? String(r[iNama] ?? '').trim() : ''
+    for (const [i, tanggal] of peta) {
+      const v = r[i]
+      const jam = jamDariSel(v)
+      if (!jam.length) {
+        if (String(v ?? '').trim() !== '') hasil.waktuRusak++
+        continue
+      }
+      for (const j of jam) hasil.scans.push({ device_pin: pin, timestamp: `${tanggal} ${j}`, nama })
+    }
+  }
+  return hasil
+}
+
+/**
+ * Buku kerja → scan dari lembar yang PALING BANYAK memuat scan. AllReport HiView berisi
+ * belasan lembar; hanya "Attendance Record" yang memuat jam scan mentah. "Attendance Abnormal"
+ * punya kolom Employee ID + Date sehingga terbaca sebagai tabel, tapi nol scan — ia kalah.
+ *
+ * Tanpa lembar yang menghasilkan scan: kisi yang gagal (periode tak ada) didahulukan karena
+ * sebabnya paling jelas, lalu tabel yang kolomnya dikenali, lalu laporan gagal berisi
+ * daftar lembar & judulnya.
+ *
+ * @param {Array<{nama:string, baris:any[][]}>} lembar
+ * @returns hasil scanDariBaris / scanDariKisi + `lembar` (nama lembar terpakai) +
+ *   `daftarLembar` [{ nama, judul }]
+ */
+export function scanDariLembar(lembar) {
+  const calon = (lembar || []).map((l) => {
+    const baris = l?.baris || []
+    const b = scanDariKisi(baris) || scanDariBaris(objekDariCsv(baris))
+    return { ...b, lembar: String(l?.nama ?? '') }
+  })
+  const daftarLembar = calon.map((c) => ({ nama: c.lembar, judul: c.judul.slice(0, 12) }))
+  const terbaik =
+    calon.reduce((a, c) => (c.scans.length > (a?.scans.length || 0) ? c : a), null) ||
+    calon.find((c) => c.bentuk === 'kisi') ||
+    calon.find((c) => c.ok) ||
+    null
+  if (terbaik) return { ...terbaik, daftarLembar }
+  return {
+    ok: false,
+    kolom: {},
+    judul: calon[0]?.judul || [],
+    lembar: '',
+    daftarLembar,
+    urutan: 'DMY',
+    urutanPasti: true,
+    scans: [],
+    total: 0,
+    tanpaPin: 0,
+    gagal: 0,
+    waktuRusak: 0
+  }
+}
+
+/**
+ * Teks yang sebenarnya berkas BINER — mis. `recordList_<serial>.csv` dari flashdisk mesin
+ * HiView yang isinya terenkripsi walau berakhiran .csv. Dibaca sebagai teks, isinya jadi
+ * karakter pengganti (U+FFFD) & kode kendali; tanpa pemeriksaan ini pesan galatnya
+ * menyebut "judul kolom" berupa sampah.
+ */
+export function tampakBiner(teks) {
+  const s = String(teks ?? '').slice(0, 4000)
+  if (!s) return false
+  let aneh = 0
+  for (const ch of s) {
+    const c = ch.codePointAt(0)
+    if (c === 0xfffd || (c < 32 && c !== 9 && c !== 10 && c !== 13)) aneh++
+  }
+  return aneh / s.length > 0.05
 }
 
 /**
