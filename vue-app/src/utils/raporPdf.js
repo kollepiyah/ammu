@@ -440,7 +440,8 @@ async function drawSignBlocks(
   lembaga,
   dbGuru = [],
   lembagaOverride = null,
-  raporState = {}
+  raporState = {},
+  namaKepalaPaksa = null
 ) {
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
@@ -504,10 +505,12 @@ async function drawSignBlocks(
 
   // Lookup Signatures — v.90.0626: Diniyah pakai guru_sekolah (wali kelas sekolah), bukan ngaji
   // v.95.0626: Qiraati/ngaji -> guru, fallback guru_pagi/guru_sore (TPQ shift / PTPT) supaya auto-isi
+  // v.1.4.8: guru_pagi/guru_sore DULU, field lama `guru` terakhir — field lama tak selalu ikut
+  //   diperbarui saat santri pindah guru, jadi dulu nama guru LAMA yang tercetak.
   const _gkRaw =
     lembaga === 'Diniyah'
       ? santri.guru_sekolah
-      : [santri.guru, santri.guru_pagi, santri.guru_sore].find((v) =>
+      : [santri.guru_pagi, santri.guru_sore, santri.guru].find((v) =>
           Array.isArray(v) ? v.filter(Boolean).length > 0 : String(v || '').trim() !== ''
         )
   const _gkArr = Array.isArray(_gkRaw) ? _gkRaw.filter(Boolean) : _gkRaw ? [_gkRaw] : []
@@ -517,11 +520,22 @@ async function drawSignBlocks(
   // v.21.10 match: if labelKepala contains 'PJ PTPT', search specifically for that
   const searchFinal = labelKepala.includes('PJ PTPT') ? 'PJ PTPT' : searchTitle
 
-  const kepala = dbGuru.find((g) => {
-    const jab = String(g.jabatan || '').toUpperCase()
-    const jabT = String(g.jabatan_tambahan || '').toUpperCase()
-    return (jab.includes(searchFinal) || jabT.includes(searchFinal)) && g.status !== 'Non-Aktif'
-  })
+  // v.1.4.8: pemanggil boleh MEMAKSA nama kepala (string; '' = garis isian kosong) — dipakai
+  //   rapor PTPT: PTPT punya lebih dari satu PJ, sedang pencarian per jabatan di bawah selalu
+  //   jatuh ke PJ PERTAMA, bukan PJ santri ini. null = cari sendiri seperti dulu.
+  const dipaksa = typeof namaKepalaPaksa === 'string'
+  const _normNm = (v) =>
+    String(v || '')
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, ' ')
+  const kepala = dipaksa
+    ? (namaKepalaPaksa && dbGuru.find((g) => _normNm(g.nama) === _normNm(namaKepalaPaksa))) || null
+    : dbGuru.find((g) => {
+        const jab = String(g.jabatan || '').toUpperCase()
+        const jabT = String(g.jabatan_tambahan || '').toUpperCase()
+        return (jab.includes(searchFinal) || jabT.includes(searchFinal)) && g.status !== 'Non-Aktif'
+      })
 
   // Nama Kepala/PJ: guru jabatan match -> master Lembaga (kepala_lembaga) -> settings.
   const kepalaNamaLmb =
@@ -530,8 +544,9 @@ async function drawSignBlocks(
         lembagaOverride.kepala_sekolah ||
         lembagaOverride.kepala)) ||
     ''
-  const kepalaNama =
-    kepala?.nama || kepalaNamaLmb || settings.namaKepala || settings.namaPengasuh || ''
+  const kepalaNama = dipaksa
+    ? kepala?.nama || namaKepalaPaksa
+    : kepala?.nama || kepalaNamaLmb || settings.namaKepala || settings.namaPengasuh || ''
   const kepalaGuru =
     kepala ||
     (kepalaNama ? dbGuru.find((g) => g.nama === kepalaNama && g.status !== 'Non-Aktif') : null)
@@ -1269,7 +1284,8 @@ export async function generateRaporPdf({
   settings,
   dbGuru,
   filename,
-  lembagaOverride = null
+  lembagaOverride = null,
+  namaKepala = null // v.1.4.8: string = paksa nama kepala/PJ (lihat drawSignBlocks)
 }) {
   const doc = await createPdf({ kind: 'rapor', orientation: 'p', format: [215, 330] }) // v.21.51: F4 (215×330mm)
   const lembaga = raporState.lembaga || santri.lembaga || ''
@@ -1300,7 +1316,8 @@ export async function generateRaporPdf({
     lembaga,
     dbGuru,
     lembagaOverride,
-    raporState
+    raporState,
+    namaKepala
   )
 
   const fn =

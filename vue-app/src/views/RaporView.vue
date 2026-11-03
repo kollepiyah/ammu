@@ -1285,7 +1285,7 @@ import { definePageActions } from '@/composables/useRibbonContext'
 import { useRoute } from 'vue-router'
 import { subscribeColl, mergeOne, serverTimestamp } from '@/services/db'
 import { useSantri } from '@/composables/useSantri'
-import { useLembaga, lembagaScopeMatches } from '@/composables/useLembaga'
+import { useLembaga } from '@/composables/useLembaga'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
@@ -1297,7 +1297,7 @@ import { pilihBerkas, urlBerkas } from '@/utils/urlBerkas'
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg Rekap Diniyah
 import { kelasJenjang, mapelDiniyahFor, diniyahJenjang, jenjangFromKelas } from '@/utils/jenjang'
 import { predikatQiraati, predikatDiniyah } from '@/utils/predikat'
-import { deteksiTipeGuru } from '@/utils/guruScope' // v.100c: filter kartu kategori rapor per tipe guru
+import { deteksiTipeGuru, isPjPtptJabatan, isGuruAktif } from '@/utils/guruScope' // v.100c: filter kartu kategori rapor per tipe guru; v.1.4.8: PJ PTPT rapor
 
 const toast = useToast()
 const route = useRoute()
@@ -1338,10 +1338,11 @@ onUnmounted(() => {
   })
 })
 
-const { santriRaw, getRapors } = useSantri()
+// v.1.4.8: scope (per sisi) + PJ efektif PTPT dari sumber yang sama dengan Data Santri.
+const { santriRaw, getRapors, scope, petaPjSantri } = useSantri()
 const { lembagaRaw } = useLembaga()
 const { guruRaw } = useGuru()
-import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { isFullFilterRole } from '@/utils/roleScope'
 import { sortSantri } from '@/utils/santriSort'
 const settingsStore = useSettingsStore()
 const authStore = useAuthStore()
@@ -1349,12 +1350,6 @@ const authStore = useAuthStore()
 // Role-based view restrictions
 // Full filter (pilih lembaga) = admin/super_admin. admin_keuangan + guru/user = guru mode.
 const isFullFilter = computed(() => isFullFilterRole(authStore.sesiAktif))
-// v.86.0526: Kepala/PJ (role guru, bukan admin) discope ke lembaganya di view rapor.
-const kepalaScope = computed(() => {
-  const s = authStore.sesiAktif
-  if (!s || s.role === 'admin' || s.id === 'admin') return null
-  return isKepalaLembaga(s) ? s.lembaga || null : null
-})
 const isGuruOnly = computed(() => {
   const s = authStore.sesiAktif
   if (!s || s.role === 'santri') return false
@@ -1463,39 +1458,17 @@ const santriList = computed(() => {
   const guruMode = isGuruOnly.value
   if (!lmb && !guruMode) return []
   let list = santriRaw.value.filter((s) => s.aktif !== false)
-  // v.86.0526: guard Kepala/PJ — hanya santri lembaganya (lintas-lembaga di-block walau pilih lembaga lain).
-  if (kepalaScope.value) {
-    list = list.filter(
-      (s) =>
-        lembagaScopeMatches(kepalaScope.value, s.lembaga) ||
-        lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah)
-    )
-  }
+  // v.1.4.8: scope PER SISI dari utils/guruScope.scopeSantri — menggantikan dua aturan lama:
+  //   (1) kepala/PJ disaring se-lembaga `sesi.lembaga` (lembaga tempat ia MENGAJAR): PJ PTPT
+  //       melihat SELURUH PTPT, Kepala SDI yang mengajar PTPT melihat seluruh PTPT tapi SDI-nya
+  //       sendiri kosong (keluhan Kyai 3 Nov 2026);
+  //   (2) guru dicocokkan ke `guru`/`guru_pagi`/`guru_sore` sekaligus — field lama `guru` yang
+  //       tak ikut dikosongkan membuat guru lama tetap melihat santri yang sudah pindah.
+  //   Qiraati memakai sisi ngaji, Diniyah sisi sekolah: santri SDI yang ngaji di PTPT tak lagi
+  //   menyusup ke daftar rapor PTPT kepala SDI.
+  const sisi = kategori.value === 'diniyah' ? scope.value.sekolah : scope.value.qiraati
+  list = list.filter(sisi)
   if (guruMode && !lmb) {
-    // filter berdasarkan kepemilikan sesuai kategori
-    const sesiNama = String(authStore.sesiAktif?.nama || '')
-      .toLowerCase()
-      .trim()
-    const sesiGuru = String(authStore.sesiAktif?.guru || '')
-      .toLowerCase()
-      .trim()
-    list = list.filter((s) => {
-      if (kategori.value === 'qiraati') {
-        const names = [s.guru, s.guru_pagi, s.guru_sore]
-          .filter(Boolean)
-          .map((g) => String(g).toLowerCase().trim())
-        return names.includes(sesiNama) || names.includes(sesiGuru)
-      } else {
-        const arr = Array.isArray(s.guru_sekolah)
-          ? s.guru_sekolah.map((g) =>
-              String(g || '')
-                .toLowerCase()
-                .trim()
-            )
-          : []
-        return arr.includes(sesiNama) || arr.includes(sesiGuru)
-      }
-    })
     if (filterKelas.value)
       list = list.filter((s) => String(s.kelas || s.kelas_sekolah || '') === filterKelas.value)
     if (search.value.trim()) {
@@ -1570,23 +1543,9 @@ const santriList = computed(() => {
     }
   }
 
-  // Guru-only: limit to santri yang guru-nya = sesi aktif
-  if (isGuruOnly.value) {
-    const sesiId = String(authStore.sesiAktif?.id || '').toLowerCase()
-    const sesiNama = String(authStore.sesiAktif?.nama || '')
-      .toLowerCase()
-      .trim()
-    list = list.filter((s) => {
-      const guruNames = [s.guru, s.guru_pagi, s.guru_sore]
-        .flat()
-        .filter(Boolean)
-        .map((g) => String(g).toLowerCase().trim())
-      const guruIds = [s.guru_id, s.guru_pagi_id, s.guru_sore_id]
-        .filter(Boolean)
-        .map((g) => String(g).toLowerCase())
-      return guruNames.includes(sesiNama) || guruIds.includes(sesiId)
-    })
-  }
+  // v.1.4.8: penyaring "guru-only" lama (cocok guru/guru_pagi/guru_sore saja) DIHAPUS — scope
+  //   per sisi di awal fungsi ini sudah membatasi guru ke santri ampuannya, dan versi lama
+  //   justru mengosongkan rapor Diniyah wali kelas sekolah (ia bukan guru ngaji santrinya).
 
   if (filterKelas.value) {
     list = list.filter((s) => {
@@ -1828,8 +1787,7 @@ const ttdGuru = computed(() => {
 })
 
 const ttdKepala = computed(() => {
-  const nk = namaKepala.value
-  const g = nk ? (guruRaw.value || []).find((x) => x.nama === nk) : null
+  const g = findGuruByName(namaKepala.value)
   return pilihBerkas(g?.tanda_tangan, g?.ttd_url, g?.ttd)
 })
 
@@ -2747,12 +2705,40 @@ function kelasRowspan(idx) {
 }
 
 // ===== Kepala/guru info for tanda tangan =====
+// v.1.4.8 (Kyai 3 Nov 2026): "di rapor PTPT, nama PJ masih Hj. Nujumun Nada, PJ baru
+//   Syarifatun belum masuk". PTPT kini punya lebih dari satu PJ, sedang rapor mengambil guru
+//   PERTAMA yang jabatannya memuat "PJ PTPT" — siapa pun PJ santrinya. Yang benar adalah PJ
+//   EFEKTIF santri itu: PJ dari guru pengajarnya (peta Peran Glondongan), cadangan label
+//   `pj_ptpt` di data santri — sumber yang sama dengan Data Santri & Rekap Prestasi.
+//   Bila PJ santri tak diketahui: dipakai PJ PTPT satu-satunya bila memang hanya satu; kalau
+//   lebih dari satu, DIBIARKAN KOSONG (garis isian) — lebih baik daripada nama PJ yang salah.
+function namaPjPtptFor(s) {
+  const pj = String(petaPjSantri.value.get(String(s?.id)) || '').trim()
+  if (pj) return findGuruByName(pj)?.nama || pj
+  // Akun wali/santri tak boleh membaca tabel guru (guru_sel = staff) — tak ada yang bisa
+  //   dihitung di sini; null = biarkan raporPdf memakai cara lama (master lembaga/settings).
+  if (!(guruRaw.value || []).length) return null
+  const pjAktif = (guruRaw.value || []).filter((g) => isGuruAktif(g) && isPjPtptJabatan(g))
+  return pjAktif.length === 1 ? pjAktif[0].nama || '' : ''
+}
+// Nama kepala yang DIPAKSAKAN ke PDF (null = biarkan raporPdf mencari sendiri seperti dulu).
+//   Hanya rapor Qiraati PTPT yang dipaksa — lembaga lain berkepala tunggal.
+function namaKepalaPdfFor(s) {
+  if (!s || kategori.value === 'diniyah') return null
+  return String(s.lembaga || '')
+    .toLowerCase()
+    .trim() === 'ptpt'
+    ? namaPjPtptFor(s)
+    : null
+}
 const namaKepala = computed(() => {
   const s = santriAktif.value
   if (!s) return settingsStore.settings?.namaPengasuh || ''
   const lnorm = String(kategori.value === 'diniyah' ? s.lembaga_sekolah || '' : s.lembaga || '')
     .toLowerCase()
     .trim()
+  const paksa = namaKepalaPdfFor(s)
+  if (paksa !== null) return paksa
   // v.100c-fix: SELARASKAN dgn PDF (raporPdf.drawSignBlocks) — cari guru by JABATAN dulu
   //   (preview dulu kosong krn hanya baca master lembaga). Prioritas: guru jabatan → master → settings.
   let searchTitle = 'KEPALA SEKOLAH'
@@ -2804,12 +2790,13 @@ const jabatanKepala = computed(() => {
 
 // v.95.0626: nama Guru Kelas — Diniyah = guru_sekolah; Qiraati/ngaji = guru, fallback
 //   guru_pagi/guru_sore (TPQ shift / PTPT) supaya auto-isi (konsisten dgn raporPdf.js).
+// v.1.4.8: urutannya kini guru_pagi → guru_sore → guru (field lama terakhir; lihat raporPdf).
 function guruKelasNames(s) {
   if (!s) return []
   const raw =
     kategori.value === 'diniyah'
       ? s.guru_sekolah
-      : [s.guru, s.guru_pagi, s.guru_sore].find((v) =>
+      : [s.guru_pagi, s.guru_sore, s.guru].find((v) =>
           Array.isArray(v) ? v.filter(Boolean).length > 0 : String(v || '').trim() !== ''
         )
   return (Array.isArray(raw) ? raw : raw ? [raw] : [])
@@ -3051,7 +3038,8 @@ async function exportPdfSingle(santri = null) {
       settings: settingsStore.settings || {},
       dbGuru: guruRaw.value || [],
       filename,
-      lembagaOverride: lembagaObj
+      lembagaOverride: lembagaObj,
+      namaKepala: namaKepalaPdfFor(s) // v.1.4.8: PJ efektif santri PTPT (null = cara lama)
     })
     toast?.success?.(`PDF ${s.nama} berhasil diunduh`)
   } catch (e) {
