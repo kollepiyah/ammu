@@ -3,12 +3,18 @@ package app.ammu.id;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.view.Window;
 import android.view.animation.AccelerateInterpolator;
 import android.webkit.WebSettings;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import androidx.core.splashscreen.SplashScreen;
 
@@ -28,6 +34,7 @@ public class MainActivity extends BridgeActivity {
     super.onCreate(savedInstanceState);
 
     batasiSkalaTeks();
+    statusBarPadatBilaInsetTakTerbaca();
 
     splashScreen.setKeepOnScreenCondition(() -> keepSplash);
     new Handler(Looper.getMainLooper()).postDelayed(() -> keepSplash = false, 450L);
@@ -46,6 +53,59 @@ public class MainActivity extends BridgeActivity {
       });
       fade.start();
     });
+  }
+
+  /**
+   * Versi Android System WebView pertama yang meneruskan inset area aman ke halaman —
+   * angka yang sama dengan WEBVIEW_VERSION_WITH_SAFE_AREA_FIX di SystemBars Capacitor.
+   */
+  private static final int WEBVIEW_INSET_TERBACA = 140;
+
+  /**
+   * v.1.4.8 — Status bar PADAT (tidak menimpa halaman) di HP yang tak bisa melaporkan
+   * tingginya ke halaman.
+   *
+   * GEJALA (Kyai, 3 Nov 2026): "tampilan di android tidak compatible di beberapa layar" —
+   * di sebagian HP header "Ammu Online" setengahnya tertutup status bar.
+   *
+   * SEBAB: plugin StatusBar v8 secara bawaan menggambar WebView DI BELAKANG status bar
+   * (overlaysWebView = true), dan halaman mendorong dirinya turun dengan
+   * env(safe-area-inset-top). Nilai itu hanya diisi bila WebView >= 140 (SystemBars
+   * meneruskan inset); di bawahnya SystemBars justru MENOLKAN inset. Di Android 15+ itu tak
+   * masalah karena SystemBars memberi padding sendiri pada wadah WebView — tapi di Android
+   * 14 ke bawah tak ada yang memberi padding, sehingga header naik ke balik status bar.
+   * HP low-end yang Android System WebView-nya jarang diperbarui kena semua.
+   *
+   * Di HP itu saja tata letak dikembalikan ke biasa (WebView di BAWAH status bar). Warna
+   * bar mengikuti tema dari App.vue (StatusBar.getInfo().overlays === false). HP lain tetap
+   * edge-to-edge seperti sekarang. Diperiksa tiap app dibuka, jadi begitu WebView-nya
+   * diperbarui ke 140+, tampilan tembus kembali dengan sendirinya.
+   */
+  private void statusBarPadatBilaInsetTakTerbaca() {
+    try {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) return;
+      if (versiUtamaWebView() >= WEBVIEW_INSET_TERBACA) return;
+      Window w = getWindow();
+      View decor = w.getDecorView();
+      int ui = decor.getSystemUiVisibility();
+      ui &= ~(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+      decor.setSystemUiVisibility(ui);
+      w.setStatusBarColor(Color.WHITE);
+    } catch (Exception e) {
+      // Kosmetik — jangan sampai menggagalkan start-up app.
+    }
+  }
+
+  /**
+   * Versi utama Chromium dari user agent WebView ("Chrome/139.0…" → 139). 0 bila tak terbaca.
+   * Dibaca dari user agent, bukan androidx.webkit.WebViewCompat, karena pustaka itu hanya
+   * dependensi `implementation` Capacitor — tak tersedia untuk modul app.
+   */
+  private int versiUtamaWebView() {
+    if (getBridge() == null || getBridge().getWebView() == null) return 0;
+    String ua = getBridge().getWebView().getSettings().getUserAgentString();
+    Matcher m = Pattern.compile("Chrome/(\\d+)").matcher(ua == null ? "" : ua);
+    return m.find() ? Integer.parseInt(m.group(1)) : 0;
   }
 
   /** Batas atas skala teks. Di atas ini tata letak Ammu mulai pecah. */

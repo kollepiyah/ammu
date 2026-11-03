@@ -63,7 +63,7 @@ async function setupNativeIntegration() {
   if (typeof window === 'undefined') return
   if (!window.Capacitor?.isNativePlatform?.()) return
 
-  // 1. StatusBar — EDGE-TO-EDGE (v.105.0626): bar TRANSPARAN (overlay:true di capacitor.config),
+  // 1. StatusBar — EDGE-TO-EDGE (v.105.0626): bar TRANSPARAN (overlaysWebView:true di capacitor.config),
   //    konten digambar di belakangnya, warna bar datang dari --bg-page (putih/#0F172A) via safe-area.
   //    Hanya STYLE (kontras ikon) yg diatur di sini — pakai WindowInsetsController, BUKAN deprecated.
   //    setBackgroundColor SENGAJA DIBUANG: no-op di Android 15+ (lihat StatusBar.shouldSetStatusBarColor)
@@ -76,6 +76,16 @@ async function setupNativeIntegration() {
       const isDark = ui.isDark
       // Style.Dark = teks TERANG (utk bg gelap), Style.Light = teks GELAP (utk bg terang) — per definisi plugin.
       StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {})
+      // v.1.4.8: di HP Android <=14 yang WebView-nya < 140, MainActivity memasang status bar
+      //   PADAT (halaman tak lagi digambar di belakangnya — inset tak terbaca di sana). Hanya
+      //   di situ bar perlu diberi warna, disamakan dengan header (putih / slate-800). Di HP
+      //   lain overlays tetap true dan bar tetap transparan seperti keputusan v.105.
+      StatusBar.getInfo()
+        .then((info) => {
+          if (info && info.overlays === false)
+            return StatusBar.setBackgroundColor({ color: isDark ? '#1E293B' : '#FFFFFF' })
+        })
+        .catch(() => {})
     }
     applyStatusBar()
     // re-apply melewati durasi splash (~1.8s) + jaga2

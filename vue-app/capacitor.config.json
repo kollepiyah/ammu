@@ -28,7 +28,7 @@
     },
     "StatusBar": {
       "style": "LIGHT",
-      "overlay": true
+      "overlaysWebView": true
     },
     "Keyboard": {
       "resize": "body",
