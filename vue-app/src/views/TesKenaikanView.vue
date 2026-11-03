@@ -91,7 +91,7 @@
               <input
                 type="checkbox"
                 :checked="sel[s.id]?.checked"
-                :disabled="hasOpenAjuan(s.id)"
+                :disabled="hasOpenAjuan(s)"
                 class="mt-1 w-4 h-4 accent-teal-600 flex-shrink-0 disabled:opacity-40"
                 @change="toggle(s)"
               />
@@ -102,8 +102,14 @@
                   }}<span v-if="s.kelas"> · {{ labelKelasPra(s.lembaga, s.kelas) }}</span
                   ><span v-if="s.juz && s.juz !== '-'"> · Juz {{ juzNum(s.juz) }}</span>
                 </p>
-                <p v-if="hasOpenAjuan(s.id)" class="text-[10px] text-amber-600 font-bold mt-0.5">
-                  <i class="fas fa-hourglass-half mr-1"></i>Sudah ada ajuan menunggu tes
+                <p v-if="hasOpenAjuan(s)" class="text-[10px] text-amber-600 font-bold mt-0.5">
+                  <template v-if="pengunciAjuan(s)?.status === 'tidak_lulus'">
+                    <i class="fas fa-rotate-left mr-1"></i>Tes sebelumnya belum lulus — diuji ulang
+                    PJ lewat ajuan yang sama
+                  </template>
+                  <template v-else>
+                    <i class="fas fa-hourglass-half mr-1"></i>Sudah ada ajuan menunggu tes
+                  </template>
                 </p>
 
                 <!-- Target tujuan (muncul saat dicentang).
@@ -129,6 +135,22 @@
                   >
                     Kelas PTPT ikut juz otomatis — mis. lulus juz 10 → juz 11 → Kelas 3.
                   </p>
+                  <!-- v.1.4.8 (Kyai 3 Nov 2026): sebagian santri kelas 2+ tak perlu glondongan.
+                       Dicentang = glondongan & review juz berjalan dilewati, langsung ke PJ. -->
+                  <label
+                    v-if="punyaGlondongan(s)"
+                    class="mt-2 flex items-start gap-2 text-[11px] text-[var(--text-secondary)] cursor-pointer"
+                  >
+                    <input
+                      v-model="sel[s.id].langsung"
+                      type="checkbox"
+                      class="mt-0.5 w-3.5 h-3.5 accent-teal-600 flex-shrink-0"
+                    />
+                    <span
+                      ><b class="text-[var(--text-primary)]">Langsung tes PJ</b> — tanpa glondongan
+                      &amp; review juz berjalan</span
+                    >
+                  </label>
                 </div>
               </div>
             </div>
@@ -171,6 +193,25 @@
             </p>
             <p v-if="a.catatan_hasil" class="text-[11px] text-[var(--text-tertiary)] mt-1 italic">
               Catatan: {{ a.catatan_hasil }}
+            </p>
+            <p v-if="a.tanpa_glondongan || a.tes_ulang_ke" class="mt-1 flex flex-wrap gap-1">
+              <span
+                v-if="a.tanpa_glondongan"
+                class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
+                ><i class="fas fa-forward mr-1"></i>Langsung tes (tanpa glondongan)</span
+              >
+              <span
+                v-if="a.tes_ulang_ke"
+                class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                ><i class="fas fa-rotate-left mr-1"></i>Tes ulang ke-{{ a.tes_ulang_ke }}</span
+              >
+            </p>
+            <p
+              v-if="a.status === 'tidak_lulus' && bisaTesUlang(a)"
+              class="text-[10px] mt-1 text-amber-700 dark:text-amber-300"
+            >
+              <i class="fas fa-circle-info mr-1"></i>Santri ini belum bisa diajukan lagi — PJ akan
+              menguji ulang lewat ajuan ini.
             </p>
             <!-- v.1.1.9: masa tempuh juz PTPT. Tab Riwayat hanya untuk penguji, jadi
                  tanpa ini GURU KELAS (pengaju) tak pernah melihatnya — padahal Kyai
@@ -370,6 +411,18 @@
             <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">
               Pengaju: {{ a.guru_nama || '-' }} · {{ fmtTgl(a.tgl_daftar) }}
             </p>
+            <p v-if="a.tanpa_glondongan || a.tes_ulang_ke" class="mt-1 flex flex-wrap gap-1">
+              <span
+                v-if="a.tanpa_glondongan"
+                class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
+                ><i class="fas fa-forward mr-1"></i>Langsung tes (tanpa glondongan)</span
+              >
+              <span
+                v-if="a.tes_ulang_ke"
+                class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                ><i class="fas fa-rotate-left mr-1"></i>Tes ulang ke-{{ a.tes_ulang_ke }}</span
+              >
+            </p>
           </div>
         </div>
         <!-- v.100d: nilai aspek tes (skala 0–90) — penguji isi saat menguji -->
@@ -479,7 +532,8 @@
       >
         <i class="fas fa-user-shield mr-1"></i>
         <b>{{ diluarAmpuan }} ajuan PTPT</b> tidak ditampilkan karena bukan santri ampuan Anda.
-        Kalau ada santri yang seharusnya masuk, isi kolom <b>PJ PTPT</b> di data santrinya.
+        Kalau ada santri yang seharusnya masuk, minta admin memasukkan gurunya ke bawah Anda di
+        <b>Glondongan PTPT → Peran</b> (atau isi kolom <b>PJ PTPT</b> di data santrinya).
       </div>
       <!-- v.100d: filter Lembaga/Jenis/Cari -->
       <div
@@ -558,6 +612,23 @@
             ]"
             >{{ statusLabel(a.status) }}</span
           >
+        </div>
+        <!-- v.1.4.8: PJ menguji ulang santri "Belum lulus" di ajuan yang SAMA (glondongan
+             yang sudah selesai tidak diulang). Santri itu terkunci dari ajuan baru. -->
+        <div
+          v-if="bisaTesUlang(a)"
+          class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex flex-wrap items-center justify-end gap-2"
+        >
+          <span class="text-[10px] text-[var(--text-tertiary)] mr-auto"
+            >Belum bisa diajukan lagi oleh guru sampai diuji ulang.</span
+          >
+          <button
+            :disabled="tesUlangBusy === a.id"
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-xs font-black bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white"
+            @click="tesUlangKlik(a)"
+          >
+            <i class="fas fa-rotate-left"></i>{{ tesUlangBusy === a.id ? '...' : 'Tes ulang' }}
+          </button>
         </div>
         <!-- v.107 CRUD (super_admin): uji ulang / hapus record historis -->
         <div
@@ -1002,7 +1073,7 @@ import {
   partnerSore,
   partnerPagi
 } from '@/utils/pasanganGuru'
-import { isPjLembaga } from '@/utils/glondongan' // v.1.2.2: kandidat PJ PTPT
+import { isPjLembaga, splitGlondongan, testedJuz } from '@/utils/glondongan' // v.1.2.2: kandidat PJ PTPT; v.1.4.8: langsung tes
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
@@ -1039,6 +1110,10 @@ const {
   putuskan,
   batalAjuan,
   hasOpenAjuan,
+  pengunciAjuan, // v.1.4.8
+  bisaTesUlang, // v.1.4.8
+  tesUlang, // v.1.4.8
+  loaded: ajuanTermuat, // v.1.4.8: kunci ajuan butuh seluruh riwayat ajuan termuat
   canCrud,
   resetAjuan,
   hapusAjuan,
@@ -1167,6 +1242,28 @@ async function buatUlangGlond(a) {
     toast.error('Gagal buat ulang: ' + (e.message || e))
   } finally {
     buatUlangBusy.value = null
+  }
+}
+
+// v.1.4.8: PJ menguji ulang ajuan "Belum lulus" (ajuan yang sama kembali ke antrian).
+const tesUlangBusy = ref(null)
+async function tesUlangKlik(a) {
+  const ok = await confirmDlg({
+    title: `Tes ulang ${a.nama_cache}?`,
+    message:
+      'Ajuan ini kembali ke Antrian Tes. Glondongan yang sudah selesai tidak diulang, dan hasil "Belum lulus" sebelumnya tetap tersimpan di riwayat ajuan.',
+    confirmText: 'Tes ulang'
+  })
+  if (!ok) return
+  tesUlangBusy.value = a.id
+  try {
+    await tesUlang(a.id)
+    toast.success('Masuk Antrian Tes untuk diuji ulang.')
+    activeTab.value = 'antrian'
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    tesUlangBusy.value = null
   }
 }
 
@@ -1471,7 +1568,12 @@ function targetOptionsFor(s) {
 function ensureSel(s) {
   if (!sel[s.id]) {
     const jenis = s.lembaga === 'PTPT' ? 'juz' : tesJenisOptions(s.lembaga)[0]?.value || ''
-    sel[s.id] = { checked: false, jenis, target: tesTargetDefault(s, jenis, settings.value) }
+    sel[s.id] = {
+      checked: false,
+      jenis,
+      target: tesTargetDefault(s, jenis, settings.value),
+      langsung: false // v.1.4.8: langsung tes PJ tanpa glondongan
+    }
   }
   return sel[s.id]
 }
@@ -1480,20 +1582,39 @@ function toggle(s) {
   st.checked = !st.checked
 }
 const checkedCount = computed(() => Object.values(sel).filter((x) => x.checked).length)
+// v.1.4.8: santri PTPT ini punya glondongan (kelas 2+)? Hanya mereka yang bisa "langsung tes".
+function punyaGlondongan(s) {
+  return s?.lembaga === 'PTPT' && splitGlondongan(testedJuz(s)).glondongan.length > 0
+}
 
 const submitting = ref(false)
 async function submitAjukan() {
   const items = santriEligible.value
     .filter((s) => sel[s.id]?.checked)
-    .map((s) => ({ santri: s, jenis: sel[s.id].jenis, target: sel[s.id].target }))
+    .map((s) => ({
+      santri: s,
+      jenis: sel[s.id].jenis,
+      target: sel[s.id].target,
+      langsungTes: !!sel[s.id].langsung && punyaGlondongan(s)
+    }))
   const noTarget = items.filter((it) => !it.target)
   if (noTarget.length) {
     toast.warning(`${noTarget.length} santri belum dipilih targetnya.`)
     return
   }
+  // v.1.4.8: kunci ajuan dihitung dari SELURUH riwayat ajuan — jangan kirim sebelum termuat,
+  //   kalau tidak santri yang masih "Belum lulus" lolos begitu saja.
+  if (!ajuanTermuat.value) {
+    toast.warning('Data ajuan belum termuat — tunggu sebentar lalu coba lagi.')
+    return
+  }
+  const nLangsung = items.filter((it) => it.langsungTes).length
   const ok = await confirmDlg({
     title: 'Ajukan tes kenaikan?',
-    message: `${items.length} santri akan diajukan tes ke Kepala/PJ lembaganya. Lanjutkan?`,
+    message:
+      `${items.length} santri akan diajukan tes ke Kepala/PJ lembaganya.` +
+      (nLangsung ? ` ${nLangsung} di antaranya LANGSUNG tes PJ tanpa glondongan.` : '') +
+      ' Lanjutkan?',
     confirmText: 'Ajukan'
   })
   if (!ok) return
@@ -1501,14 +1622,15 @@ async function submitAjukan() {
   try {
     const res = await ajukanBatch(items, guruRaw.value || [])
     let msg = `${res.ok} ajuan terkirim`
-    if (res.skipped) msg += `, ${res.skipped} dilewati (sudah ada ajuan)`
+    if (res.skipped) msg += `, ${res.skipped} dilewati (masih ada ajuan menunggu / belum lulus)`
     if (res.fail) msg += `, ${res.fail} gagal`
     // v.1.1.9: baris glondongan yang tak lahir akan mengunci gerbang PJ selamanya —
     //   jangan biarkan senyap seperti dulu (console.warn saja).
     if (res.glondonganGagal) msg += `, ${res.glondonganGagal} baris glondongan GAGAL dibuat`
     res.fail || res.glondonganGagal ? toast.warning(msg) : toast.success(msg)
     // reset centang yang sukses
-    for (const it of items) if (sel[it.santri.id]) sel[it.santri.id].checked = false
+    for (const it of items)
+      if (sel[it.santri.id]) Object.assign(sel[it.santri.id], { checked: false, langsung: false })
     if (res.ok) activeTab.value = 'status'
   } catch (e) {
     toast.error('Gagal mengajukan: ' + (e.message || e))

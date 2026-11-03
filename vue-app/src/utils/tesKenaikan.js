@@ -144,6 +144,55 @@ export const STATUS_LABEL = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// v.1.4.8 (Kyai 3 Nov 2026): "santri yg diajukan tes harusnya gk bisa diajukan jika tes
+//   sebelumnya belum lulus/dibatalkan." Dulu hanya ajuan berstatus 'diajukan' yang
+//   mengunci, jadi santri yang baru dinyatakan BELUM LULUS bisa langsung diajukan lagi
+//   sebagai ajuan BARU — lengkap dengan glondongan yang dibuat ulang dari awal.
+//   Keputusan Kyai: ajuan berakhir hanya bila Lulus / Dibatalkan / Ditolak. "Belum lulus"
+//   tetap mengunci; PJ menguji ulang lewat tombol "Tes ulang" di ajuan yang SAMA, sehingga
+//   glondongan yang sudah selesai disimak tidak diulang.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Status yang mengakhiri ajuan — santri boleh diajukan lagi sesudahnya. */
+export const STATUS_TUNTAS = ['lulus', 'dibatalkan', 'ditolak']
+
+function _waktuAjuan(a) {
+  return Number(a?._ts) || Date.parse(a?.tgl_daftar || '') || 0
+}
+
+/**
+ * Ajuan yang MENGUNCI santri dari ajuan baru, atau null bila santri boleh diajukan.
+ *   - ajuan 'diajukan' (menunggu tes) mana pun selalu mengunci;
+ *   - selain itu ajuan TERAKHIR santri menentukan: tuntas (STATUS_TUNTAS) → bebas,
+ *     'tidak_lulus' → terkunci sampai PJ menguji ulang.
+ *   Pengecualian: ajuan 'tidak_lulus' untuk jenjang yang SUDAH ditinggalkan santri (lembaga,
+ *   kelas, atau juz-nya kini lain — mis. dinaikkan manual di Naik Kelas) tak lagi mengunci;
+ *   kalau tidak, santri itu terkunci selamanya oleh tes lama yang tak relevan lagi.
+ * @param {Array} ajuanList seluruh baris tes_kenaikan
+ * @param {object} santri   santri yang mau diajukan (minimal { id })
+ */
+export function ajuanPengunci(ajuanList, santri) {
+  const sid = String(santri?.id ?? '')
+  if (!sid) return null
+  let terakhir = null
+  for (const a of ajuanList || []) {
+    if (String(a?.santri_id) !== sid) continue
+    if ((a.status || 'diajukan') === 'diajukan') return a
+    if (!terakhir || _waktuAjuan(a) > _waktuAjuan(terakhir)) terakhir = a
+  }
+  if (!terakhir || STATUS_TUNTAS.includes(String(terakhir.status))) return null
+  const beda = (x, y) =>
+    String(x ?? '').trim() !== '' && String(x ?? '').trim() !== String(y ?? '').trim()
+  if (
+    beda(terakhir.lembaga, santri.lembaga) ||
+    beda(terakhir.kelas_asal, santri.kelas) ||
+    beda(terakhir.juz_asal, santri.juz)
+  )
+    return null
+  return terakhir
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // v.100d: PENILAIAN TES per lembaga (skala 0–90). Penguji (Kepala/PJ) isi nilai
 //   tiap aspek saat memutuskan hasil. `toRapor` = nilai aspek ini auto mengisi rapor
 //   (pre-fill, masih bisa diedit di menu Rapor). Skema per kyai (14 Jun 2026):

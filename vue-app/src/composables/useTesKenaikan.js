@@ -13,10 +13,11 @@ import {
   testedJuz,
   periodeBulan,
   gerbangGlondongan,
-  buatScopePj,
   PTPT_LEMBAGA
 } from '@/utils/glondongan'
 import { useSantri } from '@/composables/useSantri'
+import { headsLembaga } from '@/utils/guruScope'
+import { ajuanPengunci } from '@/utils/tesKenaikan'
 
 export function useTesKenaikan() {
   const auth = useAuthStore()
@@ -43,23 +44,46 @@ export function useTesKenaikan() {
   // v.1.1.9: scope PJ PTPT — "PJ hanya bisa melihat santri ampuannya" (Kyai 21 Jul
   //   2026). PJ PTPT kini >1 orang. Sumber santri = pinia collections store, jadi
   //   TIDAK menambah langganan.
-  const { santriRaw } = useSantri()
-  const isAmpuanSaya = computed(() => buatScopePj(santriRaw.value, myNama.value))
+  // v.1.4.8: ampuan PJ = PJ EFEKTIF santri (guru pengajar → PJ lewat peta Peran Glondongan,
+  //   cadangan label pj_ptpt) — sama dengan Data Santri. Dulu di sini label `pj_ptpt` SAJA,
+  //   jadi santri yang dibagikan lewat peta guru tak pernah sampai ke antrian PJ barunya.
+  const { santriRaw, scope, petaPjSantri } = useSantri()
+  const _norm = (v) =>
+    String(v ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+  const isAmpuanSaya = computed(() => {
+    const saya = _norm(myNama.value)
+    return (santriId) => !!saya && _norm(petaPjSantri.value.get(String(santriId))) === saya
+  })
+  const _isPtpt = (a) =>
+    String(a?.lembaga || '')
+      .trim()
+      .toUpperCase() === PTPT_LEMBAGA
+  // v.1.4.8: lembaga yang dipimpin dibaca dari JABATAN (headsLembaga), bukan `sesi.lembaga`
+  //   (lembaga tempat ia mengajar). Dulu Kepala SDI yang mengajar PTPT ikut menjadi penguji
+  //   PTPT. Jabatan yang tak menyebut lembaga apa pun (mis. "Pengasuh") tetap memakai
+  //   aturan lama supaya tak kehilangan antriannya.
+  const _jabatanMenyebutLembaga = computed(() =>
+    [sesi.value.jabatan, sesi.value.jabatan_tambahan].some((j) =>
+      /^(kepala|pj|pengasuh)\s+\S/.test(_norm(j))
+    )
+  )
+  function _pimpinLembagaAjuan(a) {
+    return _jabatanMenyebutLembaga.value
+      ? headsLembaga(sesi.value, a.lembaga)
+      : lembagaScopeMatches(myLembaga.value, a.lembaga)
+  }
 
-  // Apakah ajuan masuk scope penguji ini? (admin = semua; kepala = se-lembaganya)
+  // Apakah ajuan masuk scope penguji ini? (admin = semua; kepala = lembaga yang dipimpinnya)
   function inScope(a) {
     if (isAdmin.value) return true
     if (!isKepala.value) return false
-    if (!lembagaScopeMatches(myLembaga.value, a.lembaga)) return false
-    // Penyempitan KHUSUS PTPT: kepala/PJ PTPT hanya santri ampuannya. Kepala
-    //   lembaga lain TIDAK berubah — mereka tetap lihat se-lembaganya.
-    if (
-      String(a.lembaga || '')
-        .trim()
-        .toUpperCase() === PTPT_LEMBAGA
-    ) {
-      return isAmpuanSaya.value(a.santri_id)
-    }
+    if (!_pimpinLembagaAjuan(a)) return false
+    // Penyempitan KHUSUS PTPT: PJ PTPT hanya santri ampuannya. Kepala lembaga lain
+    //   (termasuk gelar luas seperti "Kepala Qiraati") tetap se-lembaganya.
+    if (_isPtpt(a) && scope.value.pjPtpt) return isAmpuanSaya.value(a.santri_id)
     return true
   }
 
@@ -67,14 +91,9 @@ export function useTesKenaikan() {
   //   tahu "ada N ajuan di luar ampuan Anda" — tanpa ini, santri yang label
   //   `pj_ptpt`-nya belum diisi tampak HILANG begitu saja.
   const diluarAmpuan = computed(() => {
-    if (isAdmin.value || !isKepala.value) return 0
+    if (isAdmin.value || !isKepala.value || !scope.value.pjPtpt) return 0
     return ajuanRaw.value.filter(
-      (a) =>
-        String(a.lembaga || '')
-          .trim()
-          .toUpperCase() === PTPT_LEMBAGA &&
-        lembagaScopeMatches(myLembaga.value, a.lembaga) &&
-        !isAmpuanSaya.value(a.santri_id)
+      (a) => _isPtpt(a) && _pimpinLembagaAjuan(a) && !isAmpuanSaya.value(a.santri_id)
     ).length
   })
 
@@ -95,10 +114,18 @@ export function useTesKenaikan() {
     sortNewest(ajuanRaw.value.filter((a) => a.status !== 'diajukan' && inScope(a)))
   )
 
-  // Guard dobel: santri sudah punya ajuan 'diajukan' (belum diputus)?
-  function hasOpenAjuan(santriId) {
-    const sid = String(santriId)
-    return ajuanRaw.value.some((a) => String(a.santri_id) === sid && a.status === 'diajukan')
+  // Guard dobel. v.1.4.8: bukan lagi "ada ajuan 'diajukan'" saja — ajuan terakhir yang
+  //   BELUM LULUS ikut mengunci (lihat utils/tesKenaikan.ajuanPengunci). `santri` boleh
+  //   objek santri (disarankan — dipakai pengecualian jenjang lama) atau id saja.
+  function pengunciAjuan(santri) {
+    const s =
+      santri && typeof santri === 'object'
+        ? santri
+        : santriRaw.value.find((x) => String(x?.id) === String(santri)) || { id: santri }
+    return ajuanPengunci(ajuanRaw.value, s)
+  }
+  function hasOpenAjuan(santri) {
+    return !!pengunciAjuan(santri)
   }
 
   // v.111.x: baris glondongan per ajuan_id (utk gerbang PJ).
@@ -128,6 +155,9 @@ export function useTesKenaikan() {
         .trim()
         .toUpperCase() === 'PTPT' && (ajuan.jenis || '') === 'juz'
     if (!isPtptJuz) return kosong
+    // v.1.4.8: "langsung tes" — glondongan & review juz berjalan dilewati atas pilihan
+    //   pengaju; tak ada baris yang ditunggu, tak ada gerbang.
+    if (ajuan.tanpa_glondongan) return { ...kosong, tanpaGlondongan: true }
     const g = gerbangGlondongan(ajuan.juz_asal, glondonganByAjuan.value[String(ajuan.id)] || [])
     const siapTes = !!ajuan.siap_tes
     return {
@@ -158,10 +188,20 @@ export function useTesKenaikan() {
         skipped++
         continue
       }
-      if (hasOpenAjuan(s.id)) {
+      if (pengunciAjuan(s)) {
         skipped++
         continue
-      } // sudah ada ajuan terbuka
+      } // v.1.4.8: masih ada ajuan menunggu tes / belum lulus
+      // v.1.4.8 (Kyai 3 Nov 2026): "ada beberapa anak yg kadang tidak perlu gelondong, jadi
+      //   langsung tes". Hanya untuk PTPT juz yang memang punya glondongan (kelas 2+), dicentang
+      //   pengaju per santri. Glondongan DAN review juz berjalan dilewati (keputusan Kyai),
+      //   santri langsung siap dites PJ.
+      const isPtptJuz =
+        String(s.lembaga || '')
+          .trim()
+          .toUpperCase() === 'PTPT' && (it.jenis || '') === 'juz'
+      const langsungTes =
+        !!it.langsungTes && isPtptJuz && splitGlondongan(testedJuz(s)).glondongan.length > 0
       // Resolve nama kepala/PJ lembaga ini (utk push notif Fase B) — best-effort.
       const kepala = (guruList || []).find((g) => {
         const j = `${g.jabatan || ''} ${g.jabatan_tambahan || ''}`.toLowerCase()
@@ -184,19 +224,15 @@ export function useTesKenaikan() {
           status: 'diajukan',
           tgl_daftar: now.toISOString(),
           _ts: now.getTime(),
-          batch_id: batchId
+          batch_id: batchId,
+          ...(langsungTes ? { tanpa_glondongan: true, siap_tes: true } : {})
         })
         ok++
         // v.111: PTPT jenis 'juz' -> spawn baris glondongan + review juz berjalan.
         //   Kegagalan di sini TIDAK menggagalkan ajuan tes kenaikan utama, tapi
         //   dihitung & dilaporkan (lihat spawnGlondongan) — baris yang tak lahir
         //   mengunci gerbang PJ selamanya.
-        if (
-          String(s.lembaga || '')
-            .trim()
-            .toUpperCase() === 'PTPT' &&
-          (it.jenis || '') === 'juz'
-        ) {
+        if (isPtptJuz && !langsungTes) {
           try {
             const g = await spawnGlondongan(ajuanId, s, now, guruList)
             glondonganGagal += g.gagal
@@ -353,6 +389,43 @@ export function useTesKenaikan() {
     await updateOne('tes_kenaikan', id, patch)
   }
 
+  // v.1.4.8: PJ/penguji menguji ULANG ajuan yang "Belum lulus" — ajuan yang SAMA kembali ke
+  //   antrian, jadi glondongan yang sudah selesai disimak (dan tanda Siap Tes) tetap berlaku.
+  //   Hasil sebelumnya tidak dibuang: disimpan berurutan di `riwayat_hasil`. Trigger notif
+  //   (tg_tes_decided_notif) diam karena `penguji` dikosongkan; notif baru keluar saat
+  //   hasil tes ulangnya diputuskan.
+  function bisaTesUlang(a) {
+    if (!a || a.status !== 'tidak_lulus') return false
+    // Hanya ajuan yang masih MENGUNCI santrinya — ajuan gagal lama yang sudah disusul ajuan
+    //   lain tak boleh dibuka kembali (jadi dua ajuan terbuka untuk satu santri).
+    const p = pengunciAjuan(a.santri_id)
+    return !!p && String(p.id) === String(a.id)
+  }
+  async function tesUlang(id) {
+    const a = ajuanRaw.value.find((x) => String(x.id) === String(id))
+    if (!bisaTesUlang(a))
+      throw new Error('Hanya ajuan terakhir yang "Belum lulus" yang bisa dites ulang.')
+    const jejak = Array.isArray(a.riwayat_hasil) ? a.riwayat_hasil : []
+    await updateOne('tes_kenaikan', String(id), {
+      status: 'diajukan',
+      riwayat_hasil: [
+        ...jejak,
+        {
+          status: a.status,
+          nilai: a.nilai || null,
+          catatan_hasil: a.catatan_hasil || '',
+          penguji: a.penguji || '',
+          tgl_hasil: a.tgl_hasil || ''
+        }
+      ],
+      tes_ulang_ke: (Number(a.tes_ulang_ke) || 0) + 1,
+      nilai: null,
+      catatan_hasil: '',
+      penguji: '',
+      tgl_hasil: ''
+    })
+  }
+
   // Pengaju: batalkan ajuan yang masih 'diajukan' (sebelum diuji).
   //   v.1.2.5 (Kyai): status khusus 'dibatalkan' — BUKAN 'ditolak'. Pembatalan oleh
   //   pengaju sendiri ≠ penolakan penguji; dibedakan supaya labelnya jujur dan tak
@@ -438,6 +511,9 @@ export function useTesKenaikan() {
     isAmpuanSaya, // v.1.1.9: predikat scope PJ (santriId) => boolean
     diluarAmpuan, // jumlah ajuan PTPT yang disembunyikan scope PJ (utk pesan UI)
     hasOpenAjuan,
+    pengunciAjuan, // v.1.4.8: ajuan yang mengunci santri (menunggu / belum lulus) atau null
+    bisaTesUlang, // v.1.4.8
+    tesUlang, // v.1.4.8: PJ menguji ulang ajuan "Belum lulus" yang sama
     ajukanBatch,
     putuskan,
     batalAjuan,
