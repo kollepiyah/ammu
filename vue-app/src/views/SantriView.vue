@@ -363,6 +363,14 @@
           {{ t.l }} ({{ t.n }})
         </button>
       </div>
+      <p
+        v-if="pjBelumDitata"
+        class="mt-3 text-[11px] leading-snug px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800"
+      >
+        <i class="fas fa-circle-info mr-1"></i>Belum ada santri PTPT yang dibagikan ke Anda sebagai
+        PJ — yang tampil hanya kelas yang Anda ajar. Minta admin mengatur guru di bawah Anda di menu
+        Glondongan PTPT → Peran.
+      </p>
 
       <!-- v.21.22c.0526: Select-all (Master mode only) -->
       <div
@@ -605,7 +613,6 @@ import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan c
 import { gedungList } from '@/utils/gedung' // v.111: filter Gedung (pisah Pra PTPT per gedung)
 import { useAuthStore } from '@/stores/auth'
 import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
-import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope' // v.100b/1.2.3: pisah santri qiraati/sekolah + kepala lembaga per-sisi
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
@@ -685,6 +692,8 @@ const {
   filterPjPtpt,
   stats,
   isFullAccess,
+  scope, // v.1.4.8: scope sesi per sisi (sumber yang sama dengan daftar)
+  petaPjSantri,
   pjPtptDistinct
 } = useSantri()
 
@@ -807,18 +816,38 @@ watch(filterLembaga, (l) => {
 //      Sekolah : saya guru sekolahnya,   ATAU (kepala) lembaga sekolahnya se-scope saya
 //    Dengan begitu kepala sekolah merangkap guru qiraati melihat kelas ngajinya di tab
 //    Qiraati dan santri sekolahnya di tab Sekolah — tak pernah tercampur.
-const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
 // v.1.2.3: sisi ditentukan headsLembaga PER-SISI (bukan isKepalaScope + user.lembaga utk
 //   keduanya) — kepala SEKOLAH dulu tak pernah masuk sisi Sekolah karena dicocokkan ke
 //   lembaga NGAJI-nya. Kini: Qiraati = kelas ngaji ampuan sendiri ATAU kepala lembaga
 //   ngaji-nya; Sekolah = kelas sekolah ampuan sendiri ATAU kepala sekolah-nya. Kepala SDI
 //   yang juga guru ngaji: Qiraati = kelasnya, Sekolah = seluruh SDI — persis guru dual-role.
+// v.1.4.8: aturannya dipindah ke utils/guruScope.scopeSantri (dipakai juga Rapor, Absensi,
+//   Tes) — termasuk pembatasan PJ PTPT ke santri ampuannya.
 function sisiQiraati(s) {
-  return ownsNgaji(s, myNamaGuru.value) || headsLembaga(authStore.sesiAktif, s.lembaga)
+  return scope.value.qiraati(s)
 }
 function sisiSekolah(s) {
-  return ownsSekolah(s, myNamaGuru.value) || headsLembaga(authStore.sesiAktif, s.lembaga_sekolah)
+  return scope.value.sekolah(s)
 }
+// v.1.4.8: PJ PTPT yang belum punya satu pun santri ampuan — dulu ia melihat SELURUH PTPT
+//   (pengaman v.1.2.1), kini hanya kelasnya sendiri. Beri tahu sebabnya, jangan diam.
+const pjBelumDitata = computed(() => {
+  if (!scope.value.pjPtpt) return false
+  const saya = String(authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+  for (const v of petaPjSantri.value.values()) {
+    if (
+      String(v || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ') === saya
+    )
+      return false
+  }
+  return true
+})
 
 // Hitung dari SELURUH santri dalam scope (santriRaw), bukan hasil pencarian — kalau
 //   tidak, sub-tab akan muncul-hilang mengikuti kata kunci.

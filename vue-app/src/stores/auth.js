@@ -350,6 +350,31 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * v.1.4.8: bangun ulang sesi dari database TANPA menahan layar (lihat pemanggilnya di
+   * initAuth). Gagal jaringan → sesi lama tetap dipakai. Guru yang sudah dinonaktifkan →
+   * buildSesi() mengeluarkannya (sama seperti saat login), lalu pemulih sesi zombie
+   * mengarahkannya ke halaman masuk.
+   */
+  async function _segarkanSesiLatar() {
+    try {
+      const baru = _finalizeSesi(await authSupabase.buildSesi())
+      const lama = sesiAktif.value
+      if (!baru || !lama || baru.supabase_uid !== lama.supabase_uid) return
+      if (JSON.stringify(baru) === JSON.stringify(lama)) return
+      sesiAktif.value = { ...lama, ...baru }
+      _persistFullSesi(sesiAktif.value)
+      if (baru.id === 'admin') _persistAdminSesi(sesiAktif.value)
+      try {
+        setAuditSesi(sesiAktif.value)
+      } catch (e) {
+        /* noop */
+      }
+    } catch (e) {
+      console.warn('[auth] segarkan sesi gagal (sesi lama dipakai):', e?.message || e)
+    }
+  }
+
+  /**
    * initAuth — dipanggil sekali dari main.js sebelum router siap.
    * 1) Restore cepat dari localStorage (admin + full sesi) supaya UI tak flash logout.
    * 2) Subscribe Supabase Auth: event pertama resolve authReady. Bila ada sesi Supabase
@@ -433,6 +458,20 @@ export const useAuthStore = defineStore('auth', () => {
           //   tak pernah jalan dan badge "tertaut" tak kunjung berubah — penautannya
           //   tampak gagal padahal berhasil.
           const _sudahPunyaSesi = !!sesiAktif.value && sesiAktif.value.supabase_uid === user.id
+          // v.1.4.8 (Kyai 3 Nov 2026: "data santri di akun guru kadang tidak muncul/tidak
+          //   sesuai"): sesi yang dipulihkan dari localStorage TAK PERNAH dibangun ulang selama
+          //   token-nya masih sama — di Android (app tak pernah logout) berbulan-bulan. Nama,
+          //   jabatan, dan lembaga di sesi itu yang menentukan santri mana yang tampil, jadi
+          //   setiap koreksi nama guru, pengangkatan PJ, atau pindah lembaga di Master Data tak
+          //   pernah sampai ke HP-nya. Kini dibangun ulang SEKALI per pembukaan app (putaran
+          //   pertama event auth), di latar belakang: layar tetap memakai sesi lama sampai yang
+          //   baru tiba. Biayanya dua baris kecil (profiles + guru/santri).
+          //   Ditunda keluar dari callback ini: buildSesi() memanggil supabase.auth.getUser(),
+          //   dan memanggil metode auth DI DALAM onAuthStateChange bisa macet menunggu kunci
+          //   auth yang sedang dipegang pemanggilnya.
+          if (_sudahPunyaSesi && !_baruBalikOAuth && _lastCollUid !== user.id) {
+            setTimeout(_segarkanSesiLatar, 1500)
+          }
           if (_baruBalikOAuth || !_sudahPunyaSesi) {
             const sesi = _finalizeSesi(await authSupabase.buildSesi())
             if (sesi) {

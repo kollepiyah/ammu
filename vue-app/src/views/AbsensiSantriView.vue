@@ -455,13 +455,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onUnmounted, watch } from 'vue'
 import { subscribeColl, mergeOne, serverTimestamp } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
-import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { isFullFilterRole } from '@/utils/roleScope'
 import { ownsNgaji, ownsSekolah } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
-import { lembagaScopeMatches } from '@/composables/useLembaga'
+import { useSantri } from '@/composables/useSantri'
 import { sortSantri } from '@/utils/santriSort'
 
 const toast = useToast()
@@ -472,12 +472,11 @@ const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))
 const isGuruMode = computed(() => !isFullFilter.value)
 // alias lama supaya template tetap jalan
 const isGuru = isGuruMode
-// v.86.0526: Kepala/PJ (role guru, bukan admin) discope ke lembaganya.
-const kepalaScope = computed(() => {
-  const s = auth.sesiAktif
-  if (!s || s.role === 'admin' || s.id === 'admin') return null
-  return isKepalaLembaga(s) ? s.lembaga || null : null
-})
+// v.1.4.8: santri dari store bersama (bukan langganan tabel penuh KEDUA milik layar ini —
+//   hemat egress) + scope per sisi dari sumber yang sama dengan Data Santri & Rapor.
+//   Menggantikan scope kepala lama "se-lembaga `sesi.lembaga`": PJ PTPT melihat SELURUH PTPT,
+//   dan Kepala SDI yang mengajar PTPT melihat seluruh PTPT tapi SDI-nya sendiri kosong.
+const { santriRaw, loading: loadingSantri, scope } = useSantri()
 const guruName = computed(() =>
   String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '')
     .toLowerCase()
@@ -545,9 +544,8 @@ const hariEfektif = ref(24) // sesi Pagi (dan sesi tunggal utk sekolah)
 const hariEfektifSore = ref(24) // sesi Sore (khusus ngaji)
 const search = ref('')
 
-const santriRaw = ref([])
 const absRaw = ref([]) // dokumen absensi periode terpilih
-const loading = ref(true)
+const loading = computed(() => loadingSantri.value)
 const saving = ref(false)
 const generating = ref(false)
 
@@ -621,13 +619,9 @@ const filteredSantri = computed(() => {
       return false
     }
   })
-  // v.86.0526: Kepala/PJ → hanya santri lembaganya (block lintas-lembaga)
-  if (kepalaScope.value)
-    list = list.filter(
-      (s) =>
-        lembagaScopeMatches(kepalaScope.value, s.lembaga) ||
-        lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah)
-    )
+  // v.1.4.8: kepala/PJ → hanya sisi yang ia naungi (lihat scopeSantri). Guru sudah tersaring
+  //   ownNgaji/ownSekolah di atas; admin penuh lolos semua.
+  list = list.filter(kategori.value === 'ngaji' ? scope.value.qiraati : scope.value.sekolah)
   if (search.value) {
     const kw = search.value.toLowerCase()
     list = list.filter((s) =>
@@ -795,7 +789,6 @@ async function generateKeRapor() {
   }
 }
 
-let unsubSantri = null
 let unsubAbs = null
 function resubAbs() {
   if (unsubAbs) {
@@ -828,19 +821,20 @@ function initGuruFlow() {
   }
 }
 
-onMounted(() => {
-  unsubSantri = subscribeColl('santri', (docs) => {
-    santriRaw.value = docs || []
-    loading.value = false
+// v.1.4.8: alur guru ditentukan SEKALI begitu santri termuat. Dulu dipanggil tiap kali
+//   tabel santri berubah (realtime), jadi guru yang sedang mengisi absen terlempar balik
+//   ke layar awal setiap ada santri lain disunting.
+let _alurGuruSiap = false
+watch(
+  loadingSantri,
+  (l) => {
+    if (l || _alurGuruSiap) return
+    _alurGuruSiap = true
     initGuruFlow()
-  })
-})
+  },
+  { immediate: true }
+)
 onUnmounted(() => {
-  if (unsubSantri) {
-    try {
-      unsubSantri()
-    } catch (e) {}
-  }
   if (unsubAbs) {
     try {
       unsubAbs()

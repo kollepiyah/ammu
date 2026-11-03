@@ -1565,7 +1565,11 @@ const isGuruMode = computed(() => !isFullFilter.value)
 // v.1.2.8 (Kyai 5 Agu 2026): scope kepala PER-SISI — sumber tunggal di utils/guruScope.
 //   Menutup bug "Kepala SDI yang juga guru ngaji PTPT melihat SEMUA santri SDI di rekap
 //   prestasi PTPT"; alasan lengkapnya ada di komentar scopeQiraati.
-const qs = computed(() => scopeQiraati(auth.sesiAktif))
+// v.1.4.8 (Kyai 3 Nov 2026: "Di akun PJ masih tampil semua santri PTPT"): PJ PTPT dibatasi ke
+//   santri yang PJ efektifnya dia — peta yang sama dengan penyaring PJ di bawah.
+const qs = computed(() =>
+  scopeQiraati(auth.sesiAktif, { pjSantri: (s) => petaPjSantri.value.get(String(s?.id)) })
+)
 function _lowS(v) {
   return String(v || '')
     .toLowerCase()

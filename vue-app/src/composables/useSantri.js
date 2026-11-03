@@ -10,8 +10,8 @@ import { sortSantri, kelasRank } from '@/utils/santriSort'
 // v.111: scope Gedung (akademik per gedung + filter Pra PTPT/PTPT)
 import { isGedungScoped, gedungOf } from '@/utils/gedung'
 // v.1.2.1: scope PJ PTPT — santri ampuan diturunkan dari guru pengajar (peta pj_guru)
-import { buatPetaPjSantri, isPjLembaga, PTPT_LEMBAGA } from '@/utils/glondongan'
-import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope'
+import { buatPetaPjSantri } from '@/utils/glondongan'
+import { scopeSantri } from '@/utils/guruScope' // v.1.4.8: scope santri terpusat (per sisi)
 import { isAdminKeuangan } from '@/utils/roleScope' // v.1.2.6: admin_keuangan discope seperti guru
 import { usePjGuru } from './usePjGuru'
 // v.1.2.4: filter per KELAS-GURU (rombel pasangan) — resolver + label pasangan
@@ -64,6 +64,11 @@ export function useSantri() {
       .trim()
       .toLowerCase()
       .replace(/\s+/g, ' ')
+  // v.1.4.8: scope sesi per sisi (qiraati/sekolah) — dipakai daftar di sini DAN layar yang
+  //   memisah sisi (Data Santri sub-tab, Rapor, Absensi). PJ efektif dari peta di atas.
+  const scope = computed(() =>
+    scopeSantri(auth.sesiAktif, { pjSantri: (s) => petaPjSantri.value.get(String(s?.id)) })
+  )
 
   // Search & filter state
   const search = ref('')
@@ -145,70 +150,16 @@ export function useSantri() {
     // v.21.12.0526: drop blanket aktif filter — handle via filterStatus below (supaya "Tidak Aktif" bisa dilihat)
     let list = santriRaw.value.filter((s) => !!s)
 
-    // Role filter — v.21.10.0526: pakai lembagaScopeMatches untuk Kepala Lembaga scoping (lihat semua di lembaga-nya), guru biasa lihat kelasnya
+    // Role filter — v.1.4.8: satu aturan untuk semua layar akademik (utils/guruScope.scopeSantri):
+    //   guru → kelas ampuannya; kepala → lembaga yang JABATANNYA pimpin (+ kelas ampuannya);
+    //   PJ PTPT → santri yang PJ efektifnya dia (+ kelas ampuannya).
+    //   DIBUANG: pengaman v.1.2.1 "ampuan PJ 0 → lihat SEMUA PTPT". Itulah yang membuat PJ
+    //   yang pembagiannya belum ditata melihat seluruh PTPT (keluhan Kyai 3 Nov 2026) —
+    //   kini ia melihat kelas ampuannya saja, dan SantriView memberi tahu cara menatanya.
     if (!isFullAccess.value) {
-      const user = auth.sesiAktif
-      const myNama = String(user?.guru || user?.nama || '')
-        .trim()
-        .toLowerCase()
-      if (!myNama) return []
-      // Kepala Lembaga: filter santri yang lembaga-nya = lembaga kepala-nya (via lembagaScopeMatches)
-      const jabL = `${user?.jabatan || ''} ${user?.jabatan_tambahan || ''}`.toLowerCase()
-      const isKepala = /(^|\s)(kepala|pj|pengasuh)(\s|$)/.test(jabL)
-      // v.1.2.1 (Kyai 22 Jul): PJ PTPT tak lagi lihat SEMUA PTPT — hanya santri ampuannya
-      //   (guru pengajarnya di bawah PJ ini, via peta pj_guru; cadangan label pj_ptpt).
-      //   PENGAMAN: kalau peta & label dua-duanya belum diisi (ampuan 0), jatuh ke scope
-      //   lembaga LAMA supaya PJ tak melihat layar kosong sebelum sempat menata pembagian.
-      // v.1.2.2: PJ PTPT dipakai aturan ketat isPjLembaga (jabatan wajib menyebut lembaga).
-      //   `isKepala` di bawah SENGAJA tetap longgar — itu scope "Kepala Lembaga" umum,
-      //   Kepala SDI memang harus tetap melihat santri lembaganya sendiri.
-      const isPjPtpt = isPjLembaga(user, PTPT_LEMBAGA)
-      const namaPj = _normPj(user?.guru || user?.nama)
-      const ampuanIds = isPjPtpt
-        ? new Set(
-            santriRaw.value
-              .filter((s) => s && _normPj(petaPjSantri.value.get(String(s.id))) === namaPj)
-              .map((s) => String(s.id))
-          )
-        : null
-      const pakaiScopePj = isPjPtpt && ampuanIds && ampuanIds.size > 0
-      list = list.filter((s) => {
-        if (pakaiScopePj) return ampuanIds.has(String(s.id))
-        // v.86.0526: Kepala/PJ = se-lembaganya (kyai "se-group"). lembagaScopeMatches handle
-        //   variant/family (TPQ Sore→TPQ Pagi/Sore/Pra PTPT) MAUPUN label broad ('Qiraati'→semua qiraati).
-        if (isKepala) {
-          // v.1.2.3: kepala melihat SETIAP lembaga yang JABATANNYA pimpin (headsLembaga —
-          //   ngaji via s.lembaga, sekolah via s.lembaga_sekolah). Dulu kepala SEKOLAH luput
-          //   karena keduanya dicocokkan ke user.lembaga (= lembaga NGAJI-nya), jadi santri
-          //   sekolahnya tak pernah masuk. PLUS kelas ampuannya sendiri (ownsNgaji/ownsSekolah)
-          //   utk lembaga yang ia AJAR tapi tak pimpin (mis. kepala SDI yang guru ngaji PTPT).
-          return (
-            ownsNgaji(s, myNama) ||
-            ownsSekolah(s, myNama) ||
-            headsLembaga(user, s.lembaga) ||
-            headsLembaga(user, s.lembaga_sekolah)
-          )
-        }
-        const gp = String(s.guru_pagi || '')
-          .trim()
-          .toLowerCase()
-        const gs = String(s.guru_sore || '')
-          .trim()
-          .toLowerCase()
-        const gOld = String(s.guru || '')
-          .trim()
-          .toLowerCase()
-        const gsek = Array.isArray(s.guru_sekolah)
-          ? s.guru_sekolah.map((x) =>
-              String(x || '')
-                .trim()
-                .toLowerCase()
-            )
-          : []
-        return (
-          gp === myNama || gs === myNama || (gOld === myNama && !gp && !gs) || gsek.includes(myNama)
-        )
-      })
+      const sc = scope.value
+      if (!String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').trim()) return []
+      list = list.filter(sc.lihat)
     }
 
     // v.111: auto-scope Gedung — user ber-gedung (admin keuangan) hanya lihat santri gedungnya
@@ -391,6 +342,8 @@ export function useSantri() {
     filterPjPtpt,
     stats,
     isFullAccess,
+    scope, // v.1.4.8: { adminPenuh, pjPtpt, qiraati(s), sekolah(s), lihat(s) }
+    petaPjSantri, // v.1.4.8: santriId -> nama PJ efektif (rapor PTPT, scope tes)
     pjPtptDistinct, // v.1.2.1: nama PJ efektif utk dropdown filter
     getGuruInfo,
     // v.21.10.0526: lembaga_refs + rapor list per santri
