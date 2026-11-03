@@ -5,6 +5,37 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.8 — November 2026
+
+**Perbaikan**
+
+- **Setiap akun kini melihat santri yang memang miliknya, di semua layar.** PJ PTPT hanya melihat
+  santri yang dibagikan kepadanya (plus kelas yang ia ajar), tidak lagi seluruh santri PTPT —
+  termasuk di Rapor, Absensi Santri, Rekap Prestasi, dan antrian Tes. Kepala sekolah yang juga
+  guru ngaji melihat kelas ngajinya di sisi Qiraati dan santri sekolahnya di sisi Sekolah, tidak
+  lagi bercampur. Kepala TPQ kembali melihat seluruh TPQ Pagi, TPQ Sore, dan Pra PTPT.
+- **Data santri di akun guru tak lagi hilang atau nyasar.** Perubahan nama, jabatan, atau lembaga
+  guru di Master Data kini sampai ke HP-nya saat aplikasi dibuka, tanpa perlu keluar-masuk akun.
+  Santri yang sudah pindah guru tak lagi tampil di akun guru lamanya.
+- **Rapor PTPT menulis PJ yang benar.** Nama dan tanda tangan PJ di rapor mengikuti PJ santri itu
+  sendiri, jadi santri PJ Syarifatun tak lagi tertulis PJ Hj. Nujumun Nada.
+- **Tampilan di sebagian HP Android tak lagi tertutup status bar.** Di HP yang komponen Android
+  System WebView-nya belum diperbarui, bagian atas aplikasi dulu naik ke balik jam & sinyal.
+
+**Baru**
+
+- **Langsung tes PJ tanpa glondongan.** Saat mengajukan tes santri PTPT kelas 2 ke atas, guru bisa
+  mencentang "Langsung tes PJ" untuk santri yang tak perlu glondongan — santri langsung masuk antrian
+  PJ tanpa glondongan dan review juz berjalan.
+- **Santri yang belum lulus diuji ulang di ajuan yang sama.** Santri yang hasil tesnya "Belum lulus"
+  tak bisa diajukan lagi sebagai ajuan baru; PJ menekan "Tes ulang" di Riwayat, dan glondongan yang
+  sudah selesai tidak diulang. Ajuan baru bisa dibuat lagi setelah tes terakhir Lulus, Dibatalkan,
+  atau Ditolak.
+- **Widget Jam Hijri di layar beranda kini 4×1.** Satu baris memanjang, tidak lagi 3×2. Widget yang
+  sudah terpasang perlu dihapus lalu dipasang ulang.
+
+---
+
 ## v.1.4.7 — September 2026
 
 **Perbaikan**

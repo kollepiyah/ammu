@@ -20,6 +20,126 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.8] — 2026-11-04 — Santri tampil sesuai PJ & jabatan di semua layar akademik; rapor PTPT memakai PJ santrinya; tes PTPT bisa langsung tanpa glondongan; status bar & widget Android
+
+**SIAP RILIS** — `versionCode` 148 / `versionName` `v.1.4.8`. **Tanpa migrasi Supabase, tanpa
+perubahan edge function.** Ada perubahan NATIVE Android (MainActivity, widget, capacitor.config)
+— **wajib rebuild AAB**, deploy web saja tak cukup. Urutannya: **deploy web → rebuild AAB → rilis
+Electron.**
+
+Nomor baru, BUKAN gelombang v.1.4.7: Electron 1.4.7 sudah "Latest" di GitHub sejak 30 Sep 2026.
+
+Diuji: vitest 114 berkas / 1.782 tes (2 berkas baru: `scopeSantriSisi`, `ajuanPengunci`);
+`vite build` sukses; `gradlew :app:compileReleaseJavaWithJavac` sukses (MainActivity + resource
+widget). Di peramban (dev server, sesi & data rekaan, tulisan Supabase dicegat): Data Santri PJ /
+Kepala SDI, pratinjau DAN PDF rapor PTPT, tab Ajukan/Riwayat Tes, payload ajuan & tes ulang.
+
+Data produksi yang dibaca (master/lembaga, terbaca anon): peta `pj_guru` PTPT SUDAH berisi dua PJ
+(33 guru dan 7 guru; target 20/10 dan 40/20) — jadi keluhan #4/#6 bukan soal peta yang kosong.
+
+### Fixed — "Di akun PJ masih tampil semua santri PTPT" & "kepala sekolah yg juga guru ngaji masih campur"
+
+Kyai, 3 Nov 2026 (#3, #6, #7). Aturan "santri mana yang terlihat" ada di LIMA tempat dan
+berbeda-beda:
+
+- **Rapor & Absensi Santri** menyaring kepala/PJ se-lembaga `sesi.lembaga` — lembaga tempat ia
+  MENGAJAR, bukan yang ia pimpin. PJ PTPT melihat SELURUH PTPT; Kepala SDI yang mengajar PTPT
+  melihat seluruh PTPT, sedang SDI-nya sendiri kosong.
+- **Data Santri** mengenal peta PJ, tapi (a) mengenali PJ lewat `isPjLembaga` yang mewajibkan field
+  `lembaga` = PTPT — PJ yang mengajar di lembaga lain lolos lalu, lewat `headsLembaga`, melihat
+  semua PTPT; (b) jatuh ke "semua PTPT" bila ampuan PJ itu terhitung 0 (pengaman v.1.2.1).
+- **Rekap Prestasi** (`scopeQiraati`) memberi PJ PTPT seluruh PTPT.
+- **Antrian Tes** memakai label `pj_ptpt` SAJA, bukan peta guru → santri yang dibagikan lewat peta
+  tak sampai ke antrian PJ-nya; penguji ditentukan dari `sesi.lembaga`.
+
+Sekarang satu sumber: `utils/guruScope.scopeSantri(sesi, { pjSantri })` →
+`{ adminPenuh, pjPtpt, qiraati(s), sekolah(s), lihat(s) }`. Qiraati = guru ngajinya ATAU memimpin
+lembaga ngajinya (jabatan); PJ PTPT (`isPjPtptJabatan`, tanpa gerbang field lembaga) dibatasi ke
+santri yang PJ efektifnya dia. Sekolah = wali kelasnya ATAU memimpin sekolahnya. Dipakai
+`useSantri` (+ diekspor `scope`, `petaPjSantri`), sub-tab SantriView, RaporView, AbsensiSantriView
+(kini membaca store bersama — satu langganan tabel santri penuh berkurang), `useTesKenaikan`
+(penguji dari jabatan; jabatan tanpa nama lembaga mis. "Pengasuh" tetap aturan lama).
+`scopeQiraati` menerima `opts.pjSantri` yang sama (Rekap Prestasi). Pengaman "ampuan 0 → semua
+PTPT" DIBUANG; SantriView memberi pesan "belum ada santri yang dibagikan ke Anda sebagai PJ".
+
+Ikut tertutup:
+
+- **`headsLembaga` peka huruf besar.** Nama dari jabatan dikecilkan ("tpq") lalu dicari di peta
+  keluarga yang peka huruf besar → "Kepala TPQ" tak pernah memimpin TPQ Pagi/Sore/Pra PTPT (Data
+  Santri-nya hanya kelasnya sejak v.1.2.3). `_naungi` kini mencocokkan tanpa peduli huruf besar;
+  kunci keluarga ("TPQ") hanya menaungi anggotanya — TIDAK dibaca sebagai label luas Qiraati
+  seperti di `lembagaScopeMatches` (kalau dibaca begitu, Kepala TPQ ikut memimpin PTPT & PPPH).
+- **Field lama `guru`** di santri dihitung hanya bila `guru_pagi` & `guru_sore` kosong
+  (`ownsNgaji`), sama dengan `kelasHitung`. Field itu tak ikut dikosongkan saat santri pindah guru
+  lewat impor/penugasan kelas, jadi guru LAMA tetap melihatnya di Rapor/Absensi/Rekap. Rapor &
+  PDF: Guru Kelas kini `guru_pagi → guru_sore → guru` (dulu `guru` dulu).
+- **Spasi ganda** di nama dirapatkan sebelum dicocokkan.
+- **RaporView**: penyaring "guru-only" kedua (cocok guru ngaji saja) dihapus — ia mengosongkan
+  rapor Diniyah wali kelas sekolah yang bukan guru ngaji santrinya.
+
+### Fixed — sesi di HP tak pernah ikut perubahan data guru (#3 "kadang tidak muncul/tidak sesuai")
+
+`initAuth` membangun sesi dari DB hanya bila sesi localStorage kosong atau milik uid lain. Di
+Android (app tak pernah logout) nama, jabatan, lembaga di sesi bisa berbulan-bulan basi — koreksi
+nama guru, pengangkatan PJ, pindah lembaga tak sampai ke HP-nya, dan santrinya dicocokkan ke nama
+lama. Kini `_segarkanSesiLatar()` membangun ulang SEKALI per pembukaan app (putaran pertama event
+auth per uid), ditunda 1,5 dtk keluar dari callback `onAuthStateChange` (memanggil metode auth di
+dalamnya bisa macet menunggu kuncinya). Gagal jaringan → sesi lama. Guru yang sudah dinonaktifkan →
+`buildSesi()` mengeluarkannya seperti saat login.
+
+### Fixed — rapor PTPT menulis PJ yang salah (#4)
+
+"Nama PJ masih Hj. Nujumun Nada, PJ baru Syarifatun belum masuk." Rapor (pratinjau & PDF) mencari
+guru PERTAMA yang jabatannya memuat "PJ PTPT". Sekarang PJ EFEKTIF santri (`petaPjSantri`: guru
+pengajar → PJ, cadangan label `pj_ptpt`). PJ tak diketahui: PJ PTPT satu-satunya bila memang hanya
+satu; lebih dari satu → garis isian kosong (lebih baik daripada nama salah). Akun wali (tak boleh
+membaca tabel guru) tetap memakai cara lama. `generateRaporPdf({ namaKepala })` → `drawSignBlocks`
+(`namaKepalaPaksa`: string = paksa, '' = kosong, null = cari sendiri); TTD & NIG ikut nama itu.
+
+### Changed — ajuan tes terkunci sampai Lulus / Dibatalkan / Ditolak (#5)
+
+Dulu hanya ajuan 'diajukan' yang mengunci — santri yang baru BELUM LULUS bisa langsung diajukan
+lagi sebagai ajuan baru, glondongannya dibuat ulang dari awal. Keputusan Kyai: `ajuanPengunci`
+(utils/tesKenaikan) — ajuan 'diajukan' mana pun mengunci; selain itu ajuan TERAKHIR menentukan,
+'tidak_lulus' mengunci. Pengecualian: 'tidak_lulus' untuk jenjang yang sudah ditinggalkan (lembaga/
+kelas/juz santri kini lain) tak mengunci. Tombol **Tes ulang** (Riwayat, penguji) mengembalikan
+ajuan yang SAMA ke antrian: glondongan yang sudah selesai & tanda Siap Tes tetap berlaku, hasil lama
+masuk `riwayat_hasil`, `tes_ulang_ke` naik; `penguji` dikosongkan sehingga trigger notif diam
+sampai hasil barunya diputuskan. Kirim ajuan ditolak bila data ajuan belum termuat.
+
+### Added — "Langsung tes PJ" tanpa glondongan (#2)
+
+"Ada beberapa anak yg kadang tidak perlu gelondong, jadi langsung tes." Di tab Ajukan, santri PTPT
+yang punya glondongan (kelas 2+) mendapat centang **Langsung tes PJ**. Keputusan Kyai: dicentang
+GURU pengaju; glondongan DAN review juz berjalan sama-sama dilewati. Ajuan menyimpan
+`tanpa_glondongan: true, siap_tes: true`, `spawnGlondongan` dilewati, `gerbangFor` tak mengunci.
+Chip "Langsung tes (tanpa glondongan)" di Status Ajuan & Antrian.
+
+### Fixed — header tertutup status bar di sebagian HP Android (#1)
+
+Plugin StatusBar v8 secara bawaan menggambar WebView di belakang status bar (`overlaysWebView` —
+kunci `"overlay"` di capacitor.config tak pernah dibaca; kini ditulis dengan nama benar, nilainya
+sama). Halaman mendorong diri turun dengan `env(safe-area-inset-top)`, yang hanya terisi bila
+WebView ≥ 140; di bawahnya SystemBars menolkan inset, dan di Android ≤ 14 tak ada yang memberi
+padding → header naik ke balik status bar. `MainActivity.statusBarPadatBilaInsetTakTerbaca()`:
+Android < 15 DAN Chromium WebView < 140 (dari user agent; `androidx.webkit` hanya dependensi
+`implementation` Capacitor) → lepas `LAYOUT_FULLSCREEN|LAYOUT_STABLE`, bar putih; App.vue memberi
+warna sesuai tema bila `StatusBar.getInfo().overlays === false`. HP lain tetap edge-to-edge.
+Belum diuji di HP sungguhan.
+
+### Changed — widget layar beranda Jam Hijri 4×1 (bukan 3×2)
+
+`minHeight` 64dp jatuh ke 2 baris pada launcher yang menghitung petak dengan rumus 70n − 30 dp
+(Android < 12 & banyak launcher bawaan HP). Kini 250×40 dp (+ `targetCell` 4×1, `minResize`,
+`previewLayout`) dan tata letak satu baris: Hijri di atas chip hari + Masehi, jam + WIB di kanan.
+Widget yang sudah terpasang tetap berukuran lama — hapus lalu pasang ulang (atau perkecil).
+
+**Titik versi:** package.json root, vue-app, vue-app-psb, vue-widgets, electron; empat package-lock
+(hanya versi paketnya sendiri); build.gradle (vc148); app-version.json; entri rilis Bantuan;
+CHANGELOG; RELEASE-NOTES.
+
+---
+
 ## [v.1.4.7] — 2026-09-30 — Tambal HiView membaca berkas AllReport asli mesin; tagihan yang dibayar lebih tak lagi terjebak di daftar "belum diakui"
 
 **SIAP RILIS** — `versionCode` 147 / `versionName` `v.1.4.7`. **Tanpa migrasi Supabase, tanpa

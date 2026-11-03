@@ -803,6 +803,18 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
+    versi: 'v.1.4.8',
+    tgl: 'November 2026',
+    items: [
+      'Setiap akun kini melihat santri yang memang miliknya. PJ PTPT hanya melihat santri yang dibagikan kepadanya (plus kelas yang ia ajar), tidak lagi seluruh PTPT — termasuk di Rapor, Absensi Santri, Rekap Prestasi, dan antrian Tes. Kepala sekolah yang juga guru ngaji melihat kelas ngajinya dan santri sekolahnya secara terpisah. Kepala TPQ kembali melihat seluruh TPQ Pagi, TPQ Sore, dan Pra PTPT.',
+      'Perubahan nama, jabatan, atau lembaga guru di Master Data kini sampai ke HP-nya saat aplikasi dibuka, tanpa keluar-masuk akun. Santri yang sudah pindah guru tak lagi tampil di akun guru lamanya.',
+      'Rapor PTPT menulis nama dan tanda tangan PJ santri itu sendiri, bukan selalu PJ yang sama.',
+      'Langsung tes PJ tanpa glondongan: saat mengajukan tes santri PTPT kelas 2 ke atas, guru bisa mencentang "Langsung tes PJ" untuk santri yang tak perlu glondongan.',
+      'Santri yang hasil tesnya "Belum lulus" diuji ulang PJ lewat tombol "Tes ulang" di Riwayat, pada ajuan yang sama — glondongan yang sudah selesai tidak diulang. Ajuan baru bisa dibuat lagi setelah tes terakhir Lulus, Dibatalkan, atau Ditolak.',
+      'Di sebagian HP Android, bagian atas aplikasi tak lagi tertutup status bar. Widget Jam Hijri di layar beranda kini berukuran 4×1 (pasang ulang widget yang lama).'
+    ]
+  },
+  {
     versi: 'v.1.4.7',
     tgl: 'September 2026',
     items: [
