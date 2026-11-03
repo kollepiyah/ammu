@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- v.1.4.8 (Kyai 4 Nov 2026): 4x1, bukan 3x2.
+     Launcher yang tak membaca targetCell* (Android < 12 & banyak launcher bawaan HP) menghitung
+     petak dari minWidth/minHeight dengan rumus 70n - 30 dp. minHeight lama 64dp > 40dp jatuh ke
+     2 BARIS — itulah 3x2-nya. 250dp = 4 kolom, 40dp = 1 baris; targetCell* untuk Android 12+.
+     previewLayout (Android 12+) menampilkan widget sungguhan di pemilih widget, bukan ikon app. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="180dp"
-    android:minHeight="64dp"
-    android:targetCellWidth="3"
+    android:minWidth="250dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="4"
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_jam_hijri"
+    android:previewLayout="@layout/widget_jam_hijri"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:previewImage="@mipmap/ic_launcher"
