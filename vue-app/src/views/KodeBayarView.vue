@@ -284,8 +284,11 @@ async function salin(teks, apa) {
     toast.error('Tidak bisa menyalin di perangkat ini')
   }
 }
+// Datang dari Pembayaran → mundur, supaya tombol kembali HP sesudah OK tak membuka kode ini lagi.
+//   Dibuka langsung (tautan/notifikasi) → ganti entri, bukan menumpuk.
 function kembali() {
-  router.push({ path: '/pembayaran' })
+  if (String(window.history.state?.back || '').startsWith('/pembayaran')) router.back()
+  else router.replace({ path: '/pembayaran' })
 }
 const membatalkan = ref(false)
 async function batal() {

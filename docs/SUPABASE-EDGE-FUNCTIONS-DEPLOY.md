@@ -378,8 +378,25 @@ TIDAK ikut dicatat sebagai uang santri.
 - Log: Dashboard → Edge Functions → midtrans-webhook → Logs, cari `[midtrans-webhook]`.
 
 ### c. Pindah ke production
-Ganti secret dengan Server Key production (tanpa `SB-`), isi ulang Notification URL di mode
-Production dasbor Midtrans. Tak perlu deploy ulang fungsi.
+Kerjakan sesudah Midtrans menyetujui akun production dan kanal yang dipakai tampil aktif di mode
+Production. **Selama kunci masih sandbox, hilangkan centang "Aktifkan pembayaran online"**: kode
+bayar sandbox tak bisa dibayar dengan uang sungguhan, dan bayar lewat simulator sandbox tercatat
+sebagai pembayaran NYATA di buku induk produksi (fungsi memakai database yang sama).
+1. Dasbor Midtrans mode **Production** (menu kiri biru; sandbox oranye) → Settings → Access Keys →
+   Generate Server Key: Payment product **Write**, izin lain **None**. Kunci production berawalan
+   `Mid-server-` (tanpa `SB-`). Salin sekali, jangan ditempel di obrolan/berkas.
+2. Ganti secret — fungsi otomatis pindah ke API production, tak perlu deploy ulang:
+   ```bash
+   supabase secrets set MIDTRANS_SERVER_KEY="Mid-server-xxxxxxxx"
+   ```
+3. Mode Production → Settings → Payment → **Notification URL**: isi URL webhook yang sama
+   (pengaturan sandbox tidak terbawa).
+4. Ammu → Pengaturan Keuangan → **Client Key** production (`Mid-client-…`), centang hanya kanal
+   yang aktif di Production, Simpan — **bersamaan dengan langkah 2**: Client Key sandbox + Server
+   Key production membuat jendela BSI gagal (jatuh ke halaman Midtrans di browser).
+5. Uji satu pembayaran kecil sungguhan pada santri sendiri, baru centang Aktifkan untuk semua wali.
+   Kode bayar sandbox lama: notifikasinya tak lagi tercatat (status diverifikasi ke API production,
+   order sandbox tak dikenal), dan kodenya kedaluwarsa sendiri atau bisa dibatalkan wali.
 
 ### d. Catatan / risiko
 - Nomor VA dari Midtrans berganti tiap pembayaran (bukan nomor tetap per santri); nominal

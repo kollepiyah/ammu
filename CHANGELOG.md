@@ -31,10 +31,24 @@ dicentang di Pengaturan Keuangan — selama belum, wali tetap melihat "Segera ha
 tayang lebih dulu. Panduan pasang: docs/SUPABASE-EDGE-FUNCTIONS-DEPLOY.md §9.
 
 Masih gelombang, bukan nomor baru: per 4 Nov 2026 siang web gelombang 1 sudah tayang
-(`app-version.json` = 149) tapi Electron 1.4.9 belum terbit di GitHub. **Bila AAB vc149 sudah
-diunggah ke Play, gelombang ini harus dinaikkan ke v.1.4.10 / vc150.**
+(`app-version.json` = 149) tapi Electron 1.4.9 belum terbit di GitHub, dan Kyai memastikan (4 Nov
+malam) AAB 1.4.9 **belum** diunggah ke Play → vc149 tetap.
 
-Diuji: vitest 119 berkas / 1.805 tes (berkas baru `midtransMirrorEdge`; `metodeBayarWali` diperluas); PGlite — fungsi LAMA
+**Midtrans production BELUM**: per 4 Nov malam pengaturan produksi `midtrans_aktif = true` dengan
+kunci **sandbox** (`SB-`) — wali mendapat kode bayar yang tak bisa dibayar uang sungguhan, dan bayar
+lewat simulator tercatat NYATA di buku induk produksi. Kyai sudah mengajukan akun production; sampai
+disetujui, centang "Aktifkan pembayaran online" harus dimatikan (di Pengaturan Keuangan, oleh Kyai).
+Langkah pindah: docs §9c.
+
+Pemeriksaan pra-rilis (4 Nov malam): vitest 123 berkas / 1.828 tes, lint 0 error, build; semua migrasi
+termasuk 20261104120000 & 20261104130000 sudah di produksi; `midtrans-charge`, `midtrans-webhook`,
+`auto-generate-tagihan` ter-deploy sesudah perubahan terakhirnya; tak ada perubahan native Android /
+Electron selain nomor versi; pemindai `no-use-before-define` atas 10 view yang berubah sejak v1.4.8
+(31 rujukan, tak satu pun jalan saat setup); 10 view itu dipasang di peramban sebagai wali & admin
+(17 kali) tanpa error, tulisan dicegat. Sandbox Midtrans sungguhan diuji Kyai dari HP (VA terbit,
+simulator membayar, tercatat).
+
+Diuji (gel. 2, sebelum pemeriksaan di atas): vitest 119 berkas / 1.805 tes (berkas baru `midtransMirrorEdge`; `metodeBayarWali` diperluas); PGlite — fungsi LAMA
 dimuat dulu lalu migrasi ini di atasnya, 11 uji lulus (satu fungsi tanpa overload; panggilan BMT
 4-argumen menghasilkan id/sumber/keterangan persis seperti dulu; p_intent_id memilih order yang benar
 di antara dua keranjang bernominal sama; notifikasi dobel idempoten; intent bukan pending / milik
@@ -44,8 +58,7 @@ esbuild dan dijalankan di Node dengan tiruan Supabase + Midtrans: 14 uji lulus (
 layanan masuk gross, tanda tangan palsu 401, nomor VA tersimpan saat pending, settlement → RPC
 dengan nominal BERSIH, order asing 200 tanpa mencatat, expire, batal). Di peramban (sesi & data
 rekaan, tulisan dan panggilan fungsi dicegat): alur wali metode → keranjang dengan cicilan → pilih
-BSI → Bayar (payload benar, halaman Snap dibuka), QRIS, kartu Pengaturan. **Belum diuji dengan
-sandbox Midtrans sungguhan** — butuh Server Key sandbox Kyai.
+BSI → Bayar (payload benar, halaman Snap dibuka), QRIS, kartu Pengaturan.
 
 ### Added — pembayaran online Midtrans (Kyai, 4 Nov 2026: lanjutan #5)
 
@@ -133,6 +146,18 @@ uji sebelumnya membuka halaman dengan daftar anak kosong sehingga jalur itu tak 
 `bayarForm` naik ke kelompok state di atas. Direproduksi di peramban dengan data santri termuat
 (versi lama: error yang sama persis; versi baru: tampil normal, tagihan dari tombol Bayar tercentang
 penuh). Penjaga regresi `tests/unit/pembayaranUrutanSetup.test.js`.
+
+### Fixed — jendela BSI di web & tombol OK Kode Bayar (pemeriksaan pra-rilis, 4 Nov 2026 malam)
+
+- **CSP web** (`firebase.json`, ketiga situs main/legacy/psb) belum mengizinkan `app.midtrans.com` /
+  `app.sandbox.midtrans.com` → snap.js diblokir dan BSI di web jatuh ke halaman Midtrans di tab
+  baru. Kedua host ditambahkan ke `script-src`, `script-src-elem`, `frame-src`, `connect-src`.
+  Android (Capacitor) & Electron tak memakai header ini, jadi tak terdampak.
+- **Tombol OK / sesudah Batalkan di Kode Bayar** memakai `router.push('/pembayaran')` → tombol
+  kembali HP sesudahnya membuka lagi halaman kode. Kini mundur bila datang dari Pembayaran, selain
+  itu mengganti entri riwayat.
+- docs §9c: langkah pindah ke kunci production (kunci, Notification URL mode Production, Client
+  Key bersamaan, uji satu transaksi nyata).
 
 ### Changed — `apply_bmt_payment` menerima order & label (migrasi 20261104120000)
 

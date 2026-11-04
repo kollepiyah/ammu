@@ -50,6 +50,23 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   pembayaran, QRIS ±0,78%).
 - Riwayat pembayaran wali kini juga memuat pembayaran VA dan pembayaran online.
 
+### Catatan rilis Play Console (What's new) — 490/500 karakter
+
+```
+Baru
+
+• Menu Perizinan & Cuti: ajukan dan setujui izin, sakit, atau cuti di satu tempat, plus rekap PDF per orang.
+• Personal: riwayat kehadiran & slip bisyaroh bulan-bulan sebelumnya.
+• PTPT: kelas Persiapan Khotaman dan Tes Khotaman.
+• Pembayaran online wali lewat Virtual Account bank & QRIS (segera aktif).
+
+Perbaikan
+
+• Rekap izin dihitung per shift, bukan per hari.
+• Capaian Prestasi TPQ–Pra PTPT berisi hasil tes kenaikan.
+• "Tandai dibaca" kini benar-benar mengosongkan notifikasi.
+```
+
 ---
 
 ## v.1.4.8 — November 2026
