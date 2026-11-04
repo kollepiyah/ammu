@@ -24,6 +24,7 @@ import { urlBerkas } from '@/utils/urlBerkas'
 import { isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
 import { kegiatanKenaLembaga } from '@/composables/useKegiatan' // v.1.2.4: scope lembaga agenda
+import { batasTerbaca } from '@/utils/notifTerbaca'
 
 // ---------------------------------------------------------------------------
 // AUDIT AGU 2026 (P3) — state & langganan dipindah ke lingkup MODUL (dipakai
@@ -520,21 +521,10 @@ export function useNotifications() {
 
   const unreadCount = computed(() => itemsUnread.value.length)
 
-  // v.87.0526: semua jenis (termasuk tagihan/libur/kenaikan)
+  // v.1.4.9: batas dihitung dari notif yang ADA (utils/notifTerbaca) — daftar tulisan
+  //   tangan yang lama lupa 'glondongan', jadi notif itu tersisa sesudah "Tandai dibaca".
   function allSeenNow(now) {
-    return {
-      supervisi: now,
-      kritik: now,
-      post: now,
-      pembayaran: now,
-      bisyaroh: now,
-      tagihan: now,
-      libur: now,
-      kegiatan: now,
-      kenaikan: now,
-      prestasi: now,
-      tes: now
-    }
+    return batasTerbaca(items.value, now)
   }
 
   async function markAllRead() {
@@ -556,13 +546,16 @@ export function useNotifications() {
   async function clearAll() {
     if (!userId.value) return
     const now = Date.now()
+    const next = allSeenNow(now)
+    // Notif ber-ts di depan jam perangkat juga harus ikut tersapu (lihat utils/notifTerbaca).
+    const batas = Math.max(now, ...Object.values(next))
     try {
       await mergeOne('user_notif_state', userId.value, {
-        cleared_at: now,
-        last_seen_per_jenis: allSeenNow(now),
+        cleared_at: batas,
+        last_seen_per_jenis: next,
         updated_at: new Date().toISOString()
       })
-      notifState.value = { ...notifState.value, cleared_at: now }
+      notifState.value = { ...notifState.value, cleared_at: batas, last_seen_per_jenis: next }
     } catch (e) {
       console.warn('[useNotifications] clearAll gagal:', e?.message || e)
     }
