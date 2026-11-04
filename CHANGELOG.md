@@ -123,6 +123,17 @@ induk "Pembayaran VA BRI (online) - Nama". Petunjuk Livin' tetap menyebut nama p
 di aplikasi bank. Diuji di peramban (ukuran HP): tagihan tercentang, BRI → Bayar → halaman Kode Bayar
 lengkap; harness fungsi 18 uji.
 
+### Fixed — menu Bayar layar putih (Kyai, 4 Nov 2026 malam: "klik menu bayar blank putih")
+
+Sesudah web gel. 2 tayang, Pembayaran wali kosong dengan `ReferenceError: Cannot access 'S' before
+initialization`. Sebab: watch prefill tagihan (baru di gel. 2) menjalankan getter-nya saat setup →
+`vaTagihanList` → `vaSantri` → `bayarForm`, padahal `const bayarForm` dideklarasikan ±240 baris lebih
+bawah (TDZ). Hanya kena bila data santri sudah termuat saat halaman dibuka — kondisi normal di HP;
+uji sebelumnya membuka halaman dengan daftar anak kosong sehingga jalur itu tak terbaca. Perbaikan:
+`bayarForm` naik ke kelompok state di atas. Direproduksi di peramban dengan data santri termuat
+(versi lama: error yang sama persis; versi baru: tampil normal, tagihan dari tombol Bayar tercentang
+penuh). Penjaga regresi `tests/unit/pembayaranUrutanSetup.test.js`.
+
 ### Changed — `apply_bmt_payment` menerima order & label (migrasi 20261104120000)
 
 Tiga parameter ber-default: `p_intent_id` (Midtrans menyebut order-nya; dulu intent dicari lewat

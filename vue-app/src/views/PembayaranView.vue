@@ -672,6 +672,10 @@ const filterTahun = ref(new Date().getFullYear())
 const mode = ref('flow')
 const selectedMethod = ref('')
 const selectedAnakId = ref('')
+// Pilihan bayar: santri + tagihan terpilih (prefill dari tombol Bayar di Tagihan).
+//   Harus dideklarasikan sebelum vaSantri — watch prefill membacanya saat setup (layar putih
+//   "Cannot access before initialization" bila urutannya terbalik).
+const bayarForm = ref({ santri_id: '', nominal: 0, kategori: '', tagihan_id: '' })
 let unsubBayar = null
 let unsubSantri = null
 let unsubTagihan = null
@@ -1066,9 +1070,6 @@ const myPendingTransfers = computed(() => {
     .filter((p) => allOwnedIds.value.has(String(p.santri_id)) && p.status !== 'verified')
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
 })
-
-// ─── Pilihan bayar: santri + tagihan terpilih (prefill dari tombol Bayar di Tagihan) ───
-const bayarForm = ref({ santri_id: '', nominal: 0, kategori: '', tagihan_id: '' })
 
 function copyToClipboard(text) {
   try {
