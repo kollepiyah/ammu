@@ -57,8 +57,10 @@
         </div>
       </div>
 
-      <!-- Grid 2 kolom: Data Saat Ini + Capaian Bulan Ini -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <!-- Grid 2 kolom: Data Saat Ini + Capaian Bulan Ini.
+           v.1.4.9 (Kyai): capaian bulanan hanya PTPT & PPPH (utils/prestasiBulanan) — santri
+           TPQ s/d Pra PTPT melihat Data Saat Ini + hasil tes kenaikan saja. -->
+      <div :class="['grid grid-cols-1 gap-3', adaPrestasiBulanan ? 'md:grid-cols-2' : '']">
         <!-- Data Saat Ini -->
         <div
           class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
@@ -99,6 +101,7 @@
 
         <!-- Capaian Bulan Ini -->
         <div
+          v-if="adaPrestasiBulanan"
           class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
         >
           <h3
@@ -153,14 +156,16 @@
 
       <!-- v.100c: Tren perkembangan capaian (Opsi A) -->
       <TrenCapaianChart
-        v-if="santriId"
+        v-if="santriId && adaPrestasiBulanan"
         :santri-ids="santriIdsTren"
         title="Tren Capaian Saya"
         subtitle="Halaman yang bertambah tiap bulan."
       />
 
-      <!-- Catatan Prestasi -->
+      <!-- Catatan Prestasi — catatan Qiraati bulanan hanya PTPT & PPPH; catatan Diniyah
+           (sekolah) tetap tampil untuk siapa pun yang punya. -->
       <div
+        v-if="adaPrestasiBulanan || catatanList.length"
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
         <h3
@@ -256,6 +261,64 @@
         </div>
       </div>
 
+      <!-- v.1.4.9: Hasil Tes Kenaikan — isi utama menu ini untuk santri TPQ s/d Pra PTPT. -->
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <h3
+          class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 pb-2 border-b border-[var(--border-subtle)] flex items-center gap-2"
+        >
+          <i class="fas fa-clipboard-check text-amber-600" aria-hidden="true"></i>Hasil Tes Kenaikan
+        </h3>
+        <div v-if="hasilTesList.length === 0" class="py-6 text-center">
+          <i class="fas fa-inbox text-[var(--text-tertiary)] text-2xl mb-2"></i>
+          <p class="text-xs text-[var(--text-secondary)] italic">Belum ada hasil tes kenaikan.</p>
+        </div>
+        <div v-else class="space-y-2.5">
+          <div
+            v-for="h in hasilTesList"
+            :key="h.key"
+            :class="[
+              'rounded-xl p-3 border-l-4',
+              h.status === 'lulus'
+                ? 'bg-emerald-50 border-emerald-500'
+                : 'bg-amber-50 border-amber-500'
+            ]"
+          >
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <p class="text-xs font-black text-[var(--text-primary)]">
+                {{ h.asal || '-' }} <i class="fas fa-arrow-right mx-1 text-[10px]"></i>
+                {{ h.target || '-' }}
+              </p>
+              <span
+                :class="[
+                  'text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded whitespace-nowrap',
+                  h.status === 'lulus'
+                    ? 'text-emerald-700 bg-emerald-100'
+                    : 'text-amber-700 bg-amber-100'
+                ]"
+                >{{ STATUS_LABEL[h.status] || h.status }}</span
+              >
+            </div>
+            <p class="text-[11px] text-[var(--text-secondary)]">
+              {{ formatTanggal(h.tanggal)
+              }}<template v-if="h.penguji"> · penguji {{ h.penguji }}</template>
+            </p>
+            <p v-if="h.nilai.length" class="text-[11px] text-[var(--text-primary)] mt-1">
+              <span v-for="(n, i) in h.nilai" :key="n.key"
+                >{{ i ? ' · ' : '' }}{{ n.label }} <b>{{ n.nilai }}</b></span
+              >
+            </p>
+            <p
+              v-if="h.catatan"
+              class="text-xs text-[var(--text-primary)] whitespace-pre-line leading-relaxed mt-1"
+            >
+              {{ h.catatan }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Kartu Kenaikan -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
@@ -321,6 +384,9 @@ import { useSantri } from '@/composables/useSantri'
 import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+// v.1.4.9: capaian bulanan hanya PTPT & PPPH — aturan yang sama dengan sisi guru (Rekap Prestasi).
+import { punyaPrestasiBulanan } from '@/utils/prestasiBulanan'
+import { riwayatHasilTes, STATUS_LABEL } from '@/utils/tesKenaikan'
 
 const auth = useAuthStore()
 const settings = useSettingsStore()
@@ -347,6 +413,8 @@ function parseHal(v) {
   const m = String(v || '').match(/\d+/)
   return m ? parseInt(m[0]) : 0
 }
+
+const adaPrestasiBulanan = computed(() => punyaPrestasiBulanan(santri.value?.lembaga))
 
 // PTPT pakai selisih akhir-awal, lembaga lain pakai prestasi_total langsung
 const isPTPT = computed(() => String(santri.value?.lembaga || '').toUpperCase() === 'PTPT')
@@ -385,9 +453,15 @@ const rekapSantri = computed(() => {
     })
 })
 
-// Hanya rekap yang punya catatan non-kosong
+// Hanya rekap yang punya catatan non-kosong. v.1.4.9: catatan Qiraati bulanan hanya untuk
+//   PTPT & PPPH; catatan Diniyah (sekolah) tak terkait capaian bulanan qiraati.
 const catatanList = computed(() =>
-  rekapSantri.value.filter((r) => r.catatan && String(r.catatan).trim().length > 0)
+  rekapSantri.value.filter(
+    (r) =>
+      r.catatan &&
+      String(r.catatan).trim().length > 0 &&
+      (adaPrestasiBulanan.value || r.kategori === 'diniyah')
+  )
 )
 
 // Kartu kenaikan: flatten dari santri.kartu_kenaikan[lembaga][kelasId].entries
@@ -432,6 +506,10 @@ function formatTanggal(t) {
 //   informasi untuk santri.
 const tesSekolah = ref([])
 let unsubTes = null
+// v.1.4.9: hasil tes kenaikan santri ini (Lulus / Belum lulus, termasuk sebelum tes ulang).
+const tesKenaikan = ref([])
+let unsubKenaikan = null
+const hasilTesList = computed(() => riwayatHasilTes(tesKenaikan.value, santriId.value))
 
 const tesSekolahList = computed(() =>
   tesSekolah.value
@@ -459,10 +537,19 @@ onMounted(() => {
     },
     id ? [['santri_id', '==', id]] : []
   )
+  if (id) {
+    unsubKenaikan = subscribeColl(
+      'tes_kenaikan',
+      (data) => {
+        tesKenaikan.value = data || []
+      },
+      [['santri_id', '==', id]]
+    )
+  }
 })
 
 onUnmounted(() => {
-  for (const un of [unsubRekap, unsubTes]) {
+  for (const un of [unsubRekap, unsubTes, unsubKenaikan]) {
     if (!un) continue
     try {
       un()

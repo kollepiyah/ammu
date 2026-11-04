@@ -114,6 +114,21 @@ dipakai juga oleh `useIzinGuru.ajukan/tulisAbsensi` yang dulu menulis bawaan itu
 Personal sudah per shift sejak dulu (baris per guru × shift) — Personal kini menuliskannya:
 "Dihitung per shift". Kuota cuti tetap per hari kalender (aturannya memang jatah hari).
 
+### Changed — Capaian Prestasi santri: capaian bulanan hanya PTPT & PPPH (Kyai, 4 Nov 2026)
+
+"Santri TPQ–Pra PTPT tidak pakai capaian prestasi, jadi menunya berisi hasil tes kenaikan dll,
+tanpa capaian bulanan." Sisi guru sudah begitu sejak v.1.2.3 (`utils/prestasiBulanan.
+punyaPrestasiBulanan`, dipakai Rekap Prestasi & kartu "Guru Belum Input"), tapi CapaianPrestasiView
+santri tetap menampilkan Capaian Bulan Ini + Tren untuk semua lembaga. Kini memakai aturan yang
+sama: santri non-PTPT/PPPH tak melihat Capaian Bulan Ini, Tren Capaian, dan catatan Qiraati
+bulanan (catatan Diniyah/sekolah tetap tampil). Bagian baru **Hasil Tes Kenaikan** untuk semua
+santri — `utils/tesKenaikan.riwayatHasilTes`: ajuan Lulus / Belum lulus milik santri itu,
+termasuk hasil sebelum "Tes ulang" (`riwayat_hasil`), nilai berlabel aspek lembaganya. Tabel
+`tes_kenaikan` memang terbaca akun wali untuk anaknya sendiri (RLS W1).
+
+Ikut: deskripsi Virtual Account Bank di halaman Pembayaran wali tinggal daftar bank (Kyai:
+"— nominal muncul otomatis" dihapus).
+
 ### Koreksi atas rancangan obrolan Gemini (PDF Kyai, 4 Nov 2026)
 
 - "VA tetap + callback inquiry ke Ammu (nominal dinamis)" tidak ada di dokumentasi Midtrans — VA

@@ -290,3 +290,62 @@ export function clampNilaiTes(v) {
   if (!Number.isFinite(n)) return null
   return Math.max(0, Math.min(TES_NILAI_MAX, n))
 }
+
+// v.1.4.9 (Kyai, 4 Nov 2026): santri TPQ s/d Pra PTPT tak memakai capaian bulanan — menu
+//   Capaian Prestasi mereka berisi hasil tes kenaikan. Riwayat hasil SATU santri: ajuan yang
+//   sudah diputus (Lulus / Belum lulus) + hasil lama yang tersimpan saat "Tes ulang"
+//   (riwayat_hasil), terbaru dulu. Ajuan yang masih menunggu / ditolak / dibatalkan bukan hasil.
+const _STATUS_HASIL = ['lulus', 'tidak_lulus']
+
+function _nilaiBerlabel(a, nilai) {
+  if (!nilai || typeof nilai !== 'object') return []
+  const aspek = tesAspekFlat({ lembaga: a.lembaga, kelas: a.kelas_asal, juz: a.juz_asal })
+  const out = []
+  for (const asp of aspek) {
+    const v = clampNilaiTes(nilai[asp.key])
+    if (v !== null) out.push({ key: asp.key, label: asp.label, nilai: v })
+  }
+  return out
+}
+
+export function riwayatHasilTes(rows, santriId) {
+  const id = String(santriId || '')
+  const out = []
+  for (const a of Array.isArray(rows) ? rows : []) {
+    if (!a || String(a.santri_id || '') !== id) continue
+    const dasar = {
+      ajuanId: String(a.id || ''),
+      lembaga: a.lembaga || '',
+      asal:
+        a.jenis === 'juz' && juzNum({ juz: a.juz_asal }) > 0
+          ? `Juz ${juzNum({ juz: a.juz_asal })}`
+          : a.kelas_asal || '',
+      target: a.target || ''
+    }
+    const lama = Array.isArray(a.riwayat_hasil) ? a.riwayat_hasil : []
+    lama.forEach((h, i) => {
+      if (!_STATUS_HASIL.includes(h?.status)) return
+      out.push({
+        ...dasar,
+        key: `${dasar.ajuanId}#${i}`,
+        status: h.status,
+        tanggal: String(h.tgl_hasil || ''),
+        penguji: h.penguji || '',
+        catatan: h.catatan_hasil || '',
+        nilai: _nilaiBerlabel(a, h.nilai)
+      })
+    })
+    if (_STATUS_HASIL.includes(a.status)) {
+      out.push({
+        ...dasar,
+        key: dasar.ajuanId,
+        status: a.status,
+        tanggal: String(a.tgl_hasil || ''),
+        penguji: a.penguji || '',
+        catatan: a.catatan_hasil || '',
+        nilai: _nilaiBerlabel(a, a.nilai)
+      })
+    }
+  }
+  return out.sort((x, y) => y.tanggal.localeCompare(x.tanggal))
+}

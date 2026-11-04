@@ -27,9 +27,8 @@ export function metodeBayarWali(settings) {
       id: 'midtrans_va',
       label: 'Virtual Account Bank',
       icon: 'fa-building-columns',
-      desc: bank.length
-        ? bank.map((k) => k.label).join(' · ') + ' — nominal muncul otomatis'
-        : 'Nomor VA per pembayaran, nominal muncul otomatis',
+      // v.1.4.9: cukup daftar banknya (Kyai: "— nominal muncul otomatis" dihapus).
+      desc: bank.length ? bank.map((k) => k.label).join(' · ') : 'Segera hadir',
       active: bank.length > 0
     },
     {

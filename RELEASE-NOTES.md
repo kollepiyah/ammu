@@ -12,6 +12,9 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Menu Perizinan & Cuti.** Guru dan pegawai mengajukan izin, sakit, atau cuti di menu sendiri ini.
   Kepala, PJ, dan admin menyetujui atau menolak pengajuan di menu yang sama, sekaligus melihat rekap
   riwayat izin per orang. Sebelumnya semua ini menumpang di menu Personal.
+- **Capaian Prestasi santri TPQ s/d Pra PTPT berisi hasil tes kenaikan.** Capaian bulanan kini
+  hanya tampil untuk santri PTPT dan PPPH; semua santri mendapat bagian baru "Hasil Tes Kenaikan"
+  (lulus / belum lulus, nilai, catatan penguji).
 - **Rekap izin dihitung per shift.** Izin satu shift (mis. hanya sore) kini terhitung 1 shift,
   bukan satu hari penuh; jumlah hari tetap ditampilkan di sampingnya.
 - **Rekap riwayat izin bisa diekspor ke PDF.** Satu orang (tombol di kartu orangnya) atau semua

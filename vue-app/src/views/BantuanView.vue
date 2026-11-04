@@ -810,6 +810,7 @@ const rilis = [
       'Rekap riwayat izin bisa diekspor ke PDF — per orang atau semua orang di daftar sekaligus — dan kini dihitung per shift: izin hanya sore terhitung 1 shift, bukan sehari penuh.',
       'Di menu Personal, kehadiran bulan-bulan sebelumnya (lengkap dengan rincian per hari) dan slip bisyaroh tahun-tahun sebelumnya kini bisa dibuka.',
       '"Tandai dibaca" di Notifikasi kini benar-benar mengosongkan daftar Belum dibaca.',
+      'Capaian Prestasi santri TPQ s/d Pra PTPT kini berisi hasil tes kenaikan; capaian bulanan hanya untuk santri PTPT dan PPPH.',
       'Pembayaran wali santri: Transfer Bank dan VA BMT PETA tidak lagi ditawarkan.',
       'Pembayaran online (setelah dinyalakan pondok): bayar tagihan lewat Virtual Account BRI, BNI, BCA, BSI, Mandiri, atau QRIS — nominal langsung terisi, tagihan lunas otomatis, boleh dicicil. Biaya layanan ditanggung pembayar dan tampil sebelum membayar.'
     ]
