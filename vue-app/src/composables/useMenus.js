@@ -64,6 +64,15 @@ const ALL_MENUS = [
     roles: ['admin', 'guru'],
     available: true
   },
+  // v.1.4.9 (Kyai): menu sendiri — ajukan izin/sakit/cuti + persetujuan Kepala/PJ/admin.
+  {
+    group: 'Menu',
+    name: 'Perizinan & Cuti',
+    path: '/perizinan',
+    icon: 'fa-calendar-minus',
+    roles: ['admin', 'guru'],
+    available: true
+  },
   // v.21.110.0527: Data Supervisi (Direktur/Supervisor + admin)
   {
     group: 'Menu',

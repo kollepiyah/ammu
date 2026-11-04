@@ -312,6 +312,13 @@ const TABS = [
           { type: 'small', icon: 'layers', label: 'Personal', to: '/personal', gate: 'noSantri' },
           {
             type: 'small',
+            icon: 'calendar',
+            label: 'Perizinan & Cuti',
+            to: '/perizinan',
+            gate: 'noSantri'
+          },
+          {
+            type: 'small',
             icon: 'chart-pie',
             label: 'Statistik Kelas',
             to: '/statistik',
@@ -461,6 +468,7 @@ const TAB_PATHS = {
   saluran: ['/posts'],
   personal: [
     '/personal',
+    '/perizinan',
     '/profil',
     '/notifikasi',
     '/kritik-saran',

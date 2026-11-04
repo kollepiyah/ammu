@@ -90,6 +90,7 @@ const PembayaranPendingView = () => import('@/views/PembayaranPendingView.vue')
 const CapaianPrestasiView = () => import('@/views/CapaianPrestasiView.vue')
 // v.20.18.0526: Personal page admin/super_admin/admin_keuangan — statistik kehadiran + slip bisyaroh
 const PersonalView = () => import('@/views/PersonalView.vue')
+const PerizinanView = () => import('@/views/PerizinanView.vue')
 // v.21.110.0527: Data Supervisi (Direktur/Supervisor)
 const SupervisiView = () => import('@/views/SupervisiView.vue')
 // v.98: AppShell pilih shell Ribbon (Electron) vs AppLayout lama (web/HP). Lihat AppShell.vue.
@@ -454,6 +455,14 @@ const routes = [
       { path: 'capaian-prestasi', name: 'capaian-prestasi', component: CapaianPrestasiView },
       // v.20.18.0526: Personal page admin (statistik kehadiran + slip bisyaroh personal)
       { path: 'personal', name: 'personal', component: PersonalView },
+      // v.1.4.9: Perizinan & Cuti — ajukan (semua guru/pegawai) + persetujuan & riwayat
+      //   (Kepala/PJ/admin, dibatasi di view lewat useIzinGuru.isApprover).
+      {
+        path: 'perizinan',
+        name: 'perizinan',
+        component: PerizinanView,
+        meta: { noSantri: true }
+      },
       // v.21.110.0527: Data Supervisi — gating Direktur/Supervisor di view-level
       { path: 'supervisi', name: 'supervisi', component: SupervisiView }
     ]
