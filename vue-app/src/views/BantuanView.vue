@@ -803,6 +803,17 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
+    versi: 'v.1.4.9',
+    tgl: 'November 2026',
+    items: [
+      'Menu baru Perizinan & Cuti: guru dan pegawai mengajukan izin, sakit, atau cuti di sana; Kepala, PJ, dan admin menyetujui serta melihat rekap riwayat izin per orang di menu yang sama.',
+      'Rekap riwayat izin bisa diekspor ke PDF — per orang atau semua orang di daftar sekaligus.',
+      'Di menu Personal, kehadiran bulan-bulan sebelumnya (lengkap dengan rincian per hari) dan slip bisyaroh tahun-tahun sebelumnya kini bisa dibuka.',
+      '"Tandai dibaca" di Notifikasi kini benar-benar mengosongkan daftar Belum dibaca.',
+      'Pembayaran wali santri: Transfer Bank dan VA BMT PETA tidak lagi ditawarkan. Pembayaran online lewat Virtual Account bank dan QRIS segera hadir; sementara ini bayar langsung di kantor pondok.'
+    ]
+  },
+  {
     versi: 'v.1.4.8',
     tgl: 'November 2026',
     items: [

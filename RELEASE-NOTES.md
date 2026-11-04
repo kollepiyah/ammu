@@ -5,6 +5,34 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.9 — November 2026
+
+**Baru**
+
+- **Menu Perizinan & Cuti.** Guru dan pegawai mengajukan izin, sakit, atau cuti di menu sendiri ini.
+  Kepala, PJ, dan admin menyetujui atau menolak pengajuan di menu yang sama, sekaligus melihat rekap
+  riwayat izin per orang. Sebelumnya semua ini menumpang di menu Personal.
+- **Rekap riwayat izin bisa diekspor ke PDF.** Satu orang (tombol di kartu orangnya) atau semua
+  orang di daftar sekaligus, mengikuti pencarian dan pilihan tahun. PDF memakai kop pondok dan
+  memuat jenis, tanggal, jumlah hari, keterangan, status, dan penyetuju.
+- **Riwayat kehadiran & slip bisyaroh bulan-bulan sebelumnya.** Di menu Personal, kartu Kehadiran
+  kini punya pilihan bulan, lengkap dengan rincian per hari (jam masuk–pulang dan statusnya). Riwayat
+  Slip Bisyaroh punya pilihan tahun beserta total setahunnya.
+
+**Perbaikan**
+
+- **"Tandai dibaca" di Notifikasi kini benar-benar mengosongkan daftar Belum dibaca.** Sebelumnya
+  notifikasi glondongan dan beberapa notifikasi tes tetap tersisa.
+
+**Perubahan**
+
+- **Pembayaran wali santri:** pilihan Transfer Bank (unggah bukti) dihapus dan Virtual Account BMT
+  PETA disembunyikan. Pembayaran online lewat Virtual Account bank dan QRIS segera hadir; sementara
+  ini pembayaran dilayani langsung di kantor pondok. Bukti transfer yang sudah terkirim tetap
+  terlihat statusnya di Riwayat.
+
+---
+
 ## v.1.4.8 — November 2026
 
 **Perbaikan**

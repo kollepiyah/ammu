@@ -1,6 +1,6 @@
 {
   "name": "portal-mu-psb",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "private": true,
   "type": "module",
   "description": "Portal MU — Public PSB site (Penerimaan Santri Baru) — deploy ammuonline-psb.web.app",

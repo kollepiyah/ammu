@@ -20,6 +20,86 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.9] — 2026-11-04 — Menu Perizinan & Cuti (+ PDF rekap izin per orang); riwayat kehadiran & slip bulan lalu di Personal; "Tandai dibaca" tuntas; pembayaran wali tanpa Transfer & BMT
+
+**SIAP RILIS** — `versionCode` 149 / `versionName` `v.1.4.9`. **Tanpa migrasi Supabase, tanpa
+perubahan edge function, tanpa perubahan native Android.** Android membundel web, jadi pengguna
+Play baru menerimanya lewat AAB baru. Urutannya: **deploy web → rebuild AAB → rilis Electron.**
+
+Nomor baru, BUKAN gelombang v.1.4.8: Electron 1.4.8 sudah "Latest" di GitHub sejak 3 Nov 2026.
+
+Diuji: vitest 118 berkas / 1.794 tes (4 berkas baru: `notifTerbaca`, `kehadiranPribadi`, `rekapIzinPdf`,
+`metodeBayarWali`); `vite build`. Paritas util kehadiran baru vs kode lama PersonalView: 300 skenario
+acak bulan berjalan identik (uji sementara, tak di-commit). Di peramban (dev server, sesi & data
+rekaan, tulisan Supabase dicegat — tak satu pun tulisan lolos): menu Perizinan sebagai super_admin
+(antrian tak memuat pengajuan sendiri), PDF rekap semua orang & per orang (dirender pdf.js, kop asli),
+Personal bulan Oktober + rincian harian + slip 2025, Pembayaran sebagai wali.
+
+### Added — menu "Perizinan & Cuti" (Kyai, 4 Nov 2026 #3)
+
+Permintaan awal: pindahkan persetujuan & riwayat izin ke menu Absensi Guru. Tidak dilakukan karena
+Absensi Guru dikunci `meta.admin` + menu `roles: ['admin']`, sedangkan penyetuju izin juga Kepala/PJ
+yang ber-peran `guru` (`useIzinGuru.isApprover = admin || isKepalaLembaga`) — mereka akan kehilangan
+tombol Setujui. Keputusan Kyai: menu baru `/perizinan` (`PerizinanView`, roles admin + guru,
+`meta.noSantri`; pita Electron tab Personal). Isinya pindah utuh dari PersonalView: Pengajuan Saya
+(+ form Ajukan), Persetujuan (+ panel pemulihan "sudah disetujui, absensinya belum terisi"), Rekap
+Riwayat Izin per Orang. Personal tinggal kartu tautan ke menu itu.
+
+Satu perbedaan perilaku: `ambilAbsensiGuru` kini SELALU membaca absensi pengaju lewat query kecil —
+PerizinanView tak berlangganan absensi siapa pun, jadi jalan pintas "kalau pengajunya saya, pakai
+langganan saya" dihapus.
+
+### Added — ekspor PDF Rekap Riwayat Izin per Orang (#4)
+
+`utils/rekapIzinPdf.cetakRekapIzinPdf(groups, …)` — masukannya kelompok dari
+`izinStatus.rekapIzinPerOrang`, jadi angka hari di PDF = angka di layar (`hitungHari` yang sama,
+`rentangTanggal` batas 60). Banyak orang → tabel ringkasan (hari disetujui per jenis, menunggu) lalu
+rincian per orang; satu orang → langsung rinciannya. Kolom Hari hanya untuk pengajuan disetujui.
+Kop pondok (`buildKopFromSettings`), F4 tegak, jejak "Dicetak … oleh …" di kaki. Tombol PDF di kepala
+kartu (semua yang tampil, ikut penyaring nama & tahun) dan di tiap kartu orang yang dibuka.
+
+### Added — riwayat kehadiran & slip bisyaroh bulan lalu di Personal (#1)
+
+Kartu Kehadiran terkunci ke bulan berjalan; slip terkunci ke tahun berjalan. Hitungannya (enam
+status + alpa yang menghormati libur per lembaga, jadwal masuk, jam mulai shift) diangkat dari
+`computed` PersonalView ke `utils/kehadiranPribadi.rekapKehadiranBulan({ tahun, bulan, … })` tanpa
+mengubah aturan. Pilihan bulan = bulan berjalan + bulan yang punya baris absensi guru itu
+(`bulanKehadiranTersedia`). Ditambah "Rincian harian" (tanggal, shift, jam masuk–pulang, status);
+alpa tak berbaris, jadi hanya tampil sebagai angka. Slip: pilihan tahun + total setahun. Tanpa
+tarikan data baru — langganan `absensi_shift_guru` & `keuangan_gaji` milik sendiri sudah menarik
+semua bulan.
+
+### Fixed — "Tandai dibaca" menyisakan notifikasi (#2)
+
+`allSeenNow` adalah daftar jenis tulisan tangan yang tak memuat `glondongan` (ditambah v.1.1.9
+tanpa ikut didaftarkan) → "Glondongan Perlu Penguji" & "Tugas Menyimak" tak pernah bisa dibaca.
+Kedua, batasnya `Date.now()` perangkat, padahal ts notif bisa di depannya: `tgl_hasil` tes yang
+diatur penguji ke tanggal depan (disimpan 00:00Z = 07:00 WIB), atau jam HP yang terlambat dari
+server. `utils/notifTerbaca.batasTerbaca(items, now)` → tiap jenis yang dikenal = now, tiap jenis
+yang MUNCUL di daftar = max(now, ts terbarunya). "Bersihkan" ikut memakai batas itu untuk
+`cleared_at`.
+
+### Changed — pembayaran wali: Transfer dihapus, BMT disembunyikan (#5)
+
+`utils/metodeBayarWali` jadi satu sumber cara bayar wali: VA BMT hanya bila `bmt_aktif` (produksi:
+mati — dulu tetap tampil "Coming soon"), lalu "Virtual Account Bank" & "QRIS" (Midtrans) sebagai
+"Segera hadir". Langkah Transfer Bank (rekening + unggah bukti, `submitTransfer`,
+`pembayaran_transfer_pending`) dihapus dari PembayaranView; daftar "Menunggu Verifikasi" untuk bukti
+yang SUDAH terkirim pindah ke mode Riwayat wali, dan PembayaranPendingView admin tak disentuh. Tanpa
+metode aktif: tombol Lanjut diganti pesan "pembayaran dilayani di kantor pondok", tombol "Setoran
+Lain" di Tagihan disembunyikan, tombol Bayar tetap (membuka info itu). `transferForm` → `bayarForm`
+(kini hanya santri + tagihan terpilih).
+
+Midtrans BELUM dibangun — rancangan menyusul (lihat catatan sesi 4 Nov 2026): pipa
+`keuangan_va_intent` + RPC `apply_bmt_payment` (idempoten per ref, alokasi keranjang/waterfall)
+bisa dipakai ulang oleh webhook Midtrans.
+
+**Titik versi:** package.json root, vue-app, vue-app-psb, vue-widgets, electron; empat package-lock
+(hanya versi paketnya sendiri); build.gradle (vc149); app-version.json; entri rilis Bantuan;
+CHANGELOG; RELEASE-NOTES.
+
+---
+
 ## [v.1.4.8] — 2026-11-04 — Santri tampil sesuai PJ & jabatan di semua layar akademik; rapor PTPT memakai PJ santrinya; tes PTPT bisa langsung tanpa glondongan; status bar & widget Android
 
 **SIAP RILIS** — `versionCode` 148 / `versionName` `v.1.4.8`. **Tanpa migrasi Supabase, tanpa
