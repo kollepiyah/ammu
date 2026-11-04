@@ -295,7 +295,8 @@
                 >
               </p>
               <p class="text-[10px] text-[var(--text-secondary)]">
-                {{ ringkasJenisIzin(g) }} · <b>{{ g.totalHari }}</b> hari disetujui
+                {{ ringkasJenisIzin(g) }} · <b>{{ g.totalShift }}</b> shift ({{ g.totalHari }} hari)
+                disetujui
                 <span v-if="g.menunggu" class="text-amber-600 font-bold">
                   · {{ g.menunggu }} menunggu</span
                 >
@@ -338,8 +339,8 @@
                     · {{ rangeLabel(a) }}
                   </p>
                   <p class="text-[10px] text-[var(--text-secondary)]">
-                    Shift {{ shiftsLabel(a.shifts)
-                    }}<span v-if="a.penyetuju"> · oleh {{ a.penyetuju }}</span>
+                    Shift {{ shiftsLabel(shiftIzin(a)) }} · {{ ukuranIzin(a) }}
+                    <span v-if="a.penyetuju"> · oleh {{ a.penyetuju }}</span>
                   </p>
                   <p v-if="a.keterangan" class="text-[10px] text-[var(--text-tertiary)] italic">
                     {{ a.keterangan }}
@@ -554,7 +555,8 @@ import {
   labelStatusIzin,
   kelasStatusIzin,
   rekapIzinPerOrang,
-  tahunIzinTersedia
+  tahunIzinTersedia,
+  shiftIzin
 } from '@/utils/izinStatus'
 import { pesanGalatDb } from '@/utils/pesanGalatDb'
 import { shiftsForGuru } from '@/utils/shiftDerive'
@@ -844,6 +846,12 @@ function toggleRekapIzin(id) {
 }
 // Deret tanggal yang sama dengan penulis absensi (batas 60 hari) → angka rekap = absensi.
 const hariIzin = (a) => rentangTanggal(a.tgl_mulai, a.tgl_selesai, 60).length || 1
+// v.1.4.9: "2 hari · 4 shift" — izin bisa hanya satu shift, jadi hari saja menyesatkan.
+function ukuranIzin(a) {
+  const h = hariIzin(a)
+  const s = h * shiftIzin(a).length
+  return s === h ? `${h} hari` : `${h} hari · ${s} shift`
+}
 const rekapIzinTahunOpsi = computed(() => tahunIzinTersedia(izinSemua.value))
 const rekapIzin = computed(() =>
   rekapIzinPerOrang(izinSemua.value, {

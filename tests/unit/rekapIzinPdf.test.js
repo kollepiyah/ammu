@@ -60,7 +60,7 @@ describe('rekapIzinPdf', () => {
       '-'
     ])
     expect(sakit[2]).toBe('01/10/2026 – 03/10/2026')
-    expect(sakit[3]).toBe('3')
+    expect(sakit[3]).toBe('3 hr / 6 sh') // pagi + sore × 3 hari
     expect(sakit[5]).toBe('demam')
     expect(sakit[8]).toBe('Ada')
     expect(izin[6]).toBe('Dibatalkan')
@@ -69,7 +69,7 @@ describe('rekapIzinPdf', () => {
 
   it('ringkasan orang memakai hari disetujui', () => {
     expect(ringkasanOrang(g)).toBe(
-      'Izin 1 (0 hari disetujui) · Sakit 1 (3 hari disetujui) · Cuti 1 (0 hari disetujui) · 1 menunggu'
+      'Izin 1 (0 shift / 0 hari disetujui) · Sakit 1 (6 shift / 3 hari disetujui) · Cuti 1 (0 shift / 0 hari disetujui) · 1 menunggu'
     )
   })
 })

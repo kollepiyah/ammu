@@ -4,7 +4,8 @@ import {
   labelStatusIzin,
   kelasStatusIzin,
   rekapIzinPerOrang,
-  tahunIzinTersedia
+  tahunIzinTersedia,
+  shiftIzin
 } from '@/utils/izinStatus'
 
 // KELUHAN NYATA (Kyai, 10 Sep 2026), tiga hal:
@@ -191,5 +192,44 @@ describe('tahunIzinTersedia', () => {
       '2026',
       '2025'
     ])
+  })
+})
+
+// v.1.4.9 (Kyai, 4 Nov 2026): "semua dihitung hari, padahal kadang izin itu shift, bukan
+//   seharian" — ukuran utama rekap = SHIFT (hari × shift diajukan = baris absensi yang ditulis).
+describe('rekapIzinPerOrang — hitungan shift', () => {
+  const satuHari = () => 1
+  const izin = (id, shifts, jenis = 'izin', status = 'disetujui') => ({
+    id,
+    guru_id: 'g9',
+    guru_nama: 'Guru Shift',
+    jenis,
+    status,
+    tgl_mulai: '2026-10-10',
+    tgl_selesai: '2026-10-10',
+    shifts
+  })
+
+  it('izin satu shift = 1 shift (bukan "1 hari" penuh); dua shift = 2', () => {
+    const [g] = rekapIzinPerOrang(
+      [
+        izin('a', ['sore']),
+        izin('b', ['pagi', 'sore'], 'sakit'),
+        izin('c', ['pagi'], 'izin', 'ditolak')
+      ],
+      { hitungHari: satuHari }
+    )
+    expect(g.shift).toEqual({ izin: 1, sakit: 2, cuti: 0 })
+    expect(g.hari).toEqual({ izin: 1, sakit: 1, cuti: 0 })
+    expect(g.totalShift).toBe(3)
+    expect(g.totalHari).toBe(2)
+  })
+
+  it('shift kosong = pagi + sore, sama dengan yang ditulis ke absensi', () => {
+    expect(shiftIzin({ shifts: [] })).toEqual(['pagi', 'sore'])
+    expect(shiftIzin({})).toEqual(['pagi', 'sore'])
+    expect(shiftIzin({ shifts: ['sekolah'] })).toEqual(['sekolah'])
+    const [g] = rekapIzinPerOrang([izin('d', undefined)], { hitungHari: () => 3 })
+    expect(g.totalShift).toBe(6)
   })
 })

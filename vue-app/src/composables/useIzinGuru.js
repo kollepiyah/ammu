@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { isSuperAdmin, isAdminBiasa, isAdminKeuangan, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
+import { shiftIzin } from '@/utils/izinStatus'
 // Rentang tanggal inklusif (YYYY-MM-DD), dibatasi 60 hari. SUMBER TUNGGAL di
 // utils/format — versi lokal yang lama memakai toISOString() pada Date tengah malam
 // LOKAL, jadi tanggalnya mundur 1 hari di WIB (lihat komentar rentangTanggal).
@@ -70,8 +71,7 @@ export function useIzinGuru() {
   //   tgl_selesai, shifts[], lampiran_url? }. kategori hanya relevan untuk jenis 'cuti'.
   async function ajukan(payload) {
     const now = new Date()
-    const shifts =
-      Array.isArray(payload.shifts) && payload.shifts.length ? payload.shifts : ['pagi', 'sore']
+    const shifts = shiftIzin(payload)
     const jenis = ['izin', 'sakit', 'cuti'].includes(payload.jenis) ? payload.jenis : 'izin'
     return addOne('izin_guru', {
       guru_id: myId.value,
@@ -139,7 +139,7 @@ export function useIzinGuru() {
   //   dulu tak diisi jalur izin, jadi baris izin luput dari query berbasis periode.
   async function tulisAbsensi(a, existingAbsensi = []) {
     const dates = dateRange(a.tgl_mulai, a.tgl_selesai)
-    const shifts = Array.isArray(a.shifts) && a.shifts.length ? a.shifts : ['pagi', 'sore']
+    const shifts = shiftIzin(a)
     const exById = new Map((existingAbsensi || []).map((x) => [String(x.id), x]))
     let written = 0
     let skipped = 0

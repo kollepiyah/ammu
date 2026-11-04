@@ -64,15 +64,26 @@ export function tahunIzinTersedia(list) {
 const JENIS = ['izin', 'sakit', 'cuti']
 
 /**
+ * Shift yang diajukan sebuah pengajuan. Kosong → pagi + sore, sama dengan yang ditulis ke
+ * absensi saat disetujui (useIzinGuru memakai fungsi ini juga — satu aturan).
+ */
+export function shiftIzin(a) {
+  return Array.isArray(a?.shifts) && a.shifts.length ? a.shifts : ['pagi', 'sore']
+}
+
+/**
  * Kelompokkan pengajuan izin per ORANG untuk rekap riwayat.
  *
  * Kunci kelompok = `guru_id`; kalau kosong, jatuh ke nama (baris impor lama kadang
- * tak punya id). Hitungan HARI hanya dari pengajuan **disetujui** — itu yang benar-benar
+ * tak punya id). Hitungan hanya dari pengajuan **disetujui** — itu yang benar-benar
  * jadi baris absensi; menghitung yang ditolak/dibatalkan akan melebihkan rekap.
+ *
+ * v.1.4.9 (Kyai): izin sering hanya untuk satu shift, bukan seharian — jadi ukuran utamanya
+ * SHIFT (hari × shift yang diajukan = jumlah baris absensi yang ditulis), hari pendamping.
  *
  * @param {Array} list pengajuan mentah dari `izin_guru`
  * @param {{cari?:string, tahun?:string|number, hitungHari?:(a:object)=>number}} opts
- * @returns {Array<{id,nama,lembaga,items,n,hari,total,totalHari,menunggu,lampiran}>}
+ * @returns {Array<{id,nama,lembaga,items,n,hari,shift,total,totalHari,totalShift,menunggu,lampiran}>}
  */
 export function rekapIzinPerOrang(list, opts = {}) {
   const cari = String(opts.cari || '')
@@ -97,6 +108,7 @@ export function rekapIzinPerOrang(list, opts = {}) {
         items: [],
         n: { izin: 0, sakit: 0, cuti: 0 },
         hari: { izin: 0, sakit: 0, cuti: 0 },
+        shift: { izin: 0, sakit: 0, cuti: 0 },
         menunggu: 0,
         lampiran: 0
       }
@@ -110,7 +122,11 @@ export function rekapIzinPerOrang(list, opts = {}) {
     g.n[jenis]++
     if (st === 'diajukan') g.menunggu++
     if (a?.lampiran_url) g.lampiran++
-    if (st === 'disetujui') g.hari[jenis] += hitungHari(a)
+    if (st === 'disetujui') {
+      const h = hitungHari(a)
+      g.hari[jenis] += h
+      g.shift[jenis] += h * shiftIzin(a).length
+    }
   }
 
   const out = [...peta.values()]
@@ -119,6 +135,7 @@ export function rekapIzinPerOrang(list, opts = {}) {
     g.items.sort((x, y) => String(y?.tgl_mulai || '').localeCompare(String(x?.tgl_mulai || '')))
     g.total = g.items.length
     g.totalHari = g.hari.izin + g.hari.sakit + g.hari.cuti
+    g.totalShift = g.shift.izin + g.shift.sakit + g.shift.cuti
   }
   // Yang masih menunggu keputusan naik ke atas, lalu yang paling sering, lalu abjad.
   out.sort(

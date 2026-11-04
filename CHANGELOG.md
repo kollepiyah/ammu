@@ -101,6 +101,19 @@ pagar `prabayarMirrorEdge` menangkapnya) kini juga dipakai riwayat PembayaranVie
 sehingga **pembayaran VA BMT pun tak pernah tampil di riwayat wali**. `metodeBayar` mengenali
 `midtrans` sebagai Transfer (laporan kas harian). Lencana VA di Tabungan/uang saku ikut.
 
+### Fixed — rekap izin menghitung SHIFT, bukan hari saja (Kyai, 4 Nov 2026)
+
+"Semua absensi/izin itu dihitung hari, padahal kadang izin itu shift, bukan seharian." Rekap
+Riwayat Izin per Orang (layar & PDF gelombang 1) menjumlah hari kalender — izin satu shift sore
+terhitung "1 hari", sama dengan izin pagi+sore. Sekarang ukuran utamanya shift = hari × shift yang
+diajukan (persis baris absensi yang ditulis saat disetujui); hari tetap ditampilkan pendamping.
+`izinStatus.shiftIzin(a)` jadi satu sumber "shift sebuah pengajuan" (kosong = pagi + sore) —
+dipakai juga oleh `useIzinGuru.ajukan/tulisAbsensi` yang dulu menulis bawaan itu sendiri-sendiri.
+`rekapIzinPerOrang` menambah `shift` & `totalShift`. PDF: kolom ringkasan Izin/Sakit/Cuti = shift
++ "Total Shift" + "Total Hari"; rincian "Jumlah" = "3 hr / 6 sh". Rekap Absensi Guru dan kartu
+Personal sudah per shift sejak dulu (baris per guru × shift) — Personal kini menuliskannya:
+"Dihitung per shift". Kuota cuti tetap per hari kalender (aturannya memang jatah hari).
+
 ### Koreksi atas rancangan obrolan Gemini (PDF Kyai, 4 Nov 2026)
 
 - "VA tetap + callback inquiry ke Ammu (nominal dinamis)" tidak ada di dokumentasi Midtrans — VA

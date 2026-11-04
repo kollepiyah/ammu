@@ -9,7 +9,7 @@ import {
   drawTable,
   savePdf
 } from './pdfBuilder'
-import { labelStatusIzin, statusIzin } from './izinStatus'
+import { labelStatusIzin, statusIzin, shiftIzin } from './izinStatus'
 import { formatTanggal } from './format'
 
 const JENIS_LABEL = { izin: 'Izin', sakit: 'Sakit', cuti: 'Cuti' }
@@ -34,8 +34,9 @@ function _shift(arr) {
 }
 
 /**
- * Baris tabel rincian satu orang. Kolom Hari hanya terisi untuk pengajuan DISETUJUI —
- * sama dengan rekapIzinPerOrang yang hanya menjumlah yang disetujui.
+ * Baris tabel rincian satu orang. Kolom Jumlah ("2 hr / 4 sh") hanya terisi untuk pengajuan
+ * DISETUJUI — sama dengan rekapIzinPerOrang. v.1.4.9 (Kyai): izin sering hanya satu shift,
+ * jadi jumlah shift ikut ditulis, bukan hari saja.
  */
 export function barisRincianIzin(items, { cutiKatNama, hitungHari } = {}) {
   const hari = typeof hitungHari === 'function' ? hitungHari : () => 1
@@ -43,8 +44,8 @@ export function barisRincianIzin(items, { cutiKatNama, hitungHari } = {}) {
     String(i + 1),
     _jenis(a, cutiKatNama),
     _rentang(a),
-    statusIzin(a) === 'disetujui' ? String(hari(a)) : '-',
-    _shift(a?.shifts) || '-',
+    statusIzin(a) === 'disetujui' ? `${hari(a)} hr / ${hari(a) * shiftIzin(a).length} sh` : '-',
+    _shift(shiftIzin(a)),
     [a?.keterangan, a?.catatan_putus].filter(Boolean).join(' — ') || '-',
     labelStatusIzin(a),
     a?.penyetuju || '-',
@@ -52,11 +53,14 @@ export function barisRincianIzin(items, { cutiKatNama, hitungHari } = {}) {
   ])
 }
 
-/** Satu kalimat ringkasan per orang: "Izin 2 (3 hari) · Sakit 1 (1 hari) · …". */
+/** Satu kalimat ringkasan per orang: "Izin 2 (3 shift / 2 hari disetujui) · …". */
 export function ringkasanOrang(g) {
   const p = []
   for (const j of ['izin', 'sakit', 'cuti']) {
-    if (g?.n?.[j]) p.push(`${JENIS_LABEL[j]} ${g.n[j]} (${g.hari?.[j] || 0} hari disetujui)`)
+    if (g?.n?.[j])
+      p.push(
+        `${JENIS_LABEL[j]} ${g.n[j]} (${g.shift?.[j] || 0} shift / ${g.hari?.[j] || 0} hari disetujui)`
+      )
   }
   if (g?.menunggu) p.push(`${g.menunggu} menunggu`)
   return p.join(' · ') || 'Tanpa pengajuan'
@@ -91,14 +95,17 @@ export async function cetakRekapIzinPdf(
   if (!satu && list.length) {
     drawTable(doc, {
       startY: y,
-      head: [['No', 'Nama', 'Lembaga', 'Izin', 'Sakit', 'Cuti', 'Total Hari', 'Menunggu']],
+      head: [
+        ['No', 'Nama', 'Lembaga', 'Izin', 'Sakit', 'Cuti', 'Total Shift', 'Total Hari', 'Menunggu']
+      ],
       body: list.map((g, i) => [
         String(i + 1),
         g.nama,
         g.lembaga || '-',
-        String(g.hari?.izin || 0),
-        String(g.hari?.sakit || 0),
-        String(g.hari?.cuti || 0),
+        String(g.shift?.izin || 0),
+        String(g.shift?.sakit || 0),
+        String(g.shift?.cuti || 0),
+        String(g.totalShift || 0),
         String(g.totalHari || 0),
         String(g.menunggu || 0)
       ]),
@@ -108,14 +115,15 @@ export async function cetakRekapIzinPdf(
         4: { halign: 'center' },
         5: { halign: 'center' },
         6: { halign: 'center' },
-        7: { halign: 'center' }
+        7: { halign: 'center' },
+        8: { halign: 'center' }
       },
       styles: { fontSize: 8.5 }
     })
     doc.setFontSize(8)
     doc.setFont(font, 'italic')
     doc.text(
-      'Kolom Izin/Sakit/Cuti = jumlah HARI yang disetujui.',
+      'Izin/Sakit/Cuti = jumlah SHIFT yang disetujui (1 hari dengan 2 shift = 2). Total Hari = hari kalender.',
       left,
       doc.lastAutoTable.finalY + 4
     )
@@ -138,14 +146,14 @@ export async function cetakRekapIzinPdf(
     drawTable(doc, {
       startY: y + 7,
       head: [
-        ['No', 'Jenis', 'Tanggal', 'Hari', 'Shift', 'Keterangan', 'Status', 'Penyetuju', 'Lamp.']
+        ['No', 'Jenis', 'Tanggal', 'Jumlah', 'Shift', 'Keterangan', 'Status', 'Penyetuju', 'Lamp.']
       ],
       body: barisRincianIzin(g.items, { cutiKatNama, hitungHari }),
       columnStyles: {
         0: { halign: 'center', cellWidth: 8 },
         1: { cellWidth: 22 },
         2: { cellWidth: 30 },
-        3: { halign: 'center', cellWidth: 10 },
+        3: { halign: 'center', cellWidth: 18 },
         4: { cellWidth: 20 },
         6: { cellWidth: 19 },
         7: { cellWidth: 25 },

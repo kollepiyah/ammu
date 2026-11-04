@@ -131,6 +131,10 @@
           </p>
         </div>
       </div>
+      <!-- v.1.4.9 (Kyai): angka di atas = per SHIFT, bukan per hari. -->
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1.5 text-center">
+        Dihitung per shift — satu hari dengan dua shift terhitung dua.
+      </p>
       <!-- v.1.2.3: KPI ringkas absen pribadi -->
       <div class="grid grid-cols-3 gap-2 mt-2 text-center">
         <div class="bg-[var(--bg-muted)] rounded-xl py-2 border border-[var(--border-subtle)]">
