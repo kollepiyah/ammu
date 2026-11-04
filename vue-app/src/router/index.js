@@ -251,6 +251,12 @@ const routes = [
       { path: 'tagihan', name: 'tagihan', component: TagihanView },
       // v.20.12.0526: Pembayaran santri/wali — placeholder fitur 2-jalur
       { path: 'pembayaran', name: 'pembayaran', component: PembayaranView },
+      // v.1.4.9 gel. 2: halaman Kode Bayar (nomor VA / QR + cara bayar), seperti Shopee.
+      {
+        path: 'pembayaran/kode/:id',
+        name: 'kode-bayar',
+        component: () => import('@/views/KodeBayarView.vue')
+      },
       // v.86.0526: daftar pembayaran pending (status=pending di pembayaran_konfirmasi)
       { path: 'pembayaran-pending', name: 'pembayaran-pending', component: PembayaranPendingView },
       // v.55.0526: POS Santri page — wire ModalPOS untuk transaksi cepat

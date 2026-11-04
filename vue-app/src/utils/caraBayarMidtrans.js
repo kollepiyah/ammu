@@ -71,7 +71,7 @@ const LANGKAH = {
       judul: "Livin' by Mandiri",
       langkah: [
         'Pilih Bayar → E-Commerce / Multipayment.',
-        'Cari penyedia "Midtrans" atau masukkan Kode Perusahaan yang tertera.',
+        'Masukkan Kode Perusahaan yang tertera (nama penyedia yang muncul: Midtrans).',
         'Masukkan Kode Bayar, periksa nominal, lalu bayar.'
       ]
     },
@@ -96,7 +96,14 @@ const LANGKAH = {
   ]
 }
 
-/** Daftar cara bayar untuk kanal Midtrans ('bri' | 'bni' | 'bca' | 'mandiri' | 'qris'). */
+/** Label kanal untuk wali — kode bayar lama tersimpan berakhiran "(Midtrans)". */
+export function labelKanal(i) {
+  return String(i?.kanal_label || 'VA BMT')
+    .replace(/\s*\(Midtrans\)\s*$/i, '')
+    .trim()
+}
+
+/** Daftar cara bayar untuk kanal online ('bri' | 'bni' | 'bca' | 'mandiri' | 'qris'). */
 export function caraBayar(kanalId) {
   return LANGKAH[String(kanalId || '')] || []
 }

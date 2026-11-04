@@ -95,7 +95,9 @@ Deno.serve(async (req) => {
         p_payload: st,
         p_intent_id: String(it.id),
         p_sumber: 'midtrans',
-        p_label: String(data.kanal_label || 'Midtrans')
+        // Buku induk: "Pembayaran VA BRI (online) - Nama" — kata "online" membedakannya dari
+        //   VA BMT bagi admin; label lama berakhiran "(Midtrans)" dirapikan.
+        p_label: String(data.kanal_label || 'Pembayaran').replace(/\s*\(Midtrans\)\s*$/, '') + ' (online)'
       })
       if (error) throw error
       console.log(`[midtrans-webhook] ${st.order_id} lunas bersih=${bersih} ->`, hasil)

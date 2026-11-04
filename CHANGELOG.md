@@ -107,6 +107,22 @@ sebelumnya. Kanal diberi penanda `core` di daftar bersama (cermin JS ⇄ Deno). 
 Mandiri, status Terbayar, QRIS); vitest 123 berkas / 1.825 tes; vite build sukses. Belum diuji
 sandbox sungguhan untuk jalur Core.
 
+### Changed — satu halaman Bayar + halaman Kode Bayar ala Shopee; tanpa tulisan "Midtrans"
+
+Kyai, 4 Nov 2026 malam (dari HP, sandbox): "tulisan Midtrans hilangkan aja; setelah klik Lanjut
+(ganti jadi Bayar) beralih ke halaman yang menampilkan khusus no. VA dan tata cara bayarnya, seperti
+Shopee." Langkah "Pilih metode → Lanjut" dihapus: halaman Pembayaran wali kini satu — Susun
+Pembayaran (tagihan dari tombol Bayar di Tagihan langsung tercentang penuh; dulu tidak), Pilih cara
+bayar, Pilih bank, rincian, tombol **Bayar Rp…**. Bayar (Core API) → rute baru
+**/pembayaran/kode/:id** (`KodeBayarView`): Total Pembayaran (salin), Bayar Dalam + jatuh tempo,
+bank, No. Virtual Account / Kode Perusahaan + Kode Bayar / QR, petunjuk per aplikasi, OK; status
+realtime; tombol kembali HP ikut bekerja (halaman, bukan jendela — `KodeBayarModal` dihapus). Jawaban
+server dititip di memori (`services/midtrans.titipKode`) sampai baris realtime tiba. Label kanal
+"VA BRI" / "QRIS" (dulu "… (Midtrans)"; label lama dirapikan `caraBayarMidtrans.labelKanal`); buku
+induk "Pembayaran VA BRI (online) - Nama". Petunjuk Livin' tetap menyebut nama penyedia yang muncul
+di aplikasi bank. Diuji di peramban (ukuran HP): tagihan tercentang, BRI → Bayar → halaman Kode Bayar
+lengkap; harness fungsi 18 uji.
+
 ### Changed — `apply_bmt_payment` menerima order & label (migrasi 20261104120000)
 
 Tiga parameter ber-default: `p_intent_id` (Midtrans menyebut order-nya; dulu intent dicari lewat

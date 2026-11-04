@@ -162,7 +162,8 @@ Deno.serve(async (req) => {
     if (rinci.galat) return json({ ok: false, error: rinci.galat }, 400)
 
     const orderId = buatOrderId(santriId, Date.now(), crypto.randomUUID().replace(/-/g, ''))
-    const label = kanal.jenis === 'qris' ? 'QRIS (Midtrans)' : `VA ${kanal.label} (Midtrans)`
+    // Label yang dilihat wali — tanpa nama penyedia (Kyai: "tulisan Midtrans hilangkan").
+    const label = kanal.jenis === 'qris' ? 'QRIS' : `VA ${kanal.label}`
     const kini = new Date().toISOString()
     const dataIntent = {
       sumber: 'midtrans',

@@ -25,21 +25,14 @@
     >
       <div class="flex items-center gap-1.5 min-w-0">
         <button
-          v-if="mode === 'flow' && step === 'bayar'"
-          class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition cursor-pointer"
-          @click="step = 'metode'"
-        >
-          <i class="fas fa-chevron-left"></i>Pilih metode
-        </button>
-        <button
-          v-else-if="mode === 'riwayat'"
+          v-if="mode === 'riwayat'"
           class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 transition cursor-pointer"
           @click="mode = 'flow'"
         >
           <i class="fas fa-chevron-left"></i>Pembayaran
         </button>
         <span v-else class="px-1.5 text-sm font-black truncate"
-          ><i class="fas fa-wallet text-cyan-500 mr-1"></i>Pilih metode pembayaran</span
+          ><i class="fas fa-wallet text-cyan-500 mr-1"></i>Bayar tagihan</span
         >
       </div>
       <button
@@ -214,79 +207,11 @@
       </div>
     </template>
 
-    <!-- ============================================================
-         v.87.0526 STEP: PILIH METODE — daftar metode (bukan tab)
-         ============================================================ -->
-    <template v-if="isSantriOnly && mode === 'flow' && step === 'metode'">
-      <!-- ringkasan tagihan kalau datang dari tombol Bayar -->
+    <!-- v.1.4.9 gel. 2 (Kyai: "seperti Shopee"): satu halaman — susun tagihan, pilih cara bayar &
+         bank, lalu Bayar → halaman Kode Bayar. Langkah "Pilih metode → Lanjut" dihapus. -->
+    <template v-if="isSantriOnly && mode === 'flow'">
       <div
-        v-if="bayarForm.tagihan_id || bayarForm.nominal"
-        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-          Tagihan dipilih
-        </p>
-        <div class="flex items-center justify-between mt-1">
-          <span class="text-sm font-black truncate">{{ bayarForm.kategori || 'Pembayaran' }}</span>
-          <span class="text-base font-black text-cyan-700">{{ fmtRp(bayarForm.nominal) }}</span>
-        </div>
-      </div>
-
-      <!-- v.1.4.9: daftar metode dari utils/metodeBayarWali (transfer dihapus, BMT disembunyikan) -->
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
-      >
-        <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] px-1">
-          Pilih cara bayar
-        </p>
-        <button
-          v-for="m in methodsSantri"
-          :key="m.id"
-          :disabled="!m.active"
-          :class="[
-            'w-full flex items-center gap-3 p-3 rounded-xl border text-left transition',
-            !m.active
-              ? 'opacity-60 cursor-not-allowed border-[var(--border-subtle)]'
-              : selectedMethod === m.id
-                ? 'border-2 border-cyan-500 bg-cyan-50/40 dark:bg-cyan-900/20 cursor-pointer'
-                : 'border-[var(--border-default)] hover:border-cyan-300 cursor-pointer'
-          ]"
-          @click="pilihMetode(m.id)"
-        >
-          <i
-            :class="[
-              'fas',
-              m.icon,
-              'text-lg w-6 text-center',
-              m.active ? 'text-cyan-600' : 'text-[var(--text-tertiary)]'
-            ]"
-          ></i>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-black">{{ m.label }}</p>
-            <p class="text-[10px] text-[var(--text-secondary)]">{{ m.desc }}</p>
-          </div>
-          <span
-            v-if="!m.active"
-            class="text-[9px] px-2 py-0.5 rounded font-black uppercase bg-amber-100 text-amber-700 border border-amber-200"
-            >Coming soon</span
-          >
-          <i
-            v-else-if="selectedMethod === m.id"
-            class="fas fa-circle-check text-cyan-600 text-lg"
-          ></i>
-          <i v-else class="fas fa-chevron-right text-[var(--text-tertiary)]"></i>
-        </button>
-      </div>
-
-      <button
-        v-if="adaMetodeAktif"
-        class="w-full px-5 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-black rounded-xl text-sm shadow-md transition cursor-pointer"
-        @click="lanjutBayar"
-      >
-        <i class="fas fa-arrow-right mr-1"></i>Lanjut
-      </button>
-      <div
-        v-else
+        v-if="!adaMetodeAktif"
         class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-[12px] text-amber-800 dark:text-amber-200 leading-relaxed"
       >
         <i class="fas fa-info-circle mr-1"></i>
@@ -300,7 +225,7 @@
          Midtrans (v.1.4.9 gel. 2: VA bank / QRIS). Keranjang = tagihan (boleh sebagian →
          cicilan) + top-up uang saku, dibayar sekali.
          ============================================================ -->
-    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar' && metodeKeranjang">
+    <template v-if="isSantriOnly && mode === 'flow' && adaMetodeAktif">
       <!-- Pilih anak dulu (multi-anak, belum terpilih) -->
       <div
         v-if="!vaSantri && waliChildren.length > 1"
@@ -318,7 +243,7 @@
         </select>
       </div>
 
-      <template v-else-if="isMidtrans || vaNumber">
+      <template v-else>
         <!-- A. Keranjang: susun pembayaran (tagihan + top-up uang saku) dalam 1 kali bayar -->
         <div
           class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
@@ -408,6 +333,54 @@
           </div>
         </div>
 
+        <!-- v.1.4.9: daftar metode dari utils/metodeBayarWali (transfer dihapus, BMT disembunyikan) -->
+        <div
+          class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
+        >
+          <p
+            class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] px-1"
+          >
+            Pilih cara bayar
+          </p>
+          <button
+            v-for="m in methodsSantri"
+            :key="m.id"
+            :disabled="!m.active"
+            :class="[
+              'w-full flex items-center gap-3 p-3 rounded-xl border text-left transition',
+              !m.active
+                ? 'opacity-60 cursor-not-allowed border-[var(--border-subtle)]'
+                : selectedMethod === m.id
+                  ? 'border-2 border-cyan-500 bg-cyan-50/40 dark:bg-cyan-900/20 cursor-pointer'
+                  : 'border-[var(--border-default)] hover:border-cyan-300 cursor-pointer'
+            ]"
+            @click="pilihMetode(m.id)"
+          >
+            <i
+              :class="[
+                'fas',
+                m.icon,
+                'text-lg w-6 text-center',
+                m.active ? 'text-cyan-600' : 'text-[var(--text-tertiary)]'
+              ]"
+            ></i>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-black">{{ m.label }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)]">{{ m.desc }}</p>
+            </div>
+            <span
+              v-if="!m.active"
+              class="text-[9px] px-2 py-0.5 rounded font-black uppercase bg-amber-100 text-amber-700 border border-amber-200"
+              >Coming soon</span
+            >
+            <i
+              v-else-if="selectedMethod === m.id"
+              class="fas fa-circle-check text-cyan-600 text-lg"
+            ></i>
+            <i v-else class="fas fa-chevron-right text-[var(--text-tertiary)]"></i>
+          </button>
+        </div>
+
         <!-- B1. Pembayaran online (Midtrans): pilih bank, rincian biaya layanan, bayar -->
         <div
           v-if="isMidtrans"
@@ -494,7 +467,7 @@
 
         <!-- B2. Kartu Nomor VA BMT -->
         <div
-          v-else
+          v-else-if="selectedMethod === 'va' && vaNumber"
           class="bg-gradient-to-br from-indigo-600 to-violet-700 dark:from-indigo-800 dark:to-violet-900 rounded-2xl p-5 text-white shadow-lg"
         >
           <p class="text-[10px] font-bold uppercase opacity-80 tracking-wider mb-3">
@@ -519,26 +492,25 @@
 
         <!-- Catatan integrasi BMT (belum live) -->
         <div
-          v-if="!isMidtrans"
+          v-if="selectedMethod === 'va' && vaNumber"
           class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-[12px] text-amber-800 dark:text-amber-200 leading-relaxed"
         >
           <i class="fas fa-info-circle mr-1"></i>
           <strong>Konfirmasi otomatis ({{ bmtNama || 'BMT PETA' }})</strong> — integrasi konfirmasi
           BMT sedang disiapkan.
         </div>
+        <!-- VA BMT belum tersedia (santri tunggal tanpa VA / prefix belum di-set) -->
+        <div
+          v-if="selectedMethod === 'va' && !vaNumber"
+          class="bg-[var(--bg-card)] rounded-2xl p-6 border border-dashed border-[var(--border-subtle)] text-center"
+        >
+          <i class="fas fa-exclamation-circle text-amber-400 text-3xl mb-2"></i>
+          <p class="text-sm font-bold text-[var(--text-primary)]">Nomor VA belum tersedia</p>
+          <p class="text-[11px] text-[var(--text-secondary)] italic mt-1">
+            Hubungi admin pondok untuk info Virtual Account santri.
+          </p>
+        </div>
       </template>
-
-      <!-- VA BMT belum tersedia (santri tunggal tanpa VA / prefix belum di-set) -->
-      <div
-        v-else
-        class="bg-[var(--bg-card)] rounded-2xl p-6 border border-dashed border-[var(--border-subtle)] text-center"
-      >
-        <i class="fas fa-exclamation-circle text-amber-400 text-3xl mb-2"></i>
-        <p class="text-sm font-bold text-[var(--text-primary)]">Nomor VA belum tersedia</p>
-        <p class="text-[11px] text-[var(--text-secondary)] italic mt-1">
-          Hubungi admin pondok untuk info Virtual Account santri.
-        </p>
-      </div>
     </template>
 
     <!-- Daftar kode bayar (VA BMT & online) — tampil di langkah mana pun selama alur bayar,
@@ -560,7 +532,7 @@
             <p class="text-sm font-black text-[var(--text-primary)]">
               {{ fmtRp(i.sumber === 'midtrans' ? i.gross || i.total : i.total) }}
               <span class="text-[10px] font-bold text-[var(--text-secondary)]">
-                · {{ i.kanal_label || 'VA BMT' }}</span
+                · {{ labelKanal(i) }}</span
               >
             </p>
             <p class="text-[10px] text-[var(--text-secondary)] truncate">
@@ -597,7 +569,7 @@
             <button
               v-if="i.sumber === 'midtrans' && i.mode === 'core'"
               class="text-[10px] font-black text-cyan-700 hover:underline cursor-pointer"
-              @click="kodeTerbukaId = i.id"
+              @click="bukaKode(i.id)"
             >
               {{ i.status === 'pending' ? 'Lihat kode bayar' : 'Rincian' }}
             </button>
@@ -621,15 +593,6 @@
       </div>
     </div>
 
-    <!-- v.1.4.9 gel. 2: kode bayar Core API (VA / QRIS) tampil di Ammu sendiri -->
-    <KodeBayarModal
-      v-if="kodeTerbuka"
-      :kode="kodeTerbuka"
-      :membatalkan="batalId === kodeTerbuka.id"
-      @close="kodeTerbukaId = ''"
-      @batal="batalIntent"
-    />
-
     <ReceiptModal
       :open="receiptOpen"
       title="Bukti Pembayaran"
@@ -643,7 +606,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { subscribeColl, setOne, updateOne } from '@/services/db'
 // v.1.4.1: cara bayar disimpulkan satu tempat (Buku Induk, POS, pos dana, riwayat wali).
 import { metodeTransaksi } from '@/utils/metodeBayar'
@@ -655,7 +618,6 @@ import { useGedungScope } from '@/composables/useGedungScope'
 import { fmtRp, fmtTgl } from '@/utils/format'
 import { sisaTagihan } from '@/utils/tagihan'
 import ReceiptModal from '@/components/ReceiptModal.vue'
-import KodeBayarModal from '@/components/KodeBayarModal.vue'
 import { buildReceiptStrukHtml } from '@/utils/receiptHtml'
 import { cetakStrukPdf } from '@/utils/strukBuilder'
 // v.1.2.6: kelompokkan struk per TRANSAKSI (nomor struk lama bisa kembar antar santri)
@@ -664,11 +626,13 @@ import { computeVaSantri, formatVa } from '@/utils/bmtVa'
 import { metodeBayarWali } from '@/utils/metodeBayarWali'
 // v.1.4.9 gel. 2: pembayaran online Midtrans (VA bank / QRIS), biaya layanan ditanggung wali.
 import { kanalAktif, cariKanal, rincianBayar } from '@/utils/biayaMidtrans'
-import { buatKodeBayar, batalKodeBayar, bayarLewatSnap } from '@/services/midtrans'
+import { labelKanal } from '@/utils/caraBayarMidtrans'
+import { buatKodeBayar, batalKodeBayar, bayarLewatSnap, titipKode } from '@/services/midtrans'
 import { SUMBER_BAYAR_SANTRI } from '@/utils/cocokBayarTagihan'
 
 // v.82.0526: deep-link dari TagihanView — tagihan terpilih terisi otomatis
 const route = useRoute()
+const router = useRouter()
 
 const NAMA_BULAN = [
   'Januari',
@@ -704,8 +668,7 @@ const loading = ref(true)
 const search = ref('')
 const filterBulan = ref(0)
 const filterTahun = ref(new Date().getFullYear())
-// v.87.0526: alur berlangkah (ganti 3-tab). step: 'metode' -> 'bayar'. mode: 'flow' | 'riwayat'.
-const step = ref('metode')
+// v.87.0526: mode: 'flow' | 'riwayat'. (Langkah metode → bayar dihapus v.1.4.9 gel. 2.)
 const mode = ref('flow')
 const selectedMethod = ref('')
 const selectedAnakId = ref('')
@@ -729,7 +692,6 @@ const adaMetodeAktif = computed(() => methodsSantri.value.some((m) => m.active))
 const metodeAktifPertama = () => methodsSantri.value.find((m) => m.active)?.id || ''
 // Metode yang memakai keranjang di langkah Bayar: VA BMT & dua kanal Midtrans.
 const isMidtrans = computed(() => ['midtrans_va', 'qris'].includes(selectedMethod.value))
-const metodeKeranjang = computed(() => selectedMethod.value === 'va' || isMidtrans.value)
 
 // ─── Midtrans: bank pilihan wali (diingat per perangkat), rincian biaya layanan ───
 const bankMidtrans = computed(() => kanalAktif(settings.settings).filter((k) => k.jenis === 'va'))
@@ -764,17 +726,13 @@ const bolehBayarMidtrans = computed(
   () => !!vaSantri.value && cartTotal.value > 0 && !rincianMidtrans.value.galat
 )
 const membuatKode = ref(false)
-// Modal Kode Bayar (Core API). Sumber utamanya baris realtime; `kodeBaru` = jawaban server
-//   sesaat sesudah dibuat, sebelum barisnya tiba.
-const kodeTerbukaId = ref('')
-const kodeBaru = ref(null)
-const kodeTerbuka = computed(() => {
-  const id = kodeTerbukaId.value
-  if (!id) return null
-  const baris = vaIntentRaw.value.find((x) => String(x.id) === String(id))
-  if (baris) return baris
-  return kodeBaru.value && String(kodeBaru.value.id) === String(id) ? kodeBaru.value : null
-})
+// v.1.4.9 gel. 2: kode bayar Core API tampil di halaman sendiri (/pembayaran/kode/:id).
+//   Jawaban server dititip (services/midtrans.titipKode) supaya tampil seketika, sebelum baris
+//   realtime tiba.
+function bukaKode(id, kode = null) {
+  if (kode) titipKode(kode)
+  router.push({ path: `/pembayaran/kode/${encodeURIComponent(id)}` })
+}
 function lanjutSnap(i) {
   bayarLewatSnap({
     token: i.snap_token,
@@ -802,9 +760,9 @@ async function bayarMidtrans() {
     cartSel.value = {}
     cartUangSaku.value = 0
     if (r.mode === 'core') {
-      // Tampilkan langsung dari jawaban server; begitu baris intent tiba lewat realtime,
-      //   modal beralih membaca baris itu (status ikut berubah sendiri).
-      kodeBaru.value = {
+      // Pindah ke halaman Kode Bayar membawa jawaban server; begitu baris intent tiba lewat
+      //   realtime, halaman itu membaca barisnya (status ikut berubah sendiri).
+      bukaKode(r.intent_id, {
         ...r,
         id: r.intent_id,
         status: 'pending',
@@ -812,8 +770,7 @@ async function bayarMidtrans() {
         va: r.nomor,
         gross: r.total,
         biaya_layanan: r.biaya
-      }
-      kodeTerbukaId.value = r.intent_id
+      })
       return
     }
     const cara = await bayarLewatSnap({
@@ -866,6 +823,16 @@ const vaTagihanList = computed(() => {
       )
     )
 })
+// v.1.4.9 gel. 2: datang dari tombol Bayar di Tagihan → tagihan itu langsung tercentang penuh.
+let tagihanPrefill = ''
+function terapkanPrefill() {
+  if (!tagihanPrefill) return
+  const t = vaTagihanList.value.find((x) => String(x.id) === tagihanPrefill)
+  if (!t) return
+  cartSel.value = { ...cartSel.value, [t.id]: getSisaVa(t) }
+  tagihanPrefill = ''
+}
+watch(() => vaTagihanList.value.length, terapkanPrefill)
 function isCarted(t) {
   return cartSel.value[t.id] !== undefined
 }
@@ -1112,7 +1079,7 @@ function copyToClipboard(text) {
   }
 }
 
-// v.87.0526: navigasi alur berlangkah (pilih metode -> bayar)
+// v.87.0526 → v.1.4.9 gel. 2: satu halaman; memilih metode cukup menandai pilihan.
 function pilihMetode(id) {
   const m = methodsSantri.value.find((x) => x.id === id)
   if (!m || !m.active) {
@@ -1120,14 +1087,6 @@ function pilihMetode(id) {
     return
   }
   selectedMethod.value = id
-}
-function lanjutBayar() {
-  const m = methodsSantri.value.find((x) => x.id === selectedMethod.value)
-  if (!m || !m.active) {
-    toast.info('Pilih metode yang aktif')
-    return
-  }
-  step.value = 'bayar'
 }
 
 // ─── Subscribe Firestore ───────────────────────────────────────
@@ -1165,14 +1124,18 @@ onMounted(() => {
     } else {
       // default: alur pembayaran (pilih metode dulu). Prefill dari tagihan kalau ada.
       mode.value = 'flow'
-      step.value = 'metode'
       selectedMethod.value = metodeAktifPertama()
       if (q.santri) bayarForm.value.santri_id = String(q.santri)
       if (q.nominal) bayarForm.value.nominal = Number(q.nominal) || 0
       if (q.kategori) bayarForm.value.kategori = String(q.kategori)
-      if (q.tagihan_id) bayarForm.value.tagihan_id = String(q.tagihan_id)
+      if (q.tagihan_id) {
+        bayarForm.value.tagihan_id = String(q.tagihan_id)
+        tagihanPrefill = String(q.tagihan_id)
+        terapkanPrefill()
+      }
       // toast info hanya kalau benar2 ada prefill dari tagihan (bukan dari "Setoran Lain")
-      if (q.tagihan_id || q.nominal) toast.info('Tagihan terpilih — pilih metode pembayaran')
+      if (q.tagihan_id || q.nominal)
+        toast.info('Tagihan terpilih — pilih cara bayar, lalu tekan Bayar')
     }
   }, 500)
 })

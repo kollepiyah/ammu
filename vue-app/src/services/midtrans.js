@@ -20,6 +20,16 @@ async function panggil(body) {
   return data
 }
 
+// Jawaban server dititip di memori sampai baris realtime keuangan_va_intent tiba di halaman
+//   Kode Bayar — history.state tak bisa diandalkan di semua mode riwayat router.
+const _titipan = new Map()
+export function titipKode(kode) {
+  if (kode?.id) _titipan.set(String(kode.id), kode)
+}
+export function ambilTitipan(id) {
+  return _titipan.get(String(id)) || null
+}
+
 /** Buat kode bayar. items = [{tipe:'tagihan', tagihan_id, nominal} | {tipe:'uang_saku', nominal}]. */
 export function buatKodeBayar({ santriId, kanal, items }) {
   return panggil({ aksi: 'buat', santri_id: String(santriId), kanal, items })
