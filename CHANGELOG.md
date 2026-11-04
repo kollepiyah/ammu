@@ -36,9 +36,11 @@ malam) AAB 1.4.9 **belum** diunggah ke Play → vc149 tetap.
 
 **Midtrans production BELUM**: per 4 Nov malam pengaturan produksi `midtrans_aktif = true` dengan
 kunci **sandbox** (`SB-`) — wali mendapat kode bayar yang tak bisa dibayar uang sungguhan, dan bayar
-lewat simulator tercatat NYATA di buku induk produksi. Kyai sudah mengajukan akun production; sampai
-disetujui, centang "Aktifkan pembayaran online" harus dimatikan (di Pengaturan Keuangan, oleh Kyai).
-Langkah pindah: docs §9c.
+lewat simulator tercatat NYATA di buku induk produksi. Kyai sudah mengajukan akun production. Centang
+boleh tetap menyala: **belum ada wali yang memegang akun** (pengguna masih guru & staf; akun wali
+dirilis Januari 2027). Yang dijaga hanya uji coba — bayar sandbox ikut tercatat di buku
+induk produksi, jadi uji di santri uji lalu hapus baris pembayarannya di Buku Induk supaya kas tak
+ikut bertambah. Langkah pindah: docs §9c.
 
 Pemeriksaan pra-rilis (4 Nov malam): vitest 123 berkas / 1.828 tes, lint 0 error, build; semua migrasi
 termasuk 20261104120000 & 20261104130000 sudah di produksi; `midtrans-charge`, `midtrans-webhook`,

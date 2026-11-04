@@ -379,9 +379,11 @@ TIDAK ikut dicatat sebagai uang santri.
 
 ### c. Pindah ke production
 Kerjakan sesudah Midtrans menyetujui akun production dan kanal yang dipakai tampil aktif di mode
-Production. **Selama kunci masih sandbox, hilangkan centang "Aktifkan pembayaran online"**: kode
-bayar sandbox tak bisa dibayar dengan uang sungguhan, dan bayar lewat simulator sandbox tercatat
-sebagai pembayaran NYATA di buku induk produksi (fungsi memakai database yang sama).
+Production. **Selama kunci masih sandbox dan sudah ada wali yang memegang akun, hilangkan centang
+"Aktifkan pembayaran online"**: kode bayar sandbox tak bisa dibayar dengan uang sungguhan, dan bayar
+lewat simulator sandbox tercatat sebagai pembayaran NYATA di buku induk produksi (fungsi memakai
+database yang sama) — uji coba internal di santri uji, lalu hapus baris pembayarannya di Buku
+Induk supaya kas tak ikut bertambah.
 1. Dasbor Midtrans mode **Production** (menu kiri biru; sandbox oranye) → Settings → Access Keys →
    Generate Server Key: Payment product **Write**, izin lain **None**. Kunci production berawalan
    `Mid-server-` (tanpa `SB-`). Salin sekali, jangan ditempel di obrolan/berkas.
