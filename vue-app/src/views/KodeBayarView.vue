@@ -46,13 +46,19 @@
       <div class="bg-[var(--bg-card)] mt-2 divide-y divide-[var(--border-subtle)]">
         <div class="flex items-center justify-between gap-3 px-4 py-3">
           <span class="text-sm text-[var(--text-primary)]">Total Pembayaran</span>
+          <!-- Salin & ajakan bayar hanya selama kode berlaku — sesudah lunas/kedaluwarsa wali
+               jangan sampai mengira harus membayar lagi. -->
           <button
+            v-if="berlaku"
             class="text-base font-black text-rose-600 dark:text-rose-400 cursor-pointer"
             title="Salin nominal"
             @click="salin(String(total), 'Nominal')"
           >
             {{ fmtRp(total) }} <i class="far fa-copy text-xs ml-0.5"></i>
           </button>
+          <span v-else class="text-base font-black text-[var(--text-primary)]">{{
+            fmtRp(total)
+          }}</span>
         </div>
         <div
           v-if="kode.status === 'pending' && berlaku"
@@ -83,7 +89,12 @@
 
         <!-- QRIS -->
         <div v-if="isQris" class="px-4 py-4 text-center">
-          <div class="inline-block p-3 bg-white rounded-2xl border border-[var(--border-subtle)]">
+          <div
+            :class="[
+              'inline-block p-3 bg-white rounded-2xl border border-[var(--border-subtle)]',
+              { 'opacity-30': !berlaku }
+            ]"
+          >
             <img
               v-if="kode.qr_url && !qrGagal"
               :src="kode.qr_url"
@@ -99,7 +110,7 @@
             </div>
           </div>
           <a
-            v-if="kode.qr_url && !qrGagal"
+            v-if="kode.qr_url && !qrGagal && berlaku"
             :href="kode.qr_url"
             target="_blank"
             rel="noopener"
@@ -114,12 +125,16 @@
             <div>
               <p class="text-xs text-[var(--text-secondary)]">Kode Perusahaan</p>
               <p
-                class="text-xl font-black font-mono tracking-wider text-rose-600 dark:text-rose-400"
+                :class="[
+                  'text-xl font-black font-mono tracking-wider',
+                  berlaku ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-secondary)]'
+                ]"
               >
                 {{ kode.kode_perusahaan }}
               </p>
             </div>
             <button
+              v-if="berlaku"
               class="text-sm font-bold text-cyan-700 dark:text-cyan-300 cursor-pointer"
               @click="salin(kode.kode_perusahaan, 'Kode perusahaan')"
             >
@@ -132,12 +147,16 @@
                 {{ kode.kode_perusahaan ? 'Kode Bayar' : 'No. Virtual Account' }}
               </p>
               <p
-                class="text-xl font-black font-mono tracking-wide text-rose-600 dark:text-rose-400 break-all"
+                :class="[
+                  'text-xl font-black font-mono tracking-wide break-all',
+                  berlaku ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-secondary)]'
+                ]"
               >
                 {{ kelompokkan(kode.va) || '…' }}
               </p>
             </div>
             <button
+              v-if="berlaku"
               :disabled="!kode.va"
               class="text-sm font-bold text-cyan-700 dark:text-cyan-300 disabled:opacity-50 cursor-pointer flex-shrink-0"
               @click="salin(kode.va, 'Nomor')"
@@ -146,8 +165,11 @@
             </button>
           </div>
           <p v-if="kode.biaya_layanan" class="text-[11px] text-[var(--text-tertiary)]">
-            Total sudah termasuk biaya layanan {{ fmtRp(kode.biaya_layanan) }}. Bayar tepat sejumlah
-            Total Pembayaran.
+            Total sudah termasuk biaya layanan {{ fmtRp(kode.biaya_layanan) }}.<template
+              v-if="berlaku"
+            >
+              Bayar tepat sejumlah Total Pembayaran.</template
+            >
           </p>
         </div>
       </div>

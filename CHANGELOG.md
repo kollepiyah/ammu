@@ -160,6 +160,11 @@ penuh). Penjaga regresi `tests/unit/pembayaranUrutanSetup.test.js`.
   itu mengganti entri riwayat.
 - docs §9c: langkah pindah ke kunci production (kunci, Notification URL mode Production, Client
   Key bersamaan, uji satu transaksi nyata).
+- **Kode Bayar yang sudah lunas / kedaluwarsa** (Kyai: "ya, rapikan") masih menampilkan tombol
+  Salin, "Bayar tepat sejumlah Total Pembayaran", dan angka merah — wali bisa mengira harus membayar
+  lagi. Kini Salin (nominal, kode perusahaan, nomor VA) dan ajakan bayar hanya tampil selama kode
+  berlaku; nomor & total berwarna netral, QR diredupkan tanpa tautan simpan. Dicek di peramban
+  (ukuran HP): kode menunggu tetap lengkap, kode lunas VA & QRIS bersih.
 
 ### Changed — `apply_bmt_payment` menerima order & label (migrasi 20261104120000)
 
