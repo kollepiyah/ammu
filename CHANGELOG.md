@@ -165,6 +165,9 @@ penuh). Penjaga regresi `tests/unit/pembayaranUrutanSetup.test.js`.
   lagi. Kini Salin (nominal, kode perusahaan, nomor VA) dan ajakan bayar hanya tampil selama kode
   berlaku; nomor & total berwarna netral, QR diredupkan tanpa tautan simpan. Dicek di peramban
   (ukuran HP): kode menunggu tetap lengkap, kode lunas VA & QRIS bersih.
+- Lanjutannya (Kyai: "layar berhasilnya gk perlu ditampilkan lagi no. VA-nya, cukup pembayaran
+  diterima"): kode **lunas** kini hanya kotak "Pembayaran diterima" + nominal; bagian total, bank,
+  nomor VA/QR, dan biaya layanan disembunyikan. Kode kedaluwarsa/dibatalkan tetap seperti di atas.
 
 ### Changed — `apply_bmt_payment` menerima order & label (migrasi 20261104120000)
 

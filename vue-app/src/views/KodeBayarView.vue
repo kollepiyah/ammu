@@ -31,6 +31,9 @@
       >
         <i class="fas fa-circle-check text-emerald-600 text-4xl mb-2"></i>
         <p class="text-sm font-black text-emerald-800 dark:text-emerald-200">Pembayaran diterima</p>
+        <p v-if="total" class="text-base font-black text-emerald-800 dark:text-emerald-200 mt-1">
+          {{ fmtRp(total) }}
+        </p>
         <p class="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1">
           Tagihan dan uang saku sudah tercatat otomatis.
         </p>
@@ -42,8 +45,11 @@
         Kode bayar ini sudah tidak berlaku. Silakan buat yang baru.
       </div>
 
-      <!-- Total & batas waktu -->
-      <div class="bg-[var(--bg-card)] mt-2 divide-y divide-[var(--border-subtle)]">
+      <!-- Total & batas waktu — sesudah lunas cukup kotak "Pembayaran diterima" (Kyai, 4 Nov 2026) -->
+      <div
+        v-if="kode.status !== 'terbayar'"
+        class="bg-[var(--bg-card)] mt-2 divide-y divide-[var(--border-subtle)]"
+      >
         <div class="flex items-center justify-between gap-3 px-4 py-3">
           <span class="text-sm text-[var(--text-primary)]">Total Pembayaran</span>
           <!-- Salin & ajakan bayar hanya selama kode berlaku — sesudah lunas/kedaluwarsa wali
@@ -77,7 +83,7 @@
       </div>
 
       <!-- Kanal + nomor -->
-      <div class="bg-[var(--bg-card)] mt-2">
+      <div v-if="kode.status !== 'terbayar'" class="bg-[var(--bg-card)] mt-2">
         <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-subtle)]">
           <span
             class="w-9 h-9 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 flex items-center justify-center"
