@@ -35,10 +35,13 @@ Deno.serve(async (req) => {
   // deno-lint-ignore no-explicit-any
   const notif: any = await req.json().catch(() => null)
   if (!notif?.order_id) return json({ ok: false, error: 'payload' }, 400)
-  if (!(await tandaTanganSah(notif, SERVER_KEY))) {
-    console.warn('[midtrans-webhook] tanda tangan salah untuk', notif.order_id)
-    return json({ ok: false, error: 'signature' }, 401)
-  }
+  // Tanda tangan BUKAN lagi satu-satunya penentu (4 Nov 2026, notifikasi sandbox Kyai gagal
+  //   terkirim): satu akun Midtrans bisa punya beberapa Server Key, dan notifikasi bisa
+  //   ditandatangani kunci selain milik Ammu — dulu itu berarti 401 untuk notifikasi yang sah.
+  //   Kebenaran diambil dari API status (kunci Ammu); tanda tangan sah jadi cadangan bila API
+  //   tak terbaca. Penyusup hanya bisa memicu pengecekan ulang order yang memang ada.
+  const sigOk = await tandaTanganSah(notif, SERVER_KEY)
+  if (!sigOk) console.warn('[midtrans-webhook] tanda tangan tak cocok, dicek ulang lewat API:', notif.order_id)
 
   try {
     // Order dicari DULU, sebelum bertanya status ke Midtrans: notifikasi uji dari dasbor
@@ -57,14 +60,25 @@ Deno.serve(async (req) => {
     }
 
     const url = urlMidtrans(SERVER_KEY)
-    const r = await fetch(`${url.api}/v2/${encodeURIComponent(notif.order_id)}/status`, {
-      headers: { Authorization: 'Basic ' + btoa(SERVER_KEY + ':'), Accept: 'application/json' }
-    })
     // deno-lint-ignore no-explicit-any
-    const st: any = await r.json().catch(() => ({}))
-    // Gagal membaca status order Ammu → 500 supaya Midtrans mengirim ulang nanti.
-    if (!r.ok || String(st.order_id || '') !== String(it.id)) {
-      throw new Error('status Midtrans tak terbaca: ' + r.status)
+    let st: any = null
+    let alasan = ''
+    try {
+      const r = await fetch(`${url.api}/v2/${encodeURIComponent(notif.order_id)}/status`, {
+        headers: { Authorization: 'Basic ' + btoa(SERVER_KEY + ':'), Accept: 'application/json' }
+      })
+      const j = await r.json().catch(() => ({}))
+      if (r.ok && String(j.order_id || '') === String(it.id)) st = j
+      else alasan = `HTTP ${r.status} ${j.status_message || ''}`.trim()
+    } catch (e) {
+      alasan = (e as Error)?.message || 'fetch gagal'
+    }
+    if (!st) {
+      // Tanpa API & tanpa tanda tangan sah → tak ada yang bisa dipercaya. 500 supaya Midtrans
+      //   mengirim ulang (mis. gangguan sesaat).
+      if (!sigOk) throw new Error('tak terverifikasi — status Midtrans: ' + alasan)
+      console.warn('[midtrans-webhook] status API tak terbaca, pakai notifikasi bertanda tangan sah:', alasan)
+      st = notif
     }
 
     const putusan = putusanStatus(st.transaction_status, st.fraud_status)

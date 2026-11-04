@@ -66,7 +66,12 @@ Keputusan Kyai: biaya VA & QRIS ditanggung wali; bank BRI, BNI, BCA, BSI, Mandir
   layanan (kalau tidak dikurangi, biaya layanan wali ikut masuk uang saku santri); pending → nomor
   VA / kode bayar Mandiri disimpan; expire/cancel → intent ditutup. Order asing — termasuk
   notifikasi uji dari dasbor Midtrans — dijawab 200 SEBELUM status ditanya ke Midtrans (order
-  rekaan tak punya status; kalau ditanya dulu, tombol uji dasbor tampak gagal).
+  rekaan tak punya status; kalau ditanya dulu, tombol uji dasbor tampak gagal). Uji sandbox Kyai
+  4 Nov: Midtrans mengirim email "difficulty sending notification" — fungsi terpasang benar (GET
+  200, tanpa JWT, kunci terbaca), jadi penolakannya di dalam fungsi; kemungkinan besar tanda tangan
+  dari Server Key lain di akun yang sama (Kyai membuat kunci "Ammu"). Tanda tangan kini bukan
+  satu-satunya penentu: status dibaca dari API dengan kunci Ammu, tanda tangan sah jadi cadangan
+  bila API tak terbaca; keduanya gagal → 500 (Midtrans mengulang).
 - **Biaya layanan** (`utils/biayaMidtrans.js`, cermin Deno `_shared/midtrans.ts`, pagar
   `midtransMirrorEdge.test.js`): VA flat (bawaan Rp4.500 = Rp4.000 + PPN dibulatkan); QRIS persen
   dari TOTAL (bawaan 0,78% ≈ MDR 0,7% + PPN), dihitung mundur `total = ceil(net / (1 − r))` lalu
