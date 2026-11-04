@@ -9,6 +9,7 @@
 import { getKartuKenaikanSchema } from './kenaikan'
 // v.1.4.5: scope Qiraati dipakai bersama Rekap Prestasi — lihat santriBisaDiajukanTes.
 import { scopeQiraati } from './guruScope'
+import { isPersiapanKhotaman } from './jenjangQiraati'
 
 // v.100d: Lembaga NGAJI yang ikut fitur tes. Pra PTPT KINI IKUT (tes per khotam, kyai 14 Jun).
 export const TES_LEMBAGA = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
@@ -48,8 +49,12 @@ export function santriBisaDiajukanTes(santriList, sesi) {
 }
 
 // Jenis ajuan yang tersedia untuk satu lembaga. [] = lembaga tak ikut tes.
-export function tesJenisOptions(lembaga) {
+// v.1.4.9: `santri` opsional — santri PTPT di kelas Persiapan Khotaman diajukan "Tes
+//   Khotaman" (lulus → PPPH Level 1, tanpa glondongan), bukan naik juz lagi.
+export function tesJenisOptions(lembaga, santri = null) {
   const l = String(lembaga || '').trim()
+  if (l === 'PTPT' && isPersiapanKhotaman(santri?.kelas))
+    return [{ value: 'khotaman', label: 'Tes Khotaman' }]
   if (l === 'TPQ Pagi' || l === 'TPQ Sore') return [{ value: 'jilid', label: 'Naik Jilid' }]
   if (l === 'Pra PTPT') return [{ value: 'khotam', label: 'Naik Khotam' }] // v.100d
   // v.1.1.9 (Kyai 21 Jul 2026): PTPT hanya 'juz'. Jenis 'kelas' DIHAPUS dari pilihan —
@@ -93,6 +98,8 @@ export function tesTargetOptions(santri, jenis, settings) {
   if (jenis === 'juz') return Array.from({ length: 30 }, (_, i) => 'Juz ' + (i + 1))
   if (jenis === 'kelas') return kelasLabels('PTPT', settings)
   if (jenis === 'level') return kelasLabels('PPPH', settings)
+  // v.1.4.9: item tunggal blok Persiapan Khotaman — target inilah yang menamatkan PTPT.
+  if (jenis === 'khotaman') return ['Khotaman']
   // v.100d: Pra PTPT — naik khotam (I..V). Item schema bisa duplikat antar level → dedupe.
   if (jenis === 'khotam') {
     const uniq = [...new Set(flattenItems('Pra PTPT', settings).map((x) => String(x)))]
@@ -109,6 +116,7 @@ export function tesTargetDefault(santri, jenis, settings) {
     const j = juzNum(santri)
     return Number.isFinite(j) && j < 30 ? 'Juz ' + (j + 1) : ''
   }
+  if (jenis === 'khotaman') return 'Khotaman'
   if (jenis === 'kelas') {
     // Kelas berikutnya dari kelas santri sekarang (cari label yang cocok, ambil next).
     const cur = String(santri?.kelas || '')

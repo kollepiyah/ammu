@@ -1060,6 +1060,7 @@ import {
   itemJenjang,
   labelJenjang,
   tujuanNaikLembaga,
+  kelasPtptUntukJuz,
   RANTAI_QIRAATI
 } from '@/utils/jenjangQiraati'
 // v.1.4.1 (Kyai 4 Sep 2026): "di field pilih guru harusnya gurunya sudah berpasangan
@@ -1567,7 +1568,8 @@ function targetOptionsFor(s) {
 //   disimpan di record supaya data lama & baru sebentuk.
 function ensureSel(s) {
   if (!sel[s.id]) {
-    const jenis = s.lembaga === 'PTPT' ? 'juz' : tesJenisOptions(s.lembaga)[0]?.value || ''
+    // v.1.4.9: santri PTPT di Persiapan Khotaman → 'khotaman' (lihat tesJenisOptions).
+    const jenis = tesJenisOptions(s.lembaga, s)[0]?.value || ''
     sel[s.id] = {
       checked: false,
       jenis,
@@ -1584,6 +1586,8 @@ function toggle(s) {
 const checkedCount = computed(() => Object.values(sel).filter((x) => x.checked).length)
 // v.1.4.8: santri PTPT ini punya glondongan (kelas 2+)? Hanya mereka yang bisa "langsung tes".
 function punyaGlondongan(s) {
+  // v.1.4.9: Tes Khotaman memang tanpa glondongan — centang "langsung tes" tak relevan.
+  if (sel[s?.id]?.jenis && sel[s.id].jenis !== 'juz') return false
   return s?.lembaga === 'PTPT' && splitGlondongan(testedJuz(s)).glondongan.length > 0
 }
 
@@ -1902,7 +1906,8 @@ function prefillNaik(a) {
     if (a.jenis === 'juz') {
       const m = t.match(/(\d+)/)
       juz = m ? m[1] : ''
-      if (juz) kelas = opts[Math.ceil(Number(juz) / 5) - 1] || ''
+      // v.1.4.9: Juz 30 → Persiapan Khotaman (bila ada di master), bukan Kelas 6 / PPPH.
+      if (juz) kelas = kelasPtptUntukJuz(juz, opts)
     } else {
       kelas = pilih(t) || t
       const m = String(kelas).match(/(\d+)/)

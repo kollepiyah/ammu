@@ -42,6 +42,29 @@ const _BERIKUTNYA = {
   p3h: ''
 }
 
+/** Label kelas terakhir PTPT (v.1.4.9). Sama ejaannya dengan jenjang terakhir TPQ. */
+export const KELAS_PERSIAPAN_KHOTAMAN = 'Persiapan Khotaman'
+
+/** Kelas ini "Persiapan Khotaman"? Toleran huruf besar & awalan "Kelas". */
+export function isPersiapanKhotaman(kelas) {
+  return _inti(kelas) === _norm(KELAS_PERSIAPAN_KHOTAMAN)
+}
+
+/**
+ * Kelas PTPT untuk juz TUJUAN tes `juz` (Kelas N = Juz 5N−4..5N). Juz 30 → Persiapan
+ * Khotaman bila jenjang itu ada di daftar; tanpa itu (master lama) tetap Kelas 6.
+ */
+export function kelasPtptUntukJuz(juz, opts) {
+  const n = Number(String(juz ?? '').match(/\d+/)?.[0])
+  const list = Array.isArray(opts) ? opts : []
+  if (!Number.isFinite(n) || n < 1) return ''
+  if (n >= 30) {
+    const pk = list.find((x) => isPersiapanKhotaman(x))
+    if (pk) return pk
+  }
+  return list[Math.min(Math.ceil(n / 5), 6) - 1] || ''
+}
+
 /** Lembaga sesudah `lembaga` dalam rantai qiraati. '' = ujung rantai / bukan qiraati. */
 export function lembagaBerikutnya(lembaga) {
   return _BERIKUTNYA[_norm(lembaga)] || ''
@@ -66,7 +89,9 @@ export const JENJANG_CADANGAN = {
     'Persiapan Khotaman'
   ],
   'pra ptpt': ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'],
-  ptpt: ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'],
+  // v.1.4.9 (Kyai, 4 Nov 2026): lulus Juz 30 tak langsung ke PPPH — masuk kelas terakhir
+  //   PTPT "Persiapan Khotaman" dulu, lalu naik ke PPPH lewat Tes Khotaman.
+  ptpt: ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6', 'Persiapan Khotaman'],
   ppph: [
     "Level 1 (Arba'in Nawawi)",
     'Level 2 (Riyadhus Sholihin)',
@@ -133,6 +158,9 @@ export function itemJenjang(lembaga, kelas, ctx = {}) {
   const blocks = Array.isArray(schema?.kelasList) ? schema.kelasList : []
   if (!blocks.length) return []
   let blk = blocks.find((b) => _norm(b?.label) === _norm(kelas))
+  // v.1.4.9: 'Kelas 6' ≡ '6' tanpa bergantung jumlah blok — sejak blok Persiapan Khotaman
+  //   ditambahkan, master PTPT lama (6 kelas) tak lagi sama panjang dengan kartunya (7 blok).
+  if (!blk) blk = blocks.find((b) => _inti(b?.label) === _inti(kelas))
   if (!blk) {
     const list = jenjangLembaga(lembaga, ctx.lembagaList)
     const i = indexJenjang(list, kelas)

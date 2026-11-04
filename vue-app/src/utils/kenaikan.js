@@ -25,9 +25,21 @@ export const DEFAULT_KARTU_KENAIKAN_PTPT = {
     { id: 'kelas_3', label: 'Kelas 3', items: _buildJuzList(11, 15), ceremonial: true },
     { id: 'kelas_4', label: 'Kelas 4', items: _buildJuzList(16, 20), ceremonial: true },
     { id: 'kelas_5', label: 'Kelas 5', items: _buildJuzList(21, 25), ceremonial: true },
-    { id: 'kelas_6', label: 'Kelas 6', items: _buildJuzList(26, 30), ceremonial: true }
+    { id: 'kelas_6', label: 'Kelas 6', items: _buildJuzList(26, 30), ceremonial: true },
+    // v.1.4.9: kelas terakhir PTPT — dicap saat lulus Tes Khotaman (naik ke PPPH).
+    {
+      id: 'persiapan_khotaman',
+      label: 'Persiapan Khotaman',
+      items: [{ id: 'khotaman', label: 'Khotaman' }],
+      ceremonial: false
+    }
   ]
 }
+
+const _blokPk = (k) =>
+  String(k?.label || '')
+    .toLowerCase()
+    .includes('persiapan khotam') || k?.id === 'persiapan_khotaman'
 
 export const DEFAULT_KARTU_KENAIKAN_TPQ = {
   itemHeader: 'Jilid',
@@ -167,7 +179,8 @@ export const DEFAULT_KARTU_KENAIKAN_P3H = DEFAULT_KARTU_KENAIKAN_PPPH
 function _isValidPtptOverride(sch) {
   if (!sch || !Array.isArray(sch.kelasList) || sch.kelasList.length === 0) return false
   let total = 0
-  for (const k of sch.kelasList) {
+  // v.1.4.9: blok Persiapan Khotaman (1 item) bukan blok juz — tak ikut syarat ≥5 juz.
+  for (const k of sch.kelasList.filter((x) => !_blokPk(x))) {
     const n = Array.isArray(k.items) ? k.items.length : 0
     if (n < 5) return false
     total += n
@@ -201,6 +214,15 @@ export function getKartuKenaikanSchema(lembaga, settings) {
     // v.100d: guard override basi PTPT → pakai default kanonik (5 juz/kelas, 30 juz).
     if (lembaga === 'PTPT' && !_isValidPtptOverride(all[lembaga])) {
       return JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_PTPT))
+    }
+    // v.1.4.9: override PTPT lama (sebelum ada Persiapan Khotaman) → blok itu ditambahkan,
+    //   kalau tidak Tes Khotaman tak punya item terakhir untuk menamatkan PTPT.
+    if (lembaga === 'PTPT' && !all[lembaga].kelasList.some(_blokPk)) {
+      const sch = JSON.parse(JSON.stringify(all[lembaga]))
+      sch.kelasList.push(
+        JSON.parse(JSON.stringify(DEFAULT_KARTU_KENAIKAN_PTPT.kelasList.find(_blokPk)))
+      )
+      return sch
     }
     // v.1.2.3: guard override basi Pra PTPT → pakai default kanonik (Level 3 Juz = I..XI).
     if (lembaga === 'Pra PTPT' && !_isValidPraPtptOverride(all[lembaga])) {
