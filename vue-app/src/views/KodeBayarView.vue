@@ -37,6 +37,9 @@
         <p class="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1">
           Tagihan dan uang saku sudah tercatat otomatis.
         </p>
+        <p class="text-xs font-bold italic text-emerald-800 dark:text-emerald-200 mt-2">
+          Jazakumulloh, semoga barokah dan manfaat.
+        </p>
       </div>
       <div
         v-else-if="!berlaku"

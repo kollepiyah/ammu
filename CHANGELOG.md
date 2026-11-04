@@ -168,6 +168,8 @@ penuh). Penjaga regresi `tests/unit/pembayaranUrutanSetup.test.js`.
 - Lanjutannya (Kyai: "layar berhasilnya gk perlu ditampilkan lagi no. VA-nya, cukup pembayaran
   diterima"): kode **lunas** kini hanya kotak "Pembayaran diterima" + nominal; bagian total, bank,
   nomor VA/QR, dan biaya layanan disembunyikan. Kode kedaluwarsa/dibatalkan tetap seperti di atas.
+  Di bawah "Tagihan dan uang saku sudah tercatat otomatis." ditambah doa permintaan Kyai:
+  "Jazakumulloh, semoga barokah dan manfaat."
 
 ### Changed — `apply_bmt_payment` menerima order & label (migrasi 20261104120000)
 
