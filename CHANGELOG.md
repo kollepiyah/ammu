@@ -23,7 +23,7 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 ## [v.1.4.9] — 2026-11-04 — Pembayaran online wali lewat Midtrans: VA BRI/BNI/BCA/BSI/Mandiri + QRIS, biaya layanan ditanggung wali, bisa dicicil
 
 **SIAP RILIS** — `versionCode` 149 / `versionName` `v.1.4.9`, **2 gelombang**. Gelombang 2 membawa
-**satu migrasi Supabase dan dua edge function baru**. Urutannya: **`supabase db push` → secret
+**dua migrasi Supabase (Midtrans + kelas Persiapan Khotaman) dan dua edge function baru**. Urutannya: **`supabase db push` → secret
 `MIDTRANS_SERVER_KEY` + deploy `midtrans-charge` & `midtrans-webhook` (+ deploy ulang
 `auto-generate-tagihan`, cermin sumber bayarnya berubah) → deploy web → rebuild AAB → rilis
 Electron**. Pembayaran online baru tampil ke wali sesudah "Aktifkan pembayaran online"
@@ -133,6 +133,39 @@ termasuk hasil sebelum "Tes ulang" (`riwayat_hasil`), nilai berlabel aspek lemba
 
 Ikut: deskripsi Virtual Account Bank di halaman Pembayaran wali tinggal daftar bank (Kyai:
 "— nominal muncul otomatis" dihapus).
+
+### Added — PTPT: kelas terakhir "Persiapan Khotaman" + Tes Khotaman ke PPPH (Kyai, 4 Nov 2026)
+
+"Santri PTPT yang sudah lulus tes Juz 30, ketika proses naik jangan langsung masuk ke PPPH. Ada
+kelas baru di akhir: Persiapan Khotaman, gurunya juga bisa ditunjuk. Urutan kelas PTPT: Kelas 1–6,
+Kelas Persiapan Khotaman." Keputusan Kyai: naik ke PPPH lewat **Tes Khotaman**, **tanpa
+glondongan**.
+
+- **Migrasi `20261104130000_ptpt_persiapan_khotaman.sql`** menambah "Persiapan Khotaman" di
+  ujung `kelas` (dan `kelas_list` bila ada) PTPT di master/lembaga — hanya bila daftarnya ada &
+  belum memuatnya; idempoten (PGlite: 6 uji). Dari situ dropdown kelas, Kelas & Guru
+  (`kelas_guru` — guru Persiapan Khotaman bisa ditunjuk), dan `jenjangLembaga` ikut. Sebelum
+  migrasi dijalankan perilaku lama tetap (lulus Juz 30 → PPPH).
+- **Lulus Juz 30 → Persiapan Khotaman.** `jenjangQiraati.kelasPtptUntukJuz` (dipakai prefillNaik
+  TesKenaikanView); Kelas 6 bukan lagi jenjang terakhir, jadi `tujuanNaikLembaga` tak memindah ke
+  PPPH. Cadangan `JENJANG_CADANGAN.ptpt` ikut memuatnya.
+- **Tes Khotaman.** `tesJenisOptions(lembaga, santri)` — santri PTPT di Persiapan Khotaman diajukan
+  jenis `khotaman` dengan target "Khotaman" = item tunggal blok kartu baru, sehingga lulusnya
+  "menamatkan" PTPT dan `tujuanNaikLembaga` mengarahkan ke PPPH Level 1 (mesin yang sama dengan
+  TPQ → Pra PTPT → PTPT). Gerbang glondongan hanya untuk jenis `juz`, jadi Tes Khotaman memang tanpa
+  glondongan; centang "Langsung tes PJ" disembunyikan untuknya. Penyaring jenis di Tes Kenaikan
+  mengenal "Khotaman (PTPT)".
+- **Kartu kenaikan PTPT**: blok "Persiapan Khotaman" (item Khotaman). Override kartu PTPT lama di
+  Pengaturan tetap dipakai dan blok itu ditambahkan; syarat ≥5 juz per blok tak berlaku untuknya.
+  Saat santri meninggalkan PTPT dari Persiapan Khotaman, kolom Khotaman dicap tanggal lulus; riwayat
+  "telah khotam Al-Qur'an 30 juz bil Ghoib" kini jatuh di kenaikan itu (kelas terakhir master).
+  `itemJenjang` mencocokkan "Kelas 6" ≡ "6" tanpa syarat jumlah blok — master 6 kelas vs kartu 7 blok
+  dulu memutus pencocokan lewat indeks.
+- **Ceremonial**: Tes Khotaman bukan kandidat naik kelas; label tujuan santri juz 30 kini
+  "Persiapan Khotaman" (dulu tertulis "Kelas 7").
+
+Diuji: `persiapanKhotaman.test.js` (12 kasus: ejaan, juz → kelas, master lama vs baru, Tes Khotaman
+→ PPPH, ceremonial, cap kartu + riwayat, override kartu). Belum diuji di peramban/data nyata.
 
 ### Koreksi atas rancangan obrolan Gemini (PDF Kyai, 4 Nov 2026)
 

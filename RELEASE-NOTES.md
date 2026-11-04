@@ -12,6 +12,9 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Menu Perizinan & Cuti.** Guru dan pegawai mengajukan izin, sakit, atau cuti di menu sendiri ini.
   Kepala, PJ, dan admin menyetujui atau menolak pengajuan di menu yang sama, sekaligus melihat rekap
   riwayat izin per orang. Sebelumnya semua ini menumpang di menu Personal.
+- **Kelas baru PTPT: Persiapan Khotaman.** Santri PTPT yang lulus tes Juz 30 kini masuk kelas
+  Persiapan Khotaman (gurunya bisa ditunjuk di Kelas & Guru), lalu naik ke PPPH setelah lulus
+  **Tes Khotaman** — diajukan guru di menu Tes Kenaikan seperti tes juz, tanpa glondongan.
 - **Capaian Prestasi santri TPQ s/d Pra PTPT berisi hasil tes kenaikan.** Capaian bulanan kini
   hanya tampil untuk santri PTPT dan PPPH; semua santri mendapat bagian baru "Hasil Tes Kenaikan"
   (lulus / belum lulus, nilai, catatan penguji).

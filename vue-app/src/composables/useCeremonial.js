@@ -19,6 +19,7 @@ import {
   isPjLembaga
 } from '@/utils/glondongan'
 import { useSantri } from '@/composables/useSantri'
+import { KELAS_PERSIAPAN_KHOTAMAN } from '@/utils/jenjangQiraati'
 
 // PJ PTPT — v.1.2.2: satu aturan di utils/glondongan.isPjLembaga (mirror useGlondongan._isPjPtpt).
 function _isPjPtpt(sesi) {
@@ -64,6 +65,8 @@ const _juz = (v) => {
  */
 export function layakCeremonial(a) {
   if (norm(a?.jenis) === 'kelas') return true
+  // v.1.4.9: Tes Khotaman memindahkan santri ke PPPH — bukan naik kelas PTPT.
+  if (norm(a?.jenis) === 'khotaman') return false
   const t = _juz(a?.juz_asal)
   return Number.isFinite(t) && t > 0 && t % 5 === 0
 }
@@ -97,9 +100,12 @@ export function pilihKandidat(ajuanList, terjadwal) {
       // v.1.2.0: juz yang BARU LULUS + kelas tujuan sesudah ceremonial — dipakai
       //   label daftar kandidat ("Lulus Juz 10 -> Kelas 3").
       juz_lulus: Number.isFinite(_juz(a.juz_asal)) ? _juz(a.juz_asal) : null,
-      kelas_tujuan: Number.isFinite(_juz(a.juz_asal))
-        ? `Kelas ${Math.floor(_juz(a.juz_asal) / 5) + 1}`
-        : '',
+      // v.1.4.9: sesudah juz 30 kelasnya Persiapan Khotaman (dulu tertulis "Kelas 7").
+      kelas_tujuan: !Number.isFinite(_juz(a.juz_asal))
+        ? ''
+        : _juz(a.juz_asal) >= 30
+          ? KELAS_PERSIAPAN_KHOTAMAN
+          : `Kelas ${Math.floor(_juz(a.juz_asal) / 5) + 1}`,
       ajuan_id: String(a.id),
       tgl_lulus_pj: a.tgl_hasil || '',
       penguji: a.penguji || '',

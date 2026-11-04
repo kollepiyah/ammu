@@ -349,7 +349,8 @@ halaman Midtrans → Midtrans memanggil `midtrans-webhook` → RPC `apply_bmt_pa
 TIDAK ikut dicatat sebagai uang santri.
 
 ### a. Urutan pasang (sandbox dulu)
-1. Migrasi: `supabase db push` (memuat `20261104120000_midtrans_pembayaran_online.sql`).
+1. Migrasi: `supabase db push` (memuat `20261104120000_midtrans_pembayaran_online.sql`; ikut
+   `20261104130000_ptpt_persiapan_khotaman.sql` — kelas terakhir PTPT, tak terkait Midtrans).
 2. Secret — **Server Key** dari Dashboard Midtrans → Settings → Access Keys. Kunci sandbox
    berawalan `SB-`; fungsi memilih API sandbox/production dari awalan itu.
    ```bash

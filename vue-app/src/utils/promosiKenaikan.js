@@ -3,7 +3,7 @@
 //   `settings` & `lembagaList` yang dulu ref view, kini parameter.
 import { getKartuKenaikanSchema } from './kenaikan'
 import { labelPasangan } from './pasanganGuru'
-import { jenjangLembaga, indexJenjang } from './jenjangQiraati' // v.1.2.2: jodohkan label master ↔ kartu
+import { jenjangLembaga, indexJenjang, isPersiapanKhotaman } from './jenjangQiraati' // v.1.2.2: jodohkan label master ↔ kartu
 import { setOne, updateOne } from '@/services/db'
 
 // v.21.75: Resolve kelas label dari Form Kenaikan ke schema {kelasId, itemId}
@@ -191,6 +191,21 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
       // v.100e: ceremonial diisi MANUAL (tidak auto-stamp di sini).
       payload.kartu_kenaikan = kk
     }
+  }
+
+  // v.1.4.9: santri yang MENINGGALKAN PTPT dari Persiapan Khotaman (lulus Tes Khotaman →
+  //   PPPH) — cap kolom "Khotaman" kartu PTPT-nya. Cap di atas hanya mengenai kartu lembaga
+  //   TUJUAN, jadi tanpa ini kolom itu kosong selamanya.
+  if (
+    String(s.lembaga || '').toUpperCase() === 'PTPT' &&
+    isPersiapanKhotaman(s.kelas) &&
+    lmbBaru &&
+    lmbBaru.toUpperCase() !== 'PTPT'
+  ) {
+    const blokPtpt = { ...((kk.PTPT || {}).persiapan_khotaman || {}) }
+    blokPtpt.khotaman = today
+    kk.PTPT = { ...(kk.PTPT || {}), persiapan_khotaman: blokPtpt }
+    payload.kartu_kenaikan = kk
   }
 
   // Append riwayat (text) — backward compatibility

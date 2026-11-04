@@ -1316,6 +1316,7 @@ const JENIS_OPTS = [
   { value: 'jilid', label: 'Jilid' },
   { value: 'khotam', label: 'Khotam' },
   { value: 'juz', label: 'Juz' },
+  { value: 'khotaman', label: 'Khotaman (PTPT)' }, // v.1.4.9
   { value: 'kelas', label: 'Kelas' },
   { value: 'level', label: 'Level' }
 ]
@@ -1908,6 +1909,11 @@ function prefillNaik(a) {
       juz = m ? m[1] : ''
       // v.1.4.9: Juz 30 → Persiapan Khotaman (bila ada di master), bukan Kelas 6 / PPPH.
       if (juz) kelas = kelasPtptUntukJuz(juz, opts)
+    } else if (a.jenis === 'khotaman') {
+      // Normalnya sudah ditangkap tujuanNaikLembaga (→ PPPH). Sampai di sini = master PTPT
+      //   belum memuat Persiapan Khotaman; jangan menebak "Khotaman" sebagai nama kelas.
+      kelas = pilih(a.kelas_asal) || a.kelas_asal || ''
+      juz = '30'
     } else {
       kelas = pilih(t) || t
       const m = String(kelas).match(/(\d+)/)

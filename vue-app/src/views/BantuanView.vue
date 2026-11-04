@@ -811,6 +811,7 @@ const rilis = [
       'Di menu Personal, kehadiran bulan-bulan sebelumnya (lengkap dengan rincian per hari) dan slip bisyaroh tahun-tahun sebelumnya kini bisa dibuka.',
       '"Tandai dibaca" di Notifikasi kini benar-benar mengosongkan daftar Belum dibaca.',
       'Capaian Prestasi santri TPQ s/d Pra PTPT kini berisi hasil tes kenaikan; capaian bulanan hanya untuk santri PTPT dan PPPH.',
+      'PTPT punya kelas terakhir baru, Persiapan Khotaman: santri yang lulus tes Juz 30 masuk ke sana, lalu naik ke PPPH setelah lulus Tes Khotaman (diajukan di menu Tes Kenaikan, tanpa glondongan).',
       'Pembayaran wali santri: Transfer Bank dan VA BMT PETA tidak lagi ditawarkan.',
       'Pembayaran online (setelah dinyalakan pondok): bayar tagihan lewat Virtual Account BRI, BNI, BCA, BSI, Mandiri, atau QRIS — nominal langsung terisi, tagihan lunas otomatis, boleh dicicil. Biaya layanan ditanggung pembayar dan tampil sebelum membayar.'
     ]
