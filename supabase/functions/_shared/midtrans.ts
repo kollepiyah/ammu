@@ -6,15 +6,17 @@
 // Bagian BAWAH (payload Snap, tanda tangan notifikasi, status) hanya dipakai server.
 // Murni tanpa API Deno supaya bisa diuji vitest.
 
-export type Kanal = { id: string; jenis: 'va' | 'qris'; snap: string; label: string }
+export type Kanal = { id: string; jenis: 'va' | 'qris'; snap: string; label: string; core: boolean }
 
 export const KANAL_MIDTRANS: Kanal[] = [
-  { id: 'bri', jenis: 'va', snap: 'bri_va', label: 'BRI' },
-  { id: 'bni', jenis: 'va', snap: 'bni_va', label: 'BNI' },
-  { id: 'bca', jenis: 'va', snap: 'bca_va', label: 'BCA' },
-  { id: 'bsi', jenis: 'va', snap: 'bsi_va', label: 'BSI' },
-  { id: 'mandiri', jenis: 'va', snap: 'echannel', label: 'Mandiri' },
-  { id: 'qris', jenis: 'qris', snap: 'other_qris', label: 'QRIS' }
+  // `core` = ditampilkan di layar Ammu sendiri lewat Core API (Kyai, 4 Nov 2026: "seperti
+  //   Shopee"). BSI tak terdokumentasi di Core API → tetap lewat Snap (jendela Midtrans).
+  { id: 'bri', jenis: 'va', snap: 'bri_va', label: 'BRI', core: true },
+  { id: 'bni', jenis: 'va', snap: 'bni_va', label: 'BNI', core: true },
+  { id: 'bca', jenis: 'va', snap: 'bca_va', label: 'BCA', core: true },
+  { id: 'bsi', jenis: 'va', snap: 'bsi_va', label: 'BSI', core: false },
+  { id: 'mandiri', jenis: 'va', snap: 'echannel', label: 'Mandiri', core: true },
+  { id: 'qris', jenis: 'qris', snap: 'other_qris', label: 'QRIS', core: true }
 ]
 
 export const BIAYA_VA_BAWAAN = 4500
@@ -187,4 +189,80 @@ export function nominalBersih(gross: unknown, biayaLayanan: unknown): number {
   const g = Math.round(Number(gross) || 0)
   const b = Math.max(0, Math.round(Number(biayaLayanan) || 0))
   return Math.max(0, g - b)
+}
+
+// ─────────────── Core API (v.1.4.9 gel. 2: tampil di layar Ammu) ───────────────
+
+/** Masa berlaku kode bayar: VA sehari, QR sejam (kode menggantung lama mengundang bayar dobel). */
+export function masaBerlaku(kanal: Kanal): { expiry_duration: number; unit: 'hour' | 'minute' } {
+  return kanal.jenis === 'qris'
+    ? { expiry_duration: 60, unit: 'minute' }
+    : { expiry_duration: 24, unit: 'hour' }
+}
+
+/**
+ * Badan POST /v2/charge (Core API). item_details sama dengan Snap — jumlahnya WAJIB = gross.
+ * Hanya untuk kanal `core`; BSI tetap Snap.
+ */
+export function bangunCharge(p: {
+  orderId: string
+  kanal: Kanal
+  items: ItemBayar[]
+  biaya: number
+  santriNama: string
+}) {
+  const snap = bangunSnap(p)
+  // deno-lint-ignore no-explicit-any
+  const dasar: any = {
+    transaction_details: snap.transaction_details,
+    item_details: snap.item_details,
+    customer_details: snap.customer_details,
+    custom_expiry: masaBerlaku(p.kanal)
+  }
+  if (p.kanal.jenis === 'qris') return { ...dasar, payment_type: 'qris', qris: { acquirer: 'gopay' } }
+  if (p.kanal.id === 'mandiri')
+    // bill_info1 dipotong 10 karakter, bill_info2 30 (aturan Midtrans).
+    return {
+      ...dasar,
+      payment_type: 'echannel',
+      echannel: { bill_info1: 'Pembayaran', bill_info2: 'Ammu Online' }
+    }
+  return { ...dasar, payment_type: 'bank_transfer', bank_transfer: { bank: p.kanal.id } }
+}
+
+/** "YYYY-MM-DD HH:mm:ss" (WIB, format Midtrans) → ISO; '' bila tak terbaca. */
+export function isoDariWaktuMidtrans(v: unknown): string {
+  const m = String(v || '').match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/)
+  return m ? new Date(`${m[1]}T${m[2]}+07:00`).toISOString() : ''
+}
+
+/**
+ * Hasil charge Core API → yang perlu ditampilkan Ammu. Midtrans menjawab HTTP 200/201 dengan
+ * `status_code` di badan; hanya '201' (pending) yang berarti kode bayar terbit.
+ */
+// deno-lint-ignore no-explicit-any
+export function bacaHasilCharge(j: any, kanal: Kanal, nowMs: number) {
+  const ok = String(j?.status_code || '') === '201'
+  const nb = nomorBayar(j)
+  const aksiQr = Array.isArray(j?.actions)
+    ? j.actions.find((a: { name?: string }) => a?.name === 'generate-qr-code')
+    : null
+  const dur = masaBerlaku(kanal)
+  const cadangan = new Date(
+    nowMs + dur.expiry_duration * (dur.unit === 'hour' ? 3600_000 : 60_000)
+  ).toISOString()
+  return {
+    ok,
+    galat: ok
+      ? ''
+      : [j?.status_message, ...(Array.isArray(j?.validation_messages) ? j.validation_messages : [])]
+          .filter(Boolean)
+          .join('; ') || 'Midtrans menolak permintaan.',
+    nomor: nb.nomor,
+    kodePerusahaan: nb.kodePerusahaan,
+    qrUrl: String(aksiQr?.url || ''),
+    qrString: String(j?.qr_string || ''),
+    transactionId: String(j?.transaction_id || ''),
+    expiryAt: isoDariWaktuMidtrans(j?.expiry_time) || cadangan
+  }
 }

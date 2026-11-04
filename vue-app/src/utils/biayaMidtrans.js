@@ -8,12 +8,14 @@
 
 // `snap` = nama kanal di Snap `enabled_payments`. Mandiri lewat Bill Payment (echannel).
 export const KANAL_MIDTRANS = [
-  { id: 'bri', jenis: 'va', snap: 'bri_va', label: 'BRI' },
-  { id: 'bni', jenis: 'va', snap: 'bni_va', label: 'BNI' },
-  { id: 'bca', jenis: 'va', snap: 'bca_va', label: 'BCA' },
-  { id: 'bsi', jenis: 'va', snap: 'bsi_va', label: 'BSI' },
-  { id: 'mandiri', jenis: 'va', snap: 'echannel', label: 'Mandiri' },
-  { id: 'qris', jenis: 'qris', snap: 'other_qris', label: 'QRIS' }
+  // `core` = ditampilkan di layar Ammu sendiri lewat Core API (Kyai, 4 Nov 2026: "seperti
+  //   Shopee"). BSI tak terdokumentasi di Core API → tetap lewat Snap (jendela Midtrans).
+  { id: 'bri', jenis: 'va', snap: 'bri_va', label: 'BRI', core: true },
+  { id: 'bni', jenis: 'va', snap: 'bni_va', label: 'BNI', core: true },
+  { id: 'bca', jenis: 'va', snap: 'bca_va', label: 'BCA', core: true },
+  { id: 'bsi', jenis: 'va', snap: 'bsi_va', label: 'BSI', core: false },
+  { id: 'mandiri', jenis: 'va', snap: 'echannel', label: 'Mandiri', core: true },
+  { id: 'qris', jenis: 'qris', snap: 'other_qris', label: 'QRIS', core: true }
 ]
 
 // Tarif Midtrans per 4 Nov 2026: VA Rp4.000 + PPN 11% = Rp4.440 → dibulatkan Rp4.500;

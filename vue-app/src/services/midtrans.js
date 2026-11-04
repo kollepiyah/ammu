@@ -30,6 +30,44 @@ export function batalKodeBayar(intentId) {
   return panggil({ aksi: 'batal', intent_id: String(intentId) })
 }
 
+// ── BSI (Snap): jendela Midtrans DI DALAM Ammu lewat snap.js — butuh Client Key (publik,
+//   diisi di Pengaturan Keuangan). Tanpa Client Key / gagal dimuat → halaman Midtrans di browser.
+let _muatSnap = null
+function muatSnap(clientKey) {
+  if (typeof window !== 'undefined' && window.snap) return Promise.resolve(window.snap)
+  if (!_muatSnap) {
+    _muatSnap = new Promise((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = /^SB-/i.test(clientKey)
+        ? 'https://app.sandbox.midtrans.com/snap/snap.js'
+        : 'https://app.midtrans.com/snap/snap.js'
+      s.setAttribute('data-client-key', clientKey)
+      s.onload = () => (window.snap ? resolve(window.snap) : reject(new Error('snap.js kosong')))
+      s.onerror = () => {
+        _muatSnap = null
+        reject(new Error('snap.js gagal dimuat'))
+      }
+      document.head.appendChild(s)
+    })
+  }
+  return _muatSnap
+}
+
+/** Bayar lewat Snap: jendela di dalam Ammu bila bisa, selain itu browser. Return 'jendela' | 'browser' | ''. */
+export async function bayarLewatSnap({ token, redirectUrl, clientKey }) {
+  if (token && clientKey) {
+    try {
+      const snap = await muatSnap(String(clientKey))
+      // Callback cukup kosong: status dicatat lewat webhook → realtime keuangan_va_intent.
+      snap.pay(token, { onSuccess() {}, onPending() {}, onError() {}, onClose() {} })
+      return 'jendela'
+    } catch {
+      /* jatuh ke browser */
+    }
+  }
+  return bukaHalamanBayar(redirectUrl) ? 'browser' : ''
+}
+
 /** Buka halaman bayar Midtrans. Capacitor & Electron meneruskannya ke browser sistem. */
 export function bukaHalamanBayar(url) {
   if (!/^https:\/\/app(\.sandbox)?\.midtrans\.com\//.test(String(url || ''))) return false

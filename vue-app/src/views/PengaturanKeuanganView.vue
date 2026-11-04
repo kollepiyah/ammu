@@ -2855,6 +2855,22 @@
           </p>
         </div>
       </div>
+      <div class="mt-3">
+        <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+          >Client Key Midtrans (untuk VA BSI)</label
+        >
+        <input
+          v-model="form.midtrans_client_key"
+          type="text"
+          placeholder="SB-Mid-client-…"
+          class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
+        />
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+          Kunci PUBLIK dari Settings → Access Keys (bukan Server Key). BRI, BNI, BCA, Mandiri &amp;
+          QRIS tampil langsung di Ammu; BSI memakai jendela Midtrans di dalam Ammu bila kunci ini
+          diisi — kosong = halaman Midtrans dibuka di browser.
+        </p>
+      </div>
       <p class="text-[10px] text-[var(--text-tertiary)] mt-3 leading-relaxed">
         <i class="fas fa-circle-info mr-1"></i>Contoh: tagihan Rp750.000 lewat VA → wali membayar
         Rp{{ fmtRp(contohMidtrans.va.total) }}; lewat QRIS → Rp{{
@@ -5402,7 +5418,8 @@ const form = reactive({
   midtrans_aktif: false,
   midtrans_kanal: KANAL_MIDTRANS.map((k) => k.id),
   midtrans_biaya_va: BIAYA_VA_BAWAAN,
-  midtrans_biaya_qris_persen: BIAYA_QRIS_PERSEN_BAWAAN
+  midtrans_biaya_qris_persen: BIAYA_QRIS_PERSEN_BAWAAN,
+  midtrans_client_key: ''
 })
 
 function slugId(s) {
@@ -5642,6 +5659,7 @@ function loadFromSettings() {
   form.midtrans_kanal = kanalAktif(s).map((k) => k.id)
   form.midtrans_biaya_va = s.midtrans_biaya_va ?? BIAYA_VA_BAWAAN
   form.midtrans_biaya_qris_persen = s.midtrans_biaya_qris_persen ?? BIAYA_QRIS_PERSEN_BAWAAN
+  form.midtrans_client_key = s.midtrans_client_key || ''
 
   hidrasiKeu.value = sidikJariKeu(s) // Kyai 7 Agu: bekal penjaga simpan (lihat simpan())
 }
@@ -6253,7 +6271,9 @@ async function simpan() {
         form.midtrans_kanal.includes(id)
       ),
       midtrans_biaya_va: Math.max(0, Math.round(Number(form.midtrans_biaya_va) || 0)),
-      midtrans_biaya_qris_persen: Math.max(0, Number(form.midtrans_biaya_qris_persen) || 0)
+      midtrans_biaya_qris_persen: Math.max(0, Number(form.midtrans_biaya_qris_persen) || 0),
+      // Client Key memang publik (dipakai snap.js di peramban) — aman di general/web.
+      midtrans_client_key: String(form.midtrans_client_key || '').trim()
     }
     // A1 (audit 29 Jul): kunci keuangan SENSITIF → settings/keuangan (finance-only),
     //   JANGAN ke general/web yang anon-readable (PSB+login). Sinkron dgn KEUANGAN_KEYS

@@ -12,11 +12,16 @@
 // disimpan sebagai keuangan_va_intent (total = BERSIH, tanpa biaya layanan) — bentuk yang
 // sama dengan keranjang VA BMT, jadi midtrans-webhook mencatatnya lewat apply_bmt_payment.
 //
+// v.1.4.9 gel. 2: BRI/BNI/BCA/Mandiri/QRIS lewat Core API (nomor VA / QR tampil di Ammu);
+//   BSI lewat Snap (jendela Midtrans). Respons memuat `mode: 'core' | 'snap'`.
+//
 // DEPLOY: supabase functions deploy midtrans-charge
 // SECRET: supabase secrets set MIDTRANS_SERVER_KEY="SB-Mid-server-…"  (sandbox berawalan SB-)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handlePreflight, json } from '../_shared/cors.ts'
 import {
+  bacaHasilCharge,
+  bangunCharge,
   bangunSnap,
   buatOrderId,
   cariKanal,
@@ -182,6 +187,61 @@ Deno.serve(async (req) => {
     })
     if (insErr) throw insErr
 
+    const gagal = async (pesan: string, status: number) => {
+      await db
+        .from('keuangan_va_intent')
+        .update({ status: 'gagal', data: { ...dataIntent, galat: pesan }, updated_at: kini })
+        .eq('id', orderId)
+      console.error('[midtrans-charge]', status, pesan)
+      return json({ ok: false, error: pesan }, 502)
+    }
+
+    // v.1.4.9 gel. 2 (Kyai: "seperti Shopee") — kanal core: Core API, nomor VA / QR ditampilkan
+    //   di layar Ammu sendiri. BSI (tak ada di Core API) tetap lewat Snap di bawah.
+    if (kanal.core) {
+      const bodyCore = bangunCharge({ orderId, kanal, items, biaya: rinci.biaya, santriNama: santri.nama || '' })
+      const rc = await fetch(`${url.api}/v2/charge`, {
+        method: 'POST',
+        headers: {
+          Authorization: authMidtrans(),
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify(bodyCore)
+      })
+      const jc = await rc.json().catch(() => ({}))
+      const h = bacaHasilCharge(jc, kanal, Date.now())
+      if (!h.ok) return await gagal(h.galat, rc.status)
+      const dataCore = {
+        ...dataIntent,
+        mode: 'core',
+        kode_perusahaan: h.kodePerusahaan,
+        qr_url: h.qrUrl,
+        qr_string: h.qrString,
+        transaction_id: h.transactionId,
+        expiry_at: h.expiryAt
+      }
+      await db
+        .from('keuangan_va_intent')
+        .update({ va: h.nomor, data: dataCore, updated_at: kini })
+        .eq('id', orderId)
+      return json({
+        ok: true,
+        mode: 'core',
+        intent_id: orderId,
+        kanal: kanal.id,
+        kanal_label: label,
+        nomor: h.nomor,
+        kode_perusahaan: h.kodePerusahaan,
+        qr_url: h.qrUrl,
+        expiry_at: h.expiryAt,
+        net,
+        biaya: rinci.biaya,
+        total: rinci.total,
+        sandbox: url.sandbox
+      })
+    }
+
     const payload = bangunSnap({ orderId, kanal, items, biaya: rinci.biaya, santriNama: santri.nama || '' })
     const r = await fetch(url.snap, {
       method: 'POST',
@@ -195,24 +255,21 @@ Deno.serve(async (req) => {
     const j = await r.json().catch(() => ({}))
     if (!r.ok || !j.redirect_url) {
       const pesan = Array.isArray(j.error_messages) ? j.error_messages.join('; ') : 'Midtrans menolak permintaan.'
-      await db
-        .from('keuangan_va_intent')
-        .update({ status: 'gagal', data: { ...dataIntent, galat: pesan }, updated_at: kini })
-        .eq('id', orderId)
-      console.error('[midtrans-charge]', r.status, pesan)
-      return json({ ok: false, error: pesan }, 502)
+      return await gagal(pesan, r.status)
     }
     await db
       .from('keuangan_va_intent')
       .update({
-        data: { ...dataIntent, snap_token: j.token, redirect_url: j.redirect_url },
+        data: { ...dataIntent, mode: 'snap', snap_token: j.token, redirect_url: j.redirect_url },
         updated_at: kini
       })
       .eq('id', orderId)
 
     return json({
       ok: true,
+      mode: 'snap',
       intent_id: orderId,
+      snap_token: j.token,
       redirect_url: j.redirect_url,
       net,
       biaya: rinci.biaya,

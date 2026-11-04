@@ -128,3 +128,94 @@ describe('payload Snap & notifikasi', () => {
     )
   })
 })
+
+describe('Core API (tampil di layar Ammu)', () => {
+  const items = [
+    { tipe: 'tagihan', tagihan_id: 't1', kategori: 'Syahriyah', periode: 'Nov', nominal: 100000 }
+  ]
+
+  it('payload per kanal: bank_transfer, echannel (Mandiri), qris; BSI bukan core', () => {
+    const bri = ts.bangunCharge({
+      orderId: 'o1',
+      kanal: ts.cariKanal('bri'),
+      items,
+      biaya: 4500,
+      santriNama: 'A'
+    })
+    expect(bri.payment_type).toBe('bank_transfer')
+    expect(bri.bank_transfer).toEqual({ bank: 'bri' })
+    expect(bri.transaction_details.gross_amount).toBe(104500)
+    expect(bri.custom_expiry).toEqual({ expiry_duration: 24, unit: 'hour' })
+    const mdr = ts.bangunCharge({
+      orderId: 'o2',
+      kanal: ts.cariKanal('mandiri'),
+      items,
+      biaya: 4500,
+      santriNama: 'A'
+    })
+    expect(mdr.payment_type).toBe('echannel')
+    expect(mdr.echannel.bill_info1.length).toBeLessThanOrEqual(10)
+    const q = ts.bangunCharge({
+      orderId: 'o3',
+      kanal: ts.cariKanal('qris'),
+      items,
+      biaya: 800,
+      santriNama: 'A'
+    })
+    expect(q.payment_type).toBe('qris')
+    expect(q.custom_expiry).toEqual({ expiry_duration: 60, unit: 'minute' })
+    expect(ts.cariKanal('bsi').core).toBe(false)
+  })
+
+  it('membaca respons: VA, Mandiri (kode perusahaan), QRIS (URL gambar), galat', () => {
+    const now = Date.parse('2026-11-04T10:00:00Z')
+    const va = ts.bacaHasilCharge(
+      {
+        status_code: '201',
+        transaction_id: 'tx',
+        va_numbers: [{ bank: 'bri', va_number: '8888' }],
+        expiry_time: '2026-11-05 17:00:00'
+      },
+      ts.cariKanal('bri'),
+      now
+    )
+    expect(va).toMatchObject({
+      ok: true,
+      nomor: '8888',
+      transactionId: 'tx',
+      expiryAt: '2026-11-05T10:00:00.000Z'
+    })
+    const mdr = ts.bacaHasilCharge(
+      { status_code: '201', bill_key: '123', biller_code: '70012' },
+      ts.cariKanal('mandiri'),
+      now
+    )
+    expect(mdr).toMatchObject({
+      nomor: '123',
+      kodePerusahaan: '70012',
+      expiryAt: '2026-11-05T10:00:00.000Z'
+    })
+    const q = ts.bacaHasilCharge(
+      {
+        status_code: '201',
+        actions: [
+          { name: 'generate-qr-code', url: 'https://api.sandbox.midtrans.com/v2/qris/x/qr-code' }
+        ],
+        qr_string: '000201'
+      },
+      ts.cariKanal('qris'),
+      now
+    )
+    expect(q).toMatchObject({
+      qrUrl: 'https://api.sandbox.midtrans.com/v2/qris/x/qr-code',
+      qrString: '000201',
+      expiryAt: '2026-11-04T11:00:00.000Z'
+    })
+    const g = ts.bacaHasilCharge(
+      { status_code: '402', status_message: 'Payment channel is not activated.' },
+      ts.cariKanal('bca'),
+      now
+    )
+    expect(g).toMatchObject({ ok: false, galat: 'Payment channel is not activated.' })
+  })
+})

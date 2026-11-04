@@ -366,7 +366,9 @@ TIDAK ikut dicatat sebagai uang santri.
    `https://rzwefjilxzsqlokkwiyt.supabase.co/functions/v1/midtrans-webhook`
    (Finish/Unfinish/Error redirect boleh dikosongkan.)
 5. Ammu → Pengaturan Keuangan → tab Bank → **Pembayaran Online (Midtrans)**: centang Aktifkan,
-   pilih kanal, cek biaya layanan, Simpan.
+   pilih kanal, cek biaya layanan, isi **Client Key** (publik, `SB-Mid-client-…` di sandbox) untuk
+   jendela BSI, Simpan. BRI/BNI/BCA/Mandiri/QRIS memakai Core API (tampil di Ammu); BSI memakai
+   Snap. Bayar uji: simulator sandbox Midtrans (`simulator.sandbox.midtrans.com`).
 
 ### b. Uji sandbox
 - `GET` URL webhook → `{ok:true,service:"midtrans-webhook",siap:true}`.

@@ -42,6 +42,9 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Bayar tagihan lewat Virtual Account BRI, BNI, BCA, BSI, Mandiri, atau QRIS.** Wali memilih
   tagihan, memilih bank atau QRIS, lalu halaman pembayaran menampilkan nomor VA / kode QR dengan
   nominal yang sudah terisi. Begitu dibayar, tagihan di aplikasi terisi sendiri — tanpa kirim bukti.
+- **Nomor VA dan kode QR tampil di Ammu sendiri** — lengkap dengan tombol salin, batas waktu,
+  dan langkah bayar per bank; status berubah "Pembayaran diterima" begitu dana masuk. Untuk BSI,
+  halaman pembayaran muncul sebagai jendela di dalam Ammu.
 - **Bisa dicicil.** Nominal tiap tagihan di keranjang boleh diubah; sisanya dibayar lain kali.
 - **Biaya layanan ditanggung pembayar** dan selalu terlihat sebelum membayar (VA Rp4.500 per
   pembayaran, QRIS ±0,78%).

@@ -89,6 +89,24 @@ Keputusan Kyai: biaya VA & QRIS ditanggung wali; bank BRI, BNI, BCA, BSI, Mandir
   biaya VA, biaya QRIS, contoh hitungan Rp750.000, Notification URL. Server Key TIDAK di sini
   (settings general/web terbaca publik) — ia secret fungsi server.
 
+### Changed — kode bayar tampil di layar Ammu sendiri, bukan halaman Midtrans (Kyai, 4 Nov 2026)
+
+"Bisa dibuat tetap di Ammu, seperti pembayaran Shopee/Tokopedia?" — keputusan Kyai: opsi A.
+BRI, BNI, BCA, Mandiri & QRIS kini lewat **Core API** (`POST /v2/charge`): `midtrans-charge`
+membangun badan per kanal (`_shared/midtrans.bangunCharge`: `bank_transfer` / `echannel` / `qris`,
+`custom_expiry` VA 24 jam, QR 60 menit), membaca jawabannya (`bacaHasilCharge`: nomor VA, kode
+perusahaan + kode bayar Mandiri, URL gambar QR, batas waktu WIB → ISO; hanya `status_code` 201 yang
+sah) dan menyimpannya di intent (`mode: 'core'`, `va`, `kode_perusahaan`, `qr_url`, `expiry_at`).
+Layar baru `components/KodeBayarModal.vue`: total + Salin, nomor VA / kode perusahaan + kode bayar
+(Mandiri) / gambar QR, hitung mundur, "Cara bayar" per bank (`utils/caraBayarMidtrans.js`), status
+ikut realtime → "Pembayaran diterima" tanpa tombol cek status. Daftar Kode Bayar: "Lihat kode
+bayar". **BSI** tetap Snap (tak ada di Core API) — dibuka sebagai jendela Midtrans DI DALAM Ammu
+lewat snap.js bila **Client Key** (publik) diisi di Pengaturan Keuangan; kosong = browser seperti
+sebelumnya. Kanal diberi penanda `core` di daftar bersama (cermin JS ⇄ Deno). Diuji: harness fungsi
+18 uji (Core BRI, Snap BSI, webhook), `midtransMirrorEdge` + `caraBayarMidtrans`, peramban (modal
+Mandiri, status Terbayar, QRIS); vitest 123 berkas / 1.825 tes; vite build sukses. Belum diuji
+sandbox sungguhan untuk jalur Core.
+
 ### Changed — `apply_bmt_payment` menerima order & label (migrasi 20261104120000)
 
 Tiga parameter ber-default: `p_intent_id` (Midtrans menyebut order-nya; dulu intent dicari lewat

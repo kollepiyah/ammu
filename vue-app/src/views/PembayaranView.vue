@@ -482,12 +482,13 @@
             >{{ membuatKode ? 'Menyiapkan…' : 'Bayar ' + fmtRp(rincianMidtrans.total) }}
           </button>
           <p class="text-[10px] text-[var(--text-tertiary)] mt-2 leading-relaxed">
-            Halaman pembayaran Midtrans akan terbuka dan menampilkan
-            {{ selectedMethod === 'qris' ? 'kode QR' : 'nomor Virtual Account' }} beserta nominalnya
+            {{ selectedMethod === 'qris' ? 'Kode QR' : 'Nomor Virtual Account' }} beserta nominalnya
+            tampil di sini<template v-if="kanalMidtrans === 'bsi'">
+              (lewat jendela Midtrans)</template
+            >
             — tinggal bayar dari m-banking<template v-if="selectedMethod === 'qris'">
               / e-wallet</template
-            >. Biaya layanan ditanggung pembayar. Status di aplikasi berubah sendiri begitu dana
-            masuk.
+            >. Biaya layanan ditanggung pembayar. Status berubah sendiri begitu dana masuk.
           </p>
         </div>
 
@@ -594,9 +595,16 @@
               >{{ vaIntentStatusLabel(i.status) }}</span
             >
             <button
-              v-if="i.sumber === 'midtrans' && i.status === 'pending' && i.redirect_url"
+              v-if="i.sumber === 'midtrans' && i.mode === 'core'"
               class="text-[10px] font-black text-cyan-700 hover:underline cursor-pointer"
-              @click="bukaHalamanBayar(i.redirect_url)"
+              @click="kodeTerbukaId = i.id"
+            >
+              {{ i.status === 'pending' ? 'Lihat kode bayar' : 'Rincian' }}
+            </button>
+            <button
+              v-else-if="i.sumber === 'midtrans' && i.status === 'pending' && i.redirect_url"
+              class="text-[10px] font-black text-cyan-700 hover:underline cursor-pointer"
+              @click="lanjutSnap(i)"
             >
               Lanjutkan bayar
             </button>
@@ -612,6 +620,15 @@
         </div>
       </div>
     </div>
+
+    <!-- v.1.4.9 gel. 2: kode bayar Core API (VA / QRIS) tampil di Ammu sendiri -->
+    <KodeBayarModal
+      v-if="kodeTerbuka"
+      :kode="kodeTerbuka"
+      :membatalkan="batalId === kodeTerbuka.id"
+      @close="kodeTerbukaId = ''"
+      @batal="batalIntent"
+    />
 
     <ReceiptModal
       :open="receiptOpen"
@@ -638,6 +655,7 @@ import { useGedungScope } from '@/composables/useGedungScope'
 import { fmtRp, fmtTgl } from '@/utils/format'
 import { sisaTagihan } from '@/utils/tagihan'
 import ReceiptModal from '@/components/ReceiptModal.vue'
+import KodeBayarModal from '@/components/KodeBayarModal.vue'
 import { buildReceiptStrukHtml } from '@/utils/receiptHtml'
 import { cetakStrukPdf } from '@/utils/strukBuilder'
 // v.1.2.6: kelompokkan struk per TRANSAKSI (nomor struk lama bisa kembar antar santri)
@@ -646,7 +664,7 @@ import { computeVaSantri, formatVa } from '@/utils/bmtVa'
 import { metodeBayarWali } from '@/utils/metodeBayarWali'
 // v.1.4.9 gel. 2: pembayaran online Midtrans (VA bank / QRIS), biaya layanan ditanggung wali.
 import { kanalAktif, cariKanal, rincianBayar } from '@/utils/biayaMidtrans'
-import { buatKodeBayar, batalKodeBayar, bukaHalamanBayar } from '@/services/midtrans'
+import { buatKodeBayar, batalKodeBayar, bayarLewatSnap } from '@/services/midtrans'
 import { SUMBER_BAYAR_SANTRI } from '@/utils/cocokBayarTagihan'
 
 // v.82.0526: deep-link dari TagihanView — tagihan terpilih terisi otomatis
@@ -746,6 +764,24 @@ const bolehBayarMidtrans = computed(
   () => !!vaSantri.value && cartTotal.value > 0 && !rincianMidtrans.value.galat
 )
 const membuatKode = ref(false)
+// Modal Kode Bayar (Core API). Sumber utamanya baris realtime; `kodeBaru` = jawaban server
+//   sesaat sesudah dibuat, sebelum barisnya tiba.
+const kodeTerbukaId = ref('')
+const kodeBaru = ref(null)
+const kodeTerbuka = computed(() => {
+  const id = kodeTerbukaId.value
+  if (!id) return null
+  const baris = vaIntentRaw.value.find((x) => String(x.id) === String(id))
+  if (baris) return baris
+  return kodeBaru.value && String(kodeBaru.value.id) === String(id) ? kodeBaru.value : null
+})
+function lanjutSnap(i) {
+  bayarLewatSnap({
+    token: i.snap_token,
+    redirectUrl: i.redirect_url,
+    clientKey: (settings.settings || {}).midtrans_client_key
+  })
+}
 async function bayarMidtrans() {
   const s = vaSantri.value
   if (!s) {
@@ -765,8 +801,27 @@ async function bayarMidtrans() {
     })
     cartSel.value = {}
     cartUangSaku.value = 0
-    toast.success(`Kode bayar ${fmtRp(r.total)} dibuat — halaman pembayaran dibuka.`)
-    if (!bukaHalamanBayar(r.redirect_url)) toast.info('Buka lewat "Lanjutkan bayar" di daftar.')
+    if (r.mode === 'core') {
+      // Tampilkan langsung dari jawaban server; begitu baris intent tiba lewat realtime,
+      //   modal beralih membaca baris itu (status ikut berubah sendiri).
+      kodeBaru.value = {
+        ...r,
+        id: r.intent_id,
+        status: 'pending',
+        jenis: r.kanal === 'qris' ? 'qris' : 'va',
+        va: r.nomor,
+        gross: r.total,
+        biaya_layanan: r.biaya
+      }
+      kodeTerbukaId.value = r.intent_id
+      return
+    }
+    const cara = await bayarLewatSnap({
+      token: r.snap_token,
+      redirectUrl: r.redirect_url,
+      clientKey: (settings.settings || {}).midtrans_client_key
+    })
+    if (!cara) toast.info('Buka lewat "Lanjutkan bayar" di daftar Kode Bayar.')
   } catch (e) {
     toast.error('Gagal membuat kode bayar: ' + (e?.message || e))
   } finally {
