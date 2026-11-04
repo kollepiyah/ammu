@@ -68,7 +68,12 @@ describe('tanggal transaksi memakai WIB, bukan UTC', () => {
     expect(baris, `pakai todayJakarta() — baris melanggar:\n${baris.join('\n')}`).toEqual([])
   })
 
-  it.each(BERKAS_TANGGAL_TRANSAKSI)('%s mengimpor todayJakarta dari utils/format', (rel) => {
+  // v.1.4.9: PembayaranView tak lagi punya input tanggal transaksi (form Transfer Bank wali
+  //   dihapus), jadi ia tak perlu todayJakarta — tetap dijaga dari pola UTC di atas.
+  const PERLU_TODAY_JAKARTA = BERKAS_TANGGAL_TRANSAKSI.filter(
+    (rel) => rel !== 'views/PembayaranView.vue'
+  )
+  it.each(PERLU_TODAY_JAKARTA)('%s mengimpor todayJakarta dari utils/format', (rel) => {
     const kode = baca(rel)
     expect(kode).toMatch(
       /import\s*\{[^}]*\btodayJakarta\b[^}]*\}\s*from\s*['"]@\/utils\/format['"]/

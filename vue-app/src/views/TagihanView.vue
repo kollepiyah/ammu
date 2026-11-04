@@ -30,9 +30,10 @@
           >
             <i class="fas fa-history"></i>
           </button>
-          <!-- v.87.0526: santri/wali — setoran/bayar di luar tagihan (kategori bebas). Tagihan = 1 pintu pembayaran. -->
+          <!-- v.87.0526: santri/wali — setoran/bayar di luar tagihan (kategori bebas). Tagihan = 1 pintu pembayaran.
+               v.1.4.9: hanya bila ada cara bayar online yang aktif (transfer manual dihapus). -->
           <button
-            v-if="isSantriRole"
+            v-if="isSantriRole && bayarOnlineAktif"
             class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
             @click="goSetoranLain"
           >
@@ -210,11 +211,11 @@
           >
             <i class="fas fa-trash"></i>
           </button>
-          <!-- v.86.0526: santri/wali bayar tagihan belum lunas via transfer (deep-link) -->
+          <!-- v.86.0526: santri/wali bayar tagihan belum lunas (deep-link ke Pembayaran) -->
           <button
             v-if="isSantriRole && getSisa(t) > 0"
             aria-label="Bayar tagihan"
-            title="Bayar via transfer"
+            title="Bayar tagihan"
             class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black transition cursor-pointer flex-shrink-0"
             @click="goBayar(t)"
           >
@@ -298,6 +299,7 @@ import { fmtRp, fmtTgl, todayJakarta, waLink } from '@/utils/format'
 import { mulaiTagihKode, bolehTerbitPeriode, pesanTolakPeriode } from '@/utils/periodeTagihan'
 import { pesanTagihan } from '@/utils/pesanWa' // v.1.2.6: teks WA tagihan otomatis
 import { useSettingsStore } from '@/stores/settings'
+import { adaMetodeBayarAktif } from '@/utils/metodeBayarWali'
 import { terbayarDari, sisaTagihan, tagihanSudahDibayar } from '@/utils/tagihan'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
@@ -473,14 +475,14 @@ function statusBadge(t) {
   }
 }
 
-// v.86.0526: santri/wali bayar tagihan belum lunas -> deep-link ke PembayaranView (tab transfer, prefill)
+// v.86.0526: santri/wali bayar tagihan belum lunas -> deep-link ke PembayaranView (prefill)
 const router = useRouter()
 const isSantriRole = computed(() => auth.sesiAktif?.role === 'santri')
+const bayarOnlineAktif = computed(() => adaMetodeBayarAktif(settingsStore.settings))
 function goBayar(t) {
   router.push({
     path: '/pembayaran',
     query: {
-      tab: 'transfer',
       santri: String(t.santri_id || ''),
       nominal: String(getSisa(t) || ''),
       kategori: String(t.kategori || ''),
@@ -490,7 +492,7 @@ function goBayar(t) {
 }
 // v.87.0526: setoran/bayar di luar tagihan (kategori bebas) — pintu pembayaran tetap di menu Tagihan
 function goSetoranLain() {
-  router.push({ path: '/pembayaran', query: { tab: 'transfer' } })
+  router.push({ path: '/pembayaran' })
 }
 // v.87.0526: buka Riwayat pembayaran (ikon jam) — mode riwayat di PembayaranView
 function goRiwayat() {
