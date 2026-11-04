@@ -64,7 +64,9 @@ Keputusan Kyai: biaya VA & QRIS ditanggung wali; bank BRI, BNI, BCA, BSI, Mandir
 - **`midtrans-webhook`** (`--no-verify-jwt`): `signature_key` SHA-512 diverifikasi, status dibaca
   ULANG dari API Midtrans, lalu settlement → `apply_bmt_payment` dengan nominal = gross − biaya
   layanan (kalau tidak dikurangi, biaya layanan wali ikut masuk uang saku santri); pending → nomor
-  VA / kode bayar Mandiri disimpan; expire/cancel → intent ditutup. Order asing dijawab 200.
+  VA / kode bayar Mandiri disimpan; expire/cancel → intent ditutup. Order asing — termasuk
+  notifikasi uji dari dasbor Midtrans — dijawab 200 SEBELUM status ditanya ke Midtrans (order
+  rekaan tak punya status; kalau ditanya dulu, tombol uji dasbor tampak gagal).
 - **Biaya layanan** (`utils/biayaMidtrans.js`, cermin Deno `_shared/midtrans.ts`, pagar
   `midtransMirrorEdge.test.js`): VA flat (bawaan Rp4.500 = Rp4.000 + PPN dibulatkan); QRIS persen
   dari TOTAL (bawaan 0,78% ≈ MDR 0,7% + PPN), dihitung mundur `total = ceil(net / (1 − r))` lalu

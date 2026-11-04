@@ -41,25 +41,30 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Order dicari DULU, sebelum bertanya status ke Midtrans: notifikasi uji dari dasbor
+    //   Midtrans memakai order rekaan yang tak punya status — kalau status ditanya lebih dulu,
+    //   jawabannya 500 dan tombol uji di dasbor tampak gagal padahal URL-nya benar.
+    const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const { data: it } = await db
+      .from('keuangan_va_intent')
+      .select('*')
+      .eq('id', String(notif.order_id))
+      .maybeSingle()
+    if (!it) {
+      // Order bukan buatan Ammu — jawab 200 supaya tak dikirim ulang.
+      console.log('[midtrans-webhook] order tak dikenal:', notif.order_id)
+      return json({ ok: true, abaikan: 'order tak dikenal' })
+    }
+
     const url = urlMidtrans(SERVER_KEY)
     const r = await fetch(`${url.api}/v2/${encodeURIComponent(notif.order_id)}/status`, {
       headers: { Authorization: 'Basic ' + btoa(SERVER_KEY + ':'), Accept: 'application/json' }
     })
     // deno-lint-ignore no-explicit-any
     const st: any = await r.json().catch(() => ({}))
-    // Gagal membaca status → 500 supaya Midtrans mengirim ulang nanti.
-    if (!r.ok || !st.order_id) throw new Error('status Midtrans tak terbaca: ' + r.status)
-
-    const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-    const { data: it } = await db
-      .from('keuangan_va_intent')
-      .select('*')
-      .eq('id', String(st.order_id))
-      .maybeSingle()
-    if (!it) {
-      // Order bukan buatan Ammu (mis. uji dari dasbor) — jawab 200 supaya tak dikirim ulang.
-      console.log('[midtrans-webhook] order tak dikenal:', st.order_id)
-      return json({ ok: true, abaikan: 'order tak dikenal' })
+    // Gagal membaca status order Ammu → 500 supaya Midtrans mengirim ulang nanti.
+    if (!r.ok || String(st.order_id || '') !== String(it.id)) {
+      throw new Error('status Midtrans tak terbaca: ' + r.status)
     }
 
     const putusan = putusanStatus(st.transaction_status, st.fraud_status)
