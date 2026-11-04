@@ -20,13 +20,101 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.9] — 2026-11-04 — Menu Perizinan & Cuti (+ PDF rekap izin per orang); riwayat kehadiran & slip bulan lalu di Personal; "Tandai dibaca" tuntas; pembayaran wali tanpa Transfer & BMT
+## [v.1.4.9] — 2026-11-04 — Pembayaran online wali lewat Midtrans: VA BRI/BNI/BCA/BSI/Mandiri + QRIS, biaya layanan ditanggung wali, bisa dicicil
 
-**SIAP RILIS** — `versionCode` 149 / `versionName` `v.1.4.9`. **Tanpa migrasi Supabase, tanpa
-perubahan edge function, tanpa perubahan native Android.** Android membundel web, jadi pengguna
-Play baru menerimanya lewat AAB baru. Urutannya: **deploy web → rebuild AAB → rilis Electron.**
+**SIAP RILIS** — `versionCode` 149 / `versionName` `v.1.4.9`, **2 gelombang**. Gelombang 2 membawa
+**satu migrasi Supabase dan dua edge function baru**. Urutannya: **`supabase db push` → secret
+`MIDTRANS_SERVER_KEY` + deploy `midtrans-charge` & `midtrans-webhook` (+ deploy ulang
+`auto-generate-tagihan`, cermin sumber bayarnya berubah) → deploy web → rebuild AAB → rilis
+Electron**. Pembayaran online baru tampil ke wali sesudah "Aktifkan pembayaran online"
+dicentang di Pengaturan Keuangan — selama belum, wali tetap melihat "Segera hadir", jadi web boleh
+tayang lebih dulu. Panduan pasang: docs/SUPABASE-EDGE-FUNCTIONS-DEPLOY.md §9.
 
-Nomor baru, BUKAN gelombang v.1.4.8: Electron 1.4.8 sudah "Latest" di GitHub sejak 3 Nov 2026.
+Masih gelombang, bukan nomor baru: per 4 Nov 2026 siang web gelombang 1 sudah tayang
+(`app-version.json` = 149) tapi Electron 1.4.9 belum terbit di GitHub. **Bila AAB vc149 sudah
+diunggah ke Play, gelombang ini harus dinaikkan ke v.1.4.10 / vc150.**
+
+Diuji: vitest 119 berkas / 1.805 tes (berkas baru `midtransMirrorEdge`; `metodeBayarWali` diperluas); PGlite — fungsi LAMA
+dimuat dulu lalu migrasi ini di atasnya, 11 uji lulus (satu fungsi tanpa overload; panggilan BMT
+4-argumen menghasilkan id/sumber/keterangan persis seperti dulu; p_intent_id memilih order yang benar
+di antara dua keranjang bernominal sama; notifikasi dobel idempoten; intent bukan pending / milik
+santri lain jatuh ke waterfall; hanya service_role boleh eksekusi). Kedua fungsi edge dibundel
+esbuild dan dijalankan di Node dengan tiruan Supabase + Midtrans: 14 uji lulus (santri orang lain
+403, kanal tertutup ditolak, minimal VA, item dijepit ke sisa, tagihan santri lain dibuang, biaya
+layanan masuk gross, tanda tangan palsu 401, nomor VA tersimpan saat pending, settlement → RPC
+dengan nominal BERSIH, order asing 200 tanpa mencatat, expire, batal). Di peramban (sesi & data
+rekaan, tulisan dan panggilan fungsi dicegat): alur wali metode → keranjang dengan cicilan → pilih
+BSI → Bayar (payload benar, halaman Snap dibuka), QRIS, kartu Pengaturan. **Belum diuji dengan
+sandbox Midtrans sungguhan** — butuh Server Key sandbox Kyai.
+
+### Added — pembayaran online Midtrans (Kyai, 4 Nov 2026: lanjutan #5)
+
+Keputusan Kyai: biaya VA & QRIS ditanggung wali; bank BRI, BNI, BCA, BSI, Mandiri.
+
+- **Snap, bukan Core API.** Di Core API `bank_transfer.bank` hanya `permata|bni|bri|bca`; BSI tidak
+  terdokumentasi. Snap mendukung kelimanya (`bri_va`, `bni_va`, `bca_va`, `bsi_va`, `echannel` untuk
+  Mandiri Bill) + QRIS (`other_qris`). Wali memilih kanal DI AMMU (supaya biaya layanannya pas),
+  Snap dibuka dengan `enabled_payments` satu kanal itu, dan halaman Midtrans menampilkan nomor VA /
+  QR beserta nominal terkunci + petunjuk per bank.
+- **`midtrans-charge`** (JWT wali): santri harus terbaca lewat RLS pemanggil; sisa tagihan dibaca
+  ulang dan tiap item dijepit ke sisanya (tagihan santri lain dibuang); biaya layanan dihitung ulang
+  dari settings; keranjang disimpan sebagai `keuangan_va_intent` (total BERSIH, `data.sumber =
+  'midtrans'`, biaya, gross, kanal, redirect_url). Aksi `batal` membatalkan juga di Midtrans; bila
+  ternyata sudah dibayar, pembatalan ditolak.
+- **`midtrans-webhook`** (`--no-verify-jwt`): `signature_key` SHA-512 diverifikasi, status dibaca
+  ULANG dari API Midtrans, lalu settlement → `apply_bmt_payment` dengan nominal = gross − biaya
+  layanan (kalau tidak dikurangi, biaya layanan wali ikut masuk uang saku santri); pending → nomor
+  VA / kode bayar Mandiri disimpan; expire/cancel → intent ditutup. Order asing dijawab 200.
+- **Biaya layanan** (`utils/biayaMidtrans.js`, cermin Deno `_shared/midtrans.ts`, pagar
+  `midtransMirrorEdge.test.js`): VA flat (bawaan Rp4.500 = Rp4.000 + PPN dibulatkan); QRIS persen
+  dari TOTAL (bawaan 0,78% ≈ MDR 0,7% + PPN), dihitung mundur `total = ceil(net / (1 − r))` lalu
+  dibulatkan per Rp100 supaya pondok tetap menerima utuh. Minimal VA Rp10.000, QRIS Rp1.000, QRIS
+  maks Rp10 juta. Lingkungan sandbox/production diturunkan dari awalan Server Key (`SB-`).
+- **Layar wali** (PembayaranView): keranjang VA BMT dan Midtrans kini satu blok; Midtrans menambah
+  pilihan bank (diingat per perangkat), rincian Subtotal / Biaya layanan / Total dibayar, tombol
+  "Bayar Rp…" (`services/midtrans.js` → buka Snap di browser sistem). Daftar **Kode Bayar** tampil
+  di langkah mana pun selama alur bayar: nominal, kanal, nomor VA bila sudah diketahui, "Lanjutkan
+  bayar", "Batalkan"; status ikut realtime (`keuangan_va_intent` sudah di publication).
+- **Cicilan**: tidak butuh fitur baru — keranjang sejak v.97 boleh membayar sebagian tiap tagihan;
+  RPC menambah `terbayar` dan status jadi `partial`. Petunjuknya kini ditulis di kartu keranjang.
+  Tiap cicilan kena biaya layanan sendiri.
+- **Pengaturan Keuangan → Bank**: kartu "Pembayaran Online (Midtrans)" — aktifkan, kanal dibuka,
+  biaya VA, biaya QRIS, contoh hitungan Rp750.000, Notification URL. Server Key TIDAK di sini
+  (settings general/web terbaca publik) — ia secret fungsi server.
+
+### Changed — `apply_bmt_payment` menerima order & label (migrasi 20261104120000)
+
+Tiga parameter ber-default: `p_intent_id` (Midtrans menyebut order-nya; dulu intent dicari lewat
+santri + total, sehingga dua keranjang bernominal sama bisa tertukar), `p_sumber` (`'midtrans'`,
+awalan id `bi_midtrans_` / `us_midtrans_`), `p_label` (keterangan "Pembayaran VA BRI (Midtrans) -
+Nama", `data.kanal`). Panggilan BMT tanpa parameter baru menghasilkan baris yang persis sama,
+kecuali catatan sisa uang saku: "Sisa transfer VA -> Uang Saku" → "Sisa pembayaran VA BMT -> Uang
+Saku". Signature berubah → fungsi lama di-DROP dulu (tanpa itu Postgres menyimpan dua overload).
+
+### Changed — riwayat & notifikasi wali memuat semua cara bayar
+
+`SUMBER_BAYAR_SANTRI` (+`midtrans`; cerminnya di cron `auto-generate-tagihan/prabayar.ts` ikut —
+pagar `prabayarMirrorEdge` menangkapnya) kini juga dipakai riwayat PembayaranView dan notifikasi
+"Pembayaran berhasil" — keduanya dulu menulis daftar sendiri `pos_santri | transfer_verified`,
+sehingga **pembayaran VA BMT pun tak pernah tampil di riwayat wali**. `metodeBayar` mengenali
+`midtrans` sebagai Transfer (laporan kas harian). Lencana VA di Tabungan/uang saku ikut.
+
+### Koreksi atas rancangan obrolan Gemini (PDF Kyai, 4 Nov 2026)
+
+- "VA tetap + callback inquiry ke Ammu (nominal dinamis)" tidak ada di dokumentasi Midtrans — VA
+  Midtrans per order dengan nominal tetap. Nomor tetap per santri = tahap 2 (nomor kustom; di
+  production bisa butuh perjanjian bank).
+- QRIS memakai `payment_type: "qris"` / Snap `other_qris`, bukan `"gopay"`.
+- Endpoint = Supabase Edge Function, bukan `api.ammuonline.id`.
+- Belum terkonfirmasi: tarif VA resmi, tarif QRIS pendidikan, biaya & kelayakan pencairan ke
+  rekening BMT PETA (KSPPS) — ditanyakan Kyai ke Midtrans.
+
+**Titik versi:** tetap vc149 / v.1.4.9 (gelombang) — tak ada berkas versi yang berubah di gelombang
+ini; entri rilis Bantuan, CHANGELOG, RELEASE-NOTES ditambah.
+
+---
+
+## [v.1.4.9 · gelombang 1] — 2026-11-04 — Menu Perizinan & Cuti (+ PDF rekap izin per orang); riwayat kehadiran & slip bulan lalu di Personal; "Tandai dibaca" tuntas; pembayaran wali tanpa Transfer & BMT
 
 Diuji: vitest 118 berkas / 1.794 tes (4 berkas baru: `notifTerbaca`, `kehadiranPribadi`, `rekapIzinPdf`,
 `metodeBayarWali`); `vite build`. Paritas util kehadiran baru vs kode lama PersonalView: 300 skenario
@@ -93,10 +181,6 @@ Lain" di Tagihan disembunyikan, tombol Bayar tetap (membuka info itu). `transfer
 Midtrans BELUM dibangun — rancangan menyusul (lihat catatan sesi 4 Nov 2026): pipa
 `keuangan_va_intent` + RPC `apply_bmt_payment` (idempoten per ref, alokasi keranjang/waterfall)
 bisa dipakai ulang oleh webhook Midtrans.
-
-**Titik versi:** package.json root, vue-app, vue-app-psb, vue-widgets, electron; empat package-lock
-(hanya versi paketnya sendiri); build.gradle (vc149); app-version.json; entri rilis Bantuan;
-CHANGELOG; RELEASE-NOTES.
 
 ---
 

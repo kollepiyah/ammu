@@ -337,3 +337,52 @@ dulu**, kalau belum, tab Jejak akan bilang tabelnya belum ada.
   guard **scan-terawal-menang** + tak timpa `izin`/`sakit`.
 - **Jam mesin WIB**: pastikan tanggal/jam & timezone mesin benar (fungsi konversi ke
   Asia/Jakarta, tapi jam mesin yg salah = shift salah).
+
+---
+
+## 9. Pembayaran online wali — Midtrans (VA BRI/BNI/BCA/BSI/Mandiri + QRIS) — v.1.4.9
+
+Alur: wali menyusun keranjang di **Pembayaran** → `midtrans-charge` (JWT wali) menghitung ulang
+sisa tagihan + biaya layanan, menyimpan `keuangan_va_intent`, meminta Snap → wali membayar di
+halaman Midtrans → Midtrans memanggil `midtrans-webhook` → RPC `apply_bmt_payment` mencatat
+(tagihan, sisa ke uang saku, buku induk `sumber = 'midtrans'`). Biaya layanan ditanggung wali dan
+TIDAK ikut dicatat sebagai uang santri.
+
+### a. Urutan pasang (sandbox dulu)
+1. Migrasi: `supabase db push` (memuat `20261104120000_midtrans_pembayaran_online.sql`).
+2. Secret — **Server Key** dari Dashboard Midtrans → Settings → Access Keys. Kunci sandbox
+   berawalan `SB-`; fungsi memilih API sandbox/production dari awalan itu.
+   ```bash
+   supabase secrets set MIDTRANS_SERVER_KEY="SB-Mid-server-xxxxxxxx"
+   ```
+3. Deploy:
+   ```bash
+   supabase functions deploy midtrans-charge                     # WAJIB JWT (wali)
+   supabase functions deploy midtrans-webhook --no-verify-jwt    # dipanggil server Midtrans
+   supabase functions deploy auto-generate-tagihan --no-verify-jwt  # v.1.4.9: kenal sumber 'midtrans'
+   ```
+4. Dashboard Midtrans → Settings → Payment → **Notification URL**:
+   `https://rzwefjilxzsqlokkwiyt.supabase.co/functions/v1/midtrans-webhook`
+   (Finish/Unfinish/Error redirect boleh dikosongkan.)
+5. Ammu → Pengaturan Keuangan → tab Bank → **Pembayaran Online (Midtrans)**: centang Aktifkan,
+   pilih kanal, cek biaya layanan, Simpan.
+
+### b. Uji sandbox
+- `GET` URL webhook → `{ok:true,service:"midtrans-webhook",siap:true}`.
+- Login akun wali → Tagihan → Bayar → pilih bank → Bayar. Halaman Snap sandbox terbuka; bayar
+  pakai simulator Midtrans (Testing Payment on Sandbox). Dalam beberapa detik kode bayar di
+  aplikasi berubah **Terbayar** dan tagihan bertambah `terbayar`-nya.
+- Log: Dashboard → Edge Functions → midtrans-webhook → Logs, cari `[midtrans-webhook]`.
+
+### c. Pindah ke production
+Ganti secret dengan Server Key production (tanpa `SB-`), isi ulang Notification URL di mode
+Production dasbor Midtrans. Tak perlu deploy ulang fungsi.
+
+### d. Catatan / risiko
+- Nomor VA dari Midtrans berganti tiap pembayaran (bukan nomor tetap per santri); nominal
+  terkunci. Nomor tetap per santri = tahap 2: dokumentasi menyebut nomor kustom untuk BCA/BNI/BRI
+  (Core API), `bsi_va.va_number` (Snap) dan `bill_key` Mandiri — di production bisa butuh perjanjian
+  bank, tanyakan ke Midtrans dulu.
+- Cicilan: wali mengubah nominal per tagihan di keranjang; tiap pembayaran kena biaya layanan.
+- Kode bayar yang dibatalkan wali juga dibatalkan di Midtrans; bila ternyata sudah terbayar,
+  pembatalan ditolak dan notifikasinya tetap dicatat.
