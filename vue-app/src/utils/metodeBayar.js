@@ -18,7 +18,8 @@ export const METODE_OPTS = ['Tunai', 'Transfer']
 //   label riwayat wali v.1.4.1 yang justru mengaku membetulkan VA BMT. Ejaan terbalik
 //   tetap ditahan sebagai alias: ia tak pernah cocok dengan apa pun, jadi tak ada
 //   ruginya, dan mencabutnya cuma memindah risiko ke penulis lain yang belum ketahuan.
-const SUMBER_TRANSFER = ['transfer_verified', 'bmt_va', 'bmt', 'va_bmt', 'va']
+// v.1.4.9 gel. 2: + 'midtrans' (VA bank / QRIS online) — uangnya masuk rekening, bukan laci.
+const SUMBER_TRANSFER = ['transfer_verified', 'bmt_va', 'bmt', 'va_bmt', 'va', 'midtrans']
 
 /** 'Tunai' | 'Transfer' untuk satu baris keuangan_buku_induk.
  *

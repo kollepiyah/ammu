@@ -25,6 +25,7 @@ import { isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
 import { kegiatanKenaLembaga } from '@/composables/useKegiatan' // v.1.2.4: scope lembaga agenda
 import { batasTerbaca } from '@/utils/notifTerbaca'
+import { SUMBER_BAYAR_SANTRI } from '@/utils/cocokBayarTagihan'
 
 // ---------------------------------------------------------------------------
 // AUDIT AGU 2026 (P3) — state & langganan dipindah ke lingkup MODUL (dipakai
@@ -205,17 +206,19 @@ export function useNotifications() {
     const me = userId.value
     return (
       bukuIndukRaw.value
-        // v.87.0526: sertakan transfer yang sudah diverifikasi admin (selain tunai POS)
-        .filter(
-          (r) =>
-            (r.sumber === 'pos_santri' || r.sumber === 'transfer_verified') &&
-            String(r.santri_id) === me
-        )
+        // v.87.0526: sertakan transfer yang sudah diverifikasi admin (selain tunai POS).
+        // v.1.4.9 gel. 2: + VA BMT & pembayaran online (Midtrans) — satu daftar dengan
+        //   pencocok tagihan, supaya wali dikabari apa pun cara bayarnya.
+        .filter((r) => SUMBER_BAYAR_SANTRI.includes(r.sumber) && String(r.santri_id) === me)
         .map((r) => ({
           id: r.id || r._id,
           jenis: 'pembayaran',
           judul:
-            r.sumber === 'transfer_verified' ? 'Transfer terverifikasi' : 'Pembayaran berhasil',
+            r.sumber === 'transfer_verified'
+              ? 'Transfer terverifikasi'
+              : r.sumber === 'midtrans'
+                ? 'Pembayaran online diterima'
+                : 'Pembayaran berhasil',
           body: `${r.kategori || 'Pembayaran'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(r.nominal || 0))}`,
           ts: tsMs(r.createdAt || r.created_at),
           link: '/pembayaran',

@@ -2744,8 +2744,8 @@
           <span class="font-bold text-[var(--text-primary)]"
             >Aktifkan opsi Virtual Account BMT PETA</span
           >
-          — saat OFF, alur pembayaran wali tetap seperti sekarang (transfer + upload bukti). Saat
-          ON, opsi VA muncul memakai prefix di bawah.
+          — saat OFF, opsi ini tak tampil sama sekali di halaman Pembayaran wali (v.1.4.9: transfer
+          manual sudah dihapus). Saat ON, opsi VA muncul memakai prefix di bawah.
         </span>
       </label>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2775,6 +2775,93 @@
           </p>
         </div>
       </div>
+    </div>
+
+    <!-- v.1.4.9 gel. 2: Pembayaran online Midtrans (VA bank + QRIS). Server Key TIDAK di sini —
+         disimpan sebagai secret fungsi server (settings general/web terbaca publik). -->
+    <div
+      v-show="activeTab === 'bank'"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <i class="fas fa-building-columns text-cyan-600 mr-1"></i>Pembayaran Online (Midtrans)
+      </h3>
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
+        Wali memilih Virtual Account bank atau QRIS di halaman Pembayaran; nomor VA / kode QR
+        beserta nominalnya tampil di halaman Midtrans, dan tagihan terisi otomatis begitu dana
+        masuk. Biaya layanan ditanggung wali — ditambahkan di atas nominal tagihan.
+      </p>
+      <label
+        class="flex items-start gap-2 p-2.5 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-700 mb-3 cursor-pointer"
+      >
+        <input
+          v-model="form.midtrans_aktif"
+          type="checkbox"
+          class="mt-0.5 w-4 h-4 accent-cyan-600"
+        />
+        <span class="text-[11px] text-[var(--text-secondary)] leading-snug">
+          <span class="font-bold text-[var(--text-primary)]">Aktifkan pembayaran online</span>
+          — nyalakan sesudah Server Key dipasang di fungsi server dan Notification URL diisi di
+          dasbor Midtrans. Selama OFF, wali melihat "Segera hadir".
+        </span>
+      </label>
+      <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1">Kanal dibuka</p>
+      <div class="flex flex-wrap gap-2 mb-3">
+        <label
+          v-for="k in KANAL_MIDTRANS"
+          :key="k.id"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--border-default)] text-xs font-bold cursor-pointer"
+        >
+          <input
+            v-model="form.midtrans_kanal"
+            type="checkbox"
+            :value="k.id"
+            class="w-3.5 h-3.5 accent-cyan-600"
+          />{{ k.jenis === 'qris' ? 'QRIS' : 'VA ' + k.label }}
+        </label>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            >Biaya layanan VA (Rp per pembayaran)</label
+          >
+          <input
+            v-model.number="form.midtrans_biaya_va"
+            type="number"
+            min="0"
+            step="100"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          />
+          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+            Tarif Midtrans Rp4.000 + PPN 11% = Rp4.440 → bawaan Rp4.500.
+          </p>
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            >Biaya layanan QRIS (% dari total)</label
+          >
+          <input
+            v-model.number="form.midtrans_biaya_qris_persen"
+            type="number"
+            min="0"
+            max="10"
+            step="0.01"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+          />
+          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+            MDR 0,7% + PPN 11% ≈ 0,78%. Ganti bila Midtrans memberi tarif pendidikan.
+          </p>
+        </div>
+      </div>
+      <p class="text-[10px] text-[var(--text-tertiary)] mt-3 leading-relaxed">
+        <i class="fas fa-circle-info mr-1"></i>Contoh: tagihan Rp750.000 lewat VA → wali membayar
+        Rp{{ fmtRp(contohMidtrans.va.total) }}; lewat QRIS → Rp{{
+          fmtRp(contohMidtrans.qris.total)
+        }}. Notification URL Midtrans:
+        <code class="font-mono select-all">{{ urlNotifMidtrans }}</code>
+      </p>
     </div>
 
     <!-- Sticky save bar -->
@@ -3921,6 +4008,13 @@ import { kodeBulan, idTagihanAuto } from '@/utils/tagihanId'
 import { useToast } from '@/composables/useToast'
 import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
+import {
+  KANAL_MIDTRANS,
+  BIAYA_VA_BAWAAN,
+  BIAYA_QRIS_PERSEN_BAWAAN,
+  kanalAktif,
+  rincianBayar
+} from '@/utils/biayaMidtrans'
 
 // v.111: scope Gedung — generate tagihan hanya untuk santri gedung admin
 const { scoped: gedungScoped, myGedung } = useGedungScope()
@@ -5303,7 +5397,12 @@ const form = reactive({
   // v.97.0626: Integrasi BMT PETA (Virtual Account)
   bmt_aktif: false,
   bmt_nama: '',
-  bmt_va_prefix: ''
+  bmt_va_prefix: '',
+  // v.1.4.9 gel. 2: pembayaran online Midtrans
+  midtrans_aktif: false,
+  midtrans_kanal: KANAL_MIDTRANS.map((k) => k.id),
+  midtrans_biaya_va: BIAYA_VA_BAWAAN,
+  midtrans_biaya_qris_persen: BIAYA_QRIS_PERSEN_BAWAAN
 })
 
 function slugId(s) {
@@ -5314,6 +5413,13 @@ function slugId(s) {
       .replace(/[^a-z0-9_]/g, '') || 'jenis'
   )
 }
+
+// v.1.4.9 gel. 2: pratinjau biaya layanan Midtrans + alamat notifikasi yang diisi di dasbornya.
+const contohMidtrans = computed(() => ({
+  va: rincianBayar(750000, 'bri', form),
+  qris: rincianBayar(750000, 'qris', form)
+}))
+const urlNotifMidtrans = `${String(import.meta.env.VITE_SUPABASE_URL || 'https://<proyek>.supabase.co').replace(/\/$/, '')}/functions/v1/midtrans-webhook`
 
 function loadFromSettings() {
   const s = settingsStore.settings || {}
@@ -5531,6 +5637,11 @@ function loadFromSettings() {
   form.bmt_aktif = s.bmt_aktif === true
   form.bmt_nama = s.bmt_nama || ''
   form.bmt_va_prefix = s.bmt_va_prefix || ''
+  // v.1.4.9 gel. 2: Midtrans — kanal kosong/tak diatur = semua dibuka (sama dgn kanalAktif)
+  form.midtrans_aktif = s.midtrans_aktif === true
+  form.midtrans_kanal = kanalAktif(s).map((k) => k.id)
+  form.midtrans_biaya_va = s.midtrans_biaya_va ?? BIAYA_VA_BAWAAN
+  form.midtrans_biaya_qris_persen = s.midtrans_biaya_qris_persen ?? BIAYA_QRIS_PERSEN_BAWAAN
 
   hidrasiKeu.value = sidikJariKeu(s) // Kyai 7 Agu: bekal penjaga simpan (lihat simpan())
 }
@@ -6135,7 +6246,14 @@ async function simpan() {
       // v.97.0626: Integrasi BMT PETA (Virtual Account)
       bmt_aktif: !!form.bmt_aktif,
       bmt_nama: String(form.bmt_nama || '').trim(),
-      bmt_va_prefix: String(form.bmt_va_prefix || '').trim()
+      bmt_va_prefix: String(form.bmt_va_prefix || '').trim(),
+      // v.1.4.9 gel. 2: Midtrans (tanpa kunci rahasia — itu secret fungsi server)
+      midtrans_aktif: !!form.midtrans_aktif,
+      midtrans_kanal: KANAL_MIDTRANS.map((k) => k.id).filter((id) =>
+        form.midtrans_kanal.includes(id)
+      ),
+      midtrans_biaya_va: Math.max(0, Math.round(Number(form.midtrans_biaya_va) || 0)),
+      midtrans_biaya_qris_persen: Math.max(0, Number(form.midtrans_biaya_qris_persen) || 0)
     }
     // A1 (audit 29 Jul): kunci keuangan SENSITIF → settings/keuangan (finance-only),
     //   JANGAN ke general/web yang anon-readable (PSB+login). Sinkron dgn KEUANGAN_KEYS

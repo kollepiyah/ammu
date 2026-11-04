@@ -44,7 +44,8 @@ import { periodeKode } from './periodeTagihan'
 
 /** Sumber baris buku induk yang BERARTI "santri membayar". Bisyaroh, kas manual
  *  yayasan, dan pos dana tanpa santri tak boleh ikut — mereka bukan pelunas tagihan. */
-export const SUMBER_BAYAR_SANTRI = ['pos_santri', 'transfer_verified', 'bmt_va']
+//  v.1.4.9 gel. 2: + 'midtrans' (VA bank / QRIS, ditulis apply_bmt_payment lewat midtrans-webhook).
+export const SUMBER_BAYAR_SANTRI = ['pos_santri', 'transfer_verified', 'bmt_va', 'midtrans']
 
 /** Normalisasi label jenis jadi kunci banding. Sama dengan yang dipakai matriks POS. */
 export function jenisKunci(v) {

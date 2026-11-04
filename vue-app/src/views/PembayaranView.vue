@@ -183,7 +183,7 @@
                 {{ p.santri_nama || getNamaSantri(p.santri_id) }}
               </p>
               <p class="text-[10px] text-[var(--text-secondary)]">
-                {{ fmtTgl(p.tanggal) }} · {{ p.catatan || '-' }}
+                {{ fmtTgl(p.tanggal) }} · {{ p.catatan || p.kanal || '-' }}
                 <!-- v.1.4.1: label cara bayar dulu diturunkan di sini sendiri — `sumber`
                      'transfer_verified' = Transfer, SELAIN ITU "[Tunai]". Kasir POS yang
                      memilih Transfer, dan pembayaran VA BMT, karena itu tercetak "Tunai"
@@ -296,10 +296,11 @@
     </template>
 
     <!-- ============================================================
-         v.97.0626 STEP: BAYAR (Virtual Account BMT PETA) — tampil nomor VA tetap santri + instruksi.
-         Auto-konfirmasi via BMT (integrasi menyusul). v.1.4.9: tampil hanya bila bmt_aktif.
+         STEP: BAYAR — keranjang bersama untuk VA BMT (v.97.0626) dan pembayaran online
+         Midtrans (v.1.4.9 gel. 2: VA bank / QRIS). Keranjang = tagihan (boleh sebagian →
+         cicilan) + top-up uang saku, dibayar sekali.
          ============================================================ -->
-    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar' && selectedMethod === 'va'">
+    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar' && metodeKeranjang">
       <!-- Pilih anak dulu (multi-anak, belum terpilih) -->
       <div
         v-if="!vaSantri && waliChildren.length > 1"
@@ -317,8 +318,8 @@
         </select>
       </div>
 
-      <template v-else-if="vaNumber">
-        <!-- A. Keranjang: susun pembayaran (tagihan + top-up uang saku) dalam 1 transfer -->
+      <template v-else-if="isMidtrans || vaNumber">
+        <!-- A. Keranjang: susun pembayaran (tagihan + top-up uang saku) dalam 1 kali bayar -->
         <div
           class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
         >
@@ -329,8 +330,9 @@
             >
           </h3>
           <p class="text-[11px] text-[var(--text-secondary)] mb-3">
-            Centang tagihan yang ingin dibayar dan/atau isi top-up uang saku. Semuanya dibayar dalam
-            <b>satu transfer VA</b>.
+            Centang tagihan yang ingin dibayar dan/atau isi top-up uang saku. Semuanya dibayar
+            <b>sekali</b>. Mau <b>mencicil</b>? Ubah nominal di kotak kanan tagihan — sisanya bisa
+            dibayar lain kali.
           </p>
 
           <!-- Tagihan belum lunas -->
@@ -360,6 +362,7 @@
                 type="number"
                 min="0"
                 :max="getSisaVa(t)"
+                aria-label="Nominal yang dibayar untuk tagihan ini"
                 class="w-28 px-2 py-1 text-xs text-right font-bold rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] flex-shrink-0"
                 @input="setCartNominal(t, $event.target.value)"
                 @click.prevent.stop
@@ -385,13 +388,16 @@
             />
           </div>
 
-          <!-- Total + buat -->
+          <!-- Total (+ tombol VA BMT) -->
           <div class="mt-4 flex items-center justify-between gap-3">
             <div>
-              <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase">Total</p>
+              <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
+                {{ isMidtrans ? 'Subtotal' : 'Total' }}
+              </p>
               <p class="text-xl font-black text-[var(--text-primary)]">{{ fmtRp(cartTotal) }}</p>
             </div>
             <button
+              v-if="!isMidtrans"
               :disabled="cartTotal <= 0 || creatingIntent"
               class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               @click="buatTagihanVa"
@@ -402,8 +408,92 @@
           </div>
         </div>
 
-        <!-- B. Kartu Nomor VA -->
+        <!-- B1. Pembayaran online (Midtrans): pilih bank, rincian biaya layanan, bayar -->
         <div
+          v-if="isMidtrans"
+          class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+        >
+          <h3 class="text-sm font-black text-[var(--text-primary)] uppercase mb-3">
+            <i
+              :class="[
+                'fas mr-1 text-cyan-600',
+                selectedMethod === 'qris' ? 'fa-qrcode' : 'fa-building-columns'
+              ]"
+            ></i
+            >{{ selectedMethod === 'qris' ? 'Bayar dengan QRIS' : 'Pilih bank Virtual Account' }}
+          </h3>
+          <div
+            v-if="selectedMethod === 'midtrans_va'"
+            class="grid grid-cols-3 md:grid-cols-5 gap-2 mb-4"
+            role="radiogroup"
+            aria-label="Bank Virtual Account"
+          >
+            <button
+              v-for="k in bankMidtrans"
+              :key="k.id"
+              type="button"
+              role="radio"
+              :aria-checked="bankPilih === k.id"
+              :class="[
+                'py-2.5 rounded-xl border text-sm font-black transition cursor-pointer',
+                bankPilih === k.id
+                  ? 'border-2 border-cyan-500 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-200'
+                  : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:border-cyan-300'
+              ]"
+              @click="pilihBank(k.id)"
+            >
+              {{ k.label }}
+            </button>
+          </div>
+          <div class="space-y-1.5 text-sm">
+            <div class="flex justify-between">
+              <span class="text-[var(--text-secondary)]">Subtotal</span>
+              <span class="font-bold">{{ fmtRp(rincianMidtrans.net) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--text-secondary)]"
+                >Biaya layanan {{ labelKanalMidtrans }}</span
+              >
+              <span class="font-bold">{{ fmtRp(rincianMidtrans.biaya) }}</span>
+            </div>
+            <div
+              class="flex justify-between items-center border-t border-[var(--border-subtle)] pt-2"
+            >
+              <span class="text-xs font-black uppercase text-[var(--text-secondary)]"
+                >Total dibayar</span
+              >
+              <span class="text-lg font-black text-cyan-700 dark:text-cyan-300">{{
+                fmtRp(rincianMidtrans.total)
+              }}</span>
+            </div>
+          </div>
+          <p
+            v-if="cartTotal > 0 && rincianMidtrans.galat"
+            class="text-[11px] text-rose-600 font-bold mt-2"
+          >
+            <i class="fas fa-exclamation-circle mr-1"></i>{{ rincianMidtrans.galat }}
+          </p>
+          <button
+            :disabled="!bolehBayarMidtrans || membuatKode"
+            class="w-full mt-4 px-5 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-black rounded-xl text-sm shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="bayarMidtrans"
+          >
+            <i :class="['fas mr-1', membuatKode ? 'fa-spinner fa-spin' : 'fa-lock']"></i
+            >{{ membuatKode ? 'Menyiapkan…' : 'Bayar ' + fmtRp(rincianMidtrans.total) }}
+          </button>
+          <p class="text-[10px] text-[var(--text-tertiary)] mt-2 leading-relaxed">
+            Halaman pembayaran Midtrans akan terbuka dan menampilkan
+            {{ selectedMethod === 'qris' ? 'kode QR' : 'nomor Virtual Account' }} beserta nominalnya
+            — tinggal bayar dari m-banking<template v-if="selectedMethod === 'qris'">
+              / e-wallet</template
+            >. Biaya layanan ditanggung pembayar. Status di aplikasi berubah sendiri begitu dana
+            masuk.
+          </p>
+        </div>
+
+        <!-- B2. Kartu Nomor VA BMT -->
+        <div
+          v-else
           class="bg-gradient-to-br from-indigo-600 to-violet-700 dark:from-indigo-800 dark:to-violet-900 rounded-2xl p-5 text-white shadow-lg"
         >
           <p class="text-[10px] font-bold uppercase opacity-80 tracking-wider mb-3">
@@ -426,52 +516,9 @@
           </p>
         </div>
 
-        <!-- C. Daftar Tagihan VA (niat-bayar) -->
-        <div
-          v-if="myVaIntents.length"
-          class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-        >
-          <h3 class="text-sm font-black text-[var(--text-primary)] uppercase mb-3">
-            <i class="fas fa-receipt text-indigo-600 mr-1"></i>Tagihan VA
-          </h3>
-          <div class="space-y-2">
-            <div
-              v-for="i in myVaIntents"
-              :key="i.id"
-              class="bg-[var(--bg-card-elevated)] rounded-xl px-3 py-2.5 flex items-start justify-between gap-2"
-            >
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-black text-[var(--text-primary)]">{{ fmtRp(i.total) }}</p>
-                <p class="text-[10px] text-[var(--text-secondary)] truncate">
-                  {{ intentRincian(i) }}
-                </p>
-              </div>
-              <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                <span
-                  :class="[
-                    'text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full',
-                    i.status === 'terbayar'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : i.status === 'dibatalkan'
-                        ? 'bg-slate-200 text-slate-600'
-                        : 'bg-amber-100 text-amber-700'
-                  ]"
-                  >{{ vaIntentStatusLabel(i.status) }}</span
-                >
-                <button
-                  v-if="i.status === 'pending'"
-                  class="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
-                  @click="batalIntent(i)"
-                >
-                  Batalkan
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Catatan integrasi BMT (belum live) -->
         <div
+          v-if="!isMidtrans"
           class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-[12px] text-amber-800 dark:text-amber-200 leading-relaxed"
         >
           <i class="fas fa-info-circle mr-1"></i>
@@ -480,7 +527,7 @@
         </div>
       </template>
 
-      <!-- VA belum tersedia (santri tunggal tanpa VA / prefix belum di-set) -->
+      <!-- VA BMT belum tersedia (santri tunggal tanpa VA / prefix belum di-set) -->
       <div
         v-else
         class="bg-[var(--bg-card)] rounded-2xl p-6 border border-dashed border-[var(--border-subtle)] text-center"
@@ -492,6 +539,79 @@
         </p>
       </div>
     </template>
+
+    <!-- Daftar kode bayar (VA BMT & online) — tampil di langkah mana pun selama alur bayar,
+         supaya wali yang kembali dari m-banking bisa melanjutkan / melihat statusnya. -->
+    <div
+      v-if="isSantriOnly && mode === 'flow' && myVaIntents.length"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3 class="text-sm font-black text-[var(--text-primary)] uppercase mb-3">
+        <i class="fas fa-receipt text-indigo-600 mr-1"></i>Kode Bayar
+      </h3>
+      <div class="space-y-2">
+        <div
+          v-for="i in myVaIntents"
+          :key="i.id"
+          class="bg-[var(--bg-card-elevated)] rounded-xl px-3 py-2.5 flex items-start justify-between gap-2"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-black text-[var(--text-primary)]">
+              {{ fmtRp(i.sumber === 'midtrans' ? i.gross || i.total : i.total) }}
+              <span class="text-[10px] font-bold text-[var(--text-secondary)]">
+                · {{ i.kanal_label || 'VA BMT' }}</span
+              >
+            </p>
+            <p class="text-[10px] text-[var(--text-secondary)] truncate">
+              {{ i.santri_nama ? i.santri_nama + ' — ' : '' }}{{ intentRincian(i) }}
+            </p>
+            <p
+              v-if="i.sumber === 'midtrans' && i.status === 'pending' && i.va"
+              class="text-[11px] font-mono font-bold text-[var(--text-primary)] mt-0.5"
+            >
+              <template v-if="i.kode_perusahaan"
+                >Kode perusahaan {{ i.kode_perusahaan }} · </template
+              >No. bayar {{ i.va }}
+              <button
+                class="ml-1 text-cyan-600 hover:underline cursor-pointer"
+                title="Salin nomor"
+                @click="copyToClipboard(i.va)"
+              >
+                <i class="fas fa-copy"></i>
+              </button>
+            </p>
+          </div>
+          <div class="flex flex-col items-end gap-1 flex-shrink-0">
+            <span
+              :class="[
+                'text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full',
+                i.status === 'terbayar'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : i.status === 'pending'
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-slate-200 text-slate-600'
+              ]"
+              >{{ vaIntentStatusLabel(i.status) }}</span
+            >
+            <button
+              v-if="i.sumber === 'midtrans' && i.status === 'pending' && i.redirect_url"
+              class="text-[10px] font-black text-cyan-700 hover:underline cursor-pointer"
+              @click="bukaHalamanBayar(i.redirect_url)"
+            >
+              Lanjutkan bayar
+            </button>
+            <button
+              v-if="i.status === 'pending'"
+              :disabled="batalId === i.id"
+              class="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer disabled:opacity-50"
+              @click="batalIntent(i)"
+            >
+              Batalkan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <ReceiptModal
       :open="receiptOpen"
@@ -524,6 +644,10 @@ import { cetakStrukPdf } from '@/utils/strukBuilder'
 import { kunciTransaksi } from '@/utils/trxStruk'
 import { computeVaSantri, formatVa } from '@/utils/bmtVa'
 import { metodeBayarWali } from '@/utils/metodeBayarWali'
+// v.1.4.9 gel. 2: pembayaran online Midtrans (VA bank / QRIS), biaya layanan ditanggung wali.
+import { kanalAktif, cariKanal, rincianBayar } from '@/utils/biayaMidtrans'
+import { buatKodeBayar, batalKodeBayar, bukaHalamanBayar } from '@/services/midtrans'
+import { SUMBER_BAYAR_SANTRI } from '@/utils/cocokBayarTagihan'
 
 // v.82.0526: deep-link dari TagihanView — tagihan terpilih terisi otomatis
 const route = useRoute()
@@ -585,6 +709,70 @@ const bmtNama = computed(() => (settings.settings || {}).bmt_nama || '')
 const methodsSantri = computed(() => metodeBayarWali(settings.settings))
 const adaMetodeAktif = computed(() => methodsSantri.value.some((m) => m.active))
 const metodeAktifPertama = () => methodsSantri.value.find((m) => m.active)?.id || ''
+// Metode yang memakai keranjang di langkah Bayar: VA BMT & dua kanal Midtrans.
+const isMidtrans = computed(() => ['midtrans_va', 'qris'].includes(selectedMethod.value))
+const metodeKeranjang = computed(() => selectedMethod.value === 'va' || isMidtrans.value)
+
+// ─── Midtrans: bank pilihan wali (diingat per perangkat), rincian biaya layanan ───
+const bankMidtrans = computed(() => kanalAktif(settings.settings).filter((k) => k.jenis === 'va'))
+const KUNCI_BANK = 'ammu_bank_bayar'
+const bankPilih = ref('')
+try {
+  bankPilih.value = localStorage.getItem(KUNCI_BANK) || ''
+} catch {
+  /* penyimpanan tak tersedia — pakai bank pertama */
+}
+function pilihBank(id) {
+  bankPilih.value = id
+  try {
+    localStorage.setItem(KUNCI_BANK, id)
+  } catch {
+    /* abaikan */
+  }
+}
+const kanalMidtrans = computed(() => {
+  if (selectedMethod.value === 'qris') return 'qris'
+  const ada = bankMidtrans.value.find((k) => k.id === bankPilih.value)
+  return (ada || bankMidtrans.value[0])?.id || ''
+})
+const labelKanalMidtrans = computed(() => {
+  const k = cariKanal(kanalMidtrans.value)
+  return !k ? '' : k.jenis === 'qris' ? 'QRIS' : 'VA ' + k.label
+})
+const rincianMidtrans = computed(() =>
+  rincianBayar(cartTotal.value, kanalMidtrans.value, settings.settings)
+)
+const bolehBayarMidtrans = computed(
+  () => !!vaSantri.value && cartTotal.value > 0 && !rincianMidtrans.value.galat
+)
+const membuatKode = ref(false)
+async function bayarMidtrans() {
+  const s = vaSantri.value
+  if (!s) {
+    toast.info('Pilih anak dulu.')
+    return
+  }
+  if (rincianMidtrans.value.galat) {
+    toast.warning(rincianMidtrans.value.galat)
+    return
+  }
+  membuatKode.value = true
+  try {
+    const r = await buatKodeBayar({
+      santriId: s.id,
+      kanal: kanalMidtrans.value,
+      items: cartItems.value
+    })
+    cartSel.value = {}
+    cartUangSaku.value = 0
+    toast.success(`Kode bayar ${fmtRp(r.total)} dibuat — halaman pembayaran dibuka.`)
+    if (!bukaHalamanBayar(r.redirect_url)) toast.info('Buka lewat "Lanjutkan bayar" di daftar.')
+  } catch (e) {
+    toast.error('Gagal membuat kode bayar: ' + (e?.message || e))
+  } finally {
+    membuatKode.value = false
+  }
+}
 
 // v.97.0626: VA BMT — santri terpilih (dari bayarForm / anak tunggal) + nomor VA tetap
 const vaSantri = computed(() => {
@@ -659,12 +847,18 @@ const cartTotal = computed(() => cartItems.value.reduce((s, i) => s + (Number(i.
 // niat-bayar milik anak-anak wali (pending + terbayar terbaru; sembunyikan yg dibatalkan)
 const myVaIntents = computed(() =>
   vaIntentRaw.value
-    .filter((i) => allOwnedIds.value.has(String(i.santri_id)) && i.status !== 'dibatalkan')
+    .filter(
+      (i) =>
+        allOwnedIds.value.has(String(i.santri_id)) && !['dibatalkan', 'gagal'].includes(i.status)
+    )
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
     .slice(0, 10)
 )
 function vaIntentStatusLabel(s) {
-  return s === 'terbayar' ? 'Terbayar' : s === 'dibatalkan' ? 'Dibatalkan' : 'Menunggu Bayar'
+  if (s === 'terbayar') return 'Terbayar'
+  if (s === 'dibatalkan') return 'Dibatalkan'
+  if (s === 'kadaluarsa') return 'Kedaluwarsa'
+  return 'Menunggu Bayar'
 }
 function intentRincian(i) {
   const items = Array.isArray(i.items) ? i.items : []
@@ -710,12 +904,18 @@ async function buatTagihanVa() {
     creatingIntent.value = false
   }
 }
+const batalId = ref('')
 async function batalIntent(i) {
+  batalId.value = i.id
   try {
-    await updateOne('keuangan_va_intent', i.id, { status: 'dibatalkan' })
-    toast.success('Tagihan VA dibatalkan.')
+    // Kode Midtrans dibatalkan juga di Midtrans (lewat server) supaya tak bisa dibayar lagi.
+    if (i.sumber === 'midtrans') await batalKodeBayar(i.id)
+    else await updateOne('keuangan_va_intent', i.id, { status: 'dibatalkan' })
+    toast.success('Kode bayar dibatalkan.')
   } catch (e) {
     toast.error('Gagal batalkan: ' + (e?.message || e))
+  } finally {
+    batalId.value = ''
   }
 }
 
@@ -877,11 +1077,11 @@ function lanjutBayar() {
 
 // ─── Subscribe Firestore ───────────────────────────────────────
 onMounted(() => {
-  // Pembayaran tunai POS + transfer yg sudah verified
+  // Pembayaran santri: tunai POS, transfer terverifikasi, VA BMT, online (Midtrans).
+  //   v.1.4.9 gel. 2: satu daftar dengan pencocok tagihan (SUMBER_BAYAR_SANTRI) — dulu
+  //   pembayaran VA BMT tak pernah muncul di riwayat wali.
   unsubBayar = subscribeColl('keuangan_buku_induk', (docs) => {
-    _pembayaranAll.value = (docs || []).filter(
-      (r) => r.sumber === 'pos_santri' || r.sumber === 'transfer_verified'
-    )
+    _pembayaranAll.value = (docs || []).filter((r) => SUMBER_BAYAR_SANTRI.includes(r.sumber))
     loading.value = false
   })
   unsubSantri = subscribeColl('santri', (docs) => {

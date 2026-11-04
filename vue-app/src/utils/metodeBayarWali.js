@@ -1,10 +1,11 @@
 // metodeBayarWali.js — v.1.4.9: satu sumber "cara bayar apa yang ditawarkan ke wali santri".
 //
 // Kyai, 4 Nov 2026: transfer manual (upload bukti) DIHAPUS; VA BMT PETA disembunyikan
-// selama `bmt_aktif` mati; pembayaran online akan lewat Midtrans (VA tetap per santri +
-// QRIS dinamis). Sampai Midtrans tersambung, keduanya tampil "Segera hadir".
+// selama `bmt_aktif` mati; pembayaran online lewat Midtrans (VA bank + QRIS), aktif bila
+// `midtrans_aktif` dan kanalnya dibuka di Pengaturan Keuangan — sebelum itu "Segera hadir".
 // Dipakai PembayaranView (daftar metode) dan TagihanView (tombol Setoran Lain).
 import { isBmtAktif } from './bmtVa'
+import { midtransAktif, kanalAktif } from './biayaMidtrans'
 
 export function metodeBayarWali(settings) {
   const s = settings || {}
@@ -18,20 +19,25 @@ export function metodeBayarWali(settings) {
       active: true
     })
   }
+  const online = midtransAktif(s)
+  const kanal = online ? kanalAktif(s) : []
+  const bank = kanal.filter((k) => k.jenis === 'va')
   out.push(
     {
       id: 'midtrans_va',
       label: 'Virtual Account Bank',
       icon: 'fa-building-columns',
-      desc: 'Nomor VA tetap per santri, nominal muncul otomatis',
-      active: false
+      desc: bank.length
+        ? bank.map((k) => k.label).join(' · ') + ' — nominal muncul otomatis'
+        : 'Nomor VA per pembayaran, nominal muncul otomatis',
+      active: bank.length > 0
     },
     {
       id: 'qris',
       label: 'QRIS',
       icon: 'fa-qrcode',
       desc: 'Scan dari aplikasi bank / e-wallet mana pun',
-      active: false
+      active: kanal.some((k) => k.jenis === 'qris')
     }
   )
   return out

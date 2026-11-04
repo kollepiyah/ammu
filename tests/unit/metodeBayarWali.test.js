@@ -18,3 +18,21 @@ describe('metodeBayarWali', () => {
     expect(adaMetodeBayarAktif(s)).toBe(true)
   })
 })
+
+describe('metodeBayarWali — Midtrans', () => {
+  it('midtrans_aktif → VA bank & QRIS aktif, mengikuti kanal yang dibuka', () => {
+    const semua = metodeBayarWali({ midtrans_aktif: true })
+    expect(semua.find((m) => m.id === 'midtrans_va')).toMatchObject({ active: true })
+    expect(semua.find((m) => m.id === 'midtrans_va').desc).toMatch(
+      /^BRI · BNI · BCA · BSI · Mandiri/
+    )
+    expect(semua.find((m) => m.id === 'qris').active).toBe(true)
+    const hanyaQris = metodeBayarWali({ midtrans_aktif: true, midtrans_kanal: ['qris'] })
+    expect(hanyaQris.find((m) => m.id === 'midtrans_va').active).toBe(false)
+    expect(adaMetodeBayarAktif({ midtrans_aktif: true, midtrans_kanal: ['qris'] })).toBe(true)
+  })
+
+  it('midtrans mati → tetap "segera hadir"', () => {
+    expect(adaMetodeBayarAktif({ midtrans_aktif: false, midtrans_kanal: ['bri'] })).toBe(false)
+  })
+})

@@ -26,7 +26,8 @@ export interface BayarSel {
 }
 
 /** Sumber baris buku induk yang BERARTI "santri membayar" (cermin SUMBER_BAYAR_SANTRI). */
-export const SUMBER_BAYAR_SANTRI: string[] = ['pos_santri', 'transfer_verified', 'bmt_va']
+//  v.1.4.9 gel. 2: + 'midtrans' — pembayaran online di muka juga harus dikenali cron.
+export const SUMBER_BAYAR_SANTRI: string[] = ['pos_santri', 'transfer_verified', 'bmt_va', 'midtrans']
 
 const BULAN = [
   'januari',
