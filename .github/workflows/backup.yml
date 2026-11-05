@@ -9,6 +9,10 @@ name: Backup Supabase → Google Drive
 #       postgresql://postgres.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
 #   GDRIVE_TOKEN    : token rclone remote Google Drive (JSON {"access_token":...,"refresh_token":...,...})
 #   GDRIVE_FOLDER   : (opsional) folder tujuan di Drive. Default: ammu-backups
+#   GDRIVE_CLIENT_ID / GDRIVE_CLIENT_SECRET : OAuth client "Desktop app" milik sendiri
+#       (project portal-mambaul-ulum). Wajib sejak client_id bersama rclone dipensiunkan
+#       Google (2026) — tanpanya unggah gagal "access_not_configured". Token di
+#       GDRIVE_TOKEN harus dibuat dengan client yang sama.
 
 on:
   schedule:
@@ -56,6 +60,8 @@ jobs:
           RCLONE_CONFIG_GDRIVE_TYPE: drive
           RCLONE_CONFIG_GDRIVE_SCOPE: drive
           RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+          RCLONE_CONFIG_GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           FOLDER="${GDRIVE_FOLDER:-ammu-backups}"
