@@ -37,6 +37,18 @@ memastikan dari HP. Perubahan kode supaya keadaannya terlihat dan tak menyesatka
 - **`midtrans-charge`** dengan kunci production menutup (`kadaluarsa`) kode sandbox santri itu yang
   masih `pending` sebelum membuat kode baru; gagal menutup tak menghalangi kode baru.
 
+Lanjutan (9 Nov pagi, sesudah secret diganti): kode bayar kini ditolak Midtrans **production**
+dengan "Payment channel is not activated." — akun production masih ditinjau Midtrans, kanal baru
+bisa dipakai sesudah diaktifkan. Dua tambahan:
+- Pesan itu (HTTP 402) tampil ke wali sebagai "Cara bayar VA BCA belum aktif. Coba cara bayar lain
+  atau hubungi admin pondok."; pesan asli Midtrans tetap di log fungsi (`galatAsli`).
+- **Pagar Server Key**: kolom Client Key Pengaturan Keuangan sempat berisi Server Key production —
+  kolom itu tersimpan di settings general/web yang terbaca tanpa login. Kini peringatan merah di
+  bawah kolom, Simpan ditolak selama isinya `Mid-server-…`/`SB-Mid-server-…`
+  (`caraBayarMidtrans.kunciServerMidtrans`), dan snap.js tak pernah dimuat dengan kunci server.
+  Server Key yang sempat tersimpan/terlihat WAJIB dibuat ulang di dasbor Midtrans lalu secret
+  `MIDTRANS_SERVER_KEY` diganti lagi.
+
 Perlu deploy: `midtrans-charge`, `midtrans-webhook`, web (+ AAB/Electron berikutnya). Diuji:
 vitest `caraBayarMidtrans` (5) + `midtransMirrorEdge` + `metodeBayarWali`, eslint berkas yang
 berubah; kedua fungsi dibundel esbuild dan dijalankan di Node dengan tiruan Supabase + Midtrans —

@@ -251,13 +251,21 @@ export function bacaHasilCharge(j: any, kanal: Kanal, nowMs: number) {
   const cadangan = new Date(
     nowMs + dur.expiry_duration * (dur.unit === 'hour' ? 3600_000 : 60_000)
   ).toISOString()
+  const mentah =
+    [j?.status_message, ...(Array.isArray(j?.validation_messages) ? j.validation_messages : [])]
+      .filter(Boolean)
+      .join('; ') || 'Midtrans menolak permintaan.'
+  // 9 Nov 2026: akun production masih ditinjau Midtrans → 402 "Payment channel is not
+  //   activated." tampil mentah (Inggris) ke wali. Diterjemahkan; aslinya tetap di log fungsi.
+  const belumAktif = String(j?.status_code || '') === '402' || /not activated/i.test(mentah)
   return {
     ok,
     galat: ok
       ? ''
-      : [j?.status_message, ...(Array.isArray(j?.validation_messages) ? j.validation_messages : [])]
-          .filter(Boolean)
-          .join('; ') || 'Midtrans menolak permintaan.',
+      : belumAktif
+        ? `Cara bayar ${kanal.jenis === 'qris' ? 'QRIS' : 'VA ' + kanal.label} belum aktif. Coba cara bayar lain atau hubungi admin pondok.`
+        : mentah,
+    galatAsli: ok ? '' : mentah,
     nomor: nb.nomor,
     kodePerusahaan: nb.kodePerusahaan,
     qrUrl: String(aksiQr?.url || ''),

@@ -2865,6 +2865,14 @@
           placeholder="SB-Mid-client-…"
           class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
         />
+        <p
+          v-if="kunciServerMidtrans(form.midtrans_client_key)"
+          class="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1"
+        >
+          <i class="fas fa-triangle-exclamation mr-1"></i>Ini SERVER KEY (rahasia), bukan Client
+          Key — tidak akan disimpan. Hapus, isi dengan Client Key (Mid-client-…), lalu buat ulang
+          Server Key di dasbor Midtrans.
+        </p>
         <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
           Kunci PUBLIK dari Settings → Access Keys (bukan Server Key). BRI, BNI, BCA, Mandiri &amp;
           QRIS tampil langsung di Ammu; BSI memakai jendela Midtrans di dalam Ammu bila kunci ini
@@ -4031,6 +4039,7 @@ import {
   kanalAktif,
   rincianBayar
 } from '@/utils/biayaMidtrans'
+import { kunciServerMidtrans } from '@/utils/caraBayarMidtrans'
 
 // v.111: scope Gedung — generate tagihan hanya untuk santri gedung admin
 const { scoped: gedungScoped, myGedung } = useGedungScope()
@@ -6188,6 +6197,14 @@ async function simpan() {
     const tolak = await alasanTolakSimpanKeu()
     if (tolak) {
       toast.error(tolak)
+      return
+    }
+    // 9 Nov 2026: Client Key tersimpan di settings general/web yang terbaca tanpa login —
+    //   Server Key yang tertempel di sini berarti kunci rahasia terbuka untuk umum.
+    if (kunciServerMidtrans(form.midtrans_client_key)) {
+      toast.error(
+        'Kolom Client Key berisi SERVER KEY (rahasia). Ganti dengan Client Key (Mid-client-…) — tidak disimpan.'
+      )
       return
     }
     // v.1.1.x: serialize semua Tahun Ajaran; global keuTagihanJenis = TA berjalan (konsumen lama tak berubah)

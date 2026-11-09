@@ -155,3 +155,12 @@ export function kodeUji(i) {
   // Hanya kode online yang menyimpan `sandbox` (midtrans-charge); VA BMT tak pernah punya.
   return i?.sandbox === true || i?.sandbox === 'true'
 }
+
+/**
+ * Server Key Midtrans (`Mid-server-…` / `SB-Mid-server-…`) RAHASIA — hanya boleh di secret fungsi
+ * server. 9 Nov 2026: Server Key production sempat tertempel di kolom Client Key Pengaturan
+ * Keuangan, yang tersimpan di settings general/web (terbaca tanpa login). Pagar untuk itu.
+ */
+export function kunciServerMidtrans(v) {
+  return /^\s*(SB-)?Mid-server-/i.test(String(v || ''))
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { caraBayar, sisaWaktu, batasKode, statusKode, kodeUji } from '@/utils/caraBayarMidtrans'
+import { caraBayar, sisaWaktu, batasKode, statusKode, kodeUji, kunciServerMidtrans } from '@/utils/caraBayarMidtrans'
 import { KANAL_MIDTRANS } from '@/utils/biayaMidtrans'
 
 describe('caraBayarMidtrans', () => {
@@ -44,5 +44,13 @@ describe('caraBayarMidtrans', () => {
     expect(kodeUji({ sumber: 'midtrans', sandbox: false })).toBe(false)
     expect(kodeUji({ sumber: 'bmt' })).toBe(false)
     expect(kodeUji(null)).toBe(false)
+  })
+
+  it('mengenali Server Key yang salah tempel di kolom Client Key', () => {
+    expect(kunciServerMidtrans('Mid-server-abc')).toBe(true)
+    expect(kunciServerMidtrans(' SB-Mid-server-abc')).toBe(true)
+    expect(kunciServerMidtrans('Mid-client-abc')).toBe(false)
+    expect(kunciServerMidtrans('SB-Mid-client-abc')).toBe(false)
+    expect(kunciServerMidtrans('')).toBe(false)
   })
 })

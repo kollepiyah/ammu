@@ -216,6 +216,19 @@ describe('Core API (tampil di layar Ammu)', () => {
       ts.cariKanal('bca'),
       now
     )
-    expect(g).toMatchObject({ ok: false, galat: 'Payment channel is not activated.' })
+    // 9 Nov 2026: akun production masih ditinjau → pesan Indonesia untuk wali, asli untuk log.
+    expect(g).toMatchObject({
+      ok: false,
+      galat: 'Cara bayar VA BCA belum aktif. Coba cara bayar lain atau hubungi admin pondok.',
+      galatAsli: 'Payment channel is not activated.'
+    })
+    const gq = ts.bacaHasilCharge({ status_code: '402', status_message: 'x' }, ts.cariKanal('qris'), now)
+    expect(gq.galat).toMatch(/^Cara bayar QRIS belum aktif/)
+    const lain = ts.bacaHasilCharge(
+      { status_code: '400', status_message: 'Bad', validation_messages: ['gross_amount salah'] },
+      ts.cariKanal('bri'),
+      now
+    )
+    expect(lain.galat).toBe('Bad; gross_amount salah')
   })
 })

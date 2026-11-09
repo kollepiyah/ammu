@@ -230,7 +230,10 @@ Deno.serve(async (req) => {
       })
       const jc = await rc.json().catch(() => ({}))
       const h = bacaHasilCharge(jc, kanal, Date.now())
-      if (!h.ok) return await gagal(h.galat, rc.status)
+      if (!h.ok) {
+        if (h.galatAsli !== h.galat) console.error('[midtrans-charge] Midtrans:', h.galatAsli)
+        return await gagal(h.galat, rc.status)
+      }
       const dataCore = {
         ...dataIntent,
         mode: 'core',

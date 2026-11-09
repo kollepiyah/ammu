@@ -1,6 +1,7 @@
 // midtrans.js — v.1.4.9 gel. 2: pintu layar ke fungsi server `midtrans-charge`.
 // Server Key Midtrans hanya ada di fungsi server; dari sini cuma meminta kode bayar.
 import { supabase } from '@/services/supabase'
+import { kunciServerMidtrans } from '@/utils/caraBayarMidtrans'
 
 async function panggil(body) {
   if (!supabase) throw new Error('Supabase belum siap.')
@@ -65,7 +66,8 @@ function muatSnap(clientKey) {
 
 /** Bayar lewat Snap: jendela di dalam Ammu bila bisa, selain itu browser. Return 'jendela' | 'browser' | ''. */
 export async function bayarLewatSnap({ token, redirectUrl, clientKey }) {
-  if (token && clientKey) {
+  // 9 Nov 2026: Server Key yang salah tempel jangan sampai ditanam ke halaman (data-client-key).
+  if (token && clientKey && !kunciServerMidtrans(clientKey)) {
     try {
       const snap = await muatSnap(String(clientKey))
       // Callback cukup kosong: status dicatat lewat webhook → realtime keuangan_va_intent.
