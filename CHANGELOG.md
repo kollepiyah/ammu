@@ -18,6 +18,31 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 - Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
 - DOMPurify integration untuk template literal innerHTML yang inject user data
 
+### Fixed — kode QRIS/VA wali masih sandbox sesudah Server Key diganti production (Kyai, 9 Nov 2026)
+
+Kyai mengganti Server Key Midtrans ke production, tetapi QRIS dan VA di akun wali masih dari
+sandbox. Lingkungan dipilih HANYA dari awalan kunci (`SB-` = sandbox), dan kunci dibaca sekali
+saat fungsi menyala — jadi penyebabnya di luar kode: secret yang terbaca fungsi masih `SB-`
+(proyek/nama secret lain, atau instans hangat yang belum memuat ulang). Panduan §9c kini mewajibkan
+deploy ulang `midtrans-charge` & `midtrans-webhook` sesudah mengganti secret, dan memberi cara
+memastikan dari HP. Perubahan kode supaya keadaannya terlihat dan tak menyesatkan wali:
+- **`midtrans-webhook` GET** memuat `mode: "production" | "sandbox"` (dari awalan kunci, kuncinya
+  tak ikut) — buka URL webhook di peramban untuk memastikan kunci yang terpakai.
+- **Tanda "Kode uji"** di daftar Kode Bayar (PembayaranView) dan halaman Kode Bayar untuk kode yang
+  dibuat dengan kunci sandbox (`data.sandbox`, sudah tersimpan sejak v1.4.9).
+- **Kode lewat batas waktu tampil "Kedaluwarsa"** (`caraBayarMidtrans.statusKode` / `batasKode`;
+  kode Snap & lama dihitung dari `created_at`: VA sehari, QR sejam) — dulu kode sandbox lama tampil
+  "Menunggu Bayar" selamanya karena notifikasi kedaluwarsanya ditolak API production; nomor, salin
+  & Batalkan disembunyikan untuk kode kedaluwarsa.
+- **`midtrans-charge`** dengan kunci production menutup (`kadaluarsa`) kode sandbox santri itu yang
+  masih `pending` sebelum membuat kode baru; gagal menutup tak menghalangi kode baru.
+
+Perlu deploy: `midtrans-charge`, `midtrans-webhook`, web (+ AAB/Electron berikutnya). Diuji:
+vitest `caraBayarMidtrans` (5) + `midtransMirrorEdge` + `metodeBayarWali`, eslint berkas yang
+berubah; kedua fungsi dibundel esbuild dan dijalankan di Node dengan tiruan Supabase + Midtrans —
+kunci `Mid-server-` → GET `production`, charge ke `api.midtrans.com`, kode sandbox lama ditutup;
+kunci `SB-` → `sandbox`, `api.sandbox.midtrans.com`, tak ada yang ditutup.
+
 ---
 
 ## [v.1.4.9] — 2026-11-04 — Pembayaran online wali lewat Midtrans: VA BRI/BNI/BCA/BSI/Mandiri + QRIS, biaya layanan ditanggung wali, bisa dicicil

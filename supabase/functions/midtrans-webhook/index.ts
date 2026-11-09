@@ -28,7 +28,15 @@ Deno.serve(async (req) => {
   const pre = handlePreflight(req)
   if (pre) return pre
   // GET = uji sambungan dari peramban / tombol "Test notification URL".
-  if (req.method === 'GET') return json({ ok: true, service: 'midtrans-webhook', siap: !!SERVER_KEY })
+  //   9 Nov 2026: + `mode` (dari awalan kunci, tanpa membocorkan kuncinya) — cara tercepat
+  //   memastikan dari HP bahwa secret production sudah terpakai sesudah diganti.
+  if (req.method === 'GET')
+    return json({
+      ok: true,
+      service: 'midtrans-webhook',
+      siap: !!SERVER_KEY,
+      mode: !SERVER_KEY ? '' : urlMidtrans(SERVER_KEY).sandbox ? 'sandbox' : 'production'
+    })
   if (req.method !== 'POST') return json({ ok: false, error: 'method' }, 405)
   if (!SERVER_KEY) return json({ ok: false, error: 'server key belum di-set' }, 503)
 

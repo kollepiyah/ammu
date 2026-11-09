@@ -387,10 +387,20 @@ Induk supaya kas tak ikut bertambah.
 1. Dasbor Midtrans mode **Production** (menu kiri biru; sandbox oranye) → Settings → Access Keys →
    Generate Server Key: Payment product **Write**, izin lain **None**. Kunci production berawalan
    `Mid-server-` (tanpa `SB-`). Salin sekali, jangan ditempel di obrolan/berkas.
-2. Ganti secret — fungsi otomatis pindah ke API production, tak perlu deploy ulang:
+2. Ganti secret di proyek `rzwefjilxzsqlokkwiyt` (CLI, atau Dashboard Supabase → Edge Functions →
+   Secrets → `MIDTRANS_SERVER_KEY`; tempel tanpa tanda kutip/spasi), lalu **deploy ulang kedua
+   fungsi**. Kunci dibaca sekali saat fungsi menyala, jadi instans yang masih hangat bisa tetap
+   memakai kunci sandbox (9 Nov 2026: secret sudah diganti, kode QRIS/VA wali masih sandbox).
    ```bash
    supabase secrets set MIDTRANS_SERVER_KEY="Mid-server-xxxxxxxx"
+   supabase functions deploy midtrans-charge
+   supabase functions deploy midtrans-webhook --no-verify-jwt
    ```
+   **Pastikan** dengan membuka `https://rzwefjilxzsqlokkwiyt.supabase.co/functions/v1/midtrans-webhook`
+   di peramban (HP pun bisa): harus `"mode":"production"`. Masih `"sandbox"` → secret yang terbaca
+   masih berawalan `SB-` (salah proyek / salah nama secret / belum ter-deploy). Cek lain: kode
+   bayar baru tak bertanda **Kode uji**; tautan "Buka / simpan gambar QR" ber-host `api.midtrans.com`
+   (bukan `api.sandbox.midtrans.com`); kolom `data.sandbox` baris terbaru `keuangan_va_intent` = false.
 3. Mode Production → Settings → Payment → **Notification URL**: isi URL webhook yang sama
    (pengaturan sandbox tidak terbawa).
 4. Ammu → Pengaturan Keuangan → **Client Key** production (`Mid-client-…`), centang hanya kanal
@@ -398,7 +408,9 @@ Induk supaya kas tak ikut bertambah.
    Key production membuat jendela BSI gagal (jatuh ke halaman Midtrans di browser).
 5. Uji satu pembayaran kecil sungguhan pada santri sendiri, baru centang Aktifkan untuk semua wali.
    Kode bayar sandbox lama: notifikasinya tak lagi tercatat (status diverifikasi ke API production,
-   order sandbox tak dikenal), dan kodenya kedaluwarsa sendiri atau bisa dibatalkan wali.
+   order sandbox tak dikenal). Di daftar wali kode yang lewat batas waktu tampil **Kedaluwarsa**
+   dan kode sandbox bertanda **Kode uji**; begitu wali membuat kode baru dengan kunci production,
+   kode sandbox santri itu yang masih `pending` ditutup (`kadaluarsa`) oleh `midtrans-charge`.
 
 ### d. Catatan / risiko
 - Nomor VA dari Midtrans berganti tiap pembayaran (bukan nomor tetap per santri); nominal

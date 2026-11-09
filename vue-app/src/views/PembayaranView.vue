@@ -534,12 +534,19 @@
               <span class="text-[10px] font-bold text-[var(--text-secondary)]">
                 · {{ labelKanal(i) }}</span
               >
+              <!-- 9 Nov 2026: kode dari kunci sandbox tak bisa dibayar uang sungguhan. -->
+              <span
+                v-if="i._uji"
+                class="ml-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                title="Dibuat dengan kunci uji (sandbox) — tidak bisa dibayar dengan uang sungguhan"
+                >Kode uji</span
+              >
             </p>
             <p class="text-[10px] text-[var(--text-secondary)] truncate">
               {{ i.santri_nama ? i.santri_nama + ' — ' : '' }}{{ intentRincian(i) }}
             </p>
             <p
-              v-if="i.sumber === 'midtrans' && i.status === 'pending' && i.va"
+              v-if="i.sumber === 'midtrans' && i._status === 'pending' && i.va"
               class="text-[11px] font-mono font-bold text-[var(--text-primary)] mt-0.5"
             >
               <template v-if="i.kode_perusahaan"
@@ -558,30 +565,30 @@
             <span
               :class="[
                 'text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full',
-                i.status === 'terbayar'
+                i._status === 'terbayar'
                   ? 'bg-emerald-100 text-emerald-700'
-                  : i.status === 'pending'
+                  : i._status === 'pending'
                     ? 'bg-amber-100 text-amber-700'
                     : 'bg-slate-200 text-slate-600'
               ]"
-              >{{ vaIntentStatusLabel(i.status) }}</span
+              >{{ vaIntentStatusLabel(i._status) }}</span
             >
             <button
               v-if="i.sumber === 'midtrans' && i.mode === 'core'"
               class="text-[10px] font-black text-cyan-700 hover:underline cursor-pointer"
               @click="bukaKode(i.id)"
             >
-              {{ i.status === 'pending' ? 'Lihat kode bayar' : 'Rincian' }}
+              {{ i._status === 'pending' ? 'Lihat kode bayar' : 'Rincian' }}
             </button>
             <button
-              v-else-if="i.sumber === 'midtrans' && i.status === 'pending' && i.redirect_url"
+              v-else-if="i.sumber === 'midtrans' && i._status === 'pending' && i.redirect_url"
               class="text-[10px] font-black text-cyan-700 hover:underline cursor-pointer"
               @click="lanjutSnap(i)"
             >
               Lanjutkan bayar
             </button>
             <button
-              v-if="i.status === 'pending'"
+              v-if="i._status === 'pending'"
               :disabled="batalId === i.id"
               class="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer disabled:opacity-50"
               @click="batalIntent(i)"
@@ -626,7 +633,7 @@ import { computeVaSantri, formatVa } from '@/utils/bmtVa'
 import { metodeBayarWali } from '@/utils/metodeBayarWali'
 // v.1.4.9 gel. 2: pembayaran online Midtrans (VA bank / QRIS), biaya layanan ditanggung wali.
 import { kanalAktif, cariKanal, rincianBayar } from '@/utils/biayaMidtrans'
-import { labelKanal } from '@/utils/caraBayarMidtrans'
+import { labelKanal, statusKode, kodeUji } from '@/utils/caraBayarMidtrans'
 import { buatKodeBayar, batalKodeBayar, bayarLewatSnap, titipKode } from '@/services/midtrans'
 import { SUMBER_BAYAR_SANTRI } from '@/utils/cocokBayarTagihan'
 
@@ -871,6 +878,11 @@ const cartItems = computed(() => {
 const cartTotal = computed(() => cartItems.value.reduce((s, i) => s + (Number(i.nominal) || 0), 0))
 
 // niat-bayar milik anak-anak wali (pending + terbayar terbaru; sembunyikan yg dibatalkan)
+// 9 Nov 2026: `_status` = status yang dilihat wali — kode online yang lewat batas waktunya
+//   tampil Kedaluwarsa walau barisnya masih pending (kode sandbox lama tak pernah menerima
+//   notifikasi kedaluwarsa sesudah pindah ke kunci production). `_uji` = kode dari kunci sandbox.
+const kiniMenit = ref(Date.now())
+const detakMenit = setInterval(() => (kiniMenit.value = Date.now()), 60_000)
 const myVaIntents = computed(() =>
   vaIntentRaw.value
     .filter(
@@ -879,6 +891,7 @@ const myVaIntents = computed(() =>
     )
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
     .slice(0, 10)
+    .map((i) => ({ ...i, _status: statusKode(i, kiniMenit.value), _uji: kodeUji(i) }))
 )
 function vaIntentStatusLabel(s) {
   if (s === 'terbayar') return 'Terbayar'
@@ -1141,6 +1154,7 @@ onMounted(() => {
   }, 500)
 })
 onUnmounted(() => {
+  clearInterval(detakMenit)
   for (const u of [unsubBayar, unsubSantri, unsubTagihan, unsubPending, unsubIntent]) {
     if (u) {
       try {

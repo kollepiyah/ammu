@@ -17,6 +17,9 @@
 //
 // DEPLOY: supabase functions deploy midtrans-charge
 // SECRET: supabase secrets set MIDTRANS_SERVER_KEY="SB-Mid-server-…"  (sandbox berawalan SB-)
+//   Kunci dibaca SEKALI saat fungsi menyala: sesudah mengganti secret, deploy ulang fungsi ini
+//   dan midtrans-webhook supaya tak ada instans hangat yang masih memegang kunci lama. Cek:
+//   GET …/functions/v1/midtrans-webhook → "mode": "production" | "sandbox".
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handlePreflight, json } from '../_shared/cors.ts'
 import {
@@ -117,6 +120,21 @@ Deno.serve(async (req) => {
       .eq('id', santriId)
       .maybeSingle()
     if (!santri) return json({ ok: false, error: 'Santri tidak ditemukan untuk akun ini.' }, 403)
+
+    // 9 Nov 2026 (pindah ke kunci production): kode sandbox santri ini yang masih "pending" tak
+    //   bisa lagi dibayar maupun dicatat — statusnya kini ditanya ke API production yang tak
+    //   mengenalnya, jadi notifikasi kedaluwarsanya pun tak pernah tercatat. Tutup supaya tak
+    //   tampil "Menunggu Bayar" di daftar wali. Gagal di sini tak menghalangi kode baru.
+    if (!url.sandbox) {
+      const { error: tutupErr } = await db
+        .from('keuangan_va_intent')
+        .update({ status: 'kadaluarsa', updated_at: new Date().toISOString() })
+        .eq('santri_id', santriId)
+        .eq('status', 'pending')
+        .eq('data->>sumber', 'midtrans')
+        .eq('data->>sandbox', 'true')
+      if (tutupErr) console.warn('[midtrans-charge] tutup kode sandbox lama gagal:', tutupErr.message)
+    }
 
     // Item dijepit ke sisa tagihan yang SEKARANG (bukan yang dilihat layar beberapa menit lalu).
     const minta = Array.isArray(body.items) ? body.items : []

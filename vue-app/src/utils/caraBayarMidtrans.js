@@ -122,3 +122,36 @@ export function sisaWaktu(expiryAt, nowMs = Date.now()) {
   const jam = `${pad(Math.floor(d / 3600))}:${pad(Math.floor((d % 3600) / 60))}:${pad(d % 60)}`
   return { habis: false, teks: hari ? `${hari} hari ${jam}` : jam }
 }
+
+/**
+ * Batas waktu kode bayar online (ms) — `expiry_at` dari Core API; kode Snap (BSI) & kode lama
+ * tak menyimpannya, jadi diturunkan dari `created_at` dengan masa berlaku yang sama dengan
+ * server (_shared/midtrans.ts: VA sehari, QR sejam). NaN bila tak bisa ditentukan.
+ */
+export function batasKode(i) {
+  const t = Date.parse(String(i?.expiry_at || ''))
+  if (Number.isFinite(t)) return t
+  if (i?.sumber !== 'midtrans') return NaN
+  const dibuat = Date.parse(String(i?.created_at || ''))
+  if (!Number.isFinite(dibuat)) return NaN
+  const qris = i?.jenis === 'qris' || i?.kanal === 'qris'
+  return dibuat + (qris ? 60 : 24 * 60) * 60_000
+}
+
+/**
+ * Status kode bayar seperti yang dilihat wali: kode online yang masih `pending` tetapi sudah lewat
+ * batas waktunya = 'kadaluarsa'. (9 Nov 2026: sesudah pindah ke kunci production, kode sandbox
+ * lama tak pernah menerima notifikasi kedaluwarsa — dulu tampil "Menunggu Bayar" selamanya.)
+ */
+export function statusKode(i, nowMs = Date.now()) {
+  const s = String(i?.status || 'pending')
+  if (s !== 'pending') return s
+  const t = batasKode(i)
+  return Number.isFinite(t) && t <= nowMs ? 'kadaluarsa' : 'pending'
+}
+
+/** Kode dibuat dengan kunci uji (sandbox) — tak bisa dibayar dengan uang sungguhan. */
+export function kodeUji(i) {
+  // Hanya kode online yang menyimpan `sandbox` (midtrans-charge); VA BMT tak pernah punya.
+  return i?.sandbox === true || i?.sandbox === 'true'
+}

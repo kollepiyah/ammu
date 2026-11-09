@@ -47,6 +47,19 @@
       >
         Kode bayar ini sudah tidak berlaku. Silakan buat yang baru.
       </div>
+      <!-- 9 Nov 2026: kode dari kunci sandbox terlihat sama persis dengan kode sungguhan —
+           tandai supaya tak ada yang mencoba membayarnya dengan uang sungguhan. -->
+      <div
+        v-if="uji && kode.status !== 'terbayar'"
+        class="m-3 rounded-2xl p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-center"
+      >
+        <p class="text-sm font-black text-orange-800 dark:text-orange-200">
+          <i class="fas fa-flask mr-1"></i>Kode uji
+        </p>
+        <p class="text-[11px] text-orange-700 dark:text-orange-300 mt-0.5">
+          Dibuat dengan kunci uji (sandbox) — tidak bisa dibayar dengan uang sungguhan.
+        </p>
+      </div>
 
       <!-- Total & batas waktu — sesudah lunas cukup kotak "Pembayaran diterima" (Kyai, 4 Nov 2026) -->
       <div
@@ -245,7 +258,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { subscribeColl } from '@/services/db'
 import { batalKodeBayar, ambilTitipan } from '@/services/midtrans'
 import { fmtRp } from '@/utils/format'
-import { caraBayar, sisaWaktu, labelKanal } from '@/utils/caraBayarMidtrans'
+import { caraBayar, sisaWaktu, labelKanal, kodeUji } from '@/utils/caraBayarMidtrans'
 import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
@@ -270,6 +283,7 @@ onMounted(() => {
 const kode = computed(() => baris.value || awal.value)
 
 const isQris = computed(() => kode.value?.jenis === 'qris' || kode.value?.kanal === 'qris')
+const uji = computed(() => kodeUji(kode.value))
 const namaKanal = computed(() => {
   const l = labelKanal(kode.value)
   return isQris.value ? 'QRIS' : l.replace(/^VA\s+/i, 'Bank ')
