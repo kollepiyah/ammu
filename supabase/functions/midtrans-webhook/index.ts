@@ -15,6 +15,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handlePreflight, json } from '../_shared/cors.ts'
 import {
+  kodeSandboxTertinggal,
   nomorBayar,
   nominalBersih,
   putusanStatus,
@@ -68,6 +69,24 @@ Deno.serve(async (req) => {
     }
 
     const url = urlMidtrans(SERVER_KEY)
+    // 9 Nov 2026: notifikasi kode sandbox sesudah pindah ke kunci production → jawab 200 (supaya
+    //   Midtrans berhenti mengulang) dan tutup kodenya bila masih pending. TIDAK pernah dicatat
+    //   sebagai pembayaran, apa pun status di badan notifikasi (tak terverifikasi & bukan uang).
+    if (kodeSandboxTertinggal(it.data, url.sandbox)) {
+      if (it.status === 'pending') {
+        await db
+          .from('keuangan_va_intent')
+          .update({
+            status: 'kadaluarsa',
+            data: { ...(it.data || {}), ditutup: 'kode sandbox — kunci sudah production' },
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', it.id)
+          .eq('status', 'pending')
+      }
+      console.log('[midtrans-webhook] kode sandbox diabaikan (kunci production):', it.id, notif.transaction_status)
+      return json({ ok: true, abaikan: 'kode sandbox, kunci production' })
+    }
     // deno-lint-ignore no-explicit-any
     let st: any = null
     let alasan = ''

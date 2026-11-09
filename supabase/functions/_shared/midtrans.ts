@@ -274,3 +274,16 @@ export function bacaHasilCharge(j: any, kanal: Kanal, nowMs: number) {
     expiryAt: isoDariWaktuMidtrans(j?.expiry_time) || cadangan
   }
 }
+
+/**
+ * Kode bayar dibuat dengan kunci SANDBOX, padahal kunci yang terpasang kini PRODUCTION.
+ * Notifikasinya (dari Midtrans sandbox) tak bisa diverifikasi lagi — tanda tangan memakai kunci
+ * sandbox, dan API production tak mengenal order-nya — dan uangnya memang bukan uang sungguhan.
+ * 9 Nov 2026: dulu dijawab 500 → Midtrans mengulang & mengirim email "difficulty sending
+ * notification". Arah sebaliknya (kode production, kunci sandbox) TIDAK termasuk: notifikasi
+ * pembayaran sungguhan harus tetap diulang Midtrans sampai kunci production terpasang lagi.
+ */
+// deno-lint-ignore no-explicit-any
+export function kodeSandboxTertinggal(dataIntent: any, kunciSandbox: boolean): boolean {
+  return !kunciSandbox && (dataIntent?.sandbox === true || dataIntent?.sandbox === 'true')
+}

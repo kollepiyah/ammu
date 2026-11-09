@@ -231,4 +231,13 @@ describe('Core API (tampil di layar Ammu)', () => {
     )
     expect(lain.galat).toBe('Bad; gross_amount salah')
   })
+
+  it('kode sandbox tertinggal: hanya kode sandbox ketika kunci production', () => {
+    expect(ts.kodeSandboxTertinggal({ sandbox: true }, false)).toBe(true)
+    expect(ts.kodeSandboxTertinggal({ sandbox: true }, true)).toBe(false) // masih uji sandbox
+    // kode production + kunci sandbox: notifikasi uang sungguhan, biar Midtrans mengulang
+    expect(ts.kodeSandboxTertinggal({ sandbox: false }, true)).toBe(false)
+    expect(ts.kodeSandboxTertinggal({ sandbox: false }, false)).toBe(false)
+    expect(ts.kodeSandboxTertinggal(null, false)).toBe(false)
+  })
 })

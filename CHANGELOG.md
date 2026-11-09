@@ -49,6 +49,15 @@ bisa dipakai sesudah diaktifkan. Dua tambahan:
   Server Key yang sempat tersimpan/terlihat WAJIB dibuat ulang di dasbor Midtrans lalu secret
   `MIDTRANS_SERVER_KEY` diganti lagi.
 
+Lanjutan (9 Nov siang): Midtrans mengirim email "difficulty sending notification" untuk order
+`mt-mrtg4jsiq5n7x1-…` (QRIS dibuat 08.09 dengan kunci sandbox, kedaluwarsa 09.09). Webhook yang
+sudah memakai kunci production tak bisa memverifikasinya (tanda tangan kunci sandbox, order tak
+dikenal API production) → 500 → Midtrans mengulang. Kini `_shared/midtrans.kodeSandboxTertinggal`:
+kode sandbox + kunci production → jawab **200**, kode yang masih pending ditutup `kadaluarsa`,
+TIDAK pernah dicatat sebagai pembayaran. Arah sebaliknya (kode production, kunci sandbox) tetap 500
+supaya notifikasi uang sungguhan diulang sampai kunci production terpasang lagi. Diuji dengan
+notifikasi persis dari email itu lewat fungsi yang dibundel (tiruan Supabase + Midtrans).
+
 Perlu deploy: `midtrans-charge`, `midtrans-webhook`, web (+ AAB/Electron berikutnya). Diuji:
 vitest `caraBayarMidtrans` (5) + `midtransMirrorEdge` + `metodeBayarWali`, eslint berkas yang
 berubah; kedua fungsi dibundel esbuild dan dijalankan di Node dengan tiruan Supabase + Midtrans —

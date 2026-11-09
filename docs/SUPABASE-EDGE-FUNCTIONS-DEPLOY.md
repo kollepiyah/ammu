@@ -411,6 +411,9 @@ Induk supaya kas tak ikut bertambah.
    order sandbox tak dikenal). Di daftar wali kode yang lewat batas waktu tampil **Kedaluwarsa**
    dan kode sandbox bertanda **Kode uji**; begitu wali membuat kode baru dengan kunci production,
    kode sandbox santri itu yang masih `pending` ditutup (`kadaluarsa`) oleh `midtrans-charge`.
+   Notifikasi Midtrans sandbox untuk kode lama dijawab 200 dan kodenya ditutup tanpa dicatat
+   (dulu 500 → email "difficulty sending notification" dari Midtrans). Bila tak lagi menguji
+   sandbox, kosongkan juga Notification URL di dasbor mode Sandbox.
 
 ### d. Catatan / risiko
 - Nomor VA dari Midtrans berganti tiap pembayaran (bukan nomor tetap per santri); nominal
