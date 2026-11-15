@@ -1339,7 +1339,7 @@
                   class="w-full px-3 py-2 text-sm border border-rose-300 dark:border-rose-700 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-100 cursor-pointer"
                 >
                   <option value="">-- Pilih Juz --</option>
-                  <option v-for="n in juzRangeForKelas" :key="n" :value="n">JUZ {{ n }}</option>
+                  <option v-for="n in juzRangeForKelas" :key="n" :value="n">Juz {{ n }}</option>
                 </select>
               </div>
 

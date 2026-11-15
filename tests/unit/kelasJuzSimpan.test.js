@@ -3,7 +3,7 @@
 // form/Edit Kelas/impor Excel menyimpan juz telanjang ('5') di samping 'JUZ 5'.
 import { describe, it, expect } from 'vitest'
 import { labelKelasDuaSisi, cocokKelasSantri } from '@/utils/kelompokRombel'
-import { juzSimpan } from '@/utils/format'
+import { juzSimpan, labelJuz } from '@/utils/format'
 
 describe('labelKelasDuaSisi / cocokKelasSantri', () => {
   const a = { lembaga: 'PTPT', kelas: '1' }
@@ -34,18 +34,24 @@ describe('labelKelasDuaSisi / cocokKelasSantri', () => {
 })
 
 describe('juzSimpan', () => {
-  it('angka telanjang & huruf kecil → JUZ n', () => {
-    expect(juzSimpan('5')).toBe('JUZ 5')
-    expect(juzSimpan(' juz 12 ')).toBe('JUZ 12')
-    expect(juzSimpan('JUZ 04')).toBe('JUZ 4')
-    expect(juzSimpan(30)).toBe('JUZ 30')
+  it('angka telanjang & huruf besar/kecil → Juz n (v.1.5.0: huruf awal saja)', () => {
+    expect(juzSimpan('5')).toBe('Juz 5')
+    expect(juzSimpan(' juz 12 ')).toBe('Juz 12')
+    expect(juzSimpan('JUZ 04')).toBe('Juz 4')
+    expect(juzSimpan(30)).toBe('Juz 30')
   })
   it('kosong & strip dibiarkan', () => {
     expect(juzSimpan('')).toBe('')
     expect(juzSimpan(null)).toBe('')
     expect(juzSimpan('-')).toBe('-')
   })
-  it('tanpa angka → kapital apa adanya', () => {
-    expect(juzSimpan('khotam')).toBe('KHOTAM')
+  it('tanpa angka → huruf awal kapital', () => {
+    expect(juzSimpan('khotam')).toBe('Khotam')
+  })
+  it('labelJuz: tampilan seragam dari nilai mentah', () => {
+    expect(labelJuz('JUZ 5')).toBe('Juz 5')
+    expect(labelJuz('05')).toBe('Juz 5')
+    expect(labelJuz('-')).toBe('')
+    expect(labelJuz('')).toBe('')
   })
 })

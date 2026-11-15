@@ -120,7 +120,7 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     payload.guru_sore = sore
   }
   if (opts.lembaga === 'PTPT' && opts.juz) {
-    payload.juz = `JUZ ${opts.juz}`
+    payload.juz = `Juz ${opts.juz}`
   }
   // v.1.2.2: label PJ PTPT — diisi saat santri MASUK PTPT dari lembaga sebelumnya.
   //   Hanya ditulis bila pemanggil memang memilih; jangan mengosongkan label yang ada.
@@ -233,7 +233,7 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
       lembaga: lmbBaru || s.lembaga || '',
       kelas_from: fromKls,
       kelas_to: toKls,
-      juz: opts.juz ? `JUZ ${opts.juz}` : null,
+      juz: opts.juz ? `Juz ${opts.juz}` : null,
       catatan: opts.catatan || '',
       guru: guruTeks
     })
@@ -300,7 +300,7 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     ke_lembaga: lmbBaru,
     ke_kelas: klsBaru,
     khotam_ke: khotamKe || '',
-    juz: lmbBaru === 'PTPT' ? `JUZ ${opts.juz}` : ''
+    juz: lmbBaru === 'PTPT' ? `Juz ${opts.juz}` : ''
   }
   payload.riwayat_kenaikan = Array.isArray(s.riwayat_kenaikan)
     ? [...s.riwayat_kenaikan, rkEntry]

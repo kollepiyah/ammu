@@ -67,6 +67,6 @@ describe('buildKenaikanQiraatiPayload — label pj_ptpt (fondasi RLS santri_upd_
     )
     expect(payload.lembaga).toBe('PTPT')
     expect(payload.kelas).toBe('Kelas 3')
-    expect(payload.juz).toBe('JUZ 11')
+    expect(payload.juz).toBe('Juz 11')
   })
 })

@@ -1284,6 +1284,7 @@ import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { useRoute } from 'vue-router'
 import { subscribeColl, mergeOne, serverTimestamp } from '@/services/db'
+import { toTitleCase } from '@/utils/format'
 import { useSantri } from '@/composables/useSantri'
 import { useLembaga } from '@/composables/useLembaga'
 import { useGuru } from '@/composables/useGuru'
@@ -1764,10 +1765,9 @@ const logoKanan = computed(() => {
   )
 })
 
+// Huruf sesudah petik tak ikut kapital ("Ma'had", bukan "Ma'Had") — sama dengan utils/format.
 function titleCase(s) {
-  return String(s || '')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  return toTitleCase(s)
 }
 
 const bgRapor = computed(() => {

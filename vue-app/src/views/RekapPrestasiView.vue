@@ -619,7 +619,7 @@
               <p class="text-sm font-bold text-slate-800 truncate">{{ s.nama }}</p>
               <p class="text-[10px] text-slate-500">
                 {{ s.lembaga }}{{ s.shift ? ' · ' + s.shift : '' }} · Kelas {{ s.kelas || '-'
-                }}{{ s.juz ? ' · ' + s.juz : '' }}
+                }}{{ labelJuz(s.juz) ? ' · ' + labelJuz(s.juz) : '' }}
               </p>
               <div class="flex flex-wrap gap-1 mt-1">
                 <span class="text-[9px] bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded font-bold"
@@ -688,7 +688,9 @@
                         class="border border-slate-200 px-2 py-1 text-center font-bold text-emerald-700"
                       >
                         {{ r.total || '-'
-                        }}<span v-if="r.juz" class="text-rose-600"> · {{ r.juz }}</span>
+                        }}<span v-if="labelJuz(r.juz)" class="text-rose-600">
+                          · {{ labelJuz(r.juz) }}</span
+                        >
                       </td>
                       <td
                         v-if="canCrud"
@@ -1342,7 +1344,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useSettingsStore } from '@/stores/settings'
-import { extractNumber, juzNum, todayJakarta } from '@/utils/format'
+import { extractNumber, juzNum, labelJuz, todayJakarta } from '@/utils/format'
 import { bestNameMatch, fuzzyKey, simRatio } from '@/utils/fuzzyMatch' // v.100 Batch12/14: cocokkan nama mirip + scope guru (impor Google Form)
 import { createPdf, savePdf, buildKopLembaga } from '@/utils/pdfBuilder'
 // v.1.4.5: tata letak PDF rekap (tabel per kelas + ringkasan target) — dipisah dari layar.
@@ -2001,7 +2003,7 @@ function getJuzNum(s) {
   return extractNumber(raw) || ''
 }
 function setJuz(id, val) {
-  setEdit(id, 'juz', val ? `JUZ ${val}` : '-')
+  setEdit(id, 'juz', val ? `Juz ${val}` : '-')
 }
 function computedTotal(s) {
   // v.1.3.7: hanya angka BULAN TERPILIH — lihat catatan di getEdit.
@@ -2358,7 +2360,7 @@ async function onImportRekap(e) {
         const ak = extractNumber(akhir || s.prestasi_akhir)
         const tot = Math.max(0, ak - aw)
         if (awal || akhir) payload.prestasi_total = tot > 0 ? `${tot} Hal` : ''
-        if (juzIn) payload.juz = `JUZ ${extractNumber(juzIn)}`
+        if (juzIn) payload.juz = `Juz ${extractNumber(juzIn)}`
         if (ptptKelasIn) payload.kelas = ptptKelasIn // PTPT = Kelas (posisi terkini)
       } else if (totalIn) {
         payload.prestasi_total = totalIn

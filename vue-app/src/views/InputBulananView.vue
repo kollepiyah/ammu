@@ -916,7 +916,7 @@ async function simpanBatch() {
       }
       if (isPtpt) {
         const juzNum = parseAngka(form.juz)
-        payload.juz = juzNum > 0 ? `JUZ ${juzNum}` : ''
+        payload.juz = juzNum > 0 ? `Juz ${juzNum}` : ''
       }
       // v.1.3.7: baris santri = "angka TERAKHIR yang pernah disimpan" (dibaca Data Santri,
       //   profil, ekspor). Dua penjaga sekaligus:

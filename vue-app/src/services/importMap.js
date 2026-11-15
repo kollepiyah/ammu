@@ -9,6 +9,8 @@
 // NIS sering KOSONG (auto-formula) -> id deterministik dari Nama(+Wali+TglLahir)
 // supaya re-impor idempoten (upsert baris yang sama).
 
+import { toTitleCase } from '../utils/format.js'
+
 // ---- util sel -------------------------------------------------------------
 /** Ekstrak teks dari nilai sel (sudah/ belum di-unwrap ExcelJS): primitif,
  *  {text}, {result}, atau objek formula tanpa hasil -> ''. */
@@ -70,10 +72,10 @@ export function normWa(v) {
   return s
 }
 
+// Kyai 16 Nov 2026: dulu `\b\w` — huruf sesudah petik ikut kapital ("Siti Ma'Rifatin"). Kini
+//   memakai toTitleCase (utils/format, juga murni) yang sama dengan form guru/santri.
 export function titleCase(v) {
-  const s = cellText(v)
-  if (!s) return ''
-  return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+  return toTitleCase(cellText(v))
 }
 
 const _low = (v) => cellText(v).toLowerCase().replace(/\s+/g, ' ').trim()

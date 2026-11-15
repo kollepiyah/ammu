@@ -80,7 +80,7 @@ describe('kartu kenaikan PTPT — cap di juz yang LULUS', () => {
       { lembaga: 'PTPT', kelas: 'Kelas 3', juz: '11' },
       ctx
     )
-    expect(payload.juz).toBe('JUZ 11')
+    expect(payload.juz).toBe('Juz 11')
     expect(payload.kelas).toBe('Kelas 3')
   })
 

@@ -173,7 +173,7 @@
                 class="mt-0.5 accent-teal-600 cursor-pointer"
               />
               <span>
-                <b>Ikut Pondok Laju</b>
+                <b>Pondok Laju</b>
                 <span class="block text-[10px] text-[var(--text-tertiary)]">
                   Label santri jadi Pondok Laju. Bila juga Fullday, tagihannya tetap Fullday saja.
                 </span>

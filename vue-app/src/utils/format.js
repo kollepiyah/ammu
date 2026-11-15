@@ -145,15 +145,22 @@ export function juzNum(v) {
 }
 
 /**
- * Bentuk SIMPAN juz: '5' / 'juz 5' / 'JUZ 5' → 'JUZ 5'. Satu bentuk untuk semua penulis
+ * Bentuk SIMPAN juz: '5' / 'juz 5' / 'JUZ 5' → 'Juz 5'. Satu bentuk untuk semua penulis
  * (form, Edit Kelas, impor Excel, kenaikan, Input Bulanan) — dulu sebagian menyimpan
  * angka telanjang sehingga data PTPT bercampur 'JUZ 4' dan '5'. '-' & kosong dibiarkan.
+ * v.1.5.0 (Kyai 16 Nov 2026): huruf awal saja yang besar — 'Juz 5', bukan 'JUZ 5'.
  */
 export function juzSimpan(v) {
   const t = String(v ?? '').trim()
   if (!t || t === '-') return t
   const n = juzNum(t)
-  return n ? `JUZ ${Number(n)}` : t.toUpperCase()
+  return n ? `Juz ${Number(n)}` : toTitleCase(t)
+}
+
+/** Label tampilan juz: 'JUZ 5' / '5' → 'Juz 5'; kosong / '-' → ''. Untuk nilai mentah di layar. */
+export function labelJuz(v) {
+  const n = juzNum(v)
+  return n ? `Juz ${Number(n)}` : ''
 }
 
 /**

@@ -9,12 +9,14 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Baru — Pondok Laju**
 
-- **Status santri Pondok Laju.** Di form santri ada centang "Ikut Pondok Laju". Santri Pondok Laju
+- **Status santri Pondok Laju.** Di form santri ada centang "Pondok Laju". Santri Pondok Laju
   yang juga Fullday tetap ditagih seperti Fullday; yang masih pulang mendapat tagihan Pondok Laju
   sebagai tambahan, sesuai pengaturan jenis pembayaran.
 - **Semua santri kini berlabel status** di Data Santri: Non-mukim, Fullday, Ma'had, atau Pondok
   Laju, dan bisa disaring per status.
 - Istilah **"Pulang Pergi" diganti "Non-mukim"**.
+- Tulisan juz kini **"Juz 5"** (huruf awal saja yang besar) di semua halaman.
+- Nama berpetik seperti **"Siti Ma'rifatin"** tak lagi tertulis "Ma'Rifatin".
 
 **Perbaikan**
 

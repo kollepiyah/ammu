@@ -11,7 +11,7 @@ export const STATUS_SANTRI_OPTS = [
   //   berdampingan dengan Fullday. Untuk TAGIHAN, Pondok Laju + Fullday ditagih sebagai Fullday
   //   SAJA; kunci ini hanya menyasar Pondok Laju yang BUKAN Fullday/Ma'had (santri yang masih
   //   pulang) — mereka tetap ikut 'non_mukim' dan mendapat jenis Pondok Laju sebagai tambahan.
-  { key: 'pondok_laju', label: 'Pondok Laju (bukan Fullday)' }
+  { key: 'pondok_laju', label: 'Pondok Laju' }
 ]
 
 /**

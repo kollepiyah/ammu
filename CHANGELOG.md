@@ -28,11 +28,12 @@ berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AA
 dirilis BERSAMA fitur Pondok Laju (tahap 1 dari 5 selesai di gelombang ini).
 
 **SIAP RILIS (setelah Pondok Laju lengkap)** — `versionCode` 150 / `versionName` `v.1.5.0`, gelombang 2.
-Tanpa migrasi Supabase: penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah
-meratakan `data`). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOnly`) →
-deploy ulang fungsi itu saat rilis. Urutan: deploy web → deploy fungsi → rebuild AAB → rilis Electron.
+Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah meratakan `data`).
+**Satu migrasi**: `20261116120000_rapikan_nama_juz.sql` (perapian DATA nama berpetik & juz — lihat
+Fixed). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOnly`) → deploy ulang
+fungsi itu. Urutan: `supabase db push` → deploy web → deploy fungsi → rebuild AAB → rilis Electron.
 
-Diuji: vitest 125 berkas / 1.846 tes (`statusSantri` +3, cermin edge +5 kasus, `kasLembaga`), eslint
+Diuji: vitest 126 berkas / 1.850 tes (`statusSantri` +3, cermin edge +5 kasus, `kasLembaga`, `namaPetik`, `labelJuz`), eslint
 0 error, vite build. Di peramban (data rekaan, penjaga tulis di klien supabase): label 5 santri,
 penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan muatan simpan
 (`data.is_pondok_laju: true` + `is_fullday: true`). **Belum** dicoba dengan akun & data nyata.
@@ -54,6 +55,23 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 ### Changed
 
 - **"Pulang Pergi" → "Non-mukim"** di form santri, penyaring Data Santri, profil, dan formulir PSB.
+- **Tulisan juz "Juz 5", bukan "JUZ 5"** (Kyai, 16 Nov). Semua penulis (`juzSimpan`, kenaikan
+  `promosiKenaikan`, Input Bulanan, Rekap Prestasi) kini menyimpan "Juz n"; tampilan nilai mentah
+  lewat `labelJuz` (Rekap Prestasi); pilihan juz Naik Kelas. Data lama diseragamkan oleh migrasi
+  `20261116120000_rapikan_nama_juz.sql` (santri.juz "JUZ 5"/"juz 05"/angka PTPT → "Juz 5").
+- Label centang form "Pondok Laju" (bukan "Ikut Pondok Laju") dan pilihan jenis pembayaran
+  "Pondok Laju" tanpa keterangan dalam kurung (permintaan Kyai).
+
+### Fixed
+
+- **Nama berpetik tertulis "Siti Ma'Rifatin".** Akar: `services/importMap.titleCase` (impor Excel
+  awal) memakai regex `\b\w`, yang menganggap petik batas kata; `RaporView.titleCase` sama. Keduanya kini
+  memakai `utils/format.toTitleCase` (petik bukan pemisah). Data yang terlanjur salah dirapikan
+  migrasi `20261116120000_rapikan_nama_juz.sql`: guru.nama, santri.nama/wali, salinan nama guru di
+  santri.data (guru_pagi/sore/guru/guru_sekolah) dan default guru per kelas di master/lembaga —
+  diuji di PGlite (idempoten, gelar "S.Pd., Gr." tak tersentuh).
+- **Build gagal di commit 4e66df5**: kalimat rilis di BantuanView memuat petik "Ma'had" di dalam
+  string berpetik tunggal. Diganti template literal.
 
 ---
 
