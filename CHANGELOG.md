@@ -24,6 +24,9 @@ berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AA
 
 ## [v.1.5.0] — 2026-11-15 — Filter kelas-guru bergelar, PDF Data Santri per guru kelas + Juz, PDF Data Kelas rapi, logout tak mencabut perangkat lain
 
+**DITAHAN (Kyai, 15 Nov 2026)** — jangan deploy / rebuild AAB / rilis Electron dulu: v.1.5.0
+dirilis BERSAMA fitur Pondok Laju (dikerjakan sebagai gelombang berikutnya v.1.5.0).
+
 **SIAP RILIS** — `versionCode` 150 / `versionName` `v.1.5.0`. Nomor baru, bukan gelombang
 v.1.4.9: Electron 1.4.9 sudah "Latest" di GitHub sejak 4 Nov 2026. Sempat di-commit sebagai
 v.1.4.10 (commit 0002f84–fae5630), lalu dinomori ulang 1.5.0 sebelum tayang. Tanpa migrasi Supabase, tanpa
