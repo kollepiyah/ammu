@@ -13,7 +13,10 @@ import { shiftList } from './shiftMaster'
 import { shiftsForGuru } from './shiftDerive'
 
 // Hitung baris auto (pure, testable). Mengembalikan array objek baris siap-tulis.
-export function hitungBarisAutoGabungan(guruList, absensiRows, settings) {
+// v.1.5.0 (Kyai 16 Nov 2026): `shiftHarian(g, tgl)` opsional — shift yang dimiliki guru HANYA hari
+//   itu (Pondok Laju). "Guru yang mendapat jadwal Laju 2, absen shift sorenya otomatis ikut Laju 2":
+//   Kyai mengisi "hadir ikut" shift Laju 2 = shift sore, dan ini berlaku pada tanggal terjadwal saja.
+export function hitungBarisAutoGabungan(guruList, absensiRows, settings, shiftHarian) {
   const list = shiftList(settings || {})
   const targets = list.filter((s) => Array.isArray(s.hadir_ikut) && s.hadir_ikut.length)
   if (!targets.length) return []
@@ -41,6 +44,7 @@ export function hitungBarisAutoGabungan(guruList, absensiRows, settings) {
     const g = guruById.get(gid)
     if (!g) continue
     const milik = shiftsForGuru(g, settings || {})
+    if (typeof shiftHarian === 'function') for (const id of shiftHarian(g, tgl) || []) milik.add(id)
     for (const t of targets) {
       if (!t.hadir_ikut.includes(srcShift)) continue // shift ini bukan sumber utk target t
       if (!milik.has(t.id)) continue // guru tak memiliki shift target → lewati
@@ -66,8 +70,14 @@ export function hitungBarisAutoGabungan(guruList, absensiRows, settings) {
 
 // Materialisasi + tulis. setOneFn di-inject (mis. setOne dari services/db) agar util
 // tetap bebas dependensi Supabase (mudah diuji). Mengembalikan jumlah baris dibuat.
-export async function materialisasiHadirIkut(guruList, absensiRows, settings, setOneFn) {
-  const baris = hitungBarisAutoGabungan(guruList, absensiRows, settings)
+export async function materialisasiHadirIkut(
+  guruList,
+  absensiRows,
+  settings,
+  setOneFn,
+  shiftHarian
+) {
+  const baris = hitungBarisAutoGabungan(guruList, absensiRows, settings, shiftHarian)
   for (const r of baris) await setOneFn('absensi_shift_guru', r.id, r)
   return baris.length
 }

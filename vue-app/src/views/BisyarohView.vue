@@ -1550,7 +1550,7 @@ import {
 } from '@/utils/periodeBisyaroh'
 // v.1.5.0: bisyaroh piket Pondok Laju per sesi — satu aturan dengan tab Bisyaroh di menu Pondok Laju.
 import { sesiLajuTerbayar, sesiTakDibayarGuru } from '@/utils/pondokLajuSesi'
-import { idShiftLaju, petaShiftSesiLaju } from '@/utils/shiftLaju'
+import { idShiftLaju, petaShiftSesiLaju, penentuShiftLaju } from '@/utils/shiftLaju'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -2743,7 +2743,16 @@ async function materialisasiGabunganPeriode(periode) {
     const dalamJendela = penyaringPeriodeBisyaroh(periode)
     const rows = (absensiShift.value || []).filter((a) => dalamJendela(a.tanggal))
     const guruAktifList = guruAktifSaja(guruRaw.value)
-    return await materialisasiHadirIkut(guruAktifList, rows, settingsStore.settings || {}, setOne)
+    // v.1.5.0: Laju 2 "hadir ikut" shift sore — butuh jadwal piket periode ini.
+    await pastikanJadwalLaju(periode)
+    const s = settingsStore.settings || {}
+    return await materialisasiHadirIkut(
+      guruAktifList,
+      rows,
+      s,
+      setOne,
+      penentuShiftLaju({ settings: s, jadwal: jadwalLaju.value })
+    )
   } catch {
     return 0
   } finally {

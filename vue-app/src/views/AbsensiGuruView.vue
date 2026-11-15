@@ -1425,7 +1425,7 @@ import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.
 import { lembagaKalenderShift, lembagaLabelShift } from '@/utils/lembagaShift'
 // v.1.3.8: "tanggal ini jadwal mengajarnya atau bukan" — guru paruh-waktu tak lagi dialpakan.
 import { guruMasukPada, tanggalBukanJadwal } from '@/utils/jadwalGuru'
-// v.1.5.0 (Kyai 16 Nov 2026): shift Pondok Laju aktif per tanggal (jadwal piket + Tadarus Pagi).
+// v.1.5.0 (Kyai 16 Nov 2026): shift Pondok Laju aktif per tanggal (jadwal piket Laju 1/2).
 import { idShiftLaju, penentuShiftLaju } from '@/utils/shiftLaju'
 // v.1.4.1: "shift ini sudah dimulai belum" (Kyai, 5 Sep 2026) — sumber tunggal aturan jamnya.
 import { jamJakarta, jamMulaiShift, kunciBelumMulai, setDariKunci } from '@/utils/shiftBerjalan'
@@ -2202,7 +2202,15 @@ async function sinkronGabungan(silent = false) {
   }
   syncingGabungan.value = true
   try {
-    const n = await materialisasiHadirIkut(guruAktif.value, bulanIniRows(), s, setOne)
+    // v.1.5.0: Laju 2 "hadir ikut" shift sore — milik guru hanya pada tanggal ia dijadwalkan.
+    if (lajuIds.value.size && !lajuJadwal.value.length) await muatLajuBulan()
+    const n = await materialisasiHadirIkut(
+      guruAktif.value,
+      bulanIniRows(),
+      s,
+      setOne,
+      shiftLajuHari.value
+    )
     if (n > 0) toast.success(`${n} "hadir sekolah" otomatis dibuat dari scan pagi (guru gabungan)`)
     else if (!silent)
       toast.info('Semua guru gabungan sudah tercatat — tak ada yang perlu disinkron')
@@ -2335,35 +2343,23 @@ function kelompokKeyOf(lembaga) {
 // ── v.1.5.0 · SHIFT PONDOK LAJU (Kyai 16 Nov 2026) ─────────────────────────────
 // "Ketika saya menjadwalkan guru … otomatis ada shift yang diaktifkan pada hari itu untuk guru
 //   itu. Jadi di rekap absen guru itu muncul juga." Shift Laju 1/2 aktif pada tanggal guru
-//   dijadwalkan piket; Tadarus Pagi aktif untuk guru kelas Pondok Laju (kecuali Ahad). Di luar
-//   tanggal itu barisnya "bukan jadwal" — tak pernah jadi alpa. Aturan: utils/shiftLaju.
+//   dijadwalkan piket; di luar tanggal itu barisnya "bukan jadwal" — tak pernah jadi alpa. Tadarus
+//   Pagi tetap ikut shift pagi guru kelas (tak berubah). Aturan: utils/shiftLaju.
 const lajuIds = computed(() => idShiftLaju(settingsStore.settings || {}))
 const lajuJadwal = ref([])
-const lajuSantri = ref([])
 async function muatLajuBulan() {
   lajuJadwal.value = []
   if (!lajuIds.value.size) return
   const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
   try {
-    const [j, st] = await Promise.all([
-      queryColl('pondok_laju_jadwal', [['periode', '==', ym]]),
-      lajuSantri.value.length
-        ? Promise.resolve(lajuSantri.value)
-        : queryColl('santri', [['is_pondok_laju', '==', true]])
-    ])
-    lajuJadwal.value = j
-    lajuSantri.value = st
+    lajuJadwal.value = await queryColl('pondok_laju_jadwal', [['periode', '==', ym]])
   } catch (e) {
     console.warn('[absensi] jadwal Pondok Laju tak terbaca:', e?.message || e)
   }
 }
 watch([selectedYear, selectedMonth, () => lajuIds.value.size], muatLajuBulan, { immediate: true })
 const shiftLajuHari = computed(() =>
-  penentuShiftLaju({
-    settings: settingsStore.settings || {},
-    jadwal: lajuJadwal.value,
-    santriList: lajuSantri.value
-  })
+  penentuShiftLaju({ settings: settingsStore.settings || {}, jadwal: lajuJadwal.value })
 )
 /** Shift guru pada satu tanggal = shift tetap + shift Pondok Laju yang aktif hari itu. */
 function shiftHariGuru(g, iso, s) {

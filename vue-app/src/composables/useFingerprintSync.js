@@ -20,7 +20,7 @@ import {
   shiftMilikHari,
   saringScan
 } from '@/utils/scanMesin'
-// v.1.5.0: shift Pondok Laju yang aktif per tanggal (jadwal piket + Tadarus Pagi guru kelas).
+// v.1.5.0: shift Pondok Laju yang aktif per tanggal (jadwal piket Laju 1/2).
 import { idShiftLaju, penentuShiftLaju } from '@/utils/shiftLaju'
 import { todayJakarta } from '@/utils/format'
 
@@ -72,11 +72,8 @@ export function useFingerprintSync() {
     let shiftHarian
     if (idShiftLaju(settings).size) {
       try {
-        const [jadwal, santriList] = await Promise.all([
-          queryColl('pondok_laju_jadwal', dari ? [['tanggal', '>=', dari]] : []),
-          queryColl('santri', [['is_pondok_laju', '==', true]])
-        ])
-        shiftHarian = penentuShiftLaju({ settings, jadwal, santriList })
+        const jadwal = await queryColl('pondok_laju_jadwal', dari ? [['tanggal', '>=', dari]] : [])
+        shiftHarian = penentuShiftLaju({ settings, jadwal })
       } catch (e) {
         console.warn('[fp-sync] jadwal Pondok Laju tak terbaca:', e?.message || e)
       }

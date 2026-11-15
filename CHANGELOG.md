@@ -36,18 +36,19 @@ RLS + `auth_is_admin_pondok_laju`). **Dua edge function berubah**: `auto-generat
 `matchStatusOnly`) dan `hiview-absen` (shift Pondok Laju harian + nomor kartu di Jejak Mesin) →
 deploy ulang keduanya. **Electron wajib dirilis ulang** (IPC "buka saat Windows menyala").
 Urutan: `supabase db push` → deploy web → deploy kedua fungsi → rebuild AAB → rilis Electron.
-**Sesudah rilis, Kyai mengatur:** (1) Master Shift — shift Tadarus Pagi, Laju 1, Laju 2 dengan
-jamnya; (2) menu Pondok Laju → Pengaturan — pilih shift tiap sesi + tanggal berlaku mulai, dan
-Admin Pondok Laju; (3) Pengaturan Keuangan → Jenis Bisyaroh — cara hitung "× sesi Pondok Laju",
-tarif per sesi; (4) di PC kantor (Ammu Desktop → Mesin Absensi): nyalakan "Buka saat Windows
-menyala" dan "Sinkron otomatis".
+**Sesudah rilis, Kyai mengatur:** (1) Master Shift — shift Laju 1 & Laju 2 dengan jamnya; pada
+Laju 2 isi "Hadir otomatis ikut shift" = shift-shift sore; (2) menu Pondok Laju → Pengaturan — pilih
+shift Laju 1/Laju 2 & Admin Pondok Laju; (3) Pengaturan Keuangan → Jenis Bisyaroh — cara hitung
+"× sesi Pondok Laju", tarif per sesi; (4) di PC kantor (Ammu Desktop → Mesin Absensi): nyalakan
+"Buka saat Windows menyala" dan "Sinkron otomatis".
 
 Diuji (absen guru & shift Pondok Laju, 16 Nov): vitest 131 berkas / 1.901 tes (baru
 `shiftLajuMirrorEdge`: app ⇄ fungsi HiView identik + sapuan 00:00–23:59 dengan shift harian),
 build web, `tsc` Electron. Di peramban (data tiruan, tulisan dicegat): matriks Absensi Guru memuat
-baris Laju 1 (hadir di tanggal terjadwal), Laju 2 (alpa di tanggal terjadwal tanpa scan), Tadarus
-Pagi guru kelas sejak tanggal mulai (Ahad & hari sebelum mulai tak dihitung); Pengaturan menolak
-shift ganda & menulis `pondokLajuShift`. **Belum diuji**: fungsi HiView sungguhan (butuh deploy),
+baris Laju 1 (hadir di tanggal terjadwal), Laju 2 (alpa di tanggal terjadwal tanpa scan), tanpa
+baris Tadarus Pagi; Laju 2 hadir-ikut sore hanya di tanggal terjadwal (sinkron gabungan membuat
+baris `auto_gabungan` untuk 10 Nov, tidak untuk 11 Nov tanpa sore / 12 Nov tanpa jadwal);
+Pengaturan menolak shift ganda & menulis `pondokLajuShift`. **Belum diuji**: fungsi HiView sungguhan (butuh deploy),
 Ammu Desktop sungguhan (sinkron Fingerspot & buka-saat-Windows butuh rilis Electron).
 Diuji (Laju 1 guru sekolah): vitest 130 berkas / 1.890 tes, build; di peramban (data tiruan):
 guru ber-shift "SDI - PKBM" terjadwal 3 sesi hadir semua → dibayar 1 (Laju 2) di rekap DAN slip,
@@ -194,10 +195,9 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 ### Added — absen guru: shift Pondok Laju otomatis, templat Excel jadwal, sinkron Fingerspot (Kyai 16 Nov 2026)
 
 - **Shift Pondok Laju aktif otomatis per tanggal.** Pondok Laju → Pengaturan: Kyai memilih shift
-  (dari Master Shift) untuk Tadarus Pagi, Laju 1, Laju 2 + "berlaku mulai". Shift Laju 1/2 aktif
-  untuk guru PADA TANGGAL ia dijadwalkan; Tadarus Pagi aktif untuk guru kelas Pondok Laju setiap hari
-  kecuali Ahad, sejak tanggal mulai (tanpa itu menyalakan pengaturan di tengah bulan mengalpakan
-  semua guru kelas untuk hari sebelumnya). Scan di jam itu tercatat ke shift itu — `deriveShift`
+  (dari Master Shift) untuk Laju 1 & Laju 2. Shift itu aktif untuk guru PADA TANGGAL ia dijadwalkan.
+  Tadarus Pagi SENGAJA tak punya shift sendiri — absennya tetap shift pagi guru kelas (jam 06.30),
+  bonus kehadiran tak berubah (Kyai 16 Nov). Scan di jam itu tercatat ke shift itu — `deriveShift`
   mendapat argumen `tambahan` (shift harian) di app DAN cermin fungsi `hiview-absen`; dipakai kiriman
   HiView, sinkron Fingerspot Revo, dan tambal log HiView (`utils/shiftLaju` + `shiftLaju.ts`, dijaga
   tes cermin). Matriks & Rekap Unit Absensi Guru memuat baris shift itu hanya pada tanggal aktif —
@@ -207,7 +207,13 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 - **Bisyaroh piket tepat per sesi.** Dengan shift tiap sesi, Laju 1 dibayar hanya bila guru hadir di
   shift Laju 1, Laju 2 di shift Laju 2 (dulu aturan cadangan min(terjadwal, shift dihadiri) yang bisa
   membayar sesi yang tak dihadiri). Jenis "× kehadiran" ber-scope kosong tak lagi ikut menghitung
-  shift Pondok Laju (piket dibayar per sesi, Tadarus Pagi tanpa bisyaroh) — cegah bayar ganda.
+  shift Pondok Laju (piket dibayar per sesi) — cegah bayar ganda.
+- **Laju 2 cukup satu scan** (Kyai: "absen shift sorenya otomatis ikut Laju 2, tidak perlu cek log
+  2 kali"). Memakai mekanisme yang sudah ada — Master Shift "Hadir otomatis ikut shift": Kyai mengisi
+  shift Laju 2 ikut shift-shift sore; materialisasi `auto_gabungan` (Absensi Guru, Bisyaroh, tambal
+  HiView) kini menghitung shift Laju sebagai milik guru PADA TANGGAL terjadwal saja
+  (`hitungBarisAutoGabungan(…, shiftHarian)`). Pengaturan Pondok Laju menampilkan apakah sudah
+  diatur.
 - **Templat Excel jadwal** (Pondok Laju → Jadwal): unduh templat bulan ini (baris = tanggal tanpa
   Ahad, kolom "<guru kelas> | Laju 1/2", berisi jadwal yang ada), isi nama guru, impor → masuk
   sebagai perubahan untuk ditinjau lalu SIMPAN JADWAL. Nama dicocokkan persis atau satu-satunya yang

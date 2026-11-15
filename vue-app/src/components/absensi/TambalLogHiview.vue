@@ -141,34 +141,23 @@ watch([dari, sampai], () => {
   if (!membaca.value && bacaan.value?.ok) muatAda()
 })
 
-// v.1.5.0: jadwal piket & guru kelas Pondok Laju di rentang ini — hanya bila Kyai sudah memilih
+// v.1.5.0: jadwal piket Pondok Laju di rentang ini — hanya bila Kyai sudah memilih
 //   shift tiap sesi. Gagal baca = tanpa shift harian (perilaku lama), tak menggagalkan tambal.
 const lajuJadwal = ref([])
-const lajuSantri = ref([])
 async function muatLaju() {
   lajuJadwal.value = []
-  lajuSantri.value = []
   if (!idShiftLaju(props.settings).size) return
   try {
-    const [j, s] = await Promise.all([
-      queryColl('pondok_laju_jadwal', [
-        ['tanggal', '>=', dari.value],
-        ['tanggal', '<=', sampai.value]
-      ]),
-      queryColl('santri', [['is_pondok_laju', '==', true]])
+    lajuJadwal.value = await queryColl('pondok_laju_jadwal', [
+      ['tanggal', '>=', dari.value],
+      ['tanggal', '<=', sampai.value]
     ])
-    lajuJadwal.value = j
-    lajuSantri.value = s
   } catch (e) {
     console.warn('[tambal] jadwal Pondok Laju tak terbaca:', e?.message || e)
   }
 }
 const shiftHarian = computed(() =>
-  penentuShiftLaju({
-    settings: props.settings,
-    jadwal: lajuJadwal.value,
-    santriList: lajuSantri.value
-  })
+  penentuShiftLaju({ settings: props.settings, jadwal: lajuJadwal.value })
 )
 
 const saring = computed(() =>

@@ -21,8 +21,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, handlePreflight, json } from '../_shared/cors.ts'
 import { deriveShift, statusFor, pilihShiftPulang, shiftsForGuru } from './shiftDerive.ts'
-// v.1.5.0: shift Pondok Laju yang aktif hari itu (jadwal piket + Tadarus Pagi guru kelas).
-import { idShiftLaju, guruKelasLajuSet, shiftLajuAktif, namaCocok } from './shiftLaju.ts'
+// v.1.5.0: shift Pondok Laju yang aktif hari itu (jadwal piket Laju 1/2).
+import { idShiftLaju, shiftLajuAktif } from './shiftLaju.ts'
 
 const SECRET = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
 
@@ -214,8 +214,8 @@ async function fetchSettings(db: any): Promise<Record<string, unknown>> {
 }
 
 // v.1.5.0 (Kyai 16 Nov 2026): shift Pondok Laju yang aktif HARI ITU bagi guru ini — Laju 1/2 dari
-//   jadwal piket, Tadarus Pagi bila ia guru kelas Pondok Laju. Hanya bila Kyai sudah memilih shift
-//   tiap sesi (settings.pondokLajuShift); gagal baca (mis. tabel belum dimigrasi) = tanpa tambahan.
+//   jadwal piket. Hanya bila Kyai sudah memilih shift tiap sesi (settings.pondokLajuShift); gagal
+//   baca (mis. tabel belum dimigrasi) = tanpa tambahan, perilaku lama.
 async function shiftLajuHariIni(
   // deno-lint-ignore no-explicit-any
   db: any,
@@ -227,23 +227,14 @@ async function shiftLajuHariIni(
 ): Promise<Set<string>> {
   if (!idShiftLaju(settings).size) return new Set()
   try {
-    const [jd, st] = await Promise.all([
-      db
-        .from('pondok_laju_jadwal')
-        .select('sesi')
-        .eq('tanggal', tanggal)
-        .eq('guru_id', String(guru.id)),
-      db.from('santri').select('*').eq('data->>is_pondok_laju', 'true')
-    ])
+    const { data } = await db
+      .from('pondok_laju_jadwal')
+      .select('sesi')
+      .eq('tanggal', tanggal)
+      .eq('guru_id', String(guru.id))
     // deno-lint-ignore no-explicit-any
-    const sesi = (jd.data || []).map((r: any) => String(r.sesi || ''))
-    const kelas = guruKelasLajuSet((st.data || []).map(flattenGuru))
-    return shiftLajuAktif({
-      settings,
-      tanggal,
-      sesiTerjadwal: sesi,
-      guruKelas: namaCocok(guru.nama, kelas)
-    })
+    const sesi = (data || []).map((r: any) => String(r.sesi || ''))
+    return shiftLajuAktif({ settings, sesiTerjadwal: sesi })
   } catch (e) {
     console.error('[hiview] shift Pondok Laju gagal dibaca:', (e as Error)?.message || e)
     return new Set()

@@ -39,8 +39,8 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
     karena jam itu sudah terbayar sebagai jam pelajaran sekolah.
   - Wali santri bisa melihat capaian Pondok Laju anaknya di halaman Capaian Prestasi.
   - **Absen Pondok Laju otomatis**: guru yang dijadwalkan Laju 1/Laju 2 otomatis mendapat shift itu
-    di hari tersebut, dan guru kelas mendapat shift Tadarus Pagi. Scan di jam itu tercatat dan
-    muncul di rekap absen guru.
+    di hari tersebut; scan di jam itu tercatat dan muncul di rekap absen guru. Untuk Laju 2, absen
+    shift sore otomatis dihitung hadir Laju 2 — cukup sekali scan.
   - **Templat Excel jadwal**: unduh, isi nama guru, lalu impor.
 - **Ammu Desktop** bisa diatur menyala sendiri saat komputer dinyalakan dan langsung menyinkron
   mesin Fingerspot. Sinkron kini hanya memproses scan dua minggu terakhir supaya lebih hemat.

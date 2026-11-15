@@ -659,12 +659,12 @@
         </p>
         <p class="text-[11px] text-[var(--text-secondary)]">
           Buat dulu shiftnya (dengan jam) di Pengaturan → Master Shift, lalu pilih di sini. Shift
-          Laju 1/Laju 2 aktif otomatis untuk guru pada tanggal ia dijadwalkan; Tadarus Pagi aktif
-          untuk guru kelas Pondok Laju setiap hari kecuali Ahad. Scan di jam itu tercatat dan muncul
-          di rekap absen guru; bisyaroh piket dibayar per sesi yang dihadiri.
+          Laju 1/Laju 2 aktif otomatis untuk guru pada tanggal ia dijadwalkan; scan di jam itu
+          tercatat dan muncul di rekap absen guru; bisyaroh piket dibayar per sesi yang dihadiri.
+          Tadarus Pagi tetap ikut absen shift pagi guru kelas — tak ada yang berubah.
         </p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-          <label v-for="s in SESI_LAJU" :key="s.key" class="block">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <label v-for="s in SESI_LAJU.filter((x) => x.piket)" :key="s.key" class="block">
             <span class="block text-[10px] font-black uppercase text-teal-700 mb-0.5">{{
               s.label
             }}</span>
@@ -680,20 +680,26 @@
             </select>
           </label>
         </div>
-        <label class="block w-full md:w-64">
-          <span class="block text-[10px] font-black uppercase text-teal-700 mb-0.5"
-            >Berlaku mulai</span
+        <!-- v.1.5.0 (Kyai 16 Nov 2026): Laju 2 cukup satu scan — absen shift sore ikut Laju 2 -->
+        <p
+          class="text-[11px] rounded-lg border px-2.5 py-1.5"
+          :class="
+            laju2IkutSore.length
+              ? 'border-emerald-300 text-emerald-800 dark:text-emerald-300'
+              : 'border-amber-300 text-amber-800 dark:text-amber-300'
+          "
+        >
+          <i class="fas fa-link mr-1"></i>
+          <template v-if="laju2IkutSore.length"
+            >Laju 2 otomatis hadir bila guru yang dijadwalkan hadir di shift
+            <b>{{ laju2IkutSore.map(labelShift).join(', ') }}</b> — tak perlu scan dua
+            kali.</template
+          ><template v-else
+            >Supaya absen shift sore otomatis ikut Laju 2 (cukup satu scan): buka Pengaturan →
+            Master Shift → shift Laju 2 → isi "Hadir otomatis ikut shift" dengan shift-shift
+            sore.</template
           >
-          <input
-            v-model="shiftSesiMulai"
-            type="date"
-            aria-label="Shift Pondok Laju berlaku mulai"
-            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
-          />
-          <span class="block text-[10px] text-[var(--text-secondary)] mt-0.5"
-            >Tadarus Pagi baru dihitung sejak tanggal ini — hari sebelumnya tak jadi alpa.</span
-          >
-        </label>
+        </p>
         <p v-if="shiftSesiGanda" class="text-[11px] font-bold text-rose-600">
           <i class="fas fa-triangle-exclamation mr-1"></i>Satu shift dipakai dua sesi — pilih shift
           yang berbeda untuk tiap sesi.
@@ -765,7 +771,7 @@ import { todayJakarta, fmtRp } from '@/utils/format'
 import { guruAktifSaja } from '@/utils/guruScope'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
-import { petaShiftSesiLaju, mulaiShiftLaju } from '@/utils/shiftLaju'
+import { petaShiftSesiLaju } from '@/utils/shiftLaju'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { jenisBisyarohList } from '@/utils/bisyarohScope'
 import { rentangPeriodeBisyaroh, penyaringPeriodeBisyaroh } from '@/utils/periodeBisyaroh'
@@ -1310,21 +1316,25 @@ async function imporTemplat(ev) {
 
 // ─────────────────────── SHIFT TIAP SESI ───────────────────────
 // Disimpan di settings.pondokLajuShift (umum) — dibaca app, sinkron Desktop, & fungsi HiView.
-const shiftSesiDraft = reactive({ tadarus: '', laju1: '', laju2: '' })
-const shiftSesiMulai = ref('')
+const shiftSesiDraft = reactive({ laju1: '', laju2: '' })
 const shiftSesiMenyimpan = ref(false)
 const petaSesiAktif = computed(() => petaShiftSesiLaju(settingsStore.settings || {}))
 watch(
   () => settingsStore.settings?.pondokLajuShift,
   () => {
     Object.assign(shiftSesiDraft, petaShiftSesiLaju(settingsStore.settings || {}))
-    shiftSesiMulai.value = mulaiShiftLaju(settingsStore.settings || {}) || todayJakarta()
   },
   { immediate: true, deep: true }
 )
 const shiftGuruOptions = computed(() =>
   shiftList(settingsStore.settings || {}).filter((sh) => sh.untuk !== 'pegawai')
 )
+// Shift sumber "hadir ikut" milik shift Laju 2 (Master Shift) — ditampilkan sebagai konfirmasi.
+const laju2IkutSore = computed(() => {
+  const id = shiftSesiDraft.laju2
+  const sh = shiftList(settingsStore.settings || {}).find((x) => x.id === id)
+  return id && sh ? sh.hadir_ikut || [] : []
+})
 const shiftSesiGanda = computed(() => {
   const isi = Object.values(shiftSesiDraft).filter(Boolean)
   return new Set(isi).size !== isi.length
@@ -1334,7 +1344,7 @@ async function simpanShiftSesi() {
   shiftSesiMenyimpan.value = true
   try {
     await settingsStore.save({
-      pondokLajuShift: { ...shiftSesiDraft, mulai: shiftSesiMulai.value || todayJakarta() }
+      pondokLajuShift: { laju1: shiftSesiDraft.laju1, laju2: shiftSesiDraft.laju2 }
     })
     toast.success('Shift tiap sesi Pondok Laju tersimpan.')
   } catch (e) {

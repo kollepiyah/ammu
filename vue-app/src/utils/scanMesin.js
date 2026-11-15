@@ -292,9 +292,12 @@ export function rencanaTambalScan({ kelompok, ada, guruAktif, settings, sumber, 
   //   sisanya urusan materialisasi di layar, bukan impor.
   const baru = [...baruById.values()]
   const lahir = new Set(baru.map((r) => r.guru_id + '|' + r.tanggal))
-  const gabungan = hitungBarisAutoGabungan(guruAktif, [...(ada || []), ...baru], settings).filter(
-    (r) => lahir.has(String(r.guru_id) + '|' + r.tanggal) && !adaById.has(r.id)
-  )
+  const gabungan = hitungBarisAutoGabungan(
+    guruAktif,
+    [...(ada || []), ...baru],
+    settings,
+    kelompok?.shiftHarian
+  ).filter((r) => lahir.has(String(r.guru_id) + '|' + r.tanggal) && !adaById.has(r.id))
   for (const r of gabungan) hitung(r.tanggal, 'gabungan')
 
   return { baru, pulang, gabungan, lewat, perTanggal }
