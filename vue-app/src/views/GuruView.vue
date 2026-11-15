@@ -251,7 +251,7 @@
           />
         </div>
         <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status) gantikan chip -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
           <select
             v-model="filterLembaga"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
@@ -263,6 +263,16 @@
             <optgroup v-if="uniqueLembagaSekolah.length" label="Sekolah (Formal)">
               <option v-for="l in uniqueLembagaSekolah" :key="'sk-' + l" :value="l">{{ l }}</option>
             </optgroup>
+          </select>
+          <!-- v.1.5.0 (Kyai): jenis guru -->
+          <select
+            v-model="filterJenis"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua jenis</option>
+            <option v-for="o in JENIS_GURU_OPTS" :key="o.value" :value="o.value">
+              {{ o.label }}
+            </option>
           </select>
           <select
             v-model="filterStatus"
@@ -448,6 +458,13 @@
                   </span>
                   <!-- v.1.1.9: label shift dari MASTER via shift_ids (dulu g.shift mentah —
                        kini field itu cuma cermin utk fp_sync, isinya bisa 'kosong'). -->
+                  <!-- v.1.5.0 (Kyai): label Pagi-Sore / Pagi / Sore, sama dengan kartu santri -->
+                  <span
+                    v-if="shiftPagiSoreGuru(g)"
+                    class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-2 py-0.5 rounded font-bold"
+                  >
+                    {{ shiftPagiSoreGuru(g) }}
+                  </span>
                   <span
                     v-if="shiftLabelGuru(g)"
                     class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold uppercase"
@@ -575,6 +592,7 @@ import {
   deleteOne,
   subscribeDoc,
   getAll,
+  getOne,
   serverTimestamp
 } from '@/services/db'
 import {
@@ -595,6 +613,9 @@ import {
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 // v.1.1.9: label shift kartu guru ikut master (sumber tunggal aturan shift)
 import { shiftsForGuru } from '@/utils/shiftDerive'
+// v.1.5.0 (Kyai): label Pagi-Sore/Pagi/Sore & penyaring jenis guru — satu sumber di utils.
+import { labelShiftPagiSore, shiftPagiSoreDariIds, isShiftPagiSore } from '@/utils/labelShift'
+import { isPengajar, jenisGuru, JENIS_GURU_OPTS } from '@/utils/jenisGuru'
 import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@/utils/shiftMaster'
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
@@ -644,10 +665,12 @@ const router = useRouter()
 // v.1.4.2: pola yang sama dengan SantriView — penyaring ⇄ URL lewat satu `spec`, dan
 //   tulis-balik dijaga PERBANDINGAN hasil, bukan bendera `_syncingQuery` yang selalu
 //   kalah cepat dari antrean watcher (`flush: 'pre'`). Lihat utils/filterQuery.js.
+const filterJenis = ref('') // v.1.5.0: Qiraati-Sekolah / Qiraati / Sekolah / Pegawai
 const SPEC_FILTER = [
   { kunci: 'q' },
   { kunci: 'lembaga' },
   { kunci: 'jabatan' },
+  { kunci: 'jenis' },
   { kunci: 'status', bawaan: 'aktif' }
 ]
 // `tipe` = pita Data Guru vs Data Pegawai; `tab`/`sub` = Master Data sebagai halaman induk.
@@ -656,6 +679,7 @@ const refFilter = {
   q: search,
   lembaga: filterLembaga,
   jabatan: filterJabatan,
+  jenis: filterJenis,
   status: filterStatus
 }
 function syncFiltersFromQuery() {
@@ -680,11 +704,16 @@ const alamatKelola = computed(() => alamatBawaFilter('/master-data', _route.quer
 //   bukan lagi g.shift mentah. g.shift kini sekadar cermin utk fp_sync dan bisa berisi
 //   'kosong' (penanda "tak ada shift") yang tak layak dipajang.
 const _settingsShift = useSettingsStore()
+//   v.1.5.0: pagi/sore (guru & pegawai) kini label sendiri "Pagi-Sore"/"Pagi"/"Sore" — baris
+//   "Shift:" tinggal memuat shift LAIN (Sekolah, shift kustom) supaya tak tertulis dua kali.
 function shiftLabelGuru(g) {
   const s = _settingsShift.settings || {}
-  const ids = [...shiftsForGuru(g, s)]
+  const ids = [...shiftsForGuru(g, s)].filter((id) => !isShiftPagiSore(id))
   if (ids.length === 0) return ''
   return ids.map((id) => shiftLabelOf(s, id)).join(' + ')
+}
+function shiftPagiSoreGuru(g) {
+  return labelShiftPagiSore(shiftPagiSoreDariIds(shiftsForGuru(g, _settingsShift.settings || {})))
 }
 
 // v.98: pita "Data Guru" (?tipe=guru) vs "Data Pegawai" (?tipe=pegawai) — pisah guru vs pegawai non-guru.
@@ -693,23 +722,23 @@ function shiftLabelGuru(g) {
 const tipeFilter = computed(() => String(_route.query.tipe || '').toLowerCase())
 // v.100 FIX: utamakan field eksplisit `tipe_pegawai` (guru/pegawai/pegawai_guru + legacy ngaji/sekolah).
 // Tanpa ini, guru yang `jabatan`-nya tak cocok regex (mis. kosong/"Tenaga Pendidik") salah terfilter jadi PEGAWAI.
-function _isPengajar(g) {
-  const t = String(g.tipe_pegawai || '')
-    .toLowerCase()
-    .trim()
-  if (['guru', 'pegawai_guru', 'ngaji', 'ngaji_sekolah', 'sekolah'].includes(t)) return true
-  if (['pegawai', 'admin'].includes(t)) return false
-  // fallback heuristik jabatan bila tipe_pegawai kosong / legacy tak dikenal
-  const j = (String(g.jabatan || '') + ' ' + String(g.jabatan_tambahan || '')).toLowerCase()
-  return /guru|ustadz|ustadzah|pengajar|mu.?allim|mudarr?is|asatidz|wali\s*kelas|kepala|pengasuh/.test(
-    j
-  )
-}
+//   v.1.5.0: aturannya dipindah ke utils/jenisGuru.isPengajar (dipakai juga penyaring jenis guru).
+// v.1.5.0 (Kyai): penyaring jenis guru — Qiraati-Sekolah / Qiraati / Sekolah / Pegawai. Jenis tiap
+//   lembaga dibaca dari master/lembaga (sekali, bukan dilanggan); kosong → konstanta cadangan.
+const _lembagaMaster = ref([])
+getOne('master', 'lembaga')
+  .then((d) => (_lembagaMaster.value = Array.isArray(d?.list) ? d.list : []))
+  .catch(() => {})
 const guruShown = computed(() => {
   const t = tipeFilter.value
-  if (t === 'guru') return guru.value.filter(_isPengajar)
-  if (t === 'pegawai') return guru.value.filter((g) => !_isPengajar(g))
-  return guru.value
+  let list = guru.value
+  if (t === 'guru') list = list.filter(isPengajar)
+  else if (t === 'pegawai') list = list.filter((g) => !isPengajar(g))
+  if (filterJenis.value) {
+    const L = _lembagaMaster.value
+    list = list.filter((g) => jenisGuru(g, L) === filterJenis.value)
+  }
+  return list
 })
 // v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
 function goProfil(g, e) {

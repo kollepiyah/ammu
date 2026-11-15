@@ -22,6 +22,9 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Siap Tes dan seremonial satu kelas.** Guru kelas bisa menandai "Siap Tes" untuk satu kelas
   Pondok Laju sekaligus, dan penjadwal seremonial bisa memilih satu kelas sekaligus.
 
+- **Label shift** "Pagi-Sore", "Pagi", atau "Sore" kini tampil untuk semua santri dan semua guru.
+- **Data Guru bisa disaring per jenis**: Qiraati-Sekolah, Qiraati, Sekolah, atau Pegawai.
+
 **Perbaikan penting**
 
 - **Kunci glondongan untuk PJ kini benar-benar bekerja.** Sebelumnya, untuk sebagian besar santri

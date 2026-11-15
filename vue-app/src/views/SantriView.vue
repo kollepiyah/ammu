@@ -510,7 +510,7 @@
                   class="text-[10px] bg-slate-50 dark:bg-slate-700/40 text-[var(--text-secondary)] border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded"
                   >{{ label }}</span
                 >
-                <!-- v.1.2.4: tanda santri yg hanya ikut pagi/sore -->
+                <!-- v.1.2.4: shift ngaji — v.1.5.0 (Kyai): SEMUA santri, Pagi-Sore / Pagi / Sore -->
                 <span
                   v-if="shiftNgajiLabel(s)"
                   class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-1.5 py-0.5 rounded font-bold"
@@ -626,6 +626,7 @@ const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
 import { getNamaGuruGelar, toTitleCase, normalizeWA, juzNum } from '@/utils/format'
 import { kelompokRombel, labelKelasSantri } from '@/utils/kelompokRombel' // v.1.5.0: PDF per rombel guru
+import { labelShiftPagiSore } from '@/utils/labelShift' // v.1.5.0: Pagi-Sore / Pagi / Sore
 import { shiftNgajiOf } from '@/utils/kelasHitung' // v.1.2.4: label shift ngaji (pagi/sore saja)
 import { usiaKini } from '@/utils/usia' // umur santri auto dari tgl lahir (card + ekspor)
 import { useExcel } from '@/composables/useExcel'
@@ -1203,13 +1204,10 @@ function formatGuru(s) {
   return labels
 }
 
-// v.1.2.4: label shift ngaji hanya bila santri HANYA ikut pagi/sore (default keduanya
-//   tak diberi chip supaya kartu tak ramai).
+// v.1.5.0 (Kyai 16 Nov 2026): label shift ngaji untuk SEMUA santri — "Pagi-Sore", "Pagi", "Sore"
+//   (dulu hanya "Pagi saja"/"Sore saja"). Teksnya satu sumber dengan kartu guru (utils/labelShift).
 function shiftNgajiLabel(s) {
-  const sh = shiftNgajiOf(s)
-  if (sh === 'pagi') return 'Pagi saja'
-  if (sh === 'sore') return 'Sore saja'
-  return ''
+  return labelShiftPagiSore(shiftNgajiOf(s))
 }
 
 function cleanWa(wa) {

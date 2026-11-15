@@ -814,9 +814,9 @@ const {
 
 // v.1.2.4: opsi Shift Ngaji santri (ikut pagi/sore/keduanya)
 const SHIFT_NGAJI_OPSI = [
-  { value: 'pagi_sore', label: 'Pagi & Sore' },
-  { value: 'pagi', label: 'Pagi saja' },
-  { value: 'sore', label: 'Sore saja' }
+  { value: 'pagi_sore', label: 'Pagi-Sore' },
+  { value: 'pagi', label: 'Pagi' },
+  { value: 'sore', label: 'Sore' }
 ]
 
 // v.21.23.0526: kelas sekolah pakai kelasSekolahOptions (filter per lembaga_sekolah dari master/lembaga)

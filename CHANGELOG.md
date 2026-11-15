@@ -33,6 +33,8 @@ Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah merata
 Fixed). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOnly`) → deploy ulang
 fungsi itu. Urutan: `supabase db push` → deploy web → deploy fungsi → rebuild AAB → rilis Electron.
 
+Diuji (label & jenis guru): vitest 128 berkas / 1.868 tes, vite build; di peramban (data rekaan +
+penjaga tulis): 5 guru rekaan berlabel Pagi-Sore/Pagi/Sore + penyaring 4 jenis, 3 santri berlabel.
 Diuji (tahap 3): vitest 127 berkas / 1.863 tes, eslint 0 error, vite build; di peramban (data
 rekaan + penjaga tulis): Siap Tes satu kelas (2 siap · 1 menunggu simakan), seremonial pilih satu
 kelas & "Satu kelas Pondok Laju" di dialog sesi.
@@ -86,6 +88,16 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 - **Seremonial satu kelas.** Kandidat seremonial membawa `kelompok_laju`; di sub-tab "Belum
   Dijadwalkan" ada tombol pilih satu kelas, dan di dialog sesi ada "Satu kelas Pondok Laju" untuk
   menambah/melepas sekelas. Penjadwalan per santri tetap seperti biasa (`kelasSeremonialLaju`).
+
+### Added — label shift & jenis guru (Kyai, 16 Nov 2026)
+
+- **Label shift Pagi-Sore / Pagi / Sore** untuk SEMUA santri (dulu hanya "Pagi saja"/"Sore saja")
+  dan untuk guru/pegawai (dari shift absensinya; shift pegawai pagi/sore ikut). Di kartu guru, baris
+  "Shift:" kini hanya memuat shift lain (mis. Sekolah) supaya pagi/sore tak tertulis dua kali.
+  Pilihan shift ngaji di form santri ikut berlabel sama. Satu sumber: `utils/labelShift`.
+- **Penyaring jenis guru** di Data Guru: Qiraati-Sekolah / Qiraati / Sekolah / Pegawai (`?jenis=`),
+  dari lembaga ngaji & sekolah guru + jenis lembaga di master/lembaga. `_isPengajar` GuruView
+  dipindah utuh ke `utils/jenisGuru.isPengajar`.
 
 ### Fixed — gerbang PJ glondongan tak pernah mengunci (sejak 19 Jul 2026, bfa80e1)
 

@@ -811,6 +811,7 @@ const rilis = [
       'Pondok Laju: tes bisa diajukan satu kelas sekaligus; glondongan langsung disimak guru kelas dalam satu kartu per kelas, dan santri Pondok Laju selalu naik (PJ cukup mengisi nilai & catatan).',
       'Pondok Laju: guru kelas bisa menandai Siap Tes satu kelas sekaligus, dan seremonial bisa dijadwalkan satu kelas sekaligus.',
       'Tes Kenaikan PTPT: kunci glondongan untuk PJ kini benar-benar bekerja — PJ menunggu sampai semua blok glondongan selesai disimak.',
+      'Label shift "Pagi-Sore", "Pagi", atau "Sore" kini tampil di semua santri dan guru; Data Guru bisa disaring per jenis (Qiraati-Sekolah, Qiraati, Sekolah, Pegawai).',
       `Tulisan juz kini "Juz 5" (huruf awal saja yang besar), dan nama berpetik seperti "Ma'rifatin" tak lagi tertulis "Ma'Rifatin".`,
       'Data Santri: penyaring kelas per guru kini berfungsi untuk guru bergelar (nama dengan koma, mis. "S.Pd., Gr."), dan pilihannya menyesuaikan PJ yang dipilih.',
       'PDF Data Santri: santri PTPT kini menampilkan kolom Juz, dan bila disaring per lembaga / PJ / guru, daftarnya dikelompokkan per guru kelas (pasangan pagi–sore).',
