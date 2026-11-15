@@ -144,6 +144,7 @@
 import { computed, ref, watch } from 'vue'
 import { useSantriForm } from '@/composables/useSantriForm'
 import { mergeOne } from '@/services/db'
+import { juzSimpan } from '@/utils/format'
 import { useToast } from '@/composables/useToast'
 
 const props = defineProps({
@@ -200,7 +201,7 @@ async function simpan() {
       lembaga_sekolah: String(f.lembaga_sekolah || '').trim(),
       // '-' = konvensi "tak ada" (sama dengan useSantriForm.save).
       kelas_sekolah: String(f.kelas_sekolah || '').trim() || '-',
-      juz: lembaga.toUpperCase() === 'PTPT' ? String(f.juz || '').toUpperCase() : '-',
+      juz: lembaga.toUpperCase() === 'PTPT' ? juzSimpan(f.juz) : '-',
       // v.1.2.4: shift ngaji (pagi_sore|pagi|sore) — penentu penggabungan kelas.
       shift_ngaji: f.shift_ngaji || 'pagi_sore'
     })

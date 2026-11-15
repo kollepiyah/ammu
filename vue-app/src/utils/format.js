@@ -145,6 +145,18 @@ export function juzNum(v) {
 }
 
 /**
+ * Bentuk SIMPAN juz: '5' / 'juz 5' / 'JUZ 5' → 'JUZ 5'. Satu bentuk untuk semua penulis
+ * (form, Edit Kelas, impor Excel, kenaikan, Input Bulanan) — dulu sebagian menyimpan
+ * angka telanjang sehingga data PTPT bercampur 'JUZ 4' dan '5'. '-' & kosong dibiarkan.
+ */
+export function juzSimpan(v) {
+  const t = String(v ?? '').trim()
+  if (!t || t === '-') return t
+  const n = juzNum(t)
+  return n ? `JUZ ${Number(n)}` : t.toUpperCase()
+}
+
+/**
  * v.21.13b.0526: Smart Title Case — capitalize setelah space/koma/titik/dash.
  * Apostrof TIDAK dianggap separator supaya "mu'asyaroh" → "Mu'asyaroh" (bukan "Mu'Asyaroh").
  * Setelah titik (gelar) tetap capitalize: "s.e." → "S.E." / "evi, s.pd." → "Evi, S.Pd."

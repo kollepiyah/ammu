@@ -21,6 +21,9 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   Kelas dan Juz ikut seragam seperti PDF-nya.
 - **Keluar akun di satu perangkat tak lagi mengeluarkan perangkat lain.** Sebelumnya keluar di HP
   membuat web atau aplikasi PC yang sedang terbuka tiba-tiba meminta masuk ulang.
+- **Penyaring Kelas di Data Santri:** "1" dan "Kelas 1" kini satu pilihan. Sebelumnya memilih
+  salah satunya diam-diam menyembunyikan santri yang kelasnya ditulis dengan cara lain.
+- **Juz santri disimpan seragam** ("JUZ 5") dari form santri, Edit Kelas, maupun impor Excel.
 
 ---
 

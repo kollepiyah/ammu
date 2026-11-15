@@ -7,7 +7,7 @@
 // "kolom baru lupa dimasukkan template", mis. Gedung & PJ PTPT).
 //
 // Dipakai oleh: SantriView.vue (downloadTemplateSantri / exportExcel / onImportSantri).
-import { toTitleCase, parseMultipleWA } from '@/utils/format'
+import { toTitleCase, parseMultipleWA, juzSimpan } from '@/utils/format'
 import { canonLembaga } from '@/composables/useLembaga'
 import { usiaKini } from '@/utils/usia'
 
@@ -211,7 +211,7 @@ export const SANTRI_FIELDS = [
     aliases: ['Juz', 'juz'],
     exp: (s) => s.juz || '',
     imp: (d, v) => {
-      d.juz = _s(v).toUpperCase()
+      d.juz = juzSimpan(_s(v))
     }
   },
   // v.111: penataan administrasi — Gedung (scope keuangan+akademik) & PJ PTPT

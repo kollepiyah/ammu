@@ -26,7 +26,7 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 v.1.4.9: Electron 1.4.9 sudah "Latest" di GitHub sejak 4 Nov 2026. Tanpa migrasi Supabase, tanpa
 edge function, tanpa perubahan native. Urutan: deploy web → rebuild AAB → rilis Electron.
 
-Diuji: vitest 124 berkas / 1.835 tes (baru `kelompokRombel`; `filterQuery` +1), eslint 0 error,
+Diuji: vitest 125 berkas / 1.843 tes (baru `kelompokRombel`, `kelasJuzSimpan`; `filterQuery` +1), eslint 0 error,
 vite build. PDF Data Santri berkelompok dirender di peramban (pdf.js) dengan data rekaan. **Belum**
 dicoba dengan data & akun nyata.
 
@@ -55,6 +55,17 @@ dicoba dengan data & akun nyata.
   kanonik + kolom Juz, cermin PDF-nya). Ekspor Excel LENGKAP Data Santri sengaja tetap mentah —
   ia juga berkas impor-ulang. Sapuan pemisah koma: tak ada lagi tempat lain yang memecah nama guru
   dengan koma; `signOut` hanya dipanggil dari `authSupabase`.
+- **Penyaring Kelas/Jilid/Level Data Santri memisah satu kelas jadi dua (audit, 15 Nov).** Opsinya
+  dari nilai mentah, jadi PTPT '1' dan 'Kelas 1' tampil dua kali dan memilih satu menyembunyikan
+  santri ejaan lainnya. Opsi & pencocokan kini lewat label kanonik per lembaga
+  (`kelompokRombel.labelKelasDuaSisi` / `cocokKelasSantri`; nilai mentah dari tautan lama tetap
+  cocok). Sengaja bukan `kelasSama` — ia lintas-lembaga dan akan menyatukan 'Jilid 1' dengan
+  'Kelas 1'. master/lembaga dibaca sekali & malas (hanya saat penyaring Kelas dipakai) karena
+  `useSantri` dipanggil banyak layar. Penyaring kelas Rekap Diniyah kini `kelasSama`.
+- **Juz tersimpan dalam dua bentuk (audit, 15 Nov).** Form santri, dialog Edit Kelas, dan impor
+  Excel menyimpan juz apa adanya ('5'), sedangkan kenaikan / Input Bulanan / Rekap Prestasi
+  menyimpan 'JUZ 5'. Ketiganya kini lewat `utils/format.juzSimpan` → 'JUZ n'. Data lama yang
+  sudah campur tidak diubah (tampilan & ekspor sudah aman lewat `juzNum`).
 
 ---
 

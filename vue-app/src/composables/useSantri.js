@@ -17,6 +17,8 @@ import { usePjGuru } from './usePjGuru'
 // v.1.2.4: filter per KELAS-GURU (rombel pasangan) — resolver + label pasangan
 import { buildResolverQiraati } from '@/utils/kelasHitung'
 import { labelPasangan } from '@/utils/pasanganGuru'
+import { labelKelasDuaSisi, cocokKelasSantri } from '@/utils/kelompokRombel'
+import { getOne } from '@/services/db'
 
 // Helper: derive santri.lembaga_refs dari legacy fields
 // Santri reguler: 1 ref. Santri mukim: 3 refs (Ma'had + Qiraati + Sekolah).
@@ -51,6 +53,21 @@ export function useSantri() {
   collections.ensure('santri', 'guru')
   const { santri: santriRaw, guru: guruRaw } = storeToRefs(collections)
   const lembagaList = ref([])
+  // master/lembaga untuk label kelas kanonik penyaring Kelas — dibaca sekali & MALAS (hanya
+  //   bila penyaring Kelas dipakai), sebab useSantri dipanggil banyak layar (egress Free Plan).
+  //   Gagal/kosong tetap aman: labelJenjang jatuh ke JENJANG_CADANGAN.
+  const _masterLembaga = ref([])
+  let _masterDiminta = false
+  const masterLembaga = () => {
+    if (!_masterDiminta) {
+      _masterDiminta = true
+      Promise.resolve()
+        .then(() => getOne('master', 'lembaga'))
+        .then((d) => (_masterLembaga.value = Array.isArray(d?.list) ? d.list : []))
+        .catch(() => {})
+    }
+    return _masterLembaga.value
+  }
   const loading = computed(() => !collections.isLoaded('santri'))
   const error = ref(null)
   // v.1.2.1: peta pembagian santri per PJ (shared, 1 listener se-sesi).
@@ -209,13 +226,14 @@ export function useSantri() {
   //   Santri non-aktif dilewati supaya kelas yang sudah kosong tak menghantui daftar.
   const kelasOptions = computed(() => {
     const fl = filterLembaga.value
+    const L = masterLembaga()
     const hitung = new Map()
     for (const s of santriScope.value) {
       if (s.aktif === false) continue
       if (!cocokLembaga(s, fl)) continue
-      for (const v of [s.kelas, s.kelas_sekolah]) {
-        const k = String(v || '').trim()
-        if (!k) continue
+      // v.1.4.10: label kanonik — dulu '1' dan 'Kelas 1' (dua ejaan PTPT) jadi dua opsi,
+      //   dan memilih salah satunya menyembunyikan santri ejaan lainnya.
+      for (const k of labelKelasDuaSisi(s, L)) {
         hitung.set(k, (hitung.get(k) || 0) + 1)
       }
     }
@@ -256,9 +274,8 @@ export function useSantri() {
 
     // Kelas filter
     if (filterKelas.value) {
-      list = list.filter(
-        (s) => s.kelas === filterKelas.value || s.kelas_sekolah === filterKelas.value
-      )
+      const L = masterLembaga()
+      list = list.filter((s) => cocokKelasSantri(s, filterKelas.value, L))
     }
 
     // v.1.2.4: filter per KELAS-GURU (rombel pasangan).

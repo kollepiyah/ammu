@@ -5,7 +5,7 @@ import { getOne, mergeOne, getAll, subscribeColl, subscribeDoc } from '@/service
 import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
-import { toTitleCase, normalizeWA } from '@/utils/format'
+import { toTitleCase, normalizeWA, juzSimpan } from '@/utils/format'
 import { gedungList } from '@/utils/gedung'
 import { nextNisForNew } from '@/utils/nisGenerator' // v.111: santri baru = No. Induk lanjut (append)
 import { namaLembaga } from '@/utils/jabatanUnit'
@@ -411,7 +411,7 @@ export function useSantriForm() {
         // v.1.2.4: shift ngaji (pagi_sore|pagi|sore) — penentu penggabungan kelas.
         shift_ngaji: f.shift_ngaji || 'pagi_sore',
         guru: f.guru_pagi || f.guru_sore, // backward compat
-        juz: f.lembaga === 'PTPT' ? String(f.juz || '').toUpperCase() : '-',
+        juz: f.lembaga === 'PTPT' ? juzSimpan(f.juz) : '-',
         // v.111: gedung (semua santri) + pj_ptpt (hanya bermakna utk PTPT)
         gedung: String(f.gedung || '').trim(),
         pj_ptpt: f.lembaga === 'PTPT' ? String(f.pj_ptpt || '').trim() : '',

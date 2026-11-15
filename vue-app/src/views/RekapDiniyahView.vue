@@ -241,6 +241,7 @@ import { useToast } from '@/composables/useToast'
 import { useMobileShell } from '@/composables/useMobileShell'
 import { useSantri } from '@/composables/useSantri'
 import { sortSantri } from '@/utils/santriSort'
+import { kelasSama } from '@/utils/jenjangQiraati'
 import { ownsSekolah } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
 // v.90.0626: util jenjang Diniyah (SDI/SMP/SMA) — sumber tunggal, samakan dg RaporView
 import {
@@ -358,7 +359,8 @@ const kelasOptions = computed(() => {
       diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah) !== filterJenjang.value
     )
       return
-    set.add(s.kelas_sekolah)
+    // v.1.4.10: satu opsi per kelas — '1' dan 'Kelas 1' tak lagi jadi dua pilihan terpisah.
+    if (![...set].some((k) => kelasSama(k, s.kelas_sekolah))) set.add(s.kelas_sekolah)
   })
   return [...set].sort()
 })
@@ -391,7 +393,7 @@ const filteredSantri = computed(() => {
       (s) => diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah) === filterJenjang.value
     )
   }
-  if (filterKelas.value) list = list.filter((s) => s.kelas_sekolah === filterKelas.value)
+  if (filterKelas.value) list = list.filter((s) => kelasSama(s.kelas_sekolah, filterKelas.value))
   const kw = search.value.trim().toLowerCase()
   if (kw)
     list = list.filter((s) =>

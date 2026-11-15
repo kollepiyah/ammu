@@ -28,6 +28,27 @@ export function labelKelasSantri(s, sekolah, lembagaList) {
     : labelJenjang(s?.lembaga, s?.kelas, lembagaList)
 }
 
+/**
+ * Label kanonik KEDUA sisi santri (ngaji, lalu sekolah) — sumber opsi & pencocokan
+ * penyaring Kelas Data Santri. Per lembaga, jadi PTPT '1' ≡ 'Kelas 1' tapi tak
+ * tergabung dengan 'Jilid 1' TPQ (kelasSama yang lintas-lembaga akan menyatukannya).
+ */
+export function labelKelasDuaSisi(s, lembagaList) {
+  const ngaji = labelJenjang(s?.lembaga, s?.kelas, lembagaList)
+  const sekolah = labelJenjang(s?.lembaga_sekolah, s?.kelas_sekolah, lembagaList)
+  const out = ngaji ? [ngaji] : []
+  if (sekolah && sekolah !== ngaji) out.push(sekolah)
+  return out
+}
+
+/** Santri cocok dengan pilihan Kelas? Nilai mentah tetap diterima (tautan lama di URL). */
+export function cocokKelasSantri(s, nilai, lembagaList) {
+  const v = _teks(nilai)
+  if (!v) return true
+  if (_teks(s?.kelas) === v || _teks(s?.kelas_sekolah) === v) return true
+  return labelKelasDuaSisi(s, lembagaList).includes(v)
+}
+
 // Gabungan jenjang satu rombel: 'Kelas 1 & 2'. Nilai telanjang ('II', '3') diberi awalan
 //   'Kelas' dulu supaya tak tercampur dengan yang sudah berawalan.
 function _labelKelasGrup(set) {
