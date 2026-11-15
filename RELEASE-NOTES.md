@@ -21,6 +21,13 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   mengisi nilai dan catatan. Bisyaroh glondongannya dihitung per blok kelas.
 - **Siap Tes dan seremonial satu kelas.** Guru kelas bisa menandai "Siap Tes" untuk satu kelas
   Pondok Laju sekaligus, dan penjadwal seremonial bisa memilih satu kelas sekaligus.
+- **Prestasi bulanan Pondok Laju cukup diisi sekali per kelas.** Angkanya berlaku untuk semua
+  santri kelas itu, dan santri yang berbeda tetap bisa diubah sendiri.
+- **Top 10 santri prestasi** (dulu Top 5) di Rekap Prestasi dan Laporan. Ketuk kartunya untuk
+  melihat peringkat lengkap dari nomor 1 sampai terakhir. Rekap Prestasi juga bisa disaring
+  khusus santri Pondok Laju.
+- **Peringkat Guru** di Tes Kenaikan → Rekap: guru diurutkan menurut jumlah santri yang lulus tes
+  dari ajuannya, per bulan atau periode bebas.
 
 - **Label shift** "Pagi-Sore", "Pagi", atau "Sore" kini tampil untuk semua santri dan semua guru.
 - **Data Guru bisa disaring per jenis**: Qiraati-Sekolah, Qiraati, Sekolah, atau Pegawai.

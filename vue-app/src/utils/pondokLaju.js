@@ -87,7 +87,7 @@ export function kelasSeremonialLaju(kandidatList) {
 
 /**
  * Kelompokkan santri Pondok Laju yang bisa diajukan per kelas (guru kelas + juz) —
- * dasar tombol "Centang satu kelas" di layar Ajukan.
+ * dasar tombol "Centang satu kelas" di layar Ajukan DAN isian prestasi bulanan sekali per kelas.
  * @returns {Array<{key, guru, juz, santri: Array}>} urut guru lalu juz.
  */
 export function kelasLajuDiajukan(santriList) {
@@ -131,4 +131,15 @@ export function kartuGlondongan(rows) {
       String(a.nama_cache || '').localeCompare(String(b.nama_cache || ''), 'id')
     )
   return { tunggal, kelompok }
+}
+
+/**
+ * Prestasi bulanan Pondok Laju diisi SEKALI per kelas (Kyai, 15 Nov 2026): kotak isian kelas
+ * menampilkan angka bersama bila semua santrinya sama, selain itu kosong + `beragam`.
+ * @returns {{ nilai: string, beragam: boolean }}
+ */
+export function nilaiSeragam(values) {
+  const isi = [...new Set((values || []).map((v) => String(v ?? '').trim()))]
+  if (isi.length === 1) return { nilai: isi[0], beragam: false }
+  return { nilai: '', beragam: isi.length > 1 }
 }

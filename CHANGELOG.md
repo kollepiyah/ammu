@@ -22,10 +22,10 @@ berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AA
 
 ---
 
-## [v.1.5.0] — 2026-11-16 — Pondok Laju tahap 1–3: status santri Pondok Laju, tes/glondongan/seremonial satu kelas, "Non-mukim"
+## [v.1.5.0] — 2026-11-16 — Pondok Laju tahap 1–4: status santri Pondok Laju, tes/glondongan/seremonial satu kelas, prestasi per kelas, Top 10, peringkat guru, "Non-mukim"
 
 **DITAHAN (Kyai, 15 Nov 2026)** — jangan deploy / rebuild AAB / rilis Electron dulu: v.1.5.0
-dirilis BERSAMA fitur Pondok Laju (tahap 1–3 dari 5 selesai di gelombang ini).
+dirilis BERSAMA fitur Pondok Laju (tahap 1–4 dari 5 selesai di gelombang ini).
 
 **SIAP RILIS (setelah Pondok Laju lengkap)** — `versionCode` 150 / `versionName` `v.1.5.0`, gelombang 2.
 Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah meratakan `data`).
@@ -33,6 +33,12 @@ Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah merata
 Fixed). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOnly`) → deploy ulang
 fungsi itu. Urutan: `supabase db push` → deploy web → deploy fungsi → rebuild AAB → rilis Electron.
 
+Diuji (tahap 4): vitest 129 berkas / 1.876 tes (baru `peringkatTahap4`), eslint 0 error,
+`npm run build --prefix vue-app` (kelas Tailwind baru ada di CSS produksi). Di peramban (data
+rekaan + penjaga tulis, satu-satunya tulisan = uji penjaga): isian sekali per kelas di Rekap
+Prestasi & Input Bulanan (3 santri sekelas terisi, ubah satu → "beragam"), Top 10 + daftar
+lengkap 14 santri, penyaring Pondok Laju, kartu Top Santri di Laporan + "Lihat semua", Peringkat
+Guru per bulan & bebas + rincian santri.
 Diuji (label & jenis guru): vitest 128 berkas / 1.868 tes, vite build; di peramban (data rekaan +
 penjaga tulis): 5 guru rekaan berlabel Pagi-Sore/Pagi/Sore + penyaring 4 jenis, 3 santri berlabel;
 Induk/Non-Induk: label + penyaring 3 pilihan + baris ekspor pada 3 guru rekaan, pilihan di form.
@@ -103,6 +109,24 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
   guru → label ungu di kartu, penyaring (`?induk=`, termasuk "Belum diisi"), kolom
   `Induk/Non-Induk` di ekspor/templat/impor Excel (sel kosong tak menghapus isian lama). DIISI
   MANUAL oleh Kyai — sengaja tak diturunkan dari gedung/lembaga; semua guru mulai kosong.
+
+### Added — Pondok Laju tahap 4 (prestasi bulanan, Top 10, peringkat guru)
+
+- **Prestasi bulanan Pondok Laju diisi sekali per kelas.** Rekap Prestasi → Input Bulanan (dan layar
+  Input Bulanan lama) menampilkan kotak per kelas Pondok Laju (guru kelas + juz); Awal/Akhir yang
+  diketik di sana menulis ke isian setiap santri sekelas. Simpan, snapshot bulanan, rapor, dan
+  ekspor tetap per santri; santri yang berbeda bisa diubah sendiri (kotak kelas lalu "beragam").
+  Kelas dari `utils/pondokLaju.kelasLajuDiajukan`, nilai bersama `nilaiSeragam`.
+- **Top 5 → Top 10 + daftar lengkap** di Rekap Prestasi (Ranking) dan kartu Top Santri PTPT & PPPH
+  (Laporan → Akademik). Ketuk kartu / "Lihat semua" → seluruh santri yang sudah dinilai, 1 sampai
+  akhir (`DaftarPeringkatModal`). Urutan satu sumber `utils/rekapPrestasiTabel.peringkatPrestasi`
+  (capaian → juz → nama) — kartu, daftar, dan ekspor Top Santri kini sama urutannya (dulu ekspor
+  hanya mengurut capaian, jadi santri seri bisa bertukar tempat).
+- **Penyaring Pondok Laju** di Rekap Prestasi (Semua / Pondok Laju / Selain Pondok Laju), di samping
+  penyaring PJ; layar, ranking, dan ekspor mengikutinya.
+- **Peringkat Guru** di Tes Kenaikan → Rekap: jumlah santri yang LULUS tes dari ajuan guru itu
+  (guru pengaju, bukan penguji), semua lembaga, per bulan atau periode bebas (tanggal hasil tes),
+  dengan rincian per lembaga dan daftar santrinya. Aturan murni `utils/peringkatGuru`.
 
 ### Fixed — gerbang PJ glondongan tak pernah mengunci (sejak 19 Jul 2026, bfa80e1)
 

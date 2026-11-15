@@ -69,6 +69,63 @@
       </p>
     </div>
 
+    <!-- v.1.5.0 (Kyai): Pondok Laju — prestasi bulanan diisi SEKALI per kelas (cermin Rekap
+         Prestasi; kelompok kelas dari utils/pondokLaju). -->
+    <div
+      v-if="kelasLajuIsian.length"
+      class="rounded-2xl border border-teal-300 dark:border-teal-700 bg-teal-50/60 dark:bg-teal-900/20 p-3 md:p-4 space-y-2"
+    >
+      <p class="text-[11px] font-black text-teal-800 dark:text-teal-200 uppercase tracking-wider">
+        <i class="fas fa-people-group mr-1"></i>Pondok Laju — isi sekali per kelas
+      </p>
+      <p class="text-[10px] text-teal-700 dark:text-teal-300">
+        Angka di sini berlaku untuk semua santri kelas itu. Santri yang berbeda tetap bisa diubah di
+        tabel bawah. Lalu tekan <b>Simpan</b> seperti biasa.
+      </p>
+      <div
+        v-for="k in kelasLajuIsian"
+        :key="k.key"
+        class="flex flex-wrap items-end gap-2 border-t border-teal-200 dark:border-teal-800 pt-2"
+      >
+        <p class="flex-1 min-w-[10rem] text-xs font-bold text-[var(--text-primary)]">
+          {{ k.guru || '— belum ada guru —' }} · Juz {{ k.juz || '-' }}
+          <span class="font-normal text-[var(--text-secondary)]"
+            >· {{ k.santri.length }} santri</span
+          >
+        </p>
+        <label class="block w-20">
+          <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5">Awal</span>
+          <input
+            type="text"
+            inputmode="numeric"
+            :value="isianKelasLaju(k, 'prestasi_awal').nilai"
+            :placeholder="isianKelasLaju(k, 'prestasi_awal').beragam ? 'beragam' : ''"
+            aria-label="Awal bulan satu kelas"
+            class="w-full text-center font-black text-[11px] p-1.5 rounded border-2 border-teal-300 bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+            @input="isiKelasLaju(k, 'prestasi_awal', $event.target.value)"
+          />
+        </label>
+        <label class="block w-20">
+          <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5">Akhir</span>
+          <input
+            type="text"
+            inputmode="numeric"
+            :value="isianKelasLaju(k, 'prestasi_akhir').nilai"
+            :placeholder="isianKelasLaju(k, 'prestasi_akhir').beragam ? 'beragam' : ''"
+            aria-label="Akhir bulan satu kelas"
+            class="w-full text-center font-black text-[11px] p-1.5 rounded border-2 border-teal-300 bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+            @input="isiKelasLaju(k, 'prestasi_akhir', $event.target.value)"
+          />
+        </label>
+        <div class="w-20 text-center">
+          <span class="block text-[9px] font-black uppercase text-cyan-700 mb-0.5">Total</span>
+          <span class="block text-[11px] font-black text-cyan-800 dark:text-cyan-300 py-1.5">{{
+            totalKelasLaju(k)
+          }}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Table card -->
     <div
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
@@ -539,6 +596,7 @@ import {
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 import { useMobileShell } from '@/composables/useMobileShell'
+import { kelasLajuDiajukan, nilaiSeragam } from '@/utils/pondokLaju' // v.1.5.0: isian per kelas
 
 const { santriRaw } = useSantri()
 const { lembagaRaw } = useLembaga()
@@ -815,6 +873,29 @@ watch(
 function markDirty(id) {
   dirtyIds.value.add(id)
   dirtyIds.value = new Set(dirtyIds.value)
+}
+
+// v.1.5.0 (Kyai 15 Nov 2026): prestasi bulanan Pondok Laju diisi sekali per kelas — kotak kelas
+//   menulis ke formMap tiap santri sekelas, jadi Simpan & snapshot bulanan tetap per santri.
+const kelasLajuIsian = computed(() =>
+  kelasLajuDiajukan(filteredSantri.value.filter((s) => lembagaKey(s) === 'ptpt'))
+)
+function isianKelasLaju(k, field) {
+  return nilaiSeragam(k.santri.map((s) => formMap[s.id]?.[field]))
+}
+function isiKelasLaju(k, field, val) {
+  for (const s of k.santri) {
+    if (!formMap[s.id]) continue
+    formMap[s.id][field] = val
+    markDirty(s.id)
+  }
+}
+function totalKelasLaju(k) {
+  const aw = isianKelasLaju(k, 'prestasi_awal')
+  const ak = isianKelasLaju(k, 'prestasi_akhir')
+  if (aw.beragam || ak.beragam) return 'beragam'
+  const tot = parseAngka(ak.nilai) - parseAngka(aw.nilai)
+  return tot > 0 ? `${tot} Hal` : '-'
 }
 
 // --- Total computation ---

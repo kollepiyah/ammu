@@ -98,17 +98,18 @@
         </div>
 
         <p class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider mb-2">
-          <i class="fas fa-trophy text-cyan-600 mr-1"></i>Top 5 Santri Prestasi Tertinggi
+          <i class="fas fa-trophy text-cyan-600 mr-1"></i>Top {{ BATAS_TOP_PRESTASI }} Santri
+          Prestasi Tertinggi
         </p>
         <div
-          v-if="lem.top5.length === 0"
+          v-if="lem.top.length === 0"
           class="text-xs text-[var(--text-tertiary)] italic text-center py-3"
         >
           Belum ada data prestasi pada periode ini.
         </div>
         <ol v-else class="space-y-1.5">
           <li
-            v-for="(s, idx) in lem.top5"
+            v-for="(s, idx) in lem.top"
             :key="s.id"
             class="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/30 hover:bg-teal-50 dark:hover:bg-teal-900/20 px-2 py-1.5 rounded-lg cursor-pointer transition"
             @click="goSantriDetail(s.id)"
@@ -133,8 +134,30 @@
             <i class="fas fa-chevron-right text-[10px] text-[var(--text-tertiary)]"></i>
           </li>
         </ol>
+        <!-- v.1.5.0 (Kyai): daftar lengkap 1 sampai akhir -->
+        <button
+          v-if="lem.semua.length"
+          class="mt-2 w-full h-9 inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-300 dark:border-cyan-700 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 text-xs font-bold transition cursor-pointer"
+          @click="daftarLengkap = lem"
+        >
+          <i class="fas fa-list-ol"></i>Lihat semua ({{ lem.semua.length }} santri)
+        </button>
       </div>
     </div>
+    <DaftarPeringkatModal
+      v-if="daftarLengkap"
+      :judul="`Peringkat ${daftarLengkap.nama}`"
+      :subjudul="periodeLabelPrestasi"
+      :rows="daftarLengkap.semua"
+      :catatan="
+        daftarLengkap.belum
+          ? `${daftarLengkap.belum} santri belum dinilai (tidak ikut daftar).`
+          : ''
+      "
+      bisa-dipilih
+      @pilih="(r) => goSantriDetail(r.id)"
+      @close="daftarLengkap = null"
+    />
   </div>
 </template>
 
@@ -145,7 +168,7 @@
 // Akademik. Top5 selisih (akhir-awal), band Kurang/Cukup/Bagus, ekspor
 // Excel/PDF detail per santri + status + guru ampuan. Logic identik.
 // ============================================================================
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
@@ -160,6 +183,9 @@ import { labelJenjang } from '@/utils/jenjangQiraati'
 // KOP per lembaga (Master Data -> Lembaga -> Pengaturan), sumber yang sama dengan rapor.
 import { useLembaga } from '@/composables/useLembaga'
 import { namaWaliSantri, alamatSantri } from '@/utils/santriIdentitas'
+// v.1.5.0 (Kyai): Top 10 + daftar lengkap — urutan satu sumber dengan Rekap Prestasi.
+import { peringkatPrestasi, BATAS_TOP_PRESTASI } from '@/utils/rekapPrestasiTabel'
+import DaftarPeringkatModal from '@/components/statistik/DaftarPeringkatModal.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -180,29 +206,57 @@ function goSantriDetail(id) {
   if (id) router.push(`/statistik/santri/${id}`)
 }
 
-// ---- ADMIN: Per-lembaga prestasi (top5 + PTPT/PPPH distribusi) -------------
-// v.95.0626: Top 5 HANYA PTPT & PPPH. Nilai = selisih (akhir - awal). Band per
-//   lembaga. Data ter-scope (kepala/PJ = se-lembaganya). Kartu kosong disembunyikan.
+// ---- ADMIN: Per-lembaga prestasi (top + PTPT/PPPH distribusi) --------------
+// v.95.0626: HANYA PTPT & PPPH. Nilai = selisih (akhir - awal). Band per lembaga. Data
+//   ter-scope (kepala/PJ = se-lembaganya). Kartu kosong disembunyikan.
+// v.1.5.0 (Kyai 15 Nov 2026): Top 5 → Top 10 + daftar lengkap; urutan (capaian → juz → nama)
+//   dari utils/rekapPrestasiTabel.peringkatPrestasi, dipakai juga oleh ekspor di bawah.
 const PRESTASI_LEMBAGA = ['PTPT', 'PPPH']
+const daftarLengkap = ref(null)
+function _santriLembaga(nama) {
+  const low = nama.toLowerCase()
+  return (scopedSantriAktif.value || []).filter(
+    (s) =>
+      String(s.lembaga || '')
+        .trim()
+        .toLowerCase() === low
+  )
+}
+function _peringkatLembaga(list) {
+  return peringkatPrestasi(
+    list.map((s) => {
+      const n = nilaiRekapSantri(s)
+      return {
+        id: s.id,
+        nama: s.nama || '',
+        totalNum: n.selisih,
+        juzNum: Number(juzNum(s.juz)) || 0,
+        dinilai: n.dinilai,
+        s
+      }
+    })
+  )
+}
 const lembagaPrestasi = computed(() => {
   if (!isAdminMode.value) return []
-  const src = scopedSantriAktif.value
   return PRESTASI_LEMBAGA.map((nama) => {
-    const low = nama.toLowerCase()
-    const list = src.filter(
-      (s) =>
-        String(s.lembaga || '')
-          .trim()
-          .toLowerCase() === low
-    )
+    const list = _santriLembaga(nama)
     const dinilai = list.filter((s) => nilaiRekapSantri(s).dinilai).length
     const unit = nama === 'PPPH' ? 'Hadits' : 'Hal'
-    const top5 = list
-      .map((s) => ({ s, val: nilaiRekapSantri(s).selisih }))
-      .filter((x) => x.val > 0)
-      .sort((a, b) => b.val - a.val)
-      .slice(0, 5)
-      .map((x) => ({ id: x.s.id, nama: x.s.nama, totalDisplay: `${x.val} ${unit}` }))
+    const p = _peringkatLembaga(list)
+    const top = p.top.map((x) => ({
+      id: x.id,
+      nama: x.nama,
+      totalDisplay: `${x.totalNum} ${unit}`
+    }))
+    const semua = p.semua.map((x) => ({
+      id: x.id,
+      nama: x.nama,
+      kelas: `${labelJenjang(x.s.lembaga, x.s.kelas, lembagaRaw.value) || '-'}${
+        x.juzNum ? ` · Juz ${x.juzNum}` : ''
+      }`,
+      total: `${x.totalNum} ${unit}`
+    }))
     let kurang = 0,
       cukup = 0,
       bagus = 0
@@ -216,7 +270,18 @@ const lembagaPrestasi = computed(() => {
       nama === 'PPPH'
         ? ['<5 hadits', '5-20 hadits', '>20 hadits']
         : ['<5 hal', '5-9 hal', '>=10 hal']
-    return { nama, total: list.length, dinilai, top5, kurang, cukup, bagus, bandLabels }
+    return {
+      nama,
+      total: list.length,
+      dinilai,
+      top,
+      semua,
+      belum: p.belum,
+      kurang,
+      cukup,
+      bagus,
+      bandLabels
+    }
   }).filter((x) => x.total > 0)
 })
 
@@ -241,28 +306,19 @@ function guruPengampu(s) {
 }
 
 // Kyai (5 Agu 2026): "santri top prestasi memang diambil 5 teratas, tapi saya ingin bisa
-//   ditampilkan semua santri sesuai urutan di ekspor". Kartu di layar TETAP Top 5 (itu
-//   ringkasan); yang memuat semua adalah EKSPOR-nya.
+//   ditampilkan semua santri sesuai urutan di ekspor". Kartu di layar = ringkasan (Top 10
+//   sejak v.1.5.0, plus tombol daftar lengkap); ekspor memuat semua.
 //
 // Isinya semua santri yang SUDAH DINILAI (`prestasi_akhir` terisi) — termasuk yang
 //   capaiannya 0, pilihan Kyai: daftar ini juga dipakai memantau yang tak bergerak, dan
 //   baris 0 justru yang perlu terlihat. Santri yang belum dinilai sama sekali tak masuk,
 //   sebab barisnya akan kosong seluruhnya.
-//   Urut capaian tertinggi -> terendah, sama seperti kartu Top 5 di layar.
+//   Urutannya SAMA dengan kartu & daftar lengkap di layar (peringkatPrestasi).
 function _rowsLembaga(nama, noAwal = 0) {
-  const low = nama.toLowerCase()
   const unit = nama === 'PPPH' ? 'Hadits' : 'Hal'
   let no = noAwal
-  return (scopedSantriAktif.value || [])
-    .filter(
-      (s) =>
-        String(s.lembaga || '')
-          .trim()
-          .toLowerCase() === low
-    )
-    .map((s) => ({ s, val: nilaiRekapSantri(s).selisih, _n: nilaiRekapSantri(s) }))
-    .filter((x) => x._n.dinilai)
-    .sort((a, b) => b.val - a.val)
+  return _peringkatLembaga(_santriLembaga(nama))
+    .semua.map((x) => ({ s: x.s, val: x.totalNum }))
     .map(({ s, val }) => {
       const juz = s.juz && String(s.juz) !== '-' ? ` (Juz ${juzNum(s.juz)})` : ''
       return {

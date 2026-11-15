@@ -825,6 +825,112 @@
         </table>
       </div>
 
+      <!-- v.1.5.0 (Kyai 15 Nov 2026): peringkat GURU = santri yang lulus tes dari ajuan guru
+           itu (bukan guru penguji), semua lembaga, per bulan atau periode bebas. -->
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-3 space-y-2"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
+            <i class="fas fa-ranking-star text-amber-500 mr-1"></i>Peringkat Guru
+          </h3>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex gap-1 bg-[var(--bg-muted)] p-1 rounded-lg">
+              <button
+                v-for="m in [
+                  { id: 'bulan', label: 'Per bulan' },
+                  { id: 'bebas', label: 'Bebas' }
+                ]"
+                :key="m.id"
+                :class="[
+                  'px-2.5 py-1 text-[11px] font-bold rounded-md transition cursor-pointer',
+                  pgMode === m.id
+                    ? 'bg-[var(--bg-card)] shadow-sm text-teal-700'
+                    : 'text-[var(--text-secondary)]'
+                ]"
+                @click="pgMode = m.id"
+              >
+                {{ m.label }}
+              </button>
+            </div>
+            <input
+              v-if="pgMode === 'bulan'"
+              v-model="pgBulan"
+              type="month"
+              aria-label="Bulan peringkat guru"
+              class="px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+            />
+            <template v-else>
+              <input
+                v-model="pgDari"
+                type="date"
+                aria-label="Dari tanggal"
+                class="px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+              />
+              <span class="text-xs text-[var(--text-tertiary)]">s/d</span>
+              <input
+                v-model="pgSampai"
+                type="date"
+                aria-label="Sampai tanggal"
+                class="px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+              />
+            </template>
+          </div>
+        </div>
+        <p class="text-[10px] text-[var(--text-tertiary)]">
+          Dihitung dari santri yang <b>lulus</b> tes dari ajuan guru itu (tanggal hasil tes),
+          mengikuti penyaring lembaga/jenis di atas. Ketuk baris untuk melihat santrinya.
+        </p>
+        <div
+          v-if="peringkatGuru.length === 0"
+          class="text-xs text-[var(--text-tertiary)] italic text-center py-4"
+        >
+          Belum ada santri lulus pada periode ini.
+        </div>
+        <ol v-else class="space-y-1">
+          <li v-for="(g, idx) in peringkatGuru" :key="g.key">
+            <button
+              class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[var(--border-subtle)] hover:bg-teal-50 dark:hover:bg-teal-900/20 text-left text-xs cursor-pointer transition"
+              :aria-expanded="pgBuka === g.key"
+              @click="pgBuka = pgBuka === g.key ? '' : g.key"
+            >
+              <span class="w-6 text-right font-black text-amber-600 flex-shrink-0"
+                >{{ idx + 1 }}.</span
+              >
+              <span class="flex-1 min-w-0">
+                <span class="block font-bold text-[var(--text-primary)] truncate">{{
+                  g.guru || '— tanpa nama —'
+                }}</span>
+                <span class="block text-[10px] text-[var(--text-secondary)] truncate">{{
+                  g.lembaga.map((l) => `${l.nama} ${l.jumlah}`).join(' · ')
+                }}</span>
+              </span>
+              <span class="text-right flex-shrink-0">
+                <span class="block font-black text-emerald-600">{{ g.lulus }} lulus</span>
+                <span
+                  v-if="g.santri !== g.lulus"
+                  class="block text-[10px] text-[var(--text-tertiary)]"
+                  >{{ g.santri }} santri</span
+                >
+              </span>
+            </button>
+            <ul v-if="pgBuka === g.key" class="mt-1 ml-8 space-y-0.5">
+              <li
+                v-for="d in g.daftar"
+                :key="d.id"
+                class="text-[11px] text-[var(--text-secondary)] flex justify-between gap-2"
+              >
+                <span class="truncate"
+                  ><b class="text-[var(--text-primary)]">{{ d.nama || '-' }}</b> · {{ d.lembaga
+                  }}<template v-if="d.target"> → {{ d.target }}</template></span
+                >
+                <span class="flex-shrink-0">{{ fmtTglPg(d.tgl) }}</span>
+              </li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+
       <!-- cetak PDF -->
       <div class="flex flex-wrap gap-2">
         <button
@@ -1115,6 +1221,9 @@ import { getOne, mergeOne, subscribeColl } from '@/services/db' // v.100d: muat 
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
 import { buildTesRaporFeed, currentRaporPeriode } from '@/utils/tesRaporFeed' // v.100d Fase 3: nilai tes → rapor
 import { buildListPdf } from '@/utils/pdfBuilder' // v.100d Fase 5: cetak daftar/rekap tes PDF
+// v.1.5.0 (Kyai): peringkat guru menurut santri yang lulus dari ajuannya — aturan murni + tes.
+import { peringkatGuruLulus, rentangBulan } from '@/utils/peringkatGuru'
+import { todayJakarta } from '@/utils/format'
 import { juzNum, waLink } from '@/utils/format' // v.100e: normalisasi juz · v.1.1.9: kontak WA
 import { pesanTesHasil, pesanGlondongan } from '@/utils/pesanWa' // v.1.2.6: teks WA otomatis
 // v.1.1.9: masa tempuh antar-juz PTPT (hari efektif lembaga) — tampil di guru kelas & PJ.
@@ -1475,6 +1584,26 @@ const statsRekap = computed(() => {
   })
   return { total: all.length, ...tot, kelulusan, lembagaRows }
 })
+
+// v.1.5.0 (Kyai 15 Nov 2026): peringkat guru — dari riwayat yang SAMA dengan statistik di atas
+//   (scope + penyaring lembaga/jenis/nama), periode per bulan atau bebas.
+const pgMode = ref('bulan')
+const pgBulan = ref(todayJakarta().slice(0, 7))
+const pgDari = ref('')
+const pgSampai = ref('')
+const pgBuka = ref('')
+const peringkatGuru = computed(() =>
+  peringkatGuruLulus(
+    riwayatView.value,
+    pgMode.value === 'bulan'
+      ? rentangBulan(pgBulan.value)
+      : { dari: pgDari.value, sampai: pgSampai.value }
+  )
+)
+function fmtTglPg(t) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t || ''))
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '-'
+}
 
 // ----- Fase 5: cetak PDF (PDF saja, sesuai kyai) -----
 const cetakBusy = ref(false)

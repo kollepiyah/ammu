@@ -416,6 +416,16 @@
           <option value="">Semua PJ (PDF dipisah per PJ)</option>
           <option v-for="p in pjOptions" :key="p" :value="p">PJ {{ p }}</option>
         </select>
+        <!-- v.1.5.0 (Kyai): penyaring Pondok Laju di samping penyaring PJ -->
+        <select
+          v-if="adaPondokLaju"
+          v-model="filterLaju"
+          class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua santri</option>
+          <option value="laju">Pondok Laju</option>
+          <option value="bukan">Selain Pondok Laju</option>
+        </select>
         <input
           v-model="search"
           type="text"
@@ -756,6 +766,61 @@
         v-else-if="mode === 'bulanan'"
         class="bg-white dark:bg-slate-800 rounded-2xl p-2 md:p-3 border border-slate-200 dark:border-slate-700 shadow-sm"
       >
+        <!-- v.1.5.0 (Kyai): Pondok Laju — prestasi bulanan diisi SEKALI per kelas -->
+        <div
+          v-if="kelasLajuIsian.length"
+          class="mb-3 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50/60 dark:bg-teal-900/20 p-3 space-y-2"
+        >
+          <p
+            class="text-[11px] font-black text-teal-800 dark:text-teal-200 uppercase tracking-wider"
+          >
+            <i class="fas fa-people-group mr-1"></i>Pondok Laju — isi sekali per kelas
+          </p>
+          <p class="text-[10px] text-teal-700 dark:text-teal-300">
+            Angka di sini berlaku untuk semua santri kelas itu. Santri yang berbeda tetap bisa
+            diubah di tabel bawah. Lalu tekan <b>SIMPAN</b> seperti biasa.
+          </p>
+          <div
+            v-for="k in kelasLajuIsian"
+            :key="k.key"
+            class="flex flex-wrap items-end gap-2 border-t border-teal-200 dark:border-teal-800 pt-2"
+          >
+            <p class="flex-1 min-w-[10rem] text-xs font-bold text-slate-800 dark:text-white">
+              {{ k.guru || '— belum ada guru —' }} · Juz {{ k.juz || '-' }}
+              <span class="font-normal text-slate-500">· {{ k.santri.length }} santri</span>
+            </p>
+            <label class="block w-20">
+              <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5">Awal</span>
+              <input
+                type="text"
+                inputmode="numeric"
+                :value="isianKelasLaju(k, 'awal').nilai"
+                :placeholder="isianKelasLaju(k, 'awal').beragam ? 'beragam' : ''"
+                aria-label="Awal bulan satu kelas"
+                class="w-full text-center border-2 border-teal-300 rounded-lg p-1.5 text-[11px] font-black bg-white dark:bg-slate-900 dark:text-white outline-none focus:border-teal-500"
+                @input="isiKelasLaju(k, 'awal', $event.target.value)"
+              />
+            </label>
+            <label class="block w-20">
+              <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5">Akhir</span>
+              <input
+                type="text"
+                inputmode="numeric"
+                :value="isianKelasLaju(k, 'akhir').nilai"
+                :placeholder="isianKelasLaju(k, 'akhir').beragam ? 'beragam' : ''"
+                aria-label="Akhir bulan satu kelas"
+                class="w-full text-center border-2 border-teal-300 rounded-lg p-1.5 text-[11px] font-black bg-white dark:bg-slate-900 dark:text-white outline-none focus:border-teal-500"
+                @input="isiKelasLaju(k, 'akhir', $event.target.value)"
+              />
+            </label>
+            <div class="w-20 text-center">
+              <span class="block text-[9px] font-black uppercase text-cyan-700 mb-0.5">Total</span>
+              <span class="block text-[11px] font-black text-cyan-800 dark:text-cyan-300 py-1.5">{{
+                totalKelasLaju(k)
+              }}</span>
+            </div>
+          </div>
+        </div>
         <!-- Desktop: tabel -->
         <div v-if="!isMobile" class="overflow-x-auto">
           <table class="min-w-full text-xs border-collapse">
@@ -1038,7 +1103,7 @@
         </div>
       </div>
 
-      <!-- ============= MODE 3: RANKING (top 5 per lembaga) ============= -->
+      <!-- ============= MODE 3: RANKING (top 10 per lembaga — v.1.5.0) ============= -->
       <template v-else-if="mode === 'ranking'">
         <!-- v.1.4.1 (Kyai, 4 Sep 2026): "di halaman ini belum ada tombol ekspor pdf."
              Tab Ranking dulu tak punya ekspor sama sekali — padahal justru DI SINI ekspornya
@@ -1051,7 +1116,8 @@
         >
           <div class="text-[11px] text-slate-500">
             <i class="fas fa-info-circle mr-1 text-cyan-500"></i>
-            Berkas ekspor memuat <b>seluruh santri</b> (bukan cuma Top 5), urut
+            Ketuk kartu untuk <b>daftar lengkap</b>. Berkas ekspor memuat
+            <b>seluruh santri</b> (bukan cuma Top {{ BATAS_TOP_PRESTASI }}), urut
             <b>capaian terbanyak</b> lalu <b>juz tertinggi</b>. PDF-nya
             <b>satu tabel per kelas (guru)</b> dengan persentase santri yang memenuhi target
             PJ<template v-if="!filterPj && pjOptions.length > 1"
@@ -1100,7 +1166,12 @@
           <div
             v-for="lmb in rankingPerLembaga"
             :key="lmb.lembaga"
-            class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 shadow-sm"
+            role="button"
+            tabindex="0"
+            :aria-label="`Daftar lengkap peringkat ${lmb.lembaga}`"
+            class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 shadow-sm cursor-pointer hover:border-cyan-400 transition"
+            @click="daftarLengkap = lmb"
+            @keydown.enter="daftarLengkap = lmb"
           >
             <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
               <h3 class="font-black text-sm text-slate-800 uppercase tracking-wider">
@@ -1129,11 +1200,12 @@
               </div>
             </div>
             <p class="text-[10px] font-black text-slate-600 uppercase mb-2">
-              <i class="fas fa-medal text-cyan-500 mr-1"></i>Top 5 Prestasi Tertinggi
+              <i class="fas fa-medal text-cyan-500 mr-1"></i>Top {{ BATAS_TOP_PRESTASI }} Prestasi
+              Tertinggi
             </p>
-            <ol v-if="lmb.top5.length > 0" class="space-y-1">
+            <ol v-if="lmb.top.length > 0" class="space-y-1">
               <li
-                v-for="(t, idx) in lmb.top5"
+                v-for="(t, idx) in lmb.top"
                 :key="t.id || idx"
                 class="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 text-xs"
               >
@@ -1147,8 +1219,29 @@
             <p v-else class="text-xs text-slate-400 italic text-center py-3">
               Belum ada data prestasi.
             </p>
+            <p
+              v-if="lmb.semua.length"
+              class="mt-2 text-center text-[10px] font-bold text-cyan-700 dark:text-cyan-300"
+            >
+              <i class="fas fa-list-ol mr-1"></i>Ketuk untuk daftar lengkap ({{ lmb.semua.length }}
+              santri)
+            </p>
           </div>
         </div>
+        <DaftarPeringkatModal
+          v-if="daftarLengkap"
+          :judul="`Peringkat ${daftarLengkap.lembaga}`"
+          :subjudul="`Rekap ${bulan} ${tahun} · capaian ${bulanDataLabel}${
+            filterPj ? ' · PJ ' + filterPj : ''
+          }${filterLaju === 'laju' ? ' · Pondok Laju' : filterLaju === 'bukan' ? ' · selain Pondok Laju' : ''}`"
+          :rows="daftarLengkap.semua"
+          :catatan="
+            daftarLengkap.belum
+              ? `${daftarLengkap.belum} santri belum dinilai (tidak ikut daftar).`
+              : ''
+          "
+          @close="daftarLengkap = null"
+        />
       </template>
     </template>
   </div>
@@ -1379,8 +1472,14 @@ import {
   guruSantri,
   // v.1.4.5: bagian per PJ → tabel per kelas (guru) + ringkasan target PJ.
   susunBagianEkspor,
-  teksTarget
+  teksTarget,
+  // v.1.5.0 (Kyai): Top 10 + daftar lengkap — satu urutan dgn kartu Top Santri di Laporan.
+  peringkatPrestasi,
+  BATAS_TOP_PRESTASI
 } from '@/utils/rekapPrestasiTabel'
+// v.1.5.0 (Kyai): Pondok Laju — penyaring & isian prestasi sekali per kelas.
+import { isSantriPondokLaju, kelasLajuDiajukan, nilaiSeragam } from '@/utils/pondokLaju'
+import DaftarPeringkatModal from '@/components/statistik/DaftarPeringkatModal.vue'
 // v.1.4.1 (Kyai, 4 Sep 2026): "guru yg mengisi dari tgl 29 agustus - september itu adalah
 //   data september." Rencana pemindahannya MURNI + 13 tes; layar ini hanya menampilkan &
 //   menerapkan sesudah Kyai menekan konfirmasi.
@@ -1603,6 +1702,8 @@ const isDualGuru = computed(
 const filterKelas = ref('')
 // v.1.4.1 (Kyai): penyaring PJ PTPT — '' = semua PJ (PDF-nya lalu DIPISAH per PJ).
 const filterPj = ref('')
+const filterLaju = ref('') // v.1.5.0: '' semua | 'laju' Pondok Laju | 'bukan' selain Pondok Laju
+const daftarLengkap = ref(null) // v.1.5.0: kartu ranking yang dibuka daftar lengkapnya
 const expandedId = ref(null)
 const mode = ref('bulanan')
 // v.1.4.1 (Kyai, 4 Sep 2026): "di filter saya membukanya di September, bukan di agustus."
@@ -1737,6 +1838,8 @@ const filteredSantri = computed(() => {
   // v.1.4.1 (Kyai): rekap bisa dipisah per PJ PTPT — penyaringnya menyetir layar & ekspor.
   if (filterPj.value)
     list = list.filter((s) => petaPjSantri.value.get(String(s.id)) === filterPj.value)
+  if (filterLaju.value)
+    list = list.filter((s) => isSantriPondokLaju(s) === (filterLaju.value === 'laju'))
   const kw = search.value.trim().toLowerCase()
   if (kw)
     list = list.filter((s) =>
@@ -1760,6 +1863,7 @@ const uniqueKelas = computed(() => {
 })
 
 const hasPTPT = computed(() => filteredSantri.value.some((s) => s.lembaga === 'PTPT'))
+const adaPondokLaju = computed(() => santriQiraati.value.some(isSantriPondokLaju))
 
 // ── v.1.4.1 · PJ efektif + baris rekap + kelompok per GURU ───────────────────
 //
@@ -1893,10 +1997,24 @@ const rankingPerLembaga = computed(() => {
         else if (computed > 0) color = 'text-rose-700'
       }
       const display = isPTPT ? (computed > 0 ? `${computed} Hal` : '-') : rawTot || '-'
-      return { id: s.id, nama: s.nama, total: computed, display, color }
+      const jz = isPTPT ? extractNumber(getEdit(s.id, 'juz')) : 0
+      return {
+        id: s.id,
+        nama: s.nama,
+        totalNum: computed,
+        juzNum: jz,
+        dinilai: sudahDinilaiBulan({
+          awal: getEdit(s.id, 'awal'),
+          akhir: getEdit(s.id, 'akhir'),
+          total: rawTot
+        }),
+        kelas: `${kelasLabel(s) || '-'}${jz ? ` · Juz ${jz}` : ''}`,
+        display,
+        color
+      }
     })
-    scored.sort((a, b) => b.total - a.total)
-    const top5 = scored.filter((t) => t.total > 0).slice(0, 5)
+    // v.1.5.0 (Kyai): Top 10 + daftar lengkap, urut capaian → juz → nama (peringkatPrestasi).
+    const p = peringkatPrestasi(scored)
     result.push({
       lembaga,
       isPTPT,
@@ -1905,7 +2023,9 @@ const rankingPerLembaga = computed(() => {
       kurang,
       cukup,
       bagus,
-      top5
+      top: p.top,
+      semua: p.semua.map((t) => ({ id: t.id, nama: t.nama, kelas: t.kelas, total: t.display })),
+      belum: p.belum
     })
   }
   return result
@@ -1993,6 +2113,25 @@ function getEdit(id, field) {
 function setEdit(id, field, val) {
   if (!edits[id]) edits[id] = {}
   edits[id][field] = val
+}
+// v.1.5.0 (Kyai 15 Nov 2026): "capaian prestasi bulanan di pondok laju itu sama satu kelas …
+//   guru mengisi hanya sekali untuk satu kelas". Kotak kelas menulis ke `edits` tiap santri
+//   sekelas, jadi SIMPAN, snapshot bulanan, dan ekspor tetap per santri seperti biasa.
+const kelasLajuIsian = computed(() =>
+  kelasLajuDiajukan(filteredSantri.value.filter((s) => s.lembaga === 'PTPT' && canEditPrestasi(s)))
+)
+function isianKelasLaju(k, field) {
+  return nilaiSeragam(k.santri.map((s) => getEdit(s.id, field)))
+}
+function isiKelasLaju(k, field, val) {
+  for (const s of k.santri) setEdit(s.id, field, val)
+}
+function totalKelasLaju(k) {
+  const aw = isianKelasLaju(k, 'awal')
+  const ak = isianKelasLaju(k, 'akhir')
+  if (aw.beragam || ak.beragam) return 'beragam'
+  const tot = Math.max(0, extractNumber(ak.nilai) - extractNumber(aw.nilai))
+  return tot > 0 ? `${tot} Hal` : '-'
 }
 function getJuzNum(s) {
   // v.1.3.7: juz = keadaan BERJALAN, bukan ukuran bulanan — snapshot bulan itu dulu

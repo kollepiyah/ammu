@@ -422,3 +422,25 @@ export function barisCetak(rows, opts = {}) {
     return out
   })
 }
+
+// ── v.1.5.0 · TOP 10 + DAFTAR LENGKAP (Kyai, 15 Nov 2026) ───────────────────────
+// "topnya itu santri hanya 5. Sekarang jadi 10 … ketika saya klik kartu itu, tampilkan
+// semuanya dari top 1 sampai akhir." Satu aturan untuk Rekap Prestasi DAN kartu Top Santri
+// di Laporan, supaya urutan kartu, daftar lengkap, dan ekspor tak bisa berbeda.
+export const BATAS_TOP_PRESTASI = 10
+
+/**
+ * Peringkat satu lembaga. `rows` = { id, nama, totalNum, juzNum, dinilai } per santri.
+ * `semua` = santri yang SUDAH dinilai (termasuk capaian 0, cermin ekspor), urut
+ * urutkanRekapPrestasi; `top` = yang capaiannya > 0, paling banyak `batas`.
+ * @returns {{ top: Array, semua: Array, belum: number }}
+ */
+export function peringkatPrestasi(rows, batas = BATAS_TOP_PRESTASI) {
+  const list = rows || []
+  const semua = urutkanRekapPrestasi(list.filter((r) => r?.dinilai))
+  return {
+    top: semua.filter((r) => (r.totalNum || 0) > 0).slice(0, batas),
+    semua,
+    belum: list.length - semua.length
+  }
+}
