@@ -2,7 +2,7 @@
 // hanya "Pagi saja"/"Sore saja"), dan penyaring jenis guru Qiraati-Sekolah/Qiraati/Sekolah/Pegawai.
 import { describe, it, expect } from 'vitest'
 import { labelShiftPagiSore, shiftPagiSoreDariIds, isShiftPagiSore } from '@/utils/labelShift'
-import { jenisGuru, isPengajar } from '@/utils/jenisGuru'
+import { jenisGuru, isPengajar, normStatusInduk, labelStatusInduk } from '@/utils/jenisGuru'
 import { shiftNgajiOf } from '@/utils/kelasHitung'
 
 describe('label shift Pagi-Sore / Pagi / Sore', () => {
@@ -48,5 +48,18 @@ describe('jenis guru', () => {
     expect(
       jenisGuru({ tipe_pegawai: 'guru', lembaga: 'TPQ Pagi', lembaga_sekolah: 'SDI' }, [])
     ).toBe('qiraati_sekolah')
+  })
+})
+
+describe('Induk / Non-Induk (isian manual)', () => {
+  it('teks form/Excel dibakukan; kosong/asing = belum diisi', () => {
+    expect(normStatusInduk('Induk')).toBe('induk')
+    expect(normStatusInduk(' non induk ')).toBe('non_induk')
+    expect(normStatusInduk('Non-Induk')).toBe('non_induk')
+    expect(normStatusInduk('non_induk')).toBe('non_induk')
+    expect(normStatusInduk('')).toBe('')
+    expect(normStatusInduk('tetap')).toBe('')
+    expect(labelStatusInduk('non_induk')).toBe('Non-Induk')
+    expect(labelStatusInduk(undefined)).toBe('')
   })
 })

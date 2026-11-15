@@ -34,7 +34,8 @@ Fixed). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOn
 fungsi itu. Urutan: `supabase db push` → deploy web → deploy fungsi → rebuild AAB → rilis Electron.
 
 Diuji (label & jenis guru): vitest 128 berkas / 1.868 tes, vite build; di peramban (data rekaan +
-penjaga tulis): 5 guru rekaan berlabel Pagi-Sore/Pagi/Sore + penyaring 4 jenis, 3 santri berlabel.
+penjaga tulis): 5 guru rekaan berlabel Pagi-Sore/Pagi/Sore + penyaring 4 jenis, 3 santri berlabel;
+Induk/Non-Induk: label + penyaring 3 pilihan + baris ekspor pada 3 guru rekaan, pilihan di form.
 Diuji (tahap 3): vitest 127 berkas / 1.863 tes, eslint 0 error, vite build; di peramban (data
 rekaan + penjaga tulis): Siap Tes satu kelas (2 siap · 1 menunggu simakan), seremonial pilih satu
 kelas & "Satu kelas Pondok Laju" di dialog sesi.
@@ -50,7 +51,7 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 
 ### Added (Kyai, 15–16 Nov 2026 — Pondok Laju, program santri PTPT dengan jam tambahan sesudah sekolah)
 
-- **Status santri Pondok Laju.** Centang "Ikut Pondok Laju" di form santri (tak tersedia untuk
+- **Status santri Pondok Laju.** Centang "Pondok Laju" di form santri (tak tersedia untuk
   Ma'had), kolom `Pondok Laju (true/false)` di impor/ekspor Excel. Boleh bersanding dengan Fullday
   ("centang dua"). Aturan satu sumber di `utils/statusSantri`: `statusSantriKey` / `labelStatusSantri`
   untuk tampilan, `matchStatusOnly` untuk tagihan.
@@ -98,6 +99,10 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 - **Penyaring jenis guru** di Data Guru: Qiraati-Sekolah / Qiraati / Sekolah / Pegawai (`?jenis=`),
   dari lembaga ngaji & sekolah guru + jenis lembaga di master/lembaga. `_isPengajar` GuruView
   dipindah utuh ke `utils/jenisGuru.isPengajar`.
+- **Induk / Non-Induk** untuk guru: isian baru `status_induk` (ekor jsonb, tanpa migrasi) di form
+  guru → label ungu di kartu, penyaring (`?induk=`, termasuk "Belum diisi"), kolom
+  `Induk/Non-Induk` di ekspor/templat/impor Excel (sel kosong tak menghapus isian lama). DIISI
+  MANUAL oleh Kyai — sengaja tak diturunkan dari gedung/lembaga; semua guru mulai kosong.
 
 ### Fixed — gerbang PJ glondongan tak pernah mengunci (sejak 19 Jul 2026, bfa80e1)
 

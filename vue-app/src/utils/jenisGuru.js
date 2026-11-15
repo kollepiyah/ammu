@@ -26,6 +26,26 @@ export function isPengajar(g) {
   )
 }
 
+// Induk / Non-Induk (Kyai, 16 Nov 2026): label baru yang DIISI MANUAL oleh Kyai di form guru —
+//   sengaja tak diturunkan dari data lain; guru yang belum diisi tak berlabel.
+export const STATUS_INDUK_OPTS = [
+  { value: 'induk', label: 'Induk' },
+  { value: 'non_induk', label: 'Non-Induk' }
+]
+
+/** Teks form/Excel ("Induk", "non induk", "Non-Induk", "non_induk") → 'induk' | 'non_induk' | ''. */
+export function normStatusInduk(v) {
+  const t = String(v || '')
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '')
+  return t === 'induk' ? 'induk' : t === 'noninduk' ? 'non_induk' : ''
+}
+
+export function labelStatusInduk(v) {
+  const k = normStatusInduk(v)
+  return STATUS_INDUK_OPTS.find((o) => o.value === k)?.label || ''
+}
+
 /** 'qiraati_sekolah' | 'qiraati' | 'sekolah' | 'pegawai' | '' (pengajar tanpa lembaga dikenal). */
 export function jenisGuru(g, lembagaList) {
   if (!isPengajar(g)) return 'pegawai'

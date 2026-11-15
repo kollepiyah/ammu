@@ -24,6 +24,8 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 - **Label shift** "Pagi-Sore", "Pagi", atau "Sore" kini tampil untuk semua santri dan semua guru.
 - **Data Guru bisa disaring per jenis**: Qiraati-Sekolah, Qiraati, Sekolah, atau Pegawai.
+- **Isian baru Induk / Non-Induk** di form guru, tampil sebagai label di kartu guru dan bisa
+  disaring (termasuk "Belum diisi"); ikut kolom Excel guru.
 
 **Perbaikan penting**
 

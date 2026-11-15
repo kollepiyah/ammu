@@ -251,7 +251,7 @@
           />
         </div>
         <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status) gantikan chip -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mt-2">
           <select
             v-model="filterLembaga"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
@@ -273,6 +273,17 @@
             <option v-for="o in JENIS_GURU_OPTS" :key="o.value" :value="o.value">
               {{ o.label }}
             </option>
+          </select>
+          <!-- v.1.5.0 (Kyai): Induk / Non-Induk (isian manual) -->
+          <select
+            v-model="filterInduk"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua Induk/Non-Induk</option>
+            <option v-for="o in STATUS_INDUK_OPTS" :key="o.value" :value="o.value">
+              {{ o.label }}
+            </option>
+            <option value="kosong">Belum diisi</option>
           </select>
           <select
             v-model="filterStatus"
@@ -460,6 +471,12 @@
                        kini field itu cuma cermin utk fp_sync, isinya bisa 'kosong'). -->
                   <!-- v.1.5.0 (Kyai): label Pagi-Sore / Pagi / Sore, sama dengan kartu santri -->
                   <span
+                    v-if="labelStatusInduk(g.status_induk)"
+                    class="text-[10px] bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700 px-2 py-0.5 rounded font-bold"
+                  >
+                    {{ labelStatusInduk(g.status_induk) }}
+                  </span>
+                  <span
                     v-if="shiftPagiSoreGuru(g)"
                     class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-2 py-0.5 rounded font-bold"
                   >
@@ -615,7 +632,14 @@ import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan c
 import { shiftsForGuru } from '@/utils/shiftDerive'
 // v.1.5.0 (Kyai): label Pagi-Sore/Pagi/Sore & penyaring jenis guru — satu sumber di utils.
 import { labelShiftPagiSore, shiftPagiSoreDariIds, isShiftPagiSore } from '@/utils/labelShift'
-import { isPengajar, jenisGuru, JENIS_GURU_OPTS } from '@/utils/jenisGuru'
+import {
+  isPengajar,
+  jenisGuru,
+  JENIS_GURU_OPTS,
+  STATUS_INDUK_OPTS,
+  normStatusInduk,
+  labelStatusInduk
+} from '@/utils/jenisGuru'
 import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@/utils/shiftMaster'
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
@@ -666,11 +690,13 @@ const router = useRouter()
 //   tulis-balik dijaga PERBANDINGAN hasil, bukan bendera `_syncingQuery` yang selalu
 //   kalah cepat dari antrean watcher (`flush: 'pre'`). Lihat utils/filterQuery.js.
 const filterJenis = ref('') // v.1.5.0: Qiraati-Sekolah / Qiraati / Sekolah / Pegawai
+const filterInduk = ref('') // v.1.5.0: 'induk' | 'non_induk' | 'kosong' (belum diisi)
 const SPEC_FILTER = [
   { kunci: 'q' },
   { kunci: 'lembaga' },
   { kunci: 'jabatan' },
   { kunci: 'jenis' },
+  { kunci: 'induk' },
   { kunci: 'status', bawaan: 'aktif' }
 ]
 // `tipe` = pita Data Guru vs Data Pegawai; `tab`/`sub` = Master Data sebagai halaman induk.
@@ -680,6 +706,7 @@ const refFilter = {
   lembaga: filterLembaga,
   jabatan: filterJabatan,
   jenis: filterJenis,
+  induk: filterInduk,
   status: filterStatus
 }
 function syncFiltersFromQuery() {
@@ -737,6 +764,10 @@ const guruShown = computed(() => {
   if (filterJenis.value) {
     const L = _lembagaMaster.value
     list = list.filter((g) => jenisGuru(g, L) === filterJenis.value)
+  }
+  if (filterInduk.value) {
+    const want = filterInduk.value === 'kosong' ? '' : filterInduk.value
+    list = list.filter((g) => normStatusInduk(g.status_induk) === want)
   }
   return list
 })
@@ -809,6 +840,8 @@ const hasFilter = computed(
     !!search.value ||
     !!filterLembaga.value ||
     !!filterJabatan.value ||
+    !!filterJenis.value ||
+    !!filterInduk.value ||
     filterStatus.value !== 'aktif'
 )
 
@@ -944,6 +977,7 @@ function _buildExcelRows(list) {
     shift_nomor: shiftNomorFromIds(g.shift_ids, _shList),
     role_sistem: g.role_sistem || '',
     id_fingerprint: g.id_fingerprint || '',
+    status_induk: labelStatusInduk(g.status_induk),
     status: g.status || 'Aktif'
   }))
 }
@@ -971,6 +1005,7 @@ const _excelColumns = [
   { key: 'shift_nomor', header: 'Shift (nomor, pisah |)', width: 18 },
   { key: 'role_sistem', header: 'Role Sistem (user/admin/admin_keuangan/super_admin)', width: 18 },
   { key: 'id_fingerprint', header: 'ID Fingerprint', width: 14 },
+  { key: 'status_induk', header: 'Induk/Non-Induk', width: 14 },
   { key: 'status', header: 'Status', width: 10 }
 ]
 
@@ -1280,6 +1315,7 @@ async function downloadTemplateGuru() {
       'Shift (pagi/sore/pagi_sore)',
       'Shift (nomor, pisah |)',
       'ID Fingerprint',
+      'Induk/Non-Induk',
       'Role Sistem (user/admin/admin_keuangan/super_admin)',
       'Username (opsional)',
       'Alamat'
@@ -1458,6 +1494,8 @@ async function onImportGuru(e) {
         _pick(r, 'Pendidikan Terakhir', 'Pendidikan', 'pendidikan_terakhir')
       )
       put('id_fingerprint', _pick(r, 'ID Fingerprint', 'id_fingerprint'))
+      // v.1.5.0: sel kosong/tak dikenal dilewati (aturan gabung) — isian lama tak terhapus.
+      put('status_induk', normStatusInduk(_pick(r, 'Induk/Non-Induk', 'Induk', 'status_induk')))
       put('wa', wa)
       put('wa_2', waList[1] || '')
       // username ikut WA (login) bila ada; jika WA & kolom Username kosong → jangan sentuh

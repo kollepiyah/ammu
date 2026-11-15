@@ -443,6 +443,21 @@
               <option value="Tidak Aktif">Tidak Aktif</option>
             </select>
           </div>
+          <!-- v.1.5.0 (Kyai): Induk / Non-Induk, diisi manual -->
+          <div>
+            <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
+              >Induk / Non-Induk</label
+            >
+            <select
+              v-model="form.status_induk"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-emerald-500 outline-none"
+            >
+              <option value="">— Belum diisi —</option>
+              <option v-for="o in STATUS_INDUK_OPTS" :key="o.value" :value="o.value">
+                {{ o.label }}
+              </option>
+            </select>
+          </div>
           <div v-if="isSuperAdmin">
             <label class="block text-xs font-bold text-teal-700 mb-1 uppercase"
               >Role Sistem (super-admin only)</label
@@ -517,6 +532,7 @@ import {
   TIPE_PEGAWAI_OPTIONS,
   ROLE_SISTEM_OPTIONS
 } from '@/composables/useGuruForm'
+import { STATUS_INDUK_OPTS } from '@/utils/jenisGuru'
 
 const route = useRoute()
 const router = useRouter()

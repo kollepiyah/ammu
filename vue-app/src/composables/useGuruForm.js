@@ -11,6 +11,7 @@ import { toTitleCase, normalizeWA } from '@/utils/format'
 import { gedungList } from '@/utils/gedung'
 // v.1.1.9: shift ikut master; shiftsForGuru dipakai utk menurunkan centangan awal data lama.
 import { shiftsForGuru } from '@/utils/shiftDerive'
+import { normStatusInduk } from '@/utils/jenisGuru' // v.1.5.0: Induk / Non-Induk
 import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
 // v.1.1.9: unit tugas dari master/jabatan (ganti tebakan regex lama)
 import {
@@ -58,6 +59,8 @@ function emptyForm() {
     status: 'Aktif',
     id_fingerprint: '',
     tipe_pegawai: 'guru',
+    // v.1.5.0 (Kyai): Induk / Non-Induk — diisi manual, kosong = belum diisi.
+    status_induk: '',
     // v.1.1.9: shift_ids[] = SUMBER KEBENARAN, satu daftar utk shift mengajar & kerja.
     //   Menggantikan pasangan shift/shift_pegawai yang artinya berganti-ganti tergantung
     //   tipe_pegawai. Keduanya masih DITULIS sbg cermin (lihat save) demi fp_sync.py.
@@ -574,6 +577,7 @@ export function useGuruForm() {
           if (['guru', 'pegawai', 'pegawai_guru'].includes(old)) return old
           return 'guru'
         })(),
+        status_induk: normStatusInduk(g.status_induk),
         // v.1.1.9: data lama belum punya shift_ids → turunkan dari shift/shift_pegawai
         //   lewat shiftsForGuru (sumber tunggal), jadi centangan awal = shift yg selama
         //   ini memang berlaku bagi dia.
@@ -682,6 +686,7 @@ export function useGuruForm() {
         rek_bmt: String(f.rek_bmt || '').trim(),
         id_fingerprint: f.id_fingerprint || '',
         tipe_pegawai: f.tipe_pegawai,
+        status_induk: normStatusInduk(f.status_induk),
         // v.1.1.9: shift_ids = sumber kebenaran. shift & shift_pegawai TETAP DITULIS
         //   sebagai cermin — fp_sync.py (replika Python di luar repo) masih membacanya
         //   dan belum mengenal shift_ids. Cermin kosong = 'kosong', bukan '' (string
