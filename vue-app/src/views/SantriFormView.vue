@@ -149,7 +149,7 @@
               class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] font-bold"
             />
           </div>
-          <!-- v.21.13.0526: Status Tinggal — Pulang Pergi / Fullday / Ma'had (kyai req) -->
+          <!-- v.21.13.0526: Status Tinggal — Non-mukim / Fullday / Ma'had (kyai req; v.1.5.0: + Pondok Laju) -->
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
               >Status Tinggal *</label
@@ -158,10 +158,27 @@
               v-model="statusTinggal"
               class="w-full px-3 py-2 text-sm rounded-xl border border-teal-300 bg-teal-50 cursor-pointer focus:ring-2 focus:ring-teal-500 outline-none"
             >
-              <option value="pp">Pulang Pergi</option>
+              <option value="pp">Non-mukim</option>
               <option value="fullday">Fullday</option>
               <option value="mahad">Ma'had (Mukim)</option>
             </select>
+            <!-- v.1.5.0 (Kyai): Pondok Laju bisa berdampingan dengan Fullday ("centang dua"). -->
+            <label
+              v-if="statusTinggal !== 'mahad'"
+              class="mt-2 flex items-start gap-2 text-xs text-[var(--text-primary)] cursor-pointer"
+            >
+              <input
+                v-model="form.is_pondok_laju"
+                type="checkbox"
+                class="mt-0.5 accent-teal-600 cursor-pointer"
+              />
+              <span>
+                <b>Ikut Pondok Laju</b>
+                <span class="block text-[10px] text-[var(--text-tertiary)]">
+                  Label santri jadi Pondok Laju. Bila juga Fullday, tagihannya tetap Fullday saja.
+                </span>
+              </span>
+            </label>
           </div>
           <!-- Kyai 3 Agu: dua penanda keuangan. Diisi MANUAL — sengaja tak ditebak sistem. -->
           <div>
@@ -816,6 +833,7 @@ const statusTinggal = computed({
     if (v === 'mahad') {
       form.value.is_mukim = true
       form.value.is_fullday = false
+      form.value.is_pondok_laju = false // Pondok Laju = santri yang pulang; tak bersanding Ma'had
     } else if (v === 'fullday') {
       form.value.is_mukim = false
       form.value.is_fullday = true

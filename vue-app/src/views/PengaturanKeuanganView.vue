@@ -3346,7 +3346,7 @@
                   </label>
                 </div>
               </div>
-              <!-- 1b) v.1.2.6 (Kyai): Whitelist STATUS santri (non-mukim/ma'had/fullday) -->
+              <!-- 1b) v.1.2.6 (Kyai): Whitelist STATUS santri (non-mukim/ma'had/fullday; v.1.5.0 + pondok laju) -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
                   <i class="fas fa-user-check mr-1"></i>Hanya untuk status santri ini (kosong =
@@ -3369,6 +3369,11 @@
                     {{ st.label }}
                   </label>
                 </div>
+                <!-- v.1.5.0: aturan "centang dua" Pondok Laju (utils/statusSantri.matchStatusOnly) -->
+                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                  Santri Pondok Laju yang juga Fullday ditagih sebagai Fullday saja. Yang tidak
+                  Fullday tetap kena jenis Non-mukim, ditambah jenis bertanda Pondok Laju.
+                </p>
               </div>
               <!-- 1b2) Kyai 4 Agu: Whitelist SHIFT NGAJI (pagi/sore).
                    "syahriyah pagi untuk ngaji pagi, syahriyah sore untuk sore". Tanpa ini

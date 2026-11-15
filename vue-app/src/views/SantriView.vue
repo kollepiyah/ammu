@@ -21,6 +21,13 @@
           <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.mukim }}</span>
           <span class="text-[var(--text-secondary)] ml-1">Ma'had</span>
         </div>
+        <div
+          v-if="stats.pondokLaju"
+          class="px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 text-xs"
+        >
+          <span class="text-amber-800 dark:text-amber-300 font-bold">{{ stats.pondokLaju }}</span>
+          <span class="text-[var(--text-secondary)] ml-1">Pondok Laju</span>
+        </div>
       </template>
       <template #actions>
         <!-- v.21.17c.0526: View mode actions (sidebar) vs Master mode actions (Master Data) -->
@@ -283,7 +290,8 @@
           <option value="">Semua status tempat</option>
           <option value="mukim">Ma'had</option>
           <option value="fullday">Fullday</option>
-          <option value="non-mukim">Pulang Pergi</option>
+          <option value="pondok_laju">Pondok Laju</option>
+          <option value="non-mukim">Non-mukim</option>
         </select>
         <select
           v-model="filterStatus"
@@ -459,16 +467,14 @@
                     }}<span v-if="usiaKini(s.tgl_lahir)"> · {{ usiaKini(s.tgl_lahir) }}</span>
                   </p>
                 </div>
-                <!-- v.21.12.0526: Ma'had / Fullday / Tidak Aktif / (PP tanpa label) -->
+                <!-- v.1.5.0 (Kyai): SEMUA santri berlabel status — Ma'had / Fullday / Pondok Laju /
+                     Non-mukim (dulu santri pulang-pergi tanpa label). -->
                 <span
-                  v-if="s.is_mukim"
-                  class="text-[9px] bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700 px-2 py-0.5 rounded font-black uppercase tracking-wider flex-shrink-0"
-                  >Ma'had</span
-                >
-                <span
-                  v-else-if="s.is_fullday"
-                  class="text-[9px] bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-black uppercase tracking-wider flex-shrink-0"
-                  >Fullday</span
+                  :class="[
+                    'text-[9px] border px-2 py-0.5 rounded font-black uppercase tracking-wider flex-shrink-0',
+                    KELAS_LABEL_STATUS[statusSantriKey(s)]
+                  ]"
+                  >{{ labelStatusSantri(s) }}</span
                 >
                 <span
                   v-if="s.aktif === false"
@@ -661,6 +667,18 @@ import {
   queryBerubah,
   alamatBawaFilter
 } from '@/utils/filterQuery'
+import { statusSantriKey, labelStatusSantri } from '@/utils/statusSantri' // v.1.5.0: label status semua santri
+// Warna label per status — Ma'had teal, Fullday cyan, Pondok Laju amber, Non-mukim abu.
+const KELAS_LABEL_STATUS = {
+  mahad:
+    'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700',
+  fullday:
+    'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-700',
+  pondok_laju:
+    'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700',
+  non_mukim:
+    'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600'
+}
 import { planAppendNis, applyNisChanges } from '@/utils/nisGenerator' // v.111: auto-NIS pasca impor = APPEND (No. Induk lama tetap; baru lanjut nomor)
 
 const exporting = ref(false)

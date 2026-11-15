@@ -9,7 +9,9 @@ import {
   JK_OPTS,
   matchShiftNgaji,
   SHIFT_NGAJI_OPTS,
-  statusTinggalDariPsb
+  statusTinggalDariPsb,
+  statusSantriKey,
+  labelStatusSantri
 } from '@/utils/statusSantri'
 
 const nonMukim = { id: 1, is_mukim: false, is_fullday: false }
@@ -58,8 +60,41 @@ describe('matchStatusOnly', () => {
     expect(matchStatusOnly({ id: 9 }, ['mahad'])).toBe(false)
   })
 
-  it('STATUS_SANTRI_OPTS memuat 3 status kanonik', () => {
-    expect(STATUS_SANTRI_OPTS.map((o) => o.key)).toEqual(['non_mukim', 'mahad', 'fullday'])
+  it('STATUS_SANTRI_OPTS memuat 4 status kanonik', () => {
+    expect(STATUS_SANTRI_OPTS.map((o) => o.key)).toEqual([
+      'non_mukim',
+      'mahad',
+      'fullday',
+      'pondok_laju'
+    ])
+  })
+})
+
+// v.1.5.0 (Kyai 15 Nov 2026): Pondok Laju bisa dicentang bersama Fullday ("centang dua").
+//   Tagihan: + Fullday → ditagih Fullday saja; tanpa Fullday → non-mukim + jenis Pondok Laju.
+//   Label: selalu Pondok Laju (kecuali Ma'had).
+describe('Pondok Laju', () => {
+  const lajuPulang = { is_mukim: false, is_fullday: false, is_pondok_laju: true }
+  const lajuFullday = { is_mukim: false, is_fullday: true, is_pondok_laju: true }
+
+  it('tagihan: centang dua ikut Fullday saja, tak kena jenis Pondok Laju', () => {
+    expect(matchStatusOnly(lajuFullday, ['fullday'])).toBe(true)
+    expect(matchStatusOnly(lajuFullday, ['pondok_laju'])).toBe(false)
+    expect(matchStatusOnly(lajuFullday, ['non_mukim'])).toBe(false)
+  })
+  it('tagihan: Pondok Laju yang pulang = non-mukim + tambahan Pondok Laju', () => {
+    expect(matchStatusOnly(lajuPulang, ['non_mukim'])).toBe(true)
+    expect(matchStatusOnly(lajuPulang, ['pondok_laju'])).toBe(true)
+    expect(matchStatusOnly(lajuPulang, ['fullday'])).toBe(false)
+    expect(matchStatusOnly(nonMukim, ['pondok_laju'])).toBe(false)
+  })
+  it('label & kunci penyaring: Pondok Laju menang atas Fullday', () => {
+    expect(labelStatusSantri(lajuFullday)).toBe('Pondok Laju')
+    expect(labelStatusSantri(lajuPulang)).toBe('Pondok Laju')
+    expect(statusSantriKey(fullday)).toBe('fullday')
+    expect(labelStatusSantri(nonMukim)).toBe('Non-mukim')
+    expect(labelStatusSantri(mahad)).toBe("Ma'had")
+    expect(labelStatusSantri({ is_mukim: true, is_pondok_laju: true })).toBe("Ma'had")
   })
 })
 

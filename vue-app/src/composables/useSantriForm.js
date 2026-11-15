@@ -46,6 +46,7 @@ function emptyForm() {
     is_mukim: false,
     // v.21.13.0526: + is_fullday + catatan_riwayat_pribadi (Ma'had) + alasan/tanggal keluar
     is_fullday: false,
+    is_pondok_laju: false, // v.1.5.0: program Pondok Laju (ekor jsonb; boleh bersama Fullday)
     // Kyai 3 Agu: penanda keuangan manual — diskon anak guru + paket nominal pilihan.
     paket_syahriyah: '',
     // K2: '' = auto (ikut aturan) | 'gabung' | 'pisah'
@@ -312,6 +313,7 @@ export function useSantriForm() {
         is_mukim: !!s.is_mukim,
         // v.21.13.0526: load + is_fullday + catatan + alasan keluar
         is_fullday: !!s.is_fullday,
+        is_pondok_laju: s.is_pondok_laju === true,
         paket_syahriyah: s.paket_syahriyah || '',
         syahriyah_gabung: s.syahriyah_gabung || '',
         catatan_riwayat_pribadi: s.catatan_riwayat_pribadi || '',
@@ -419,6 +421,7 @@ export function useSantriForm() {
         is_mukim: f.is_mukim,
         // v.21.13.0526: + is_fullday + catatan_riwayat + tgl/alasan keluar
         is_fullday: !!f.is_fullday,
+        is_pondok_laju: !f.is_mukim && f.is_pondok_laju === true,
         paket_syahriyah: f.paket_syahriyah || '',
         syahriyah_gabung: f.syahriyah_gabung || '',
         catatan_riwayat_pribadi: f.catatan_riwayat_pribadi || '',

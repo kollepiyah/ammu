@@ -641,7 +641,7 @@ import { sbSelectValue, sbInsert, genId } from '../services/supabasePsb'
 
 const TIPE_OPTIONS = [
   { value: 'mahad', label: "Ma'had (Mukim)", icon: 'fa-bed', desc: 'Tinggal di asrama 24 jam' },
-  { value: 'pp', label: 'Pulang Pergi', icon: 'fa-home', desc: 'Tidak mukim, tidak fullday' },
+  { value: 'pp', label: 'Non-mukim', icon: 'fa-home', desc: 'Tidak mukim, tidak fullday' },
   { value: 'fullday', label: 'Fullday', icon: 'fa-clock', desc: 'Termasuk makan siang' }
 ]
 

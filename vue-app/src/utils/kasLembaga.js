@@ -63,7 +63,9 @@ export function kunciJenis(v) {
 export const KAS_LEMBAGA_EKSTRA = [
   { nama: 'TPQ', ket: 'Gabungan TPQ Pagi/Sore, Pra PTPT, PTPT, PPPH' },
   { nama: 'Fullday', ket: 'Program fullday (status santri, bukan lembaga)' },
-  { nama: "Ma'had", ket: 'Asrama — uang makan & syahriyah pondok' }
+  { nama: "Ma'had", ket: 'Asrama — uang makan & syahriyah pondok' },
+  // v.1.5.0 (Kyai 16 Nov 2026): kas Pondok Laju DISENDIRIKAN dulu (keuangan yayasan belum final).
+  { nama: 'Pondok Laju', ket: 'Program Pondok Laju (status santri, bukan lembaga)' }
 ]
 
 /**

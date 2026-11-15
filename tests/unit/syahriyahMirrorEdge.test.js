@@ -299,7 +299,13 @@ describe('cermin edge (Deno) sepakat dengan utils/syahriyah.js', () => {
       [{ is_fullday: true }, ['mahad']],
       [{}, ['non_mukim']],
       [{ is_mukim: true }, ['non_mukim', 'fullday']],
-      [{}, []]
+      [{}, []],
+      // v.1.5.0: Pondok Laju — hanya yang bukan Fullday/Ma'had yang kena 'pondok_laju'.
+      [{ is_pondok_laju: true }, ['pondok_laju']],
+      [{ is_pondok_laju: true, is_fullday: true }, ['pondok_laju']],
+      [{ is_pondok_laju: true, is_fullday: true }, ['fullday']],
+      [{ is_pondok_laju: true }, ['non_mukim']],
+      [{ is_pondok_laju: true, is_mukim: true }, ['pondok_laju']]
     ]
     for (const [s, wl] of kasusStatus)
       expect(ts.matchStatusOnly(s, wl)).toBe(st.matchStatusOnly(s, wl))

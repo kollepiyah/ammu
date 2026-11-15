@@ -303,7 +303,12 @@ describe('opsiKasLembaga — pilihan kas termasuk yang BUKAN baris master', () =
   it('kas ekstra membawa keterangan (dipakai UI utk menjelaskan cakupan TPQ)', () => {
     const tpq = opsiKasLembaga(MASTER_4AGU).find((o) => o.nama === 'TPQ')
     expect(tpq.ket).toMatch(/Pra PTPT/)
-    expect(KAS_LEMBAGA_EKSTRA.map((e) => e.nama)).toEqual(['TPQ', 'Fullday', "Ma'had"])
+    expect(KAS_LEMBAGA_EKSTRA.map((e) => e.nama)).toEqual([
+      'TPQ',
+      'Fullday',
+      "Ma'had",
+      'Pondok Laju'
+    ])
   })
 
   it('master yang sudah memuat nama kas ekstra tidak menggandakannya', () => {
@@ -329,12 +334,13 @@ describe('opsiKasLembaga — pilihan kas termasuk yang BUKAN baris master', () =
   })
 
   it('master kosong / null tetap memberi kas ekstra, tidak melempar', () => {
-    expect(nama(opsiKasLembaga([]))).toEqual(['TPQ', 'Fullday', "Ma'had"])
-    expect(nama(opsiKasLembaga(null))).toEqual(['TPQ', 'Fullday', "Ma'had"])
+    expect(nama(opsiKasLembaga([]))).toEqual(['TPQ', 'Fullday', "Ma'had", 'Pondok Laju'])
+    expect(nama(opsiKasLembaga(null))).toEqual(['TPQ', 'Fullday', "Ma'had", 'Pondok Laju'])
     expect(nama(opsiKasLembaga([null, {}, { lembaga: '  ' }]))).toEqual([
       'TPQ',
       'Fullday',
-      "Ma'had"
+      "Ma'had",
+      'Pondok Laju'
     ])
   })
 })

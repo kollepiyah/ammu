@@ -806,6 +806,8 @@ const rilis = [
     versi: 'v.1.5.0',
     tgl: 'November 2026',
     items: [
+      'Pondok Laju: santri bisa ditandai "Ikut Pondok Laju" di form santri. Yang juga Fullday tetap ditagih seperti Fullday.',
+      'Data Santri: semua santri kini berlabel status (Non-mukim, Fullday, Ma'had, Pondok Laju) dan bisa disaring per status. Istilah "Pulang Pergi" diganti "Non-mukim".',
       'Data Santri: penyaring kelas per guru kini berfungsi untuk guru bergelar (nama dengan koma, mis. "S.Pd., Gr."), dan pilihannya menyesuaikan PJ yang dipilih.',
       'PDF Data Santri: santri PTPT kini menampilkan kolom Juz, dan bila disaring per lembaga / PJ / guru, daftarnya dikelompokkan per guru kelas (pasangan pagi–sore).',
       'PDF Data Kelas dari Dashboard: kolom Kelas dan Juz kini seragam (Kelas 1, bukan campuran "1" dan "Kelas 1"; Juz berupa angka).',

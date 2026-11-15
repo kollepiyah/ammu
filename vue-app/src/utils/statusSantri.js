@@ -6,8 +6,36 @@
 export const STATUS_SANTRI_OPTS = [
   { key: 'non_mukim', label: 'Non-mukim' },
   { key: 'mahad', label: "Ma'had" },
-  { key: 'fullday', label: 'Fullday' }
+  { key: 'fullday', label: 'Fullday' },
+  // v.1.5.0 (Kyai 15 Nov 2026): Pondok Laju = penanda `is_pondok_laju` (ekor jsonb) yang bisa
+  //   berdampingan dengan Fullday. Untuk TAGIHAN, Pondok Laju + Fullday ditagih sebagai Fullday
+  //   SAJA; kunci ini hanya menyasar Pondok Laju yang BUKAN Fullday/Ma'had (santri yang masih
+  //   pulang) — mereka tetap ikut 'non_mukim' dan mendapat jenis Pondok Laju sebagai tambahan.
+  { key: 'pondok_laju', label: 'Pondok Laju (bukan Fullday)' }
 ]
+
+/**
+ * Status tampilan satu santri: 'mahad' | 'pondok_laju' | 'fullday' | 'non_mukim'.
+ * Sumber tunggal LABEL & PENYARING Data Santri (bukan aturan tagihan — lihat matchStatusOnly):
+ * Pondok Laju yang juga Fullday tetap tampil Pondok Laju (keputusan Kyai).
+ */
+export function statusSantriKey(s) {
+  if (s?.is_mukim) return 'mahad'
+  if (s?.is_pondok_laju === true) return 'pondok_laju'
+  if (s?.is_fullday) return 'fullday'
+  return 'non_mukim'
+}
+
+export const LABEL_STATUS_SANTRI = {
+  non_mukim: 'Non-mukim',
+  mahad: "Ma'had",
+  fullday: 'Fullday',
+  pondok_laju: 'Pondok Laju'
+}
+
+export function labelStatusSantri(s) {
+  return LABEL_STATUS_SANTRI[statusSantriKey(s)]
+}
 
 // v.1.2.x (Kyai): whitelist jenis kelamin untuk jenis pembayaran — sejajar status/lembaga.
 //   Nilai cocok ke field santri.jk ('L'=Putra, 'P'=Putri). Kosong = semua.
@@ -133,13 +161,14 @@ export function statusTinggalDariPsb(p) {
  *   - whitelist kosong / bukan array → true (berlaku untuk SEMUA status).
  *   - antar-status bersifat OR (santri masuk bila cocok SALAH SATU status terpilih).
  * @param {Object} s - dokumen santri (dibaca is_mukim & is_fullday).
- * @param {string[]} statusOnly - subset dari ['non_mukim','mahad','fullday'].
+ * @param {string[]} statusOnly - subset dari ['non_mukim','mahad','fullday','pondok_laju'].
  */
 export function matchStatusOnly(s, statusOnly) {
   const wl = Array.isArray(statusOnly) ? statusOnly.filter(Boolean) : []
   if (wl.length === 0) return true
   const mukim = !!(s && s.is_mukim)
   const fullday = !!(s && s.is_fullday)
+  const laju = !!(s && s.is_pondok_laju === true)
   return wl.some((st) =>
     st === 'mahad'
       ? mukim
@@ -147,6 +176,8 @@ export function matchStatusOnly(s, statusOnly) {
         ? fullday
         : st === 'non_mukim'
           ? !mukim && !fullday
-          : false
+          : st === 'pondok_laju'
+            ? laju && !mukim && !fullday
+            : false
   )
 }

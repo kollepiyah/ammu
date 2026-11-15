@@ -22,19 +22,47 @@ berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AA
 
 ---
 
-## [v.1.5.0] — 2026-11-15 — Filter kelas-guru bergelar, PDF Data Santri per guru kelas + Juz, PDF Data Kelas rapi, logout tak mencabut perangkat lain
+## [v.1.5.0] — 2026-11-16 — Pondok Laju tahap 1: status santri Pondok Laju, label status semua santri, "Non-mukim"
 
 **DITAHAN (Kyai, 15 Nov 2026)** — jangan deploy / rebuild AAB / rilis Electron dulu: v.1.5.0
-dirilis BERSAMA fitur Pondok Laju (dikerjakan sebagai gelombang berikutnya v.1.5.0).
+dirilis BERSAMA fitur Pondok Laju (tahap 1 dari 5 selesai di gelombang ini).
 
-**SIAP RILIS** — `versionCode` 150 / `versionName` `v.1.5.0`. Nomor baru, bukan gelombang
-v.1.4.9: Electron 1.4.9 sudah "Latest" di GitHub sejak 4 Nov 2026. Sempat di-commit sebagai
-v.1.4.10 (commit 0002f84–fae5630), lalu dinomori ulang 1.5.0 sebelum tayang. Tanpa migrasi Supabase, tanpa
-edge function, tanpa perubahan native. Urutan: deploy web → rebuild AAB → rilis Electron.
+**SIAP RILIS (setelah Pondok Laju lengkap)** — `versionCode` 150 / `versionName` `v.1.5.0`, gelombang 2.
+Tanpa migrasi Supabase: penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah
+meratakan `data`). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOnly`) →
+deploy ulang fungsi itu saat rilis. Urutan: deploy web → deploy fungsi → rebuild AAB → rilis Electron.
 
-Diuji: vitest 125 berkas / 1.843 tes (baru `kelompokRombel`, `kelasJuzSimpan`; `filterQuery` +1), eslint 0 error,
-vite build. PDF Data Santri berkelompok dirender di peramban (pdf.js) dengan data rekaan. **Belum**
-dicoba dengan data & akun nyata.
+Diuji: vitest 125 berkas / 1.846 tes (`statusSantri` +3, cermin edge +5 kasus, `kasLembaga`), eslint
+0 error, vite build. Di peramban (data rekaan, penjaga tulis di klien supabase): label 5 santri,
+penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan muatan simpan
+(`data.is_pondok_laju: true` + `is_fullday: true`). **Belum** dicoba dengan akun & data nyata.
+
+### Added (Kyai, 15–16 Nov 2026 — Pondok Laju, program santri PTPT dengan jam tambahan sesudah sekolah)
+
+- **Status santri Pondok Laju.** Centang "Ikut Pondok Laju" di form santri (tak tersedia untuk
+  Ma'had), kolom `Pondok Laju (true/false)` di impor/ekspor Excel. Boleh bersanding dengan Fullday
+  ("centang dua"). Aturan satu sumber di `utils/statusSantri`: `statusSantriKey` / `labelStatusSantri`
+  untuk tampilan, `matchStatusOnly` untuk tagihan.
+- **Tagihan.** Pilihan status "Pondok Laju (bukan Fullday)" di jenis pembayaran. Pondok Laju +
+  Fullday → ditagih sebagai Fullday SAJA; Pondok Laju yang pulang → tetap kena jenis Non-mukim +
+  jenis bertanda Pondok Laju (keputusan Kyai). Kyai sendiri yang menata jenis pembayarannya.
+- **Kas "Pondok Laju"** tersendiri di pilihan Masuk Kas Lembaga.
+- **Label status untuk SEMUA santri** di Data Santri (Non-mukim / Fullday / Ma'had / Pondok Laju;
+  dulu santri pulang-pergi tanpa label), penyaring status + Pondok Laju, hitungan Pondok Laju di
+  kepala halaman, profil santri.
+
+### Changed
+
+- **"Pulang Pergi" → "Non-mukim"** di form santri, penyaring Data Santri, profil, dan formulir PSB.
+
+---
+
+## [v.1.5.0 · gelombang 1] — 2026-11-15 — Filter kelas-guru bergelar, PDF Data Santri per guru kelas + Juz, PDF Data Kelas rapi, logout tak mencabut perangkat lain
+
+Sempat di-commit sebagai v.1.4.10 (commit 0002f84–fae5630), lalu dinomori ulang 1.5.0 sebelum
+tayang. Nomor baru, bukan gelombang v.1.4.9: Electron 1.4.9 sudah "Latest" di GitHub sejak 4 Nov
+2026. Diuji: vitest 125 berkas / 1.843 tes, eslint 0 error, vite build; PDF Data Santri berkelompok
+dirender di peramban (pdf.js) dengan data rekaan.
 
 ### Fixed (keluhan Kyai, 15 Nov 2026)
 

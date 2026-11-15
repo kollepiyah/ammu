@@ -19,6 +19,7 @@ import { buildResolverQiraati } from '@/utils/kelasHitung'
 import { labelPasangan } from '@/utils/pasanganGuru'
 import { labelKelasDuaSisi, cocokKelasSantri } from '@/utils/kelompokRombel'
 import { getOne } from '@/services/db'
+import { statusSantriKey } from '@/utils/statusSantri' // v.1.5.0: label & penyaring status
 
 // Helper: derive santri.lembaga_refs dari legacy fields
 // Santri reguler: 1 ref. Santri mukim: 3 refs (Ma'had + Qiraati + Sekolah).
@@ -298,12 +299,13 @@ export function useSantri() {
       list = list.filter((s) => _normPj(petaPjSantri.value.get(String(s.id))) === t)
     }
 
-    // v.21.12.0526: Ma'had / Fullday / Pulang Pergi
-    if (filterMukim.value === 'mukim') list = list.filter((s) => s.is_mukim === true)
-    else if (filterMukim.value === 'fullday')
-      list = list.filter((s) => !s.is_mukim && s.is_fullday === true)
-    else if (filterMukim.value === 'non-mukim')
-      list = list.filter((s) => !s.is_mukim && !s.is_fullday)
+    // v.21.12.0526: Ma'had / Fullday / Non-mukim — v.1.5.0: + Pondok Laju. Disaring menurut
+    //   LABEL santri (statusSantriKey), jadi Pondok Laju yang juga Fullday masuk "Pondok Laju".
+    //   Nilai URL lama ('mukim', 'non-mukim') tetap dikenali.
+    if (filterMukim.value) {
+      const k = { mukim: 'mahad', 'non-mukim': 'non_mukim' }[filterMukim.value] || filterMukim.value
+      list = list.filter((s) => statusSantriKey(s) === k)
+    }
 
     // v.21.12.0526: Status aktif filter
     if (filterStatus.value === 'aktif') list = list.filter((s) => s.aktif !== false)
@@ -317,6 +319,7 @@ export function useSantri() {
   const stats = computed(() => ({
     total: santri.value.length,
     mukim: santri.value.filter((s) => s.is_mukim).length,
+    pondokLaju: santri.value.filter((s) => statusSantriKey(s) === 'pondok_laju').length,
     nonMukim: santri.value.filter((s) => !s.is_mukim).length,
     perLembaga: santri.value.reduce((acc, s) => {
       const k = s.lembaga || '—'

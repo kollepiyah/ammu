@@ -68,6 +68,8 @@ export function matchStatusOnly(s: Any, statusOnly: unknown): boolean {
   if (wl.length === 0) return true
   const mukim = !!(s && s.is_mukim)
   const fullday = !!(s && s.is_fullday)
+  // v.1.5.0: Pondok Laju (ekor jsonb, diratakan di index.ts) — cermin statusSantri.js.
+  const laju = !!(s && s.is_pondok_laju === true)
   return wl.some((st) =>
     st === 'mahad'
       ? mukim
@@ -75,7 +77,9 @@ export function matchStatusOnly(s: Any, statusOnly: unknown): boolean {
         ? fullday
         : st === 'non_mukim'
           ? !mukim && !fullday
-          : false
+          : st === 'pondok_laju'
+            ? laju && !mukim && !fullday
+            : false
   )
 }
 

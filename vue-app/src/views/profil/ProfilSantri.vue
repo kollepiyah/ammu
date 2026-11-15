@@ -29,9 +29,7 @@
             </p>
             <span
               class="inline-block mt-2 text-[11px] bg-[var(--bg-card)]/25 border border-white/30 text-white font-black px-3 py-1 rounded-full uppercase tracking-widest"
-              >{{
-                santri?.is_mukim ? "Ma'had" : santri?.is_fullday ? 'Fullday' : 'Pulang Pergi'
-              }}</span
+              >{{ labelStatusSantri(santri) }}</span
             >
           </div>
         </div>
@@ -509,6 +507,7 @@ import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402
 import { useToast } from '@/composables/useToast'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+import { labelStatusSantri } from '@/utils/statusSantri' // v.1.5.0: + Pondok Laju
 import { usiaPada } from '@/utils/usia' // umur santri saat masuk (tgl lahir → tgl masuk)
 
 const props = defineProps({

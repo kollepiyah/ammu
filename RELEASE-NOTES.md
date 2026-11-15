@@ -7,6 +7,15 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ## v.1.5.0 — November 2026
 
+**Baru — Pondok Laju**
+
+- **Status santri Pondok Laju.** Di form santri ada centang "Ikut Pondok Laju". Santri Pondok Laju
+  yang juga Fullday tetap ditagih seperti Fullday; yang masih pulang mendapat tagihan Pondok Laju
+  sebagai tambahan, sesuai pengaturan jenis pembayaran.
+- **Semua santri kini berlabel status** di Data Santri: Non-mukim, Fullday, Ma'had, atau Pondok
+  Laju, dan bisa disaring per status.
+- Istilah **"Pulang Pergi" diganti "Non-mukim"**.
+
 **Perbaikan**
 
 - **Penyaring kelas per guru di Data Santri berfungsi untuk semua guru.** Sebelumnya mencentang

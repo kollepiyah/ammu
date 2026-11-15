@@ -521,6 +521,16 @@ export const SANTRI_FIELDS = [
       d.is_fullday = parseBool(v)
     }
   },
+  // v.1.5.0: program Pondok Laju — boleh true bersama Fullday (ditagih Fullday saja).
+  {
+    header: 'Pondok Laju (true/false)',
+    width: 10,
+    aliases: ['Pondok Laju', 'is_pondok_laju'],
+    exp: (s) => (s.is_pondok_laju === true ? 'true' : 'false'),
+    imp: (d, v) => {
+      d.is_pondok_laju = parseBool(v)
+    }
+  },
   // Kyai 3 Agu 2026: dua penanda keuangan yang diisi manual (bukan diturunkan sistem).
   //   Sengaja lewat registry ini supaya sekali ditulis langsung ikut template unduh,
   //   ekspor, DAN impor — jalur paling praktis untuk mengisi 500-an santri.
