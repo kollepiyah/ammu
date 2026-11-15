@@ -132,6 +132,11 @@ const COLS = {
   //   { judul, jam_selesai, tempat, catatan, peserta:[{santri_id,nama,kelas,juz,ajuan_id,tgl_lulus_pj}],
   //     penyimak_guru:[{id,nama}], penyimak_santri:[{id,nama}], dibuat_oleh, tgl_buat }
   ceremonial_ptpt: ['tanggal', 'jam_mulai', 'status', 'periode'],
+  // v.1.5.0 Pondok Laju (migrasi 20261116130000) — SENGAJA bukan realtime (ditarik per
+  //   tanggal/bulan). jadwal data: { kelas_key, kelas_guru, guru_nama, dibuat_oleh, tgl_buat };
+  //   capaian data: { juz, halaman, surah, ayat, catatan, kelas_key, santri_nama, guru_nama }.
+  pondok_laju_jadwal: ['tanggal', 'sesi', 'guru_id', 'periode'],
+  pondok_laju_capaian: ['tanggal', 'sesi', 'santri_id', 'guru_id', 'periode'],
   izin_guru: ['guru_id', 'status'],
   supervisi_catatan: ['target_type', 'target_id', 'judul', 'catatan'],
   // -- konten & sistem --

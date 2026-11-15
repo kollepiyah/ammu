@@ -1,0 +1,440 @@
+// Pondok Laju tahap 5 (Kyai, 15–16 Nov 2026) — aturan MURNI jadwal piket & capaian bacaan.
+//
+// Urutan sesi sesudah sekolah: Tadarus Pagi (guru kelas, tanpa jadwal, tanpa bisyaroh) →
+// Laju 1 → Laju 2. Ketiganya SATU rantai bacaan: tiap sesi melanjutkan posisi sesi sebelumnya.
+// Laju 1/2 disimak guru piket bergilir, satu guru per kelas per sesi. Kelas Pondok Laju =
+// guru kelasnya (guru pagi = guru sore). Yang dicatat hanya POSISI AKHIR per santri.
+// Bisyaroh piket per sesi, HANYA bila guru terjadwal itu hadir (scan) di shift Pondok Laju.
+import { guruKelasLaju, isSantriPondokLaju } from './pondokLaju'
+import { juzNum } from './format'
+import { isPjLembaga } from './glondongan'
+
+export const SESI_LAJU = [
+  { key: 'tadarus', label: 'Tadarus Pagi', piket: false },
+  { key: 'laju1', label: 'Laju 1', piket: true },
+  { key: 'laju2', label: 'Laju 2', piket: true }
+]
+export const SESI_PIKET = SESI_LAJU.filter((s) => s.piket).map((s) => s.key)
+const _RANK = Object.fromEntries(SESI_LAJU.map((s, i) => [s.key, i]))
+
+export function labelSesi(key) {
+  return SESI_LAJU.find((s) => s.key === key)?.label || String(key || '')
+}
+
+const _norm = (v) =>
+  String(v ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+
+/** Kunci kelas Pondok Laju = nama guru kelas (dinormalkan). */
+export function kunciKelasLaju(s) {
+  return _norm(guruKelasLaju(s)) || '-'
+}
+
+/** Potongan aman untuk id baris (huruf/angka/strip). */
+export function slugKelas(key) {
+  return (
+    String(key || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'tanpa-guru'
+  )
+}
+
+/**
+ * Kelas Pondok Laju aktif, dikelompokkan per guru kelas.
+ * `juz` = juz terbanyak di kelas itu (Kyai menyamakan juz sekelas; sisanya tanda belum disamakan).
+ * @returns {Array<{key, guru, juz, santri: Array}>} urut nama guru.
+ */
+export function kelasPondokLaju(santriList) {
+  const peta = new Map()
+  for (const s of santriList || []) {
+    if (!s || s.aktif === false || !isSantriPondokLaju(s)) continue
+    const key = kunciKelasLaju(s)
+    let k = peta.get(key)
+    if (!k) peta.set(key, (k = { key, guru: guruKelasLaju(s), santri: [], _juz: {} }))
+    k.santri.push(s)
+    const j = juzNum(s.juz)
+    if (j) k._juz[j] = (k._juz[j] || 0) + 1
+  }
+  return [...peta.values()]
+    .map(({ _juz, ...k }) => ({
+      ...k,
+      juz:
+        Object.entries(_juz).sort((a, b) => b[1] - a[1] || Number(a[0]) - Number(b[0]))[0]?.[0] ||
+        '',
+      santri: k.santri.sort((a, b) =>
+        String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
+      )
+    }))
+    .sort((a, b) => a.guru.localeCompare(b.guru, 'id'))
+}
+
+// ── Mushaf Usmani Indonesia (604 halaman) ────────────────────────────────────
+// Kyai 15 Nov: juz 1 berakhir di hal. 21, juz 2 mulai hal. 22; tiap juz berikutnya 20 halaman,
+// juz 30 sampai hal. 604.
+export const HALAMAN_MUSHAF = 604
+
+export function rentangHalamanJuz(juz) {
+  const n = Number(juz)
+  if (!Number.isInteger(n) || n < 1 || n > 30) return null
+  if (n === 1) return { awal: 1, akhir: 21 }
+  return { awal: 20 * n - 18, akhir: n === 30 ? HALAMAN_MUSHAF : 20 * n + 1 }
+}
+
+export function juzDariHalaman(hal) {
+  const h = Number(hal)
+  if (!Number.isInteger(h) || h < 1 || h > HALAMAN_MUSHAF) return 0
+  if (h <= 21) return 1
+  return Math.min(30, Math.floor((h - 2) / 20) + 1)
+}
+
+// 114 surah: [nama, jumlah ayat] — nomor surah = indeks + 1 (jumlah ayat seluruhnya 6236).
+export const SURAH = [
+  ['Al-Fatihah', 7],
+  ['Al-Baqarah', 286],
+  ['Ali Imran', 200],
+  ['An-Nisa', 176],
+  ['Al-Maidah', 120],
+  ['Al-An’am', 165],
+  ['Al-A’raf', 206],
+  ['Al-Anfal', 75],
+  ['At-Taubah', 129],
+  ['Yunus', 109],
+  ['Hud', 123],
+  ['Yusuf', 111],
+  ['Ar-Ra’d', 43],
+  ['Ibrahim', 52],
+  ['Al-Hijr', 99],
+  ['An-Nahl', 128],
+  ['Al-Isra', 111],
+  ['Al-Kahf', 110],
+  ['Maryam', 98],
+  ['Taha', 135],
+  ['Al-Anbiya', 112],
+  ['Al-Hajj', 78],
+  ['Al-Mu’minun', 118],
+  ['An-Nur', 64],
+  ['Al-Furqan', 77],
+  ['Asy-Syu’ara', 227],
+  ['An-Naml', 93],
+  ['Al-Qasas', 88],
+  ['Al-Ankabut', 69],
+  ['Ar-Rum', 60],
+  ['Luqman', 34],
+  ['As-Sajdah', 30],
+  ['Al-Ahzab', 73],
+  ['Saba', 54],
+  ['Fatir', 45],
+  ['Yasin', 83],
+  ['As-Saffat', 182],
+  ['Sad', 88],
+  ['Az-Zumar', 75],
+  ['Gafir', 85],
+  ['Fussilat', 54],
+  ['Asy-Syura', 53],
+  ['Az-Zukhruf', 89],
+  ['Ad-Dukhan', 59],
+  ['Al-Jasiyah', 37],
+  ['Al-Ahqaf', 35],
+  ['Muhammad', 38],
+  ['Al-Fath', 29],
+  ['Al-Hujurat', 18],
+  ['Qaf', 45],
+  ['Az-Zariyat', 60],
+  ['At-Tur', 49],
+  ['An-Najm', 62],
+  ['Al-Qamar', 55],
+  ['Ar-Rahman', 78],
+  ['Al-Waqi’ah', 96],
+  ['Al-Hadid', 29],
+  ['Al-Mujadalah', 22],
+  ['Al-Hasyr', 24],
+  ['Al-Mumtahanah', 13],
+  ['As-Saff', 14],
+  ['Al-Jumu’ah', 11],
+  ['Al-Munafiqun', 11],
+  ['At-Tagabun', 18],
+  ['At-Talaq', 12],
+  ['At-Tahrim', 12],
+  ['Al-Mulk', 30],
+  ['Al-Qalam', 52],
+  ['Al-Haqqah', 52],
+  ['Al-Ma’arij', 44],
+  ['Nuh', 28],
+  ['Al-Jinn', 28],
+  ['Al-Muzzammil', 20],
+  ['Al-Muddassir', 56],
+  ['Al-Qiyamah', 40],
+  ['Al-Insan', 31],
+  ['Al-Mursalat', 50],
+  ['An-Naba', 40],
+  ['An-Nazi’at', 46],
+  ['Abasa', 42],
+  ['At-Takwir', 29],
+  ['Al-Infitar', 19],
+  ['Al-Mutaffifin', 36],
+  ['Al-Insyiqaq', 25],
+  ['Al-Buruj', 22],
+  ['At-Tariq', 17],
+  ['Al-A’la', 19],
+  ['Al-Gasyiyah', 26],
+  ['Al-Fajr', 30],
+  ['Al-Balad', 20],
+  ['Asy-Syams', 15],
+  ['Al-Lail', 21],
+  ['Ad-Duha', 11],
+  ['Asy-Syarh', 8],
+  ['At-Tin', 8],
+  ['Al-Alaq', 19],
+  ['Al-Qadr', 5],
+  ['Al-Bayyinah', 8],
+  ['Az-Zalzalah', 8],
+  ['Al-Adiyat', 11],
+  ['Al-Qari’ah', 11],
+  ['At-Takasur', 8],
+  ['Al-Asr', 3],
+  ['Al-Humazah', 9],
+  ['Al-Fil', 5],
+  ['Quraisy', 4],
+  ['Al-Ma’un', 7],
+  ['Al-Kausar', 3],
+  ['Al-Kafirun', 6],
+  ['An-Nasr', 3],
+  ['Al-Lahab', 5],
+  ['Al-Ikhlas', 4],
+  ['Al-Falaq', 5],
+  ['An-Nas', 6]
+]
+
+export function namaSurah(no) {
+  return SURAH[Number(no) - 1]?.[0] || ''
+}
+export function jumlahAyat(no) {
+  return SURAH[Number(no) - 1]?.[1] || 0
+}
+
+const _int = (v) => {
+  const t = String(v ?? '').trim()
+  return /^\d+$/.test(t) ? Number(t) : NaN
+}
+
+/**
+ * Pesan galat satu posisi bacaan; [] = sah. Juz & halaman wajib; surah & ayat boleh kosong,
+ * tapi ayat butuh surah dan tak boleh melebihi jumlah ayat surahnya.
+ */
+export function validasiPosisi(p) {
+  const err = []
+  const juz = _int(p?.juz)
+  const hal = _int(p?.halaman)
+  if (!(juz >= 1 && juz <= 30)) err.push('Juz harus 1–30')
+  if (!(hal >= 1 && hal <= HALAMAN_MUSHAF)) err.push(`Halaman harus 1–${HALAMAN_MUSHAF}`)
+  else if (juz >= 1 && juz <= 30) {
+    const r = rentangHalamanJuz(juz)
+    if (hal < r.awal || hal > r.akhir) err.push(`Halaman juz ${juz} adalah ${r.awal}–${r.akhir}`)
+  }
+  const adaSurah = String(p?.surah ?? '').trim() !== ''
+  const adaAyat = String(p?.ayat ?? '').trim() !== ''
+  const surah = _int(p?.surah)
+  if (adaSurah && !(surah >= 1 && surah <= 114)) err.push('Surah tidak dikenal')
+  if (adaAyat) {
+    const ayat = _int(p?.ayat)
+    if (!adaSurah) err.push('Pilih surah dulu sebelum ayat')
+    else if (surah >= 1 && surah <= 114 && !(ayat >= 1 && ayat <= jumlahAyat(surah)))
+      err.push(`Ayat ${namaSurah(surah)} 1–${jumlahAyat(surah)}`)
+  }
+  return err
+}
+
+/** Teks ringkas satu posisi: "Juz 7 · hal. 130 · Al-Baqarah 200". */
+export function teksPosisi(p) {
+  if (!p) return ''
+  const bag = []
+  if (p.juz) bag.push(`Juz ${p.juz}`)
+  if (p.halaman) bag.push(`hal. ${p.halaman}`)
+  if (p.surah) bag.push(`${namaSurah(p.surah)}${p.ayat ? ' ' + p.ayat : ''}`)
+  return bag.join(' · ')
+}
+
+// ── Rantai posisi: Tadarus Pagi → Laju 1 → Laju 2 → hari berikutnya ─────────
+function _banding(a, b) {
+  return (
+    String(a.tanggal || '').localeCompare(String(b.tanggal || '')) ||
+    (_RANK[a.sesi] ?? 9) - (_RANK[b.sesi] ?? 9)
+  )
+}
+
+/** Posisi terakhir santri SEBELUM (tanggal, sesi) — isian awal sesi ini. null bila belum ada. */
+export function posisiSebelum(rows, santriId, tanggal, sesi) {
+  const batas = { tanggal, sesi }
+  let best = null
+  for (const r of rows || []) {
+    if (String(r?.santri_id) !== String(santriId)) continue
+    if (_banding(r, batas) >= 0) continue
+    if (!best || _banding(r, best) > 0) best = r
+  }
+  return best
+}
+
+/** Map santriId → baris capaian terakhir (untuk ringkasan & tampilan wali). */
+export function posisiTerakhirPerSantri(rows) {
+  const out = new Map()
+  for (const r of rows || []) {
+    const k = String(r?.santri_id ?? '')
+    if (!k) continue
+    const cur = out.get(k)
+    if (!cur || _banding(r, cur) > 0) out.set(k, r)
+  }
+  return out
+}
+
+/** Urutkan baris capaian dari yang TERBARU. */
+export function urutTerbaru(rows) {
+  return [...(rows || [])].sort((a, b) => _banding(b, a))
+}
+
+// ── Jadwal piket ─────────────────────────────────────────────────────────────
+export function idJadwal(tanggal, sesi, kelasKey) {
+  return `${tanggal}_${sesi}_${slugKelas(kelasKey)}`
+}
+export function idCapaian(tanggal, sesi, santriId) {
+  return `${tanggal}_${sesi}_${santriId}`
+}
+
+/** Tanggal satu bulan 'YYYY-MM' tanpa hari libur mingguan (bawaan Ahad, cermin hariEfektif). */
+export function tanggalBulan(ym, liburMingguan = [0]) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(ym || ''))
+  if (!m) return []
+  const y = Number(m[1])
+  const mo = Number(m[2])
+  const hari = new Date(Date.UTC(y, mo, 0)).getUTCDate()
+  const out = []
+  for (let d = 1; d <= hari; d++) {
+    const dow = new Date(Date.UTC(y, mo - 1, d)).getUTCDay()
+    if (liburMingguan.includes(dow)) continue
+    out.push(`${ym}-${String(d).padStart(2, '0')}`)
+  }
+  return out
+}
+
+/**
+ * Rencana piket BERGILIR (Kyai: "jadwalnya tidak tetap, selang-seling"). Guru diputar
+ * berurutan melintasi tanggal → sesi → kelas, jadi selama jumlah guru ≥ jumlah kelas tak ada
+ * guru yang memegang dua kelas di sesi yang sama, dan giliran tiap guru merata.
+ * Hasilnya USULAN — penyusun masih bisa mengganti per sel sebelum menyimpan.
+ * @returns {Array<{tanggal, sesi, kelas_key, guru_id}>}
+ */
+export function rencanaBergilir({
+  tanggal = [],
+  kelas = [],
+  guru = [],
+  sesi = SESI_PIKET,
+  mulai = 0
+} = {}) {
+  const out = []
+  if (!guru.length || !kelas.length) return out
+  let i = mulai
+  for (const t of tanggal) {
+    for (const s of sesi) {
+      for (const k of kelas) {
+        out.push({ tanggal: t, sesi: s, kelas_key: k, guru_id: String(guru[i % guru.length]) })
+        i++
+      }
+    }
+  }
+  return out
+}
+
+/** Guru yang memegang dua kelas atau lebih di (tanggal, sesi) yang sama — peringatan jadwal. */
+export function bentrokJadwal(rows) {
+  const peta = new Map()
+  for (const r of rows || []) {
+    if (!r?.guru_id) continue
+    const k = `${r.tanggal}|${r.sesi}|${r.guru_id}`
+    peta.set(k, (peta.get(k) || 0) + 1)
+  }
+  return [...peta.entries()]
+    .filter(([, n]) => n > 1)
+    .map(([k, n]) => {
+      const [tanggal, sesi, guru_id] = k.split('|')
+      return { tanggal, sesi, guru_id, kelas: n }
+    })
+}
+
+// ── Peran ────────────────────────────────────────────────────────────────────
+/** Admin Pondok Laju = master/lembaga PTPT `admin_pondok_laju` [guruId] (cermin RLS). */
+export function adminPondokLaju(lembagaList) {
+  const o = (lembagaList || []).find((l) => (l?.lembaga || l?.nama) === 'PTPT')
+  const arr = Array.isArray(o?.admin_pondok_laju) ? o.admin_pondok_laju : []
+  return [...new Set(arr.map((x) => String(x)).filter(Boolean))]
+}
+
+/** Boleh menyusun jadwal? super/admin, PJ PTPT, atau Admin Pondok Laju — subset policy RLS. */
+export function bolehSusunJadwal(sesi, lembagaList) {
+  if (!sesi) return false
+  if (sesi.id === 'admin' || ['super_admin', 'admin'].includes(sesi.role_sistem)) return true
+  if (isPjLembaga(sesi, 'PTPT')) return true
+  return adminPondokLaju(lembagaList).includes(String(sesi.id ?? ''))
+}
+
+// ── Bisyaroh piket ───────────────────────────────────────────────────────────
+/**
+ * Sesi Laju yang DIBAYAR satu guru. Per tanggal: dibayar = min(sesi terjadwal, shift Pondok
+ * Laju yang ia hadiri hari itu). Hadir = status hadir/terlambat di shift yang dipilih Kyai
+ * (`shiftIds`, dari scope Jenis Bisyaroh). Tanpa shift terpilih tak ada yang terbayar —
+ * aturan Kyai: bisyaroh hanya bila guru absen di shift Pondok Laju.
+ * @returns {{ terjadwal: number, dibayar: number, rincian: Array<{tanggal, sesi: Array, hadir: number, dibayar: number}> }}
+ */
+export function sesiLajuTerbayar({
+  jadwal = [],
+  absensi = [],
+  guruId,
+  dalamPeriode = () => true,
+  shiftIds = []
+} = {}) {
+  const gid = String(guruId ?? '')
+  const ids = new Set([...(shiftIds || [])].map((x) => String(x).toLowerCase()))
+  const perTgl = new Map()
+  for (const r of jadwal) {
+    if (String(r?.guru_id ?? '') !== gid) continue
+    const t = String(r.tanggal || '').slice(0, 10)
+    if (!t || !dalamPeriode(t)) continue
+    if (!perTgl.has(t)) perTgl.set(t, [])
+    perTgl.get(t).push(r.sesi)
+  }
+  const hadirTgl = new Map()
+  if (ids.size) {
+    for (const a of absensi) {
+      if (String(a?.guru_id ?? '') !== gid) continue
+      const st = String(a.status || '').toLowerCase()
+      if (st !== 'hadir' && st !== 'terlambat') continue
+      const sh = String(a.shift || '').toLowerCase()
+      if (!ids.has(sh)) continue
+      const t = String(a.tanggal || '').slice(0, 10)
+      if (!hadirTgl.has(t)) hadirTgl.set(t, new Set())
+      hadirTgl.get(t).add(sh)
+    }
+  }
+  let terjadwal = 0
+  let dibayar = 0
+  const rincian = []
+  for (const [t, sesi] of [...perTgl.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const hadir = hadirTgl.get(t)?.size || 0
+    const bayar = Math.min(sesi.length, hadir)
+    terjadwal += sesi.length
+    dibayar += bayar
+    rincian.push({ tanggal: t, sesi, hadir, dibayar: bayar })
+  }
+  return { terjadwal, dibayar, rincian }
+}
+
+const _HARI = ['Ahad', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+const _BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+/** 'YYYY-MM-DD' → "Sel, 17 Nov" (dihitung UTC: tanggalnya sudah tanggal WIB, jangan digeser). */
+export function fmtTanggalPendek(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '').slice(0, 10))
+  if (!m) return '-'
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+  return `${_HARI[d.getUTCDay()]}, ${+m[3]} ${_BLN[+m[2] - 1]}`
+}

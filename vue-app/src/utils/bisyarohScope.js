@@ -48,6 +48,13 @@ export const HITUNGAN_OPTIONS = [
     value: 'per_shift',
     label: '× Shift',
     hint: 'Nominal × jumlah shift guru yang cocok (mengajar pagi+sore = 2×)'
+  },
+  // v.1.5.0 (Kyai 15 Nov 2026): bisyaroh piket Pondok Laju per sesi, HANYA bila guru terjadwal
+  //   itu hadir di shift Pondok Laju (kolom Shift). Aturannya utils/pondokLajuSesi.sesiLajuTerbayar.
+  {
+    value: 'per_sesi_laju',
+    label: '× sesi Pondok Laju',
+    hint: 'Tarif × sesi Laju 1/Laju 2 yang DIJADWALKAN untuk guru ini dan ia hadir (scan) di shift yang dipilih di kolom Shift. Shift wajib diisi; jabatan & lembaga tak menyaring (semua guru bisa dapat piket).'
   }
 ]
 
@@ -101,9 +108,14 @@ export function normalizeJenisBisyaroh(raw) {
   return {
     id,
     label: String(r.label || '').trim() || id,
-    hitungan: ['per_hadir', 'per_tepat', 'per_jp', 'per_jp_bulanan', 'per_shift'].includes(
-      r.hitungan
-    )
+    hitungan: [
+      'per_hadir',
+      'per_tepat',
+      'per_jp',
+      'per_jp_bulanan',
+      'per_shift',
+      'per_sesi_laju'
+    ].includes(r.hitungan)
       ? r.hitungan
       : 'flat',
     nominal: Number(r.nominal) > 0 ? Number(r.nominal) : 0,
@@ -319,10 +331,42 @@ function barisPerJp(j, ctx, refs) {
   return out
 }
 
+/**
+ * Baris piket Pondok Laju (`per_sesi_laju`) — jalur tersendiri: guru lembaga mana pun bisa
+ * dapat piket, jadi jabatan/lembaga tak menyaring dan `scope.shift` dipakai sebagai shift
+ * KEHADIRAN Laju (bukan shift milik guru). Hanya terbit bila ada sesi yang dibayar.
+ * `ctx.sesiLaju(shiftIds)` → jumlah sesi dibayar (BisyarohView, dari sesiLajuTerbayar).
+ */
+function barisSesiLaju(j, ctx) {
+  const s = j.scope || {}
+  if (s.guru_ids && s.guru_ids.length > 0) {
+    if (!s.guru_ids.map(String).includes(String(ctx?.guruId ?? ''))) return []
+  }
+  if (!cocokJk(s, ctx)) return []
+  const qty = Number(ctx?.sesiLaju?.(s.shift || [])) || 0
+  if (qty <= 0) return []
+  return [
+    {
+      jenis_id: j.id,
+      kategori: 'tambahan',
+      lembaga: 'Pondok Laju',
+      label: j.label,
+      hitungan: 'per_sesi_laju',
+      qty,
+      tarif: j.nominal,
+      nominal: qty * j.nominal
+    }
+  ]
+}
+
 export function barisBisyaroh(jenisList, ctx) {
   const out = []
   const refs = ctx?.refs || []
   for (const j of jenisList || []) {
+    if (j && j.aktif !== false && j.hitungan === 'per_sesi_laju') {
+      out.push(...barisSesiLaju(j, ctx))
+      continue
+    }
     // Jenis per-JP punya jalur sendiri: lembaganya dari Beban Mengajar, dan boleh
     //   menerbitkan lebih dari satu baris (satu per lembaga yang diajar).
     if (j && j.aktif !== false && (j.hitungan === 'per_jp' || j.hitungan === 'per_jp_bulanan')) {

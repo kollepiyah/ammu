@@ -58,6 +58,8 @@ const TesSekolahView = () => import('@/views/TesSekolahView.vue')
 // v.111: Glondongan PTPT (muroja'ah kumulatif — koordinator tugaskan, penguji nilai; tak ke rapor)
 const GlondonganView = () => import('@/views/GlondonganView.vue')
 const CeremonialView = () => import('@/views/CeremonialView.vue')
+// v.1.5.0: Pondok Laju — jadwal piket Laju, capaian bacaan, bisyaroh piket
+const PondokLajuView = () => import('@/views/PondokLajuView.vue')
 // v.66.0526: Kalender Kegiatan + Dashboard Statistik full Vue (Batch B)
 const KalenderKegiatanView = () => import('@/views/KalenderKegiatanView.vue')
 // v.110: hub Dasbor Statistik — gabung dasbor (Ringkasan) + Laporan/Analitik (satu deret tab).
@@ -313,6 +315,13 @@ const routes = [
         path: 'ceremonial',
         name: 'ceremonial',
         component: CeremonialView,
+        meta: { noSantri: true }
+      },
+      // v.1.5.0: Pondok Laju
+      {
+        path: 'pondok-laju',
+        name: 'pondok-laju',
+        component: PondokLajuView,
         meta: { noSantri: true }
       },
       {

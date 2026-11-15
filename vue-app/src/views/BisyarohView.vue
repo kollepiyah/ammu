@@ -1486,6 +1486,7 @@ import {
   setOne,
   mergeOne,
   deleteOne,
+  queryColl,
   serverTimestamp
 } from '@/services/db'
 // v.1.4.3: kas keluar milik slip yang dihapus ikut dihapus lewat pintu tunggal hapus baris uang
@@ -1542,10 +1543,13 @@ import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.
 //   yang dipakai menghitung JP-nya, dan selisihnya tak terlihat di layar mana pun.
 import {
   penyaringPeriodeBisyaroh,
+  rentangPeriodeBisyaroh,
   tanggalPeriodeBisyaroh,
   tanggalPeriodeSampai,
   labelPeriodeBisyaroh
 } from '@/utils/periodeBisyaroh'
+// v.1.5.0: bisyaroh piket Pondok Laju per sesi — satu aturan dengan tab Bisyaroh di menu Pondok Laju.
+import { sesiLajuTerbayar } from '@/utils/pondokLajuSesi'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -2059,6 +2063,37 @@ const now = new Date()
 const bulan = ref(now.getMonth() + 1)
 const tahun = ref(now.getFullYear())
 
+// v.1.5.0: jadwal piket Pondok Laju jendela periode terpilih (25→24). Tabelnya bukan realtime —
+//   ditarik ulang tiap periode berganti; generate slip menunggu tarikan ini (pastikanJadwalLaju).
+const jadwalLaju = ref([])
+let _jadwalLajuJanji = null
+let _jadwalLajuPeriode = ''
+function pastikanJadwalLaju(periode) {
+  if (_jadwalLajuJanji && _jadwalLajuPeriode === periode) return _jadwalLajuJanji
+  const r = rentangPeriodeBisyaroh(periode)
+  _jadwalLajuPeriode = periode
+  _jadwalLajuJanji = !r
+    ? Promise.resolve()
+    : queryColl('pondok_laju_jadwal', [
+        ['tanggal', '>=', r.start],
+        ['tanggal', '<=', r.end]
+      ])
+        .then((rows) => {
+          if (_jadwalLajuPeriode === periode) jadwalLaju.value = rows || []
+        })
+        .catch((e) => {
+          // Tabel belum dimigrasi / tak terbaca → tak ada sesi terbayar, slip lain tetap jalan.
+          console.warn('[bisyaroh] jadwal Pondok Laju tak terbaca:', e?.message || e)
+          if (_jadwalLajuPeriode === periode) jadwalLaju.value = []
+        })
+  return _jadwalLajuJanji
+}
+watch(
+  [tahun, bulan],
+  () => pastikanJadwalLaju(`${tahun.value}-${String(bulan.value).padStart(2, '0')}`),
+  { immediate: true }
+)
+
 // v.1.4.1: label rentang absensi yang sedang dihitung, mis. "25 Agu – 24 Sep 2026".
 //   Ditampilkan di dua tempat (Per Guru & Bulk) — nama bulan slip saja tak cukup
 //   memberi tahu tanggal berapa kehadirannya ditutup buku.
@@ -2323,7 +2358,14 @@ function ctxGuruPenuh(g, periode) {
     efektifPerShift: hadirPerShift,
     tahunPengabdian: tahunPengabdian(g.tanggal_mengabdi, akhirBulanPeriode(periode)),
     bebanJPByLembaga: bebanJP,
-    jpDiajarByLembaga
+    jpDiajarByLembaga,
+    // v.1.5.0: hadir penuh = semua sesi piket yang terjadwal terbayar.
+    sesiLaju: () =>
+      sesiLajuTerbayar({
+        jadwal: jadwalLaju.value,
+        guruId: g.id,
+        dalamPeriode: penyaringPeriodeBisyaroh(periode)
+      }).terjadwal
   }
 }
 
@@ -2552,7 +2594,16 @@ function ctxGuru(g, periode) {
     tahunPengabdian: tahunPengabdian(g.tanggal_mengabdi, akhirBulanPeriode(periode)),
     // per_jp (bisyaroh sekolah, opsi C): JP mingguan (info) + JP benar-benar diajar.
     bebanJPByLembaga: bebanJP,
-    jpDiajarByLembaga
+    jpDiajarByLembaga,
+    // v.1.5.0: per_sesi_laju — sesi piket terjadwal yang gurunya hadir di shift Laju (scope.shift).
+    sesiLaju: (shiftIds) =>
+      sesiLajuTerbayar({
+        jadwal: jadwalLaju.value,
+        absensi: absensiShift.value,
+        guruId: g.id,
+        dalamPeriode: penyaringPeriodeBisyaroh(periode),
+        shiftIds
+      }).dibayar
   }
 }
 
@@ -2579,7 +2630,9 @@ function buildLineItemsFromGuru(g, periode) {
           ? `${b.label} (${fmtJP(b.qty)}${b.terjadwal ? ' dari ' + fmtJP(b.terjadwal) : ''} JP diajar × ${fmtRp(b.tarif)})`
           : b.hitungan === 'per_shift'
             ? `${b.label} (${b.qty} shift × ${fmtRp(b.tarif)})`
-            : b.label,
+            : b.hitungan === 'per_sesi_laju'
+              ? `${b.label} (${b.qty} sesi × ${fmtRp(b.tarif)})`
+              : b.label,
     nominal: b.nominal,
     jenis_id: b.jenis_id
   }))
@@ -2982,6 +3035,7 @@ async function jalankanPratinjau() {
     //   kecil daripada yang nanti tersimpan. Idempoten & create-only, dan layar ini
     //   memang sudah menjalankannya otomatis tiap periode berganti.
     await materialisasiGabunganPeriode(periode)
+    await pastikanJadwalLaju(periode) // v.1.5.0: piket Pondok Laju periode ini sudah terbaca
     const rows = []
     for (const g of bulkTargets.value) {
       const payload = buildSlipPayload(g, periode, rows.length, { via: 'pratinjau' })
@@ -3032,6 +3086,7 @@ async function bulkGenerate() {
     // Bagian B: pastikan "hadir sekolah" guru gabungan sudah materialisasi SEBELUM hitung bonus.
     const nGab = await materialisasiGabunganPeriode(periode)
     if (nGab > 0) bulkLog.value.push(`Sinkron gabungan: ${nGab} hadir sekolah otomatis dibuat`)
+    await pastikanJadwalLaju(periode) // v.1.5.0: piket Pondok Laju periode ini sudah terbaca
     let bulkSeq = 0
     for (const g of bulkTargets.value) {
       try {

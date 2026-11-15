@@ -57,6 +57,47 @@
         </div>
       </div>
 
+      <!-- v.1.5.0 (Kyai 15 Nov 2026): wali boleh melihat capaian Pondok Laju anaknya — posisi
+           terakhir rantai Tadarus Pagi → Laju 1 → Laju 2. Ditarik sekali (bukan dilanggan). -->
+      <div
+        v-if="isLaju"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-teal-300 dark:border-teal-700 shadow-sm space-y-2"
+      >
+        <p class="text-xs font-black text-teal-700 dark:text-teal-300 uppercase tracking-wider">
+          <i class="fas fa-book-quran mr-1"></i>Capaian Pondok Laju
+        </p>
+        <p v-if="lajuMemuat" class="text-xs text-[var(--text-secondary)]">
+          <i class="fas fa-spinner fa-spin mr-1"></i>Memuat…
+        </p>
+        <p v-else-if="!lajuRows.length" class="text-xs text-[var(--text-tertiary)] italic">
+          Belum ada capaian Pondok Laju yang tercatat.
+        </p>
+        <template v-else>
+          <p class="text-lg md:text-xl font-black text-[var(--text-primary)]">
+            {{ teksPosisi(lajuRows[0]) }}
+          </p>
+          <p class="text-[11px] text-[var(--text-secondary)]">
+            Posisi terakhir · {{ labelSesi(lajuRows[0].sesi) }} ·
+            {{ fmtTanggalPendek(lajuRows[0].tanggal) }}
+          </p>
+          <ul
+            v-if="lajuRows.length > 1"
+            class="pt-2 border-t border-[var(--border-subtle)] space-y-0.5"
+          >
+            <li
+              v-for="r in lajuRows.slice(1)"
+              :key="r.id"
+              class="text-[11px] text-[var(--text-secondary)] flex justify-between gap-2"
+            >
+              <span class="flex-shrink-0"
+                >{{ fmtTanggalPendek(r.tanggal) }} · {{ labelSesi(r.sesi) }}</span
+              >
+              <span class="truncate text-right">{{ teksPosisi(r) }}</span>
+            </li>
+          </ul>
+        </template>
+      </div>
+
       <!-- Grid 2 kolom: Data Saat Ini + Capaian Bulan Ini.
            v.1.4.9 (Kyai): capaian bulanan hanya PTPT & PPPH (utils/prestasiBulanan) — santri
            TPQ s/d Pra PTPT melihat Data Saat Ini + hasil tes kenaikan saja. -->
@@ -376,10 +417,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
-import { subscribeColl } from '@/services/db'
+import { subscribeColl, queryColl } from '@/services/db'
 import { useSantri } from '@/composables/useSantri'
 import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
@@ -387,6 +428,9 @@ import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (ant
 // v.1.4.9: capaian bulanan hanya PTPT & PPPH — aturan yang sama dengan sisi guru (Rekap Prestasi).
 import { punyaPrestasiBulanan } from '@/utils/prestasiBulanan'
 import { riwayatHasilTes, STATUS_LABEL } from '@/utils/tesKenaikan'
+// v.1.5.0: capaian Pondok Laju untuk wali (RLS: hanya keluarga sendiri).
+import { isSantriPondokLaju } from '@/utils/pondokLaju'
+import { teksPosisi, labelSesi, urutTerbaru, fmtTanggalPendek } from '@/utils/pondokLajuSesi'
 
 const auth = useAuthStore()
 const settings = useSettingsStore()
@@ -397,6 +441,33 @@ const santriId = computed(() => String(auth.sesiAktif?.id || ''))
 
 // Santri object dari santriRaw real-time list
 const santri = computed(() => santriRaw.value.find((s) => String(s.id) === santriId.value) || null)
+
+// v.1.5.0: capaian Pondok Laju — 9 catatan terakhir (≈ 3 hari: Tadarus Pagi, Laju 1, Laju 2).
+const isLaju = computed(() => isSantriPondokLaju(santri.value))
+const lajuRows = ref([])
+const lajuMemuat = ref(false)
+watch(
+  () => (isLaju.value ? santriId.value : ''),
+  async (id) => {
+    lajuRows.value = []
+    if (!id) return
+    lajuMemuat.value = true
+    try {
+      const rows = await queryColl(
+        'pondok_laju_capaian',
+        [['santri_id', '==', id]],
+        [['tanggal', 'desc']],
+        9
+      )
+      lajuRows.value = urutTerbaru(rows)
+    } catch (e) {
+      lajuRows.value = [] // tabel belum dimigrasi / tak terbaca → kartu kosong, halaman tetap jalan
+    } finally {
+      lajuMemuat.value = false
+    }
+  },
+  { immediate: true }
+)
 
 // v.100c: id santri (stabil) untuk TrenCapaianChart — tren capaian diri/anak.
 const santriIdsTren = computed(() => (santriId.value ? [santriId.value] : []))

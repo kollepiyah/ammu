@@ -144,6 +144,17 @@ const ALL_MENUS = [
     featureFlag: 'fiturCeremonial',
     unitOnly: 'PTPT'
   },
+  // v.1.5.0 (Kyai 15 Nov 2026): Pondok Laju — jadwal piket Laju 1/2, capaian Tadarus Pagi →
+  //   Laju 1 → Laju 2, bisyaroh piket. TANPA unitOnly: guru lembaga mana pun bisa dapat piket.
+  {
+    group: 'Pendidikan',
+    name: 'Pondok Laju',
+    path: '/pondok-laju',
+    icon: 'fa-book-quran',
+    roles: ['admin', 'guru'],
+    available: true,
+    featureFlag: 'fiturPondokLaju'
+  },
   {
     group: 'Pendidikan',
     name: 'Rekap Prestasi',

@@ -28,6 +28,15 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   khusus santri Pondok Laju.
 - **Peringkat Guru** di Tes Kenaikan → Rekap: guru diurutkan menurut jumlah santri yang lulus tes
   dari ajuannya, per bulan atau periode bebas.
+- **Menu baru "Pondok Laju"**:
+  - **Capaian**: guru mencatat posisi akhir bacaan (juz, halaman, surah, ayat) tiap sesi — Tadarus
+    Pagi, Laju 1, Laju 2. Isiannya otomatis melanjutkan posisi terakhir, dan bisa diisi sekali untuk
+    sekelas.
+  - **Jadwal piket** Laju 1 dan Laju 2, bisa direncanakan sebulan secara bergilir oleh Admin Pondok
+    Laju, PJ, atau admin.
+  - **Bisyaroh piket** dibayar per sesi bila guru yang terjadwal hadir di shift Pondok Laju, dan
+    langsung masuk slip bisyaroh.
+  - Wali santri bisa melihat capaian Pondok Laju anaknya di halaman Capaian Prestasi.
 
 - **Label shift** "Pagi-Sore", "Pagi", atau "Sore" kini tampil untuk semua santri.
 - **Data Guru bisa disaring per jenis**: Qiraati-Sekolah, Qiraati, Sekolah, atau Pegawai.

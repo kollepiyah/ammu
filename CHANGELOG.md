@@ -22,17 +22,32 @@ berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AA
 
 ---
 
-## [v.1.5.0] — 2026-11-16 — Pondok Laju tahap 1–4: status santri Pondok Laju, tes/glondongan/seremonial satu kelas, prestasi per kelas, Top 10, peringkat guru, "Non-mukim"
+## [v.1.5.0] — 2026-11-16 — Pondok Laju: status santri, tes/glondongan/seremonial satu kelas, prestasi per kelas, Top 10, peringkat guru, menu Pondok Laju (jadwal piket, capaian, bisyaroh), "Non-mukim"
 
 **DITAHAN (Kyai, 15 Nov 2026)** — jangan deploy / rebuild AAB / rilis Electron dulu: v.1.5.0
-dirilis BERSAMA fitur Pondok Laju (tahap 1–4 dari 5 selesai di gelombang ini).
+dirilis BERSAMA fitur Pondok Laju. Kelima tahap selesai di gelombang ini (16 Nov); tinggal tinjauan
+Kyai dan pembahasan absen guru yang Kyai minta di akhir.
 
 **SIAP RILIS (setelah Pondok Laju lengkap)** — `versionCode` 150 / `versionName` `v.1.5.0`, gelombang 2.
 Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah meratakan `data`).
-**Satu migrasi**: `20261116120000_rapikan_nama_juz.sql` (perapian DATA nama berpetik & juz — lihat
-Fixed). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOnly`) → deploy ulang
-fungsi itu. Urutan: `supabase db push` → deploy web → deploy fungsi → rebuild AAB → rilis Electron.
+**Dua migrasi**: `20261116120000_rapikan_nama_juz.sql` (perapian DATA nama berpetik & juz — lihat
+Fixed) dan `20261116130000_pondok_laju.sql` (tabel `pondok_laju_jadwal` & `pondok_laju_capaian` +
+RLS + `auth_is_admin_pondok_laju`). **Edge function `auto-generate-tagihan` berubah** (cermin
+`matchStatusOnly`) → deploy ulang fungsi itu. Urutan: `supabase db push` → deploy web → deploy
+fungsi → rebuild AAB → rilis Electron. **Sesudah rilis, Kyai mengatur:** (1) Master Shift — shift
+Laju 1/Laju 2 dengan jamnya; (2) Pengaturan Keuangan → Jenis Bisyaroh — cara hitung "× sesi Pondok
+Laju", tarif per sesi, kolom Shift = shift Laju; (3) menu Pondok Laju → Peran — Admin Pondok Laju.
 
+Diuji (tahap 5): vitest 130 berkas / 1.888 tes (baru `pondokLajuSesi`: mushaf 604 hal. bolak-balik,
+114 surah = 6.236 ayat, rantai posisi, jadwal bergilir, bisyaroh per sesi, baris slip), migrasi di
+PGlite sebagai role biasa (penyusun jadwal: super/PJ/Admin Pondok Laju ya, guru biasa ditolak; wali
+hanya membaca capaian keluarga; guru menulis capaian tapi tak menghapus; idempoten), build. Di
+peramban dengan basis data TIRUAN untuk tabel baru + penjaga tulis (tulisan lain diblokir): capaian
+Tadarus Pagi terisi dari Laju 2 kemarin lalu Laju 1 melanjutkan, validasi halaman per juz, jadwal
+bergilir 48 sel tanpa bentrok + peringatan bentrok + hapus sel, sudut pandang guru piket/guru
+kelas/PJ, riwayat, rekap bisyaroh (2 sesi hadir = Rp30.000; hadir di shift pagi tak dibayar),
+baris slip di BisyarohView, Peran menyimpan `admin_pondok_laju` tanpa mengubah isian PTPT lain,
+kartu wali. **Belum** dicoba dengan akun & data nyata, dan tabel baru belum ada di produksi.
 Diuji (tahap 4): vitest 129 berkas / 1.876 tes (baru `peringkatTahap4`), eslint 0 error,
 `npm run build --prefix vue-app` (kelas Tailwind baru ada di CSS produksi). Di peramban (data
 rekaan + penjaga tulis, satu-satunya tulisan = uji penjaga): isian sekali per kelas di Rekap
@@ -131,6 +146,31 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 - **Peringkat Guru** di Tes Kenaikan → Rekap: jumlah santri yang LULUS tes dari ajuan guru itu
   (guru pengaju, bukan penguji), semua lembaga, per bulan atau periode bebas (tanggal hasil tes),
   dengan rincian per lembaga dan daftar santrinya. Aturan murni `utils/peringkatGuru`.
+
+### Added — Pondok Laju tahap 5: menu Pondok Laju (jadwal piket, capaian, bisyaroh, peran)
+
+- **Menu "Pondok Laju"** (Pendidikan; admin & guru — tanpa gerbang unit, guru lembaga mana pun bisa
+  dapat piket). Aturan murni di `utils/pondokLajuSesi` (+ tes), data di dua tabel baru yang ditarik
+  per tanggal/bulan (sengaja bukan realtime — hemat egress).
+- **Capaian**: pilih tanggal, sesi (Tadarus Pagi / Laju 1 / Laju 2), dan kelas; tiap santri diisi
+  posisi akhir — halaman (juz terisi otomatis), juz, surah (114, nomor ayat dibatasi), ayat, catatan.
+  Isian awal = posisi terakhir sebelumnya (rantai Tadarus Pagi → Laju 1 → Laju 2 → esok hari), ada
+  "isi sekali untuk sekelas". Halaman divalidasi terhadap juznya (mushaf Usmani Indonesia, juz 2
+  mulai hal. 22). Tadarus Pagi dicatat guru kelas; Laju dicatat guru piket terjadwal; admin & penyusun
+  jadwal boleh semua.
+- **Jadwal**: tabel sebulan, satu guru per kelas per sesi Laju; "Rencanakan sebulan (bergilir)"
+  memutar guru terpilih per tanggal → sesi → kelas tanpa Ahad, bisa diubah per sel; peringatan bila
+  satu guru memegang dua kelas di sesi yang sama; "Jadwal piket saya" untuk tiap guru. Penyusun =
+  admin, PJ PTPT, atau **Admin Pondok Laju** (tab Peran, super admin; disimpan di master/lembaga
+  PTPT `admin_pondok_laju`, cermin RLS `auth_is_admin_pondok_laju`).
+- **Riwayat** per kelas per bulan (n/N santri tercatat per sesi, posisi bersama atau "beragam").
+- **Bisyaroh piket per sesi**: Jenis Bisyaroh baru "× sesi Pondok Laju" (`per_sesi_laju`) — tarif ×
+  sesi terjadwal yang gurunya HADIR (hadir/terlambat) di shift yang dipilih di kolom Shift; per
+  tanggal dibayar = min(sesi terjadwal, shift Laju yang dihadiri). Tanpa shift terpilih tak ada yang
+  terbayar. Masuk slip sebagai baris tambahan "Pondok Laju"; tab Bisyaroh di menu Pondok Laju
+  menampilkan rekap yang sama (`sesiLajuTerbayar`, satu sumber). Simulasi plafon = semua sesi
+  terjadwal terbayar.
+- **Wali** melihat kartu "Capaian Pondok Laju" (posisi terakhir + riwayat singkat) di Capaian Prestasi.
 
 ### Fixed — gerbang PJ glondongan tak pernah mengunci (sejak 19 Jul 2026, bfa80e1)
 
