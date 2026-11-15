@@ -36,6 +36,56 @@ export function bolehBelumLulus(ajuan) {
 }
 
 /**
+ * Kelas Pondok Laju di tab Status Ajuan untuk tombol "Siap Tes satu kelas" (Kyai 16 Nov).
+ * Hanya ajuan 'diajukan' yang bergerbang. `siap` = semua simakannya selesai tapi belum ditandai;
+ * `menunggu` = masih ada blok glondongan/berjalan; `sudah` = sudah ditandai siap.
+ * @param {Array} ajuanList ajuan milik guru ini.
+ * @param {Object} gerbang peta { [ajuanId]: { berlaku, glondonganTerkunci, siapTes } }.
+ * @returns {Array<{key, juz, siap: Array, menunggu: number, sudah: number}>}
+ */
+export function kelasSiapTesLaju(ajuanList, gerbang) {
+  const peta = new Map()
+  for (const a of ajuanList || []) {
+    if (!a?.kelompok_laju || a.status !== 'diajukan') continue
+    const g = gerbang?.[a.id]
+    if (!g?.berlaku) continue
+    let k = peta.get(a.kelompok_laju)
+    if (!k) {
+      k = { key: a.kelompok_laju, juz: juzNum(a.juz_asal), siap: [], menunggu: 0, sudah: 0 }
+      peta.set(a.kelompok_laju, k)
+    }
+    if (g.glondonganTerkunci) k.menunggu++
+    else if (g.siapTes) k.sudah++
+    else k.siap.push(a)
+  }
+  return [...peta.values()].filter((k) => k.siap.length || k.menunggu)
+}
+
+/**
+ * Kelas Pondok Laju di antara kandidat seremonial (Tahap 3, Kyai 16 Nov): santri yang lulus
+ * bersama dalam satu pengajuan kelas → satu tombol "satu kelas". Seremonial tetap boleh per santri.
+ * @returns {Array<{key, juz_lulus, kelas_tujuan, santri: Array}>}
+ */
+export function kelasSeremonialLaju(kandidatList) {
+  const peta = new Map()
+  for (const k of kandidatList || []) {
+    if (!k?.kelompok_laju) continue
+    let g = peta.get(k.kelompok_laju)
+    if (!g) {
+      g = {
+        key: k.kelompok_laju,
+        juz_lulus: k.juz_lulus ?? null,
+        kelas_tujuan: k.kelas_tujuan || '',
+        santri: []
+      }
+      peta.set(k.kelompok_laju, g)
+    }
+    g.santri.push(k)
+  }
+  return [...peta.values()].sort((a, b) => Number(a.juz_lulus || 0) - Number(b.juz_lulus || 0))
+}
+
+/**
  * Kelompokkan santri Pondok Laju yang bisa diajukan per kelas (guru kelas + juz) —
  * dasar tombol "Centang satu kelas" di layar Ajukan.
  * @returns {Array<{key, guru, juz, santri: Array}>} urut guru lalu juz.

@@ -203,6 +203,33 @@
         <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
         <p class="text-sm text-[var(--text-secondary)] italic">Belum ada ajuan tes dari Anda.</p>
       </div>
+      <!-- v.1.5.0 (Kyai): Pondok Laju — tandai Siap Tes satu kelas sekaligus. Hanya santri yang
+           semua simakannya sudah selesai yang ditandai; yang masih menunggu disebut jumlahnya. -->
+      <div
+        v-for="k in kelasSiapTes"
+        :key="k.key"
+        class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-300 dark:border-amber-700 flex flex-wrap items-center gap-2 text-[11px]"
+      >
+        <span class="font-black text-amber-800 dark:text-amber-200">
+          <i class="fas fa-people-group mr-1"></i>Pondok Laju<template v-if="k.juz">
+            · Juz {{ k.juz }}</template
+          >
+        </span>
+        <span class="text-[var(--text-secondary)]">
+          {{ k.siap.length }} santri siap dites<template v-if="k.menunggu">
+            · {{ k.menunggu }} masih menunggu simakan</template
+          ><template v-if="k.sudah"> · {{ k.sudah }} sudah ditandai</template>
+        </span>
+        <button
+          v-if="k.siap.length"
+          :disabled="siapKelasBusy === k.key"
+          class="ml-auto px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black"
+          @click="siapTesKelas(k)"
+        >
+          <i class="fas fa-flag-checkered mr-1"></i
+          >{{ siapKelasBusy === k.key ? '...' : `Siap Tes satu kelas (${k.siap.length})` }}
+        </button>
+      </div>
       <div
         v-for="a in myAjuan"
         :key="a.id"
@@ -1117,7 +1144,7 @@ import {
   partnerPagi
 } from '@/utils/pasanganGuru'
 import { isPjLembaga, splitGlondongan, testedJuz } from '@/utils/glondongan' // v.1.2.2: kandidat PJ PTPT; v.1.4.8: langsung tes
-import { kelasLajuDiajukan, bolehBelumLulus } from '@/utils/pondokLaju' // v.1.5.0: Pondok Laju
+import { kelasLajuDiajukan, bolehBelumLulus, kelasSiapTesLaju } from '@/utils/pondokLaju' // v.1.5.0: Pondok Laju
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
@@ -1251,6 +1278,24 @@ function penyimakGlondonganAjuan(a) {
     })
 }
 const siapTesBusy = ref(null)
+// v.1.5.0: Siap Tes satu kelas Pondok Laju — aksi yang sama dengan tombol per santri.
+const kelasSiapTes = computed(() => kelasSiapTesLaju(myAjuan.value, gerbangMy.value))
+const siapKelasBusy = ref(null)
+async function siapTesKelas(k) {
+  siapKelasBusy.value = k.key
+  let ok = 0
+  try {
+    for (const a of k.siap) {
+      await setSiapTes(a.id, true)
+      ok++
+    }
+    toast.success(`${ok} santri ditandai SIAP dites PJ`)
+  } catch (e) {
+    toast.error(`Gagal setelah ${ok} santri: ` + (e.message || e))
+  } finally {
+    siapKelasBusy.value = null
+  }
+}
 async function toggleSiapTes(a, val) {
   siapTesBusy.value = a.id
   try {

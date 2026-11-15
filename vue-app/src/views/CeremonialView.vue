@@ -16,6 +16,7 @@ import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: buang guru nonakti
 import { waLink } from '@/utils/format' // v.1.2.6: tautan WA penyimak
 import { pesanCeremonial } from '@/utils/pesanWa' // v.1.2.6: teks WA otomatis
 import { useSettingsStore } from '@/stores/settings'
+import { kelasSeremonialLaju } from '@/utils/pondokLaju' // v.1.5.0: seremonial satu kelas
 
 const {
   loaded,
@@ -135,6 +136,17 @@ const semuaTerpilih = computed(
 )
 function toggleSemua() {
   pilihMassal.value = semuaTerpilih.value ? [] : kandidatBelum.value.map((k) => String(k.santri_id))
+}
+// v.1.5.0 (Kyai, Tahap 3): kelas Pondok Laju bisa dipilih SATU KELAS sekaligus. Klik lagi
+//   saat semuanya terpilih = lepas semua. Penjadwalan per santri tetap berjalan seperti biasa.
+const kelasLajuBelum = computed(() => kelasSeremonialLaju(kandidatBelum.value))
+const kelasLajuPenuh = (g) => g.santri.every((k) => adaPilih(k.santri_id))
+function pilihKelasLaju(g) {
+  const nyala = !kelasLajuPenuh(g)
+  for (const k of g.santri) {
+    const ada = adaPilih(k.santri_id)
+    if (nyala !== ada) togglePilih(k.santri_id)
+  }
 }
 // Buka dialog sesi baru dengan peserta SUDAH TERISI — inti "tidak manual satu-satu".
 function jadwalkanTerpilih() {
@@ -257,6 +269,13 @@ function togglePeserta(k) {
   else form.value.peserta.push({ ...k })
 }
 const adaOrang = (list, id) => list.some((x) => String(x.id) === String(id))
+// Dialog: "Tambahkan satu kelas" Pondok Laju ke peserta sesi.
+const kelasLajuDialog = computed(() => kelasSeremonialLaju(kandidat.value))
+const kelasLajuDiSesi = (g) => g.santri.every((k) => adaPeserta(k.santri_id))
+function tambahKelasLaju(g) {
+  const nyala = !kelasLajuDiSesi(g)
+  for (const k of g.santri) if (nyala !== adaPeserta(k.santri_id)) togglePeserta(k)
+}
 function toggleOrang(list, o) {
   const i = list.findIndex((x) => String(x.id) === String(o.id))
   if (i >= 0) list.splice(i, 1)
@@ -442,6 +461,34 @@ function jamRange(s) {
       </div>
 
       <div v-else class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-3">
+        <!-- v.1.5.0: Pondok Laju — pilih satu kelas sekaligus -->
+        <div
+          v-if="canKelola && kandidatTab === 'belum' && kelasLajuBelum.length"
+          class="flex flex-wrap gap-1.5 pb-2 mb-2 border-b border-[var(--border-subtle)]"
+        >
+          <span
+            class="text-[10px] font-black uppercase text-amber-700 dark:text-amber-300 self-center"
+            >Pondok Laju:</span
+          >
+          <button
+            v-for="g in kelasLajuBelum"
+            :key="g.key"
+            type="button"
+            :class="[
+              'text-[11px] px-2.5 py-1 rounded-lg border font-bold',
+              kelasLajuPenuh(g)
+                ? 'bg-amber-500 border-amber-500 text-white'
+                : 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200'
+            ]"
+            @click="pilihKelasLaju(g)"
+          >
+            <i :class="['fas mr-1', kelasLajuPenuh(g) ? 'fa-check-square' : 'fa-square']"></i>
+            <template v-if="g.juz_lulus">Lulus Juz {{ g.juz_lulus }}</template
+            ><template v-if="g.kelas_tujuan"> → {{ g.kelas_tujuan }}</template> ({{
+              g.santri.length
+            }})
+          </button>
+        </div>
         <label
           v-if="canKelola && kandidatTab === 'belum'"
           class="flex items-center gap-2 pb-2 mb-2 border-b border-[var(--border-subtle)] cursor-pointer"
@@ -782,6 +829,27 @@ function jamRange(s) {
               placeholder="Cari nama santri..."
               class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none mb-1.5"
             />
+            <!-- v.1.5.0: "Tambahkan satu kelas" Pondok Laju -->
+            <div v-if="kelasLajuDialog.length" class="flex flex-wrap gap-1.5 mb-1.5">
+              <button
+                v-for="g in kelasLajuDialog"
+                :key="g.key"
+                type="button"
+                :class="[
+                  'text-[11px] px-2.5 py-1 rounded-lg border font-bold',
+                  kelasLajuDiSesi(g)
+                    ? 'bg-amber-500 border-amber-500 text-white'
+                    : 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200'
+                ]"
+                @click="tambahKelasLaju(g)"
+              >
+                <i :class="['fas mr-1', kelasLajuDiSesi(g) ? 'fa-check-square' : 'fa-plus']"></i>
+                Satu kelas Pondok Laju<template v-if="g.juz_lulus">
+                  · Juz {{ g.juz_lulus }}</template
+                >
+                ({{ g.santri.length }})
+              </button>
+            </div>
             <p
               v-if="!kandidatTampil.length"
               class="text-[11px] text-[var(--text-tertiary)] italic px-1 py-2"

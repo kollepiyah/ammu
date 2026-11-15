@@ -42,7 +42,10 @@ function _range(a, b) {
  *                [] bila Kelas 1 (belum ada glondongan).
  */
 export function splitGlondongan(T) {
-  const t = Number(T)
+  // Kyai 16 Nov 2026: terima juga teks juz ('JUZ 6' / 'Juz 6'). Gerbang PJ dipanggil dengan
+  //   `tes_kenaikan.juz_asal` (salinan santri.juz, bentuknya teks) — Number('JUZ 6') = NaN membuat
+  //   gerbang glondongan TAK PERNAH mengunci sejak 19 Jul 2026 (hanya "Siap Tes" yang menahan PJ).
+  const t = typeof T === 'number' ? T : Number((String(T ?? '').match(/\d+/) || [])[0])
   const K = kelasFromJuz(t)
   if (!Number.isFinite(K)) {
     return { ok: false, kelas: NaN, pj: NaN, berjalan: { juz: [] }, glondongan: [] }

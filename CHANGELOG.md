@@ -22,10 +22,10 @@ berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AA
 
 ---
 
-## [v.1.5.0] — 2026-11-16 — Pondok Laju tahap 1–2: status santri Pondok Laju, tes satu kelas & glondongan oleh guru kelas, "Non-mukim"
+## [v.1.5.0] — 2026-11-16 — Pondok Laju tahap 1–3: status santri Pondok Laju, tes/glondongan/seremonial satu kelas, "Non-mukim"
 
 **DITAHAN (Kyai, 15 Nov 2026)** — jangan deploy / rebuild AAB / rilis Electron dulu: v.1.5.0
-dirilis BERSAMA fitur Pondok Laju (tahap 1–2 dari 5 selesai di gelombang ini).
+dirilis BERSAMA fitur Pondok Laju (tahap 1–3 dari 5 selesai di gelombang ini).
 
 **SIAP RILIS (setelah Pondok Laju lengkap)** — `versionCode` 150 / `versionName` `v.1.5.0`, gelombang 2.
 Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah meratakan `data`).
@@ -33,6 +33,9 @@ Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah merata
 Fixed). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOnly`) → deploy ulang
 fungsi itu. Urutan: `supabase db push` → deploy web → deploy fungsi → rebuild AAB → rilis Electron.
 
+Diuji (tahap 3): vitest 127 berkas / 1.863 tes, eslint 0 error, vite build; di peramban (data
+rekaan + penjaga tulis): Siap Tes satu kelas (2 siap · 1 menunggu simakan), seremonial pilih satu
+kelas & "Satu kelas Pondok Laju" di dialog sesi.
 Diuji (tahap 2): vitest 127 berkas / 1.860 tes (baru `pondokLaju`), eslint 0 error, vite build; di
 peramban dengan data rekaan + penjaga tulis: tombol "centang satu kelas", muatan ajuan & baris
 glondongan (blok langsung ke guru kelas, `ditugaskan_oleh: 'auto'`), kartu gabungan + Simpan per
@@ -74,6 +77,25 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
   `utils/glondongan.unitBisyarohGlondongan`, dipakai Rekap di Glondongan DAN slip BisyarohView
   (dulu slip menghitung sendiri — cermin yang berpisah). Baris sekelas + kelas asal + penguji = satu
   blok; bulannya tanggal nilai paling awal (blok lintas akhir bulan tak terbayar dua kali).
+
+### Added — Pondok Laju tahap 3 + Siap Tes satu kelas
+
+- **Siap Tes satu kelas** (tab Status Ajuan, guru kelas). Satu bar per kelas Pondok Laju: berapa
+  santri siap, berapa masih menunggu simakan, berapa sudah ditandai. Tombolnya hanya menandai yang
+  simakannya sudah selesai (`kelasSiapTesLaju`).
+- **Seremonial satu kelas.** Kandidat seremonial membawa `kelompok_laju`; di sub-tab "Belum
+  Dijadwalkan" ada tombol pilih satu kelas, dan di dialog sesi ada "Satu kelas Pondok Laju" untuk
+  menambah/melepas sekelas. Penjadwalan per santri tetap seperti biasa (`kelasSeremonialLaju`).
+
+### Fixed — gerbang PJ glondongan tak pernah mengunci (sejak 19 Jul 2026, bfa80e1)
+
+- `useTesKenaikan.gerbangFor` memanggil `gerbangGlondongan(ajuan.juz_asal, …)`, dan `juz_asal` adalah
+  salinan `santri.juz` berbentuk TEKS ("JUZ 6"). `splitGlondongan` memakai `Number(T)` → NaN →
+  "tak ada glondongan" → gerbang tak pernah mengunci. Akibatnya bagi santri berjuz "JUZ n": PJ hanya
+  ditahan tombol "Siap Tes", dan tab Status menulis "Semua sudah disimak" walau blok belum selesai.
+  `splitGlondongan` kini menerima teks juz. **Dampak sesudah deploy:** ajuan yang menunggu dan
+  glondongannya belum selesai akan tampil terkunci di antrian PJ (memang aturan Kyai); ajuan lama
+  tanpa baris glondongan akan menawarkan "buat ulang baris".
 
 ### Changed
 

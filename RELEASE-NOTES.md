@@ -19,6 +19,15 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   mengajukan tes. Glondongan kelas 2 ke atas langsung disimak guru kelasnya sendiri (tanpa
   menunggu penugasan), dalam satu kartu untuk satu kelas. Santri Pondok Laju selalu naik — PJ cukup
   mengisi nilai dan catatan. Bisyaroh glondongannya dihitung per blok kelas.
+- **Siap Tes dan seremonial satu kelas.** Guru kelas bisa menandai "Siap Tes" untuk satu kelas
+  Pondok Laju sekaligus, dan penjadwal seremonial bisa memilih satu kelas sekaligus.
+
+**Perbaikan penting**
+
+- **Kunci glondongan untuk PJ kini benar-benar bekerja.** Sebelumnya, untuk sebagian besar santri
+  PTPT, PJ sudah bisa menguji walau glondongan belum selesai disimak (asal guru kelas menekan
+  "Siap Tes"), dan layar guru bisa menulis "Semua sudah disimak" padahal belum. Kini PJ menunggu
+  sampai semua blok glondongan selesai.
 - Tulisan juz kini **"Juz 5"** (huruf awal saja yang besar) di semua halaman.
 - Nama berpetik seperti **"Siti Ma'rifatin"** tak lagi tertulis "Ma'Rifatin".
 

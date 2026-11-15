@@ -109,7 +109,9 @@ export function pilihKandidat(ajuanList, terjadwal) {
       ajuan_id: String(a.id),
       tgl_lulus_pj: a.tgl_hasil || '',
       penguji: a.penguji || '',
-      sesi_terjadwal: hitungSesi(a.santri_id) // 0 = belum pernah dijadwal
+      sesi_terjadwal: hitungSesi(a.santri_id), // 0 = belum pernah dijadwal
+      // v.1.5.0: kelas Pondok Laju yang lulus bersama — dasar tombol "satu kelas" (Tahap 3).
+      ...(a.kelompok_laju ? { kelompok_laju: String(a.kelompok_laju) } : {})
     }))
     .sort((x, y) => String(x.nama).localeCompare(String(y.nama), 'id'))
 }

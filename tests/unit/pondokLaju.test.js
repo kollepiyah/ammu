@@ -127,3 +127,65 @@ describe('penyimak sibuk', () => {
     expect(peta.byId.get('g2')).toBe(1)
   })
 })
+
+describe('Siap Tes satu kelas (tab Status Ajuan)', () => {
+  it('memilah siap / masih menunggu simakan / sudah ditandai per kelas', async () => {
+    const { kelasSiapTesLaju } = await import('@/utils/pondokLaju')
+    const A = (id, extra = {}) => ({
+      id,
+      status: 'diajukan',
+      kelompok_laju: 'k1',
+      juz_asal: 'Juz 7',
+      ...extra
+    })
+    const ajuan = [A('a'), A('b'), A('c'), A('d'), A('e', { kelompok_laju: '' })]
+    const gerbang = {
+      a: { berlaku: true, glondonganTerkunci: false, siapTes: false },
+      b: { berlaku: true, glondonganTerkunci: false, siapTes: false },
+      c: { berlaku: true, glondonganTerkunci: true, siapTes: false },
+      d: { berlaku: true, glondonganTerkunci: false, siapTes: true },
+      e: { berlaku: true, glondonganTerkunci: false, siapTes: false }
+    }
+    const [k] = kelasSiapTesLaju(ajuan, gerbang)
+    expect(k.siap.map((a) => a.id)).toEqual(['a', 'b'])
+    expect(k).toMatchObject({ juz: '7', menunggu: 1, sudah: 1 })
+    expect(kelasSiapTesLaju([A('x')], { x: { berlaku: true, siapTes: true } })).toEqual([])
+  })
+})
+
+describe('Seremonial satu kelas (Tahap 3)', () => {
+  it('kandidat membawa kelompok_laju dan dikelompokkan per kelas', async () => {
+    const { pilihKandidat } = await import('@/composables/useCeremonial')
+    const { kelasSeremonialLaju } = await import('@/utils/pondokLaju')
+    const L = (id, nama, kel) => ({
+      id,
+      santri_id: 's' + id,
+      nama_cache: nama,
+      status: 'lulus',
+      lembaga: 'PTPT',
+      jenis: 'juz',
+      juz_asal: 'Juz 10',
+      target: 'Juz 11',
+      tgl_hasil: '2026-11-16',
+      ...(kel ? { kelompok_laju: kel } : {})
+    })
+    const kandidat = pilihKandidat([L(1, 'Ali', 'k1'), L(2, 'Umar', 'k1'), L(3, 'Zaid', '')])
+    const kelas = kelasSeremonialLaju(kandidat)
+    expect(kelas).toHaveLength(1)
+    expect(kelas[0]).toMatchObject({ key: 'k1', juz_lulus: 10, kelas_tujuan: 'Kelas 3' })
+    expect(kelas[0].santri.map((k) => k.nama)).toEqual(['Ali', 'Umar'])
+    expect(kandidat.find((k) => k.nama === 'Zaid').kelompok_laju).toBeUndefined()
+  })
+})
+
+describe('gerbang PJ menerima juz berbentuk teks (bug sejak 19 Jul 2026)', () => {
+  it("'JUZ 6' / 'Juz 6' mengunci PJ selama blok glondongan belum selesai", async () => {
+    const { gerbangGlondongan, splitGlondongan } = await import('@/utils/glondongan')
+    const blok = { tipe: 'glondongan', kelas_asal: 1, status: 'ditugaskan' }
+    expect(gerbangGlondongan('JUZ 6', [blok]).terkunci).toBe(true)
+    expect(gerbangGlondongan('Juz 6', [blok]).terkunci).toBe(true)
+    expect(gerbangGlondongan('Juz 6', [{ ...blok, status: 'selesai' }]).terkunci).toBe(false)
+    expect(splitGlondongan('Juz 11')).toMatchObject({ ok: true, kelas: 3 })
+    expect(splitGlondongan('')).toMatchObject({ ok: false })
+  })
+})
