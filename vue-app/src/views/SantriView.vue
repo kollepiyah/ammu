@@ -1284,6 +1284,10 @@ async function kirimGoogleSheet() {
   sendingGsheet.value = true
   try {
     const ss = settingsStore.settings || {}
+    // v.1.4.10: kelas kanonik + Juz PTPT, cermin PDF (lihat cetakPdf).
+    const lembagaList = await getOne('master', 'lembaga')
+      .then((d) => (Array.isArray(d?.list) ? d.list : []))
+      .catch(() => [])
     const rows = (santri.value || []).map((s, i) => ({
       no: i + 1,
       nama: s.nama || '',
@@ -1291,11 +1295,13 @@ async function kirimGoogleSheet() {
       jk: s.jk || '',
       usia: usiaKini(s.tgl_lahir),
       lembaga: s.lembaga || '',
-      kelas: s.kelas || '',
+      kelas: labelKelasSantri(s, false, lembagaList),
+      juz: String(s.lembaga || '').toUpperCase() === 'PTPT' ? juzNum(s.juz) : '',
       lembaga_sekolah: s.lembaga_sekolah || '',
-      kelas_sekolah: s.kelas_sekolah || '',
+      kelas_sekolah: labelKelasSantri(s, true, lembagaList),
       wa: s.wa || ''
     }))
+    const adaJuz = rows.some((r) => r.juz)
     const { url } = await sendToSheet({
       rows, // v.100: WAJIB — tanpa ini Apps Script hanya tulis KOP + header (baris data kosong)
       title: `Data Santri ${new Date().toISOString().slice(0, 10)}`,
@@ -1314,6 +1320,7 @@ async function kirimGoogleSheet() {
         { key: 'usia', header: 'Usia', width: 10 },
         { key: 'lembaga', header: 'Lembaga Qiraati', width: 16 },
         { key: 'kelas', header: 'Kelas', width: 14 },
+        ...(adaJuz ? [{ key: 'juz', header: 'Juz', width: 6 }] : []),
         { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 16 },
         { key: 'kelas_sekolah', header: 'Kelas Sekolah', width: 14 },
         { key: 'wa', header: 'No. WA Wali', width: 18 }

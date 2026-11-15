@@ -1342,7 +1342,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useSettingsStore } from '@/stores/settings'
-import { extractNumber, todayJakarta } from '@/utils/format'
+import { extractNumber, juzNum, todayJakarta } from '@/utils/format'
 import { bestNameMatch, fuzzyKey, simRatio } from '@/utils/fuzzyMatch' // v.100 Batch12/14: cocokkan nama mirip + scope guru (impor Google Form)
 import { createPdf, savePdf, buildKopLembaga } from '@/utils/pdfBuilder'
 // v.1.4.5: tata letak PDF rekap (tabel per kelas + ringkasan target) — dipisah dari layar.
@@ -2540,12 +2540,12 @@ async function exportExcel() {
       const ak = getEdit(s.id, 'akhir') || s.prestasi_akhir || ''
       const tot =
         s.lembaga === 'PTPT' ? computedTotal(s) : getEdit(s.id, 'total') || s.prestasi_total || ''
-      const jz = s.lembaga === 'PTPT' ? getEdit(s.id, 'juz') || s.juz || '-' : '-'
+      const jz = s.lembaga === 'PTPT' ? juzNum(getEdit(s.id, 'juz') || s.juz) || '-' : '-'
       return {
         no: no++,
         nama: s.nama,
         jk: s.jk || '-',
-        lembaga_kelas: `${s.lembaga} - ${s.kelas || '-'}`,
+        lembaga_kelas: `${s.lembaga} - ${kelasLabel(s) || '-'}`,
         juz: jz,
         awal: aw,
         akhir: ak,
@@ -2595,12 +2595,12 @@ async function kirimRekapGsheet() {
       const ak = getEdit(s.id, 'akhir') || s.prestasi_akhir || ''
       const tot =
         s.lembaga === 'PTPT' ? computedTotal(s) : getEdit(s.id, 'total') || s.prestasi_total || ''
-      const jz = s.lembaga === 'PTPT' ? getEdit(s.id, 'juz') || s.juz || '-' : '-'
+      const jz = s.lembaga === 'PTPT' ? juzNum(getEdit(s.id, 'juz') || s.juz) || '-' : '-'
       return {
         no: no++,
         nama: s.nama,
         jk: s.jk || '-',
-        lembaga_kelas: `${s.lembaga} - ${s.kelas || '-'}`,
+        lembaga_kelas: `${s.lembaga} - ${kelasLabel(s) || '-'}`,
         juz: jz,
         awal: aw,
         akhir: ak,
@@ -2645,7 +2645,7 @@ function cetakHTML() {
     const ak = getEdit(s.id, 'akhir') || s.prestasi_akhir || ''
     const tot =
       s.lembaga === 'PTPT' ? computedTotal(s) : getEdit(s.id, 'total') || s.prestasi_total || ''
-    const jz = s.lembaga === 'PTPT' ? getEdit(s.id, 'juz') || s.juz || '-' : '-'
+    const jz = s.lembaga === 'PTPT' ? juzNum(getEdit(s.id, 'juz') || s.juz) || '-' : '-'
     // v.1.4.1: nama guru dari PASANGAN (guru_pagi/sore), bukan `s.guru` yang di PTPT
     //   memang sering kosong — cermin persis judul grup di layar.
     const guruName = guruSantri(s) || '—'

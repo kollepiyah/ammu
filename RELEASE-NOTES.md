@@ -17,6 +17,8 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   berbeda tampil sebagai satu kelompok "Pagi: … · Sore: …".
 - **PDF Data Kelas dari Dashboard:** kolom Kelas dan Juz kini seragam (selalu "Kelas 1", juz
   berupa angka), dan judul kelompoknya rapi ("Kelas 1 & 2", bukan "Kelas 1, 2, Kelas 1").
+- **Ekspor Rekap Prestasi (Excel, Google Sheet, cetak) dan Google Sheet Data Santri:** kolom
+  Kelas dan Juz ikut seragam seperti PDF-nya.
 - **Keluar akun di satu perangkat tak lagi mengeluarkan perangkat lain.** Sebelumnya keluar di HP
   membuat web atau aplikasi PC yang sedang terbuka tiba-tiba meminta masuk ulang.
 

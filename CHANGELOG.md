@@ -50,6 +50,11 @@ dicoba dengan data & akun nyata.
   `saveToken` push juga dilewati bila tak ada sesi Supabase (dulu jalan sebagai anon → 401).
   Error `background.js` "disconnected port" berasal dari ekstensi Chrome, dan
   `bundle.tracing.min.js` ERR_BLOCKED_BY_CLIENT = skrip pemantau galat diblokir pemblokir iklan peramban — tak berbahaya.
+- **Ekspor lain dengan juz/kelas mentah (sapuan lanjutan, 15 Nov).** Excel, Google Sheet, dan
+  cetak HTML Rekap Prestasi (`juzNum` + `kelasLabel`), serta Google Sheet Data Santri (kelas
+  kanonik + kolom Juz, cermin PDF-nya). Ekspor Excel LENGKAP Data Santri sengaja tetap mentah —
+  ia juga berkas impor-ulang. Sapuan pemisah koma: tak ada lagi tempat lain yang memecah nama guru
+  dengan koma; `signOut` hanya dipanggil dari `authSupabase`.
 
 ---
 

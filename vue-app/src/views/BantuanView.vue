@@ -809,6 +809,7 @@ const rilis = [
       'Data Santri: penyaring kelas per guru kini berfungsi untuk guru bergelar (nama dengan koma, mis. "S.Pd., Gr."), dan pilihannya menyesuaikan PJ yang dipilih.',
       'PDF Data Santri: santri PTPT kini menampilkan kolom Juz, dan bila disaring per lembaga / PJ / guru, daftarnya dikelompokkan per guru kelas (pasangan pagi–sore).',
       'PDF Data Kelas dari Dashboard: kolom Kelas dan Juz kini seragam (Kelas 1, bukan campuran "1" dan "Kelas 1"; Juz berupa angka).',
+      'Ekspor Rekap Prestasi (Excel, Google Sheet, cetak) dan Google Sheet Data Santri: kolom Kelas dan Juz ikut seragam.',
       'Keluar dari akun di satu perangkat tak lagi ikut mengeluarkan akun yang sama di perangkat lain.'
     ]
   },
