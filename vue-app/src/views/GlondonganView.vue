@@ -30,6 +30,7 @@ import {
   totalPenyimakGlondongan
 } from '@/utils/glondongan'
 import { useSettingsStore } from '@/stores/settings'
+import { kartuGlondongan } from '@/utils/pondokLaju' // v.1.5.0: satu kartu per blok per kelas
 
 const {
   loaded,
@@ -365,6 +366,10 @@ function toggleNilai(row) {
     return
   }
   openId.value = row.id
+  siapkanDraft(row)
+}
+// Isi awal kotak nilai dari angka yang sudah tersimpan (draft) — dipakai kartu tunggal & kelas.
+function siapkanDraft(row) {
   if (!drafts.value[row.id]) {
     const nilai = {}
     for (const j of row.juz || []) {
@@ -455,6 +460,62 @@ async function saveNilai(row) {
     toast.error('Gagal simpan nilai: ' + (e.message || e))
   } finally {
     savingNilaiId.value = ''
+  }
+}
+
+// ── v.1.5.0 Pondok Laju: satu kartu per blok per kelas (Kyai) ──
+//   Baris tetap satu per santri di DB (nilai, rapor, gerbang PJ tak berubah); hanya tampilan &
+//   tombolnya yang digabung, jadi Simpan/Selesai menjalankan aksi yang sama untuk tiap baris.
+const kartuNilaiSaya = computed(() => kartuGlondongan(tugasNilaiSaya.value))
+const openKelompok = ref('')
+function toggleKelompok(g) {
+  if (openKelompok.value === g.key) {
+    openKelompok.value = ''
+    return
+  }
+  openKelompok.value = g.key
+  for (const r of g.rows) siapkanDraft(r)
+}
+const savingKelompok = ref('')
+async function saveDraftKelompok(g) {
+  savingKelompok.value = g.key
+  try {
+    for (const r of g.rows) {
+      const d = drafts.value[r.id]
+      await simpanDraft(r.id, bangunNilai(r, d), d?.catatan)
+    }
+    toast.success('Tersimpan sementara — belum dikirim, bisa dilanjutkan nanti')
+  } catch (e) {
+    toast.error('Gagal menyimpan sementara: ' + (e.message || e))
+  } finally {
+    savingKelompok.value = ''
+  }
+}
+async function saveNilaiKelompok(g) {
+  const kurang = g.rows.filter((r) => juzBelumLengkap(r).length)
+  if (kurang.length) {
+    const nama = kurang.map((r) => r.nama_cache || '—').join(', ')
+    const ok = await confirmDlg({
+      title: 'Selesaikan blok kelas ini?',
+      message:
+        `<b>${kurang.length} santri</b> nilainya belum lengkap (${nama}).` +
+        '<br><br>Setelah selesai, blok keluar dari daftar tugas Anda dan giliran blok berikutnya terbuka.',
+      confirmText: 'Ya, selesai'
+    })
+    if (!ok) return
+  }
+  savingKelompok.value = g.key
+  try {
+    for (const r of g.rows) {
+      const d = drafts.value[r.id]
+      await simpanNilai(r.id, bangunNilai(r, d), d?.catatan)
+    }
+    toast.success(`Nilai ${g.rows.length} santri terkirim — blok selesai`)
+    openKelompok.value = ''
+  } catch (e) {
+    toast.error('Gagal simpan nilai: ' + (e.message || e))
+  } finally {
+    savingKelompok.value = ''
   }
 }
 
@@ -1242,9 +1303,138 @@ async function exportRekapBisyarohPdf() {
       <!-- v.1.2.4 FIX: kartu isi-nilai kini v-if MANDIRI (dulu v-else ke blok "Menunggu
            giliran") — dulu bila ada 1 tugas belum-giliran, SEMUA kartu terbuka ikut hilang
            walau notifnya muncul. -->
-      <ul v-if="tugasNilaiSaya.length" class="space-y-2">
+      <!-- v.1.5.0: Pondok Laju — satu kartu per blok per kelas, nilai tiap santri di dalamnya -->
+      <ul v-if="kartuNilaiSaya.kelompok.length" class="space-y-2 mb-2">
         <li
-          v-for="row in tugasNilaiSaya"
+          v-for="g in kartuNilaiSaya.kelompok"
+          :key="g.key"
+          class="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-900/20 overflow-hidden"
+        >
+          <button
+            type="button"
+            class="w-full flex items-center justify-between gap-2 p-3 text-left"
+            @click="toggleKelompok(g)"
+          >
+            <div class="min-w-0">
+              <p class="text-sm font-bold text-[var(--text-primary)]">
+                <span
+                  class="px-1.5 py-0.5 rounded text-[10px] font-bold mr-1 bg-amber-200 text-amber-800 dark:bg-amber-800/60 dark:text-amber-100"
+                  >Pondok Laju</span
+                >
+                {{ g.rows.length }} santri · {{ tipeLabel(g.rows[0]) }}
+              </p>
+              <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                Kelas {{ g.kelas_asal }} · {{ juzLabel(g.rows[0]) }}
+                <span class="text-[var(--text-tertiary)]"
+                  >· tes Juz {{ g.rows[0].juz_target }}</span
+                >
+                <span
+                  v-if="g.rows.some(punyaDraft)"
+                  class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                  ><i class="fas fa-floppy-disk mr-0.5"></i>Tersimpan, belum dikirim</span
+                >
+              </p>
+              <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5 truncate">
+                {{ g.rows.map((r) => r.nama_cache || '—').join(', ') }}
+              </p>
+            </div>
+            <i
+              :class="[
+                'fas text-[var(--text-tertiary)]',
+                openKelompok === g.key ? 'fa-chevron-up' : 'fa-chevron-down'
+              ]"
+            ></i>
+          </button>
+          <div v-if="openKelompok === g.key" class="px-3 pb-3 space-y-3">
+            <div
+              v-for="row in g.rows"
+              :key="row.id"
+              class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-2"
+            >
+              <p class="text-xs font-black text-[var(--text-primary)] mb-1">
+                {{ row.nama_cache || '—' }}
+              </p>
+              <div v-if="drafts[row.id]" class="overflow-x-auto -mx-1 px-1">
+                <table class="w-full text-xs border-collapse">
+                  <thead>
+                    <tr class="text-[var(--text-secondary)]">
+                      <th class="text-left font-bold py-1 pr-2">Juz</th>
+                      <th
+                        v-for="a in PTPT_ASPEK"
+                        :key="a.key"
+                        class="font-bold py-1 px-1 text-center"
+                      >
+                        {{ a.label }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="j in row.juz"
+                      :key="j"
+                      class="border-t border-[var(--border-subtle)]"
+                    >
+                      <td class="py-1 pr-2 font-bold text-[var(--text-primary)] whitespace-nowrap">
+                        Juz {{ j }}
+                      </td>
+                      <td v-for="a in PTPT_ASPEK" :key="a.key" class="py-1 px-1 text-center">
+                        <input
+                          v-model.number="drafts[row.id].nilai[j][a.key]"
+                          type="number"
+                          min="0"
+                          :max="NILAI_MAX"
+                          class="w-14 px-1.5 py-1 text-center rounded-md border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <textarea
+                v-if="drafts[row.id]"
+                v-model="drafts[row.id].catatan"
+                rows="1"
+                placeholder="Catatan evaluasi (opsional)…"
+                class="w-full mt-1 px-2.5 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)]"
+              ></textarea>
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)]">
+              Skala 0–{{ NILAI_MAX }} per aspek. Kosongkan bila belum dinilai.
+            </p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                :disabled="savingKelompok === g.key"
+                class="bg-[var(--bg-card)] border border-teal-600 text-teal-700 dark:text-teal-300 font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                @click="saveDraftKelompok(g)"
+              >
+                <i
+                  :class="[
+                    'fas',
+                    savingKelompok === g.key ? 'fa-spinner fa-spin' : 'fa-floppy-disk'
+                  ]"
+                ></i>
+                Simpan
+              </button>
+              <button
+                type="button"
+                :disabled="savingKelompok === g.key"
+                class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                @click="saveNilaiKelompok(g)"
+              >
+                <i
+                  :class="['fas', savingKelompok === g.key ? 'fa-spinner fa-spin' : 'fa-check']"
+                ></i>
+                Selesai
+              </button>
+            </div>
+          </div>
+        </li>
+      </ul>
+
+      <ul v-if="kartuNilaiSaya.tunggal.length" class="space-y-2">
+        <li
+          v-for="row in kartuNilaiSaya.tunggal"
           :key="row.id"
           class="rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)] overflow-hidden"
         >

@@ -422,23 +422,62 @@ export function isPenyimakKategori(guruId, kategori, lembagaList) {
  */
 export function agregatPenyimakGlondongan(rows, bulan) {
   const per = {}
-  for (const r of rows || []) {
-    if (!r || r.status !== 'selesai') continue
-    if (String(r.tipe) !== 'glondongan') continue
-    const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
-    if (bln !== bulan) continue
-    const key = String(r.penguji_id || r.penguji_nama || r.penilai_nama || '—')
-    const nama = r.penguji_nama || r.penilai_nama || '—'
-    if (!per[key]) per[key] = { key, nama, blok: 0, juz: 0, _santri: new Set() }
-    per[key].juz += Array.isArray(r.juz) ? r.juz.length : 0
+  for (const u of unitBisyarohGlondongan(rows, bulan)) {
+    const key = u.pengujiKey
+    if (!per[key]) per[key] = { key, nama: u.nama, blok: 0, juz: 0, _santri: new Set() }
+    per[key].juz += u.juz
     per[key].blok += 1
-    if (r.santri_id) per[key]._santri.add(String(r.santri_id))
+    for (const s of u.santriIds) per[key]._santri.add(s)
   }
   return Object.values(per).map(({ _santri, ...g }) => ({
     ...g,
     santri: _santri.size,
     santriIds: [..._santri]
   }))
+}
+
+/**
+ * SATUAN BAYAR glondongan dalam 1 bulan — sumber tunggal Rekap Penyimak/Bisyaroh
+ * (GlondonganView) DAN slip (BisyarohView).
+ *
+ * Satu baris 'selesai' bertipe 'glondongan' = satu blok. v.1.5.0 (Kyai 16 Nov 2026): blok
+ * Pondok Laju disimak SEKELAS sekaligus, jadi baris yang sama `kelompok_laju` + kelas asal +
+ * penguji dihitung SATU blok (bukan per anak). Bulannya = tanggal nilai paling awal di blok itu,
+ * supaya blok yang selesai melintasi akhir bulan tak terbayar dua kali.
+ * @returns {Array<{pengujiKey, penguji_id, nama, juz, santriIds}>}
+ */
+export function unitBisyarohGlondongan(rows, bulan) {
+  const units = new Map()
+  let i = 0
+  for (const r of rows || []) {
+    i++
+    if (!r || r.status !== 'selesai') continue
+    if (String(r.tipe) !== 'glondongan') continue
+    const pengujiKey = String(r.penguji_id || r.penguji_nama || r.penilai_nama || '—')
+    const key = r.kelompok_laju
+      ? `L|${r.kelompok_laju}|${r.kelas_asal}|${pengujiKey}`
+      : `R|${r.id || i}`
+    let u = units.get(key)
+    if (!u) {
+      u = {
+        pengujiKey,
+        penguji_id: String(r.penguji_id || ''),
+        nama: r.penguji_nama || r.penilai_nama || '—',
+        penguji_nama: String(r.penguji_nama || r.penilai_nama || ''),
+        juz: Array.isArray(r.juz) ? r.juz.length : 0,
+        santriIds: [],
+        _tgl: ''
+      }
+      units.set(key, u)
+    }
+    if (r.santri_id && !u.santriIds.includes(String(r.santri_id)))
+      u.santriIds.push(String(r.santri_id))
+    const t = String(r.tgl_nilai || '')
+    if (t && (!u._tgl || t < u._tgl)) u._tgl = t
+  }
+  return [...units.values()]
+    .filter((u) => (u._tgl ? periodeBulan(new Date(u._tgl)) : '') === bulan)
+    .map(({ _tgl, ...u }) => u)
 }
 
 /** Total lintas penguji. Santri dihitung UNIK (disimak 2 penyimak ≠ 2 santri). */
@@ -481,6 +520,9 @@ export function hitungTugasAktif(rows) {
   for (const r of rows || []) {
     if (String(r?.tipe || '') !== 'glondongan') continue
     if (String(r?.status || '') !== 'ditugaskan') continue
+    // v.1.5.0: blok Pondok Laju = tugas guru kelas atas kelasnya sendiri (seperti 'berjalan'),
+    //   bukan penugasan koordinator — tak membuat gurunya tampak sibuk di daftar penugasan.
+    if (r?.kelompok_laju) continue
     bump(byId, String(r.penguji_id ?? '').trim())
     bump(byNama, _normNama(r.penguji_nama))
   }

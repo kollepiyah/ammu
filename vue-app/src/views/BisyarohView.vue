@@ -1557,7 +1557,11 @@ import { useToast } from '@/composables/useToast'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useExcel } from '@/composables/useExcel'
 import { fmtRp, getNamaGuruGelar, todayJakarta } from '@/utils/format'
-import { periodeBulan, getPenyimakGlondongan, PTPT_JUZ_PER_KELAS } from '@/utils/glondongan' // v.111: bisyaroh tes glondongan PTPT
+import {
+  getPenyimakGlondongan,
+  PTPT_JUZ_PER_KELAS,
+  unitBisyarohGlondongan
+} from '@/utils/glondongan' // v.111: bisyaroh tes glondongan PTPT
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildSlipBisyarohHtml } from '@/utils/receiptHtml'
 import { cetakSlipBisyarohPdf, exportRekapBisyarohPdf } from '@/utils/strukBuilder'
@@ -1621,19 +1625,14 @@ function hitungGlondonganGuru(guruId, guruNama, periode, settings) {
     .toLowerCase()
   let juz = 0
   let blok = 0
-  for (const r of glondonganRows.value || []) {
-    if (r.status !== 'selesai') continue
-    if (String(r.tipe) !== 'glondongan') continue // berjalan (juz kelas sendiri) TIDAK dibayar
-    const bln = r.tgl_nilai ? periodeBulan(new Date(r.tgl_nilai)) : ''
-    if (bln !== periode) continue
-    const pid = String(r.penguji_id || '')
-    const match = pid
-      ? pid === gid
-      : String(r.penguji_nama || r.penilai_nama || '')
-          .trim()
-          .toLowerCase() === gnama
+  // v.1.5.0: satuan bayar dari utils/glondongan (sumber yang sama dgn Rekap di GlondonganView) —
+  //   berjalan tak dibayar, blok Pondok Laju sekelas dihitung satu.
+  for (const u of unitBisyarohGlondongan(glondonganRows.value, periode)) {
+    const match = u.penguji_id
+      ? u.penguji_id === gid
+      : u.penguji_nama.trim().toLowerCase() === gnama
     if (!match) continue
-    juz += Array.isArray(r.juz) ? r.juz.length : 0
+    juz += u.juz
     blok += 1
   }
   return { juz, blok, tarif, total: juz * tarif }

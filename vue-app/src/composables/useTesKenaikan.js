@@ -18,6 +18,13 @@ import {
 import { useSantri } from '@/composables/useSantri'
 import { headsLembaga } from '@/utils/guruScope'
 import { ajuanPengunci } from '@/utils/tesKenaikan'
+// v.1.5.0: Pondok Laju — tes satu kelas, glondongan langsung ke guru kelas, tanpa "Belum Lulus".
+import {
+  isSantriPondokLaju,
+  kunciKelompokLaju,
+  guruKelasLaju,
+  bolehBelumLulus
+} from '@/utils/pondokLaju'
 
 export function useTesKenaikan() {
   const auth = useAuthStore()
@@ -209,6 +216,10 @@ export function useTesKenaikan() {
         return isKep && g.status !== 'Non-Aktif' && lembagaScopeMatches(g.lembaga, s.lembaga)
       })
       const now = new Date()
+      // v.1.5.0: ajuan Pondok Laju ditandai + diberi kunci kelas (batch|guru kelas|juz) — dasar
+      //   kartu glondongan per kelas & bisyaroh per blok.
+      const laju = isPtptJuz && isSantriPondokLaju(s)
+      const kelompok = laju ? kunciKelompokLaju(batchId, s) : ''
       try {
         const ajuanId = await addOne('tes_kenaikan', {
           santri_id: String(s.id),
@@ -225,6 +236,7 @@ export function useTesKenaikan() {
           tgl_daftar: now.toISOString(),
           _ts: now.getTime(),
           batch_id: batchId,
+          ...(laju ? { pondok_laju: true, kelompok_laju: kelompok } : {}),
           ...(langsungTes ? { tanpa_glondongan: true, siap_tes: true } : {})
         })
         ok++
@@ -234,7 +246,7 @@ export function useTesKenaikan() {
         //   mengunci gerbang PJ selamanya.
         if (isPtptJuz && !langsungTes) {
           try {
-            const g = await spawnGlondongan(ajuanId, s, now, guruList)
+            const g = await spawnGlondongan(ajuanId, s, now, guruList, kelompok)
             glondonganGagal += g.gagal
             errors.push(...g.errors)
           } catch (e) {
@@ -255,7 +267,7 @@ export function useTesKenaikan() {
   //   - glondongan: blok 5-juz per kelas asal (kumulatif) -> 'menunggu' penugasan koordinator/PJ/super_admin.
   //   Nilai per juz (format PJ) TAK masuk rapor — murni catatan evaluasi.
   // Bangun baris tes_glondongan (berjalan + glondongan blok) utk 1 ajuan.
-  function _buildGlondonganRows(ajuanId, s, now, guruList = []) {
+  function _buildGlondonganRows(ajuanId, s, now, guruList = [], kelompok = '') {
     const T = testedJuz(s)
     const split = splitGlondongan(T)
     if (!split.ok) return [] // juz tak valid / di luar 1..30
@@ -271,7 +283,8 @@ export function useTesKenaikan() {
       nilai: {},
       catatan: '',
       tgl_daftar: now.toISOString(),
-      _ts: now.getTime()
+      _ts: now.getTime(),
+      ...(kelompok ? { pondok_laju: true, kelompok_laju: kelompok } : {})
     }
     const rows = []
     // Review juz kelas berjalan (guru kelas santri) — hanya bila ada juz di bawah target.
@@ -294,6 +307,12 @@ export function useTesKenaikan() {
       })
     }
     // Glondongan per blok kelas asal (kelas lampau) — menunggu penugasan.
+    //   v.1.5.0: Pondok Laju → langsung ditugaskan ke guru kelas santri (Kyai: "gelondongan
+    //   otomatis oleh guru kelas"), tanpa koordinator & tanpa jadwal.
+    const gkLaju = kelompok ? guruKelasLaju(s) : ''
+    const gLaju = gkLaju
+      ? (guruList || []).find((g) => String(g.nama || '').trim() === gkLaju)
+      : null
     for (const blk of split.glondongan) {
       rows.push({
         ...base,
@@ -302,10 +321,15 @@ export function useTesKenaikan() {
         juz_dari: blk.juz_dari,
         juz_sampai: blk.juz_sampai,
         juz: blk.juz,
-        status: 'menunggu',
-        penguji_id: '',
-        penguji_nama: '',
-        ditugaskan_oleh: ''
+        ...(kelompok
+          ? {
+              status: 'ditugaskan',
+              penguji_id: gLaju ? String(gLaju.id) : '',
+              penguji_nama: gkLaju,
+              ditugaskan_oleh: 'auto',
+              tgl_tugas: now.toISOString()
+            }
+          : { status: 'menunggu', penguji_id: '', penguji_nama: '', ditugaskan_oleh: '' })
       })
     }
     return rows
@@ -313,10 +337,10 @@ export function useTesKenaikan() {
   // Return { dibuat, gagal, errors }. Kegagalan TIDAK menggagalkan ajuan tes kenaikan
   //   utama, tapi WAJIB sampai ke pengaju: baris yang tak lahir membuat
   //   gerbangGlondongan() mengunci PJ SELAMANYA tanpa jejak (dulu cuma console.warn).
-  async function spawnGlondongan(ajuanId, s, now, guruList = []) {
+  async function spawnGlondongan(ajuanId, s, now, guruList = [], kelompok = '') {
     let dibuat = 0
     const errors = []
-    for (const r of _buildGlondonganRows(ajuanId, s, now, guruList)) {
+    for (const r of _buildGlondonganRows(ajuanId, s, now, guruList, kelompok)) {
       try {
         await addOne('tes_glondongan', r)
         dibuat++
@@ -340,9 +364,13 @@ export function useTesKenaikan() {
           String(x.tipe) === String(r.tipe) &&
           (r.tipe === 'berjalan' || Number(x.kelas_asal) === Number(r.kelas_asal))
       )
-    const rows = _buildGlondonganRows(String(ajuan.id), s, new Date(), guruList).filter(
-      (r) => !punya(r)
-    )
+    const rows = _buildGlondonganRows(
+      String(ajuan.id),
+      s,
+      new Date(),
+      guruList,
+      ajuan.kelompok_laju || ''
+    ).filter((r) => !punya(r))
     let dibuat = 0
     const errors = []
     for (const r of rows) {
@@ -362,6 +390,11 @@ export function useTesKenaikan() {
   async function putuskan(id, status, catatan = '', nilai = null, tglIso = null) {
     // v.111.x GERBANG: PJ tak boleh mengetes (Lulus/Belum Lulus) sebelum glondongan+berjalan
     //   'selesai'. Tolak/Batal (status lain) tetap boleh.
+    if (status === 'tidak_lulus') {
+      const aj = ajuanRaw.value.find((a) => String(a.id) === String(id))
+      if (!bolehBelumLulus(aj))
+        throw new Error('Santri Pondok Laju selalu naik — tak ada hasil Belum Lulus.')
+    }
     if (status === 'lulus' || status === 'tidak_lulus') {
       const ajuan = ajuanRaw.value.find((a) => String(a.id) === String(id))
       if (gerbangFor(ajuan).terkunci) {

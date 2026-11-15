@@ -22,10 +22,10 @@ berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AA
 
 ---
 
-## [v.1.5.0] — 2026-11-16 — Pondok Laju tahap 1: status santri Pondok Laju, label status semua santri, "Non-mukim"
+## [v.1.5.0] — 2026-11-16 — Pondok Laju tahap 1–2: status santri Pondok Laju, tes satu kelas & glondongan oleh guru kelas, "Non-mukim"
 
 **DITAHAN (Kyai, 15 Nov 2026)** — jangan deploy / rebuild AAB / rilis Electron dulu: v.1.5.0
-dirilis BERSAMA fitur Pondok Laju (tahap 1 dari 5 selesai di gelombang ini).
+dirilis BERSAMA fitur Pondok Laju (tahap 1–2 dari 5 selesai di gelombang ini).
 
 **SIAP RILIS (setelah Pondok Laju lengkap)** — `versionCode` 150 / `versionName` `v.1.5.0`, gelombang 2.
 Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah meratakan `data`).
@@ -33,7 +33,12 @@ Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah merata
 Fixed). **Edge function `auto-generate-tagihan` berubah** (cermin `matchStatusOnly`) → deploy ulang
 fungsi itu. Urutan: `supabase db push` → deploy web → deploy fungsi → rebuild AAB → rilis Electron.
 
-Diuji: vitest 126 berkas / 1.850 tes (`statusSantri` +3, cermin edge +5 kasus, `kasLembaga`, `namaPetik`, `labelJuz`), eslint
+Diuji (tahap 2): vitest 127 berkas / 1.860 tes (baru `pondokLaju`), eslint 0 error, vite build; di
+peramban dengan data rekaan + penjaga tulis: tombol "centang satu kelas", muatan ajuan & baris
+glondongan (blok langsung ke guru kelas, `ditugaskan_oleh: 'auto'`), kartu gabungan + Simpan per
+santri, antrian PJ tanpa "Belum Lulus". Tahap 2 tanpa migrasi (RLS `tes_glondongan_ins` sudah
+mengizinkan pengampu membuat baris non-'selesai'; `_upd` mengizinkan penguji terpasang).
+Diuji (tahap 1): vitest 126 berkas / 1.850 tes (`statusSantri` +3, cermin edge +5 kasus, `kasLembaga`, `namaPetik`, `labelJuz`), eslint
 0 error, vite build. Di peramban (data rekaan, penjaga tulis di klien supabase): label 5 santri,
 penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan muatan simpan
 (`data.is_pondok_laju: true` + `is_fullday: true`). **Belum** dicoba dengan akun & data nyata.
@@ -51,6 +56,24 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 - **Label status untuk SEMUA santri** di Data Santri (Non-mukim / Fullday / Ma'had / Pondok Laju;
   dulu santri pulang-pergi tanpa label), penyaring status + Pondok Laju, hitungan Pondok Laju di
   kepala halaman, profil santri.
+
+### Added — Pondok Laju tahap 2 (tes & glondongan per kelas)
+
+- **Ajukan tes satu kelas.** Layar Ajukan menampilkan tombol per kelas Pondok Laju (guru kelas +
+  juz); sekali klik mencentang semua santrinya. Ajuan Pondok Laju ditandai `pondok_laju` +
+  `kelompok_laju` (batch|guru kelas|juz) — aturan di `utils/pondokLaju`.
+- **Glondongan langsung ke guru kelas.** Blok kelas 2+ santri Pondok Laju lahir `ditugaskan` ke guru
+  kelasnya (`ditugaskan_oleh: 'auto'`), tanpa penugasan koordinator & jadwal. Urutan blok per 5 juz
+  dan gerbang PJ tetap. Blok ini tak membuat gurunya tampak "sibuk" di daftar penugasan biasa.
+- **Satu kartu per blok per kelas** di Glondongan → Tugas Menilai: nilai tiap santri dalam satu
+  kartu, Simpan/Selesai berlaku untuk semuanya (baris DB tetap per santri, jadi rapor & gerbang tak
+  berubah).
+- **Tanpa "Belum Lulus".** Ajuan Pondok Laju berlabel "Pondok Laju · selalu naik"; tombol Belum Lulus
+  disembunyikan dan `putuskan` menolaknya (`bolehBelumLulus`). Nilai & catatan PJ tetap ke rapor.
+- **Bisyaroh glondongan Pondok Laju per blok.** Satuan bayar kini satu sumber,
+  `utils/glondongan.unitBisyarohGlondongan`, dipakai Rekap di Glondongan DAN slip BisyarohView
+  (dulu slip menghitung sendiri — cermin yang berpisah). Baris sekelas + kelas asal + penguji = satu
+  blok; bulannya tanggal nilai paling awal (blok lintas akhir bulan tak terbayar dua kali).
 
 ### Changed
 

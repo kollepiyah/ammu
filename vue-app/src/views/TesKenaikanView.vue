@@ -69,6 +69,30 @@
           {{ santriEligible.length }} santri bisa diajukan. Tercentang:
           <b class="text-teal-600">{{ checkedCount }}</b>
         </p>
+        <!-- v.1.5.0: Pondok Laju — ajukan tes satu kelas sekaligus -->
+        <div v-if="kelasLaju.length" class="flex flex-wrap gap-1.5">
+          <span
+            class="text-[10px] font-black uppercase text-amber-700 dark:text-amber-300 self-center"
+            >Pondok Laju:</span
+          >
+          <button
+            v-for="g in kelasLaju"
+            :key="g.key"
+            type="button"
+            :class="[
+              'text-[11px] px-2.5 py-1 rounded-lg border font-bold',
+              kelasLajuPenuh(g)
+                ? 'bg-amber-500 border-amber-500 text-white'
+                : 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200'
+            ]"
+            @click="centangKelasLaju(g)"
+          >
+            <i :class="['fas mr-1', kelasLajuPenuh(g) ? 'fa-check-square' : 'fa-square']"></i>
+            {{ g.guru || 'Tanpa guru' }} · {{ g.juz ? 'Juz ' + g.juz : 'juz belum diisi' }} ({{
+              g.santri.length
+            }})
+          </button>
+        </div>
       </div>
 
       <div
@@ -194,7 +218,15 @@
             <p v-if="a.catatan_hasil" class="text-[11px] text-[var(--text-tertiary)] mt-1 italic">
               Catatan: {{ a.catatan_hasil }}
             </p>
-            <p v-if="a.tanpa_glondongan || a.tes_ulang_ke" class="mt-1 flex flex-wrap gap-1">
+            <p
+              v-if="a.tanpa_glondongan || a.tes_ulang_ke || a.pondok_laju"
+              class="mt-1 flex flex-wrap gap-1"
+            >
+              <span
+                v-if="a.pondok_laju"
+                class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-50 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                ><i class="fas fa-people-group mr-1"></i>Pondok Laju · selalu naik</span
+              >
               <span
                 v-if="a.tanpa_glondongan"
                 class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
@@ -411,7 +443,15 @@
             <p class="text-[10px] text-[var(--text-tertiary)] mt-0.5">
               Pengaju: {{ a.guru_nama || '-' }} · {{ fmtTgl(a.tgl_daftar) }}
             </p>
-            <p v-if="a.tanpa_glondongan || a.tes_ulang_ke" class="mt-1 flex flex-wrap gap-1">
+            <p
+              v-if="a.tanpa_glondongan || a.tes_ulang_ke || a.pondok_laju"
+              class="mt-1 flex flex-wrap gap-1"
+            >
+              <span
+                v-if="a.pondok_laju"
+                class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-50 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                ><i class="fas fa-people-group mr-1"></i>Pondok Laju · selalu naik</span
+              >
               <span
                 v-if="a.tanpa_glondongan"
                 class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
@@ -504,7 +544,9 @@
           >
             <i class="fas fa-check mr-1"></i>Lulus
           </button>
+          <!-- v.1.5.0: santri Pondok Laju selalu naik — tak ada Belum Lulus -->
           <button
+            v-if="bolehBelumLulus(a)"
             :disabled="busyId === a.id || (gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci)"
             class="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black"
             @click="decide(a, 'tidak_lulus')"
@@ -1075,6 +1117,7 @@ import {
   partnerPagi
 } from '@/utils/pasanganGuru'
 import { isPjLembaga, splitGlondongan, testedJuz } from '@/utils/glondongan' // v.1.2.2: kandidat PJ PTPT; v.1.4.8: langsung tes
+import { kelasLajuDiajukan, bolehBelumLulus } from '@/utils/pondokLaju' // v.1.5.0: Pondok Laju
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
@@ -1583,6 +1626,18 @@ function ensureSel(s) {
 function toggle(s) {
   const st = ensureSel(s)
   st.checked = !st.checked
+}
+// v.1.5.0 (Kyai): Pondok Laju dites SATU KELAS — tombol per kelas (guru kelas + juz) mencentang
+//   semua santrinya sekaligus; klik lagi saat semuanya tercentang = lepas semua.
+const kelasLaju = computed(() =>
+  kelasLajuDiajukan(santriEligible.value.filter((s) => !hasOpenAjuan(s)))
+)
+function kelasLajuPenuh(g) {
+  return g.santri.every((s) => sel[s.id]?.checked)
+}
+function centangKelasLaju(g) {
+  const nyala = !kelasLajuPenuh(g)
+  for (const s of g.santri) ensureSel(s).checked = nyala
 }
 const checkedCount = computed(() => Object.values(sel).filter((x) => x.checked).length)
 // v.1.4.8: santri PTPT ini punya glondongan (kelas 2+)? Hanya mereka yang bisa "langsung tes".

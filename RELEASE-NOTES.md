@@ -15,6 +15,10 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Semua santri kini berlabel status** di Data Santri: Non-mukim, Fullday, Ma'had, atau Pondok
   Laju, dan bisa disaring per status.
 - Istilah **"Pulang Pergi" diganti "Non-mukim"**.
+- **Tes Pondok Laju satu kelas.** Guru kelas bisa mencentang satu kelas Pondok Laju sekaligus saat
+  mengajukan tes. Glondongan kelas 2 ke atas langsung disimak guru kelasnya sendiri (tanpa
+  menunggu penugasan), dalam satu kartu untuk satu kelas. Santri Pondok Laju selalu naik — PJ cukup
+  mengisi nilai dan catatan. Bisyaroh glondongannya dihitung per blok kelas.
 - Tulisan juz kini **"Juz 5"** (huruf awal saja yang besar) di semua halaman.
 - Nama berpetik seperti **"Siti Ma'rifatin"** tak lagi tertulis "Ma'Rifatin".
 
