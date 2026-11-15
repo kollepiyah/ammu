@@ -5,6 +5,23 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.4.10 — November 2026
+
+**Perbaikan**
+
+- **Penyaring kelas per guru di Data Santri berfungsi untuk semua guru.** Sebelumnya mencentang
+  guru yang namanya bergelar (mis. "Ikrimatul Alifiyah, S.Pd., Gr.") tidak menyaring apa pun.
+  Bila PJ dipilih, daftar gurunya kini hanya guru di bawah PJ itu.
+- **PDF Data Santri:** santri PTPT kini punya kolom **Juz**, dan bila daftar disaring per lembaga,
+  PJ, atau guru, PDF-nya **dikelompokkan per guru kelas** — kelas yang guru pagi dan sorenya
+  berbeda tampil sebagai satu kelompok "Pagi: … · Sore: …".
+- **PDF Data Kelas dari Dashboard:** kolom Kelas dan Juz kini seragam (selalu "Kelas 1", juz
+  berupa angka), dan judul kelompoknya rapi ("Kelas 1 & 2", bukan "Kelas 1, 2, Kelas 1").
+- **Keluar akun di satu perangkat tak lagi mengeluarkan perangkat lain.** Sebelumnya keluar di HP
+  membuat web atau aplikasi PC yang sedang terbuka tiba-tiba meminta masuk ulang.
+
+---
+
 ## v.1.4.9 — November 2026
 
 **Baru**

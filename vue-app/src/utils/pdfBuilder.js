@@ -369,7 +369,10 @@ export async function buildListPdf({
   columns = [],
   rows = [],
   signature = null,
-  filename = 'list.pdf'
+  filename = 'list.pdf',
+  // v.1.4.9: opsional — [{ judul, kanan, rows }] → satu tabel per kelompok (mis. per rombel
+  //   guru) dengan judul di atasnya. Bila diisi, `rows` diabaikan.
+  groups = null
 }) {
   const doc = await createPdf({ kind, orientation, format })
   let y = 10
@@ -380,26 +383,57 @@ export async function buildListPdf({
   }
   // Convert columns to autotable head/body
   const head = [columns.map((c) => c.header || c.label || c.key)]
-  const body = rows.map((r) =>
-    columns.map((c) => {
-      const v = typeof c.format === 'function' ? c.format(r[c.key], r) : r[c.key]
-      return v == null ? '' : String(v)
-    })
-  )
+  const toBody = (list) =>
+    list.map((r) =>
+      columns.map((c) => {
+        const v = typeof c.format === 'function' ? c.format(r[c.key], r) : r[c.key]
+        return v == null ? '' : String(v)
+      })
+    )
   // v.93.0626: skala lebar kolom supaya tabel SAMA LEBAR dgn KOP (pageW-24) & center (margin default 12/12).
-  const _availW = doc.internal.pageSize.getWidth() - 24
+  const pageW = doc.internal.pageSize.getWidth()
+  const _availW = pageW - 24
   const _sumW = columns.reduce((s, c) => s + (Number(c.width) || 0), 0)
   const _scale = _sumW > 0 ? _availW / _sumW : 1
-  drawTable(doc, {
-    startY: y + 4,
-    head,
-    body,
-    tableWidth: _availW,
-    columnStyles: columns.reduce((acc, c, i) => {
-      if (c.width) acc[i] = { cellWidth: Math.round(Number(c.width) * _scale * 100) / 100 }
-      return acc
-    }, {})
-  })
+  const columnStyles = columns.reduce((acc, c, i) => {
+    if (c.width) acc[i] = { cellWidth: Math.round(Number(c.width) * _scale * 100) / 100 }
+    return acc
+  }, {})
+  if (Array.isArray(groups)) {
+    const pageH = doc.internal.pageSize.getHeight()
+    const font = doc._fontMU || 'helvetica'
+    y += 6
+    for (const g of groups) {
+      if (y > pageH - 35) {
+        doc.addPage()
+        y = 15
+      }
+      doc.setFont(font, 'bold')
+      doc.setFontSize(10)
+      doc.text(String(g.judul || ''), 12, y, { maxWidth: _availW - 40 })
+      if (g.kanan) {
+        doc.setFont(font, 'normal')
+        doc.setFontSize(9)
+        doc.text(String(g.kanan), pageW - 12, y, { align: 'right' })
+      }
+      drawTable(doc, {
+        startY: y + 2,
+        head,
+        body: toBody(g.rows || []),
+        tableWidth: _availW,
+        columnStyles
+      })
+      y = lastTableY(doc) + 8
+    }
+  } else {
+    drawTable(doc, {
+      startY: y + 4,
+      head,
+      body: toBody(rows),
+      tableWidth: _availW,
+      columnStyles
+    })
+  }
   if (signature) {
     drawSignature(doc, signature)
   }

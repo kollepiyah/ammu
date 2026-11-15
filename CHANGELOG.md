@@ -20,6 +20,39 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
+## [v.1.4.10] — 2026-11-15 — Filter kelas-guru bergelar, PDF Data Santri per guru kelas + Juz, PDF Data Kelas rapi, logout tak mencabut perangkat lain
+
+**SIAP RILIS** — `versionCode` 150 / `versionName` `v.1.4.10`. Nomor baru, bukan gelombang
+v.1.4.9: Electron 1.4.9 sudah "Latest" di GitHub sejak 4 Nov 2026. Tanpa migrasi Supabase, tanpa
+edge function, tanpa perubahan native. Urutan: deploy web → rebuild AAB → rilis Electron.
+
+Diuji: vitest 124 berkas / 1.835 tes (baru `kelompokRombel`; `filterQuery` +1), eslint 0 error,
+vite build. PDF Data Santri berkelompok dirender di peramban (pdf.js) dengan data rekaan. **Belum**
+dicoba dengan data & akun nyata.
+
+### Fixed (keluhan Kyai, 15 Nov 2026)
+
+- **Filter Kelas-Guru di Data Santri tak menyaring guru bergelar.** Pilihan disimpan di URL
+  `?kelasguru=` dipisah koma, padahal kuncinya memuat nama guru — dan gelar ("…, S.Pd., Gr.")
+  memuat koma. Saat URL dibaca balik, satu pilihan terpotong jadi beberapa kunci yang tak ada →
+  daftar kosong / centang hilang. `utils/filterQuery`: koma & `%` di dalam nilai kini di-escape.
+  Tambahan: bila PJ PTPT dipilih, opsi Kelas-Guru dipersempit ke rombel ber-PJ itu (`useSantri`).
+- **PDF Data Santri tanpa kolom Juz & tak dikelompokkan per guru.** Kolom Juz muncul bila ada
+  santri PTPT; bila daftar disaring lembaga / PJ / kelas-guru, PDF dipecah per rombel (pasangan
+  pagi–sore = satu kelompok, santri pagi/sore-saja menempel) lewat opsi baru `groups` di
+  `buildListPdf`. Label kelas kanonik (`labelJenjang`, master/lembaga dibaca sekali saat cetak).
+- **PDF Data Kelas (Dashboard → kartu lembaga) berantakan.** Kelas mentah ('1' vs 'Kelas 1') dan
+  juz mentah ('JUZ 4' vs '5') kini lewat `labelJenjang` & `juzNum`; judul kelompok "Kelas 1 & 2".
+  Pengelompokan dipindah ke `utils/kelompokRombel` — satu sumber untuk layar ini dan PDF Data Santri.
+- **Console: refresh token 400 → "Sesi Supabase zombie" → `save_push_token` 401.** Akar:
+  `supabase.auth.signOut()` bawaan ber-scope `global` — keluar di satu perangkat mencabut SEMUA sesi
+  akun itu, sehingga tab/PC lain gagal refresh. `authSupabase.signOut` kini `scope: 'local'`.
+  `saveToken` push juga dilewati bila tak ada sesi Supabase (dulu jalan sebagai anon → 401).
+  Error `background.js` "disconnected port" berasal dari ekstensi Chrome, dan
+  `bundle.tracing.min.js` ERR_BLOCKED_BY_CLIENT = skrip pemantau galat diblokir pemblokir iklan peramban — tak berbahaya.
+
+---
+
 ## [v.1.4.9] — 2026-11-04 — Pembayaran online wali lewat Midtrans: VA BRI/BNI/BCA/BSI/Mandiri + QRIS, biaya layanan ditanggung wali, bisa dicicil
 
 **SIAP RILIS** — `versionCode` 149 / `versionName` `v.1.4.9`, **2 gelombang**. Gelombang 2 membawa

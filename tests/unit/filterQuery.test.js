@@ -132,6 +132,17 @@ describe('penyaring yang boleh dicentang lebih dari satu (`daftar`)', () => {
     expect(tulisFilterQuery({}, SPEC)).toEqual({})
   })
 
+  // Kyai, 15 Nov 2026: "filter per guru tidak bisa". Nama guru bergelar memuat koma,
+  // dan koma itu dulu dianggap pemisah — centangan terpotong jadi kunci yang tak ada.
+  it('nama guru bergelar (memuat koma & persen) selamat bolak-balik', () => {
+    const k1 = 'ptpt|ikrimatul alifiyah, s.pd., gr.||ikrimatul alifiyah, s.pd., gr.'
+    const k2 = 'ptpt|nur faizah||nur fais zalillah'
+    const k3 = 'tpq pagi|a 100%2c||'
+    const q = tulisFilterQuery({ kelasguru: [k1, k2, k3] }, SPEC)
+    expect(q.kelasguru.split(',')).toHaveLength(3)
+    expect(bacaFilterQuery(q, SPEC).kelasguru).toEqual([k1, k2, k3])
+  })
+
   it('bolak-balik tetap stabil — ini yang menjaga penyaring tak lupa sesudah Simpan', () => {
     for (const awal of [{}, { kelasguru: 'a|1' }, { kelasguru: 'a|1,b|2', q: 'siti' }]) {
       const nilai = bacaFilterQuery(awal, SPEC)

@@ -33,6 +33,12 @@
 // Nilai penyaring selalu STRING. Kunci yang nilainya = bawaan TIDAK ditulis ke URL, supaya
 // alamat daftar tetap pendek dan `?status=aktif` tak memenuhi bilah alamat.
 
+// Escape minimal untuk satu nilai penyaring `daftar`: hanya `%` dan `,` — supaya koma
+//   pemisah tak tertukar dengan koma di nama guru, dan URL lainnya tetap terbaca.
+const _escItem = (v) => String(v).replace(/%/g, '%25').replace(/,/g, '%2C')
+const _unescItem = (v) =>
+  String(v).replace(/%(25|2C)/gi, (m, k) => (k.toUpperCase() === '25' ? '%' : ','))
+
 /**
  * Baca nilai penyaring dari query URL.
  *
@@ -49,13 +55,14 @@ export function bacaFilterQuery(query, spec) {
     const v = Array.isArray(raw) ? raw[0] : raw
     const teks = v != null ? String(v) : ''
     // v.1.4.2: penyaring yang boleh dicentang LEBIH DARI SATU (mis. Kelas-Guru) disimpan
-    //   sebagai satu kunci dipisah koma. Nilainya sendiri tak pernah memuat koma —
-    //   `${lembaga}|${kunciRombel}` — jadi pemisah ini aman; potongan kosong dibuang
-    //   supaya URL tempelan seperti `?kelasguru=,,` tak menghasilkan penyaring hantu.
+    //   sebagai satu kunci dipisah koma; potongan kosong dibuang supaya URL tempelan
+    //   seperti `?kelasguru=,,` tak menghasilkan penyaring hantu.
+    // v.1.4.9: koma DI DALAM nilai di-escape (lihat _escItem) — nama guru bergelar
+    //   ("…, S.Pd., Gr.") dulu terpotong di sini sehingga centangannya tak cocok lagi.
     if (f.daftar) {
       out[f.kunci] = teks
         .split(',')
-        .map((x) => x.trim())
+        .map((x) => _unescItem(x.trim()))
         .filter(Boolean)
       continue
     }
@@ -87,7 +94,7 @@ export function tulisFilterQuery(nilai, spec, queryLama = {}, kekal = []) {
     if (f.daftar) {
       const arr = Array.isArray(nilai?.[f.kunci]) ? nilai[f.kunci] : []
       const bersih = arr.map((x) => String(x).trim()).filter(Boolean)
-      if (bersih.length) q[f.kunci] = bersih.join(',')
+      if (bersih.length) q[f.kunci] = bersih.map(_escItem).join(',')
       continue
     }
     const v = String(nilai?.[f.kunci] ?? '')

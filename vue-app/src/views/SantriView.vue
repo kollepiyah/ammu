@@ -619,6 +619,7 @@ const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
 import { getNamaGuruGelar, toTitleCase, normalizeWA, juzNum } from '@/utils/format'
+import { kelompokRombel, labelKelasSantri } from '@/utils/kelompokRombel' // v.1.4.9: PDF per rombel guru
 import { shiftNgajiOf } from '@/utils/kelasHitung' // v.1.2.4: label shift ngaji (pagi/sore saja)
 import { usiaKini } from '@/utils/usia' // umur santri auto dari tgl lahir (card + ekspor)
 import { useExcel } from '@/composables/useExcel'
@@ -641,7 +642,7 @@ import EditKelasSantriDialog from '@/components/form/EditKelasSantriDialog.vue' 
 // v.1.4.2: penyaring Kelas-Guru bisa dicentang lebih dari satu.
 import MultiSelectFilter from '@/components/form/MultiSelectFilter.vue'
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
-import { mergeOne, addOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
+import { mergeOne, addOne, deleteOne, getAll, getOne, serverTimestamp } from '@/services/db'
 // v.111: registry field santri = sumber tunggal template/ekspor/impor (auto-detect field baru)
 import {
   santriTemplateColumns,
@@ -1206,18 +1207,42 @@ async function cetakPdf() {
     const settingsObj = settingsStore.settings || {}
     // v.21.92.0527: helper kanonik — baca logoKop/kopLine* dari Pengaturan Web
     const kop = buildKopFromSettings(settingsObj)
-    const rows = (santri.value || []).map((s, i) => ({
+    // v.1.4.9: label kelas kanonik ('Kelas 1', bukan '1') butuh master/lembaga — dibaca
+    //   sekali saat cetak, bukan dilanggan sepanjang layar terbuka.
+    const lembagaList = await getOne('master', 'lembaga')
+      .then((d) => (Array.isArray(d?.list) ? d.list : []))
+      .catch(() => [])
+    const list = santri.value || []
+    const keRow = (s, i) => ({
       no: i + 1,
       nama: s.nama || '',
       nis: s.nis || '',
       jk: s.jk || '',
       usia: usiaKini(s.tgl_lahir),
       lembaga: s.lembaga || '',
-      kelas: s.kelas || '',
+      kelas: labelKelasSantri(s, false, lembagaList),
+      juz: String(s.lembaga || '').toUpperCase() === 'PTPT' ? juzNum(s.juz) : '',
       lembaga_sekolah: s.lembaga_sekolah || '',
-      kelas_sekolah: s.kelas_sekolah || '',
+      kelas_sekolah: labelKelasSantri(s, true, lembagaList),
       wa: s.wa || ''
-    }))
+    })
+    // Kolom Juz hanya bila ada santri PTPT di daftar (lembaga lain tak berjenjang juz).
+    const adaJuz = list.some((s) => String(s.lembaga || '').toUpperCase() === 'PTPT')
+    // v.1.4.9 (Kyai 15 Nov): PDF dikelompokkan per GURU KELAS (rombel pasangan pagi/sore)
+    //   bila daftarnya satu lembaga / PJ / kelas-guru — campuran semua lembaga tetap datar.
+    const sisiSekolah =
+      !!filterLembaga.value &&
+      uniqueLembagaSekolah.value.includes(filterLembaga.value) &&
+      !uniqueLembaga.value.includes(filterLembaga.value)
+    const berkelompok =
+      !!filterLembaga.value || !!filterPjPtpt.value || filterKelasGuru.value.length > 0
+    const groups = berkelompok
+      ? kelompokRombel(list, { sekolah: sisiSekolah, lembagaList }).map((g) => ({
+          judul: `${g.kelas} · ${g.guruLabel}`,
+          kanan: `Total Santri: ${g.santri.length}`,
+          rows: g.santri.map(keRow)
+        }))
+      : null
     await buildListPdf({
       kind: 'umum',
       orientation: 'l',
@@ -1232,13 +1257,15 @@ async function cetakPdf() {
         { key: 'nis', header: 'No. Induk', width: 22 },
         { key: 'jk', header: 'JK', width: 8 },
         { key: 'usia', header: 'Usia', width: 16 },
-        { key: 'lembaga', header: 'Lembaga', width: 24 },
+        { key: 'lembaga', header: 'Lembaga', width: 22 },
         { key: 'kelas', header: 'Kelas', width: 18 },
-        { key: 'lembaga_sekolah', header: 'Sekolah', width: 20 },
-        { key: 'kelas_sekolah', header: 'Kelas', width: 12 },
+        ...(adaJuz ? [{ key: 'juz', header: 'Juz', width: 9 }] : []),
+        { key: 'lembaga_sekolah', header: 'Sekolah', width: 18 },
+        { key: 'kelas_sekolah', header: 'Kelas', width: 16 },
         { key: 'wa', header: 'No. WA', width: 26 }
       ],
-      rows,
+      rows: list.map(keRow),
+      groups,
       filename: `daftar-santri-${new Date().toISOString().slice(0, 10)}.pdf`
     })
     toast?.success?.('PDF santri berhasil dibuat')

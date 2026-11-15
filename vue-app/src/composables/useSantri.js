@@ -135,7 +135,18 @@ export function useSantri() {
   const kelasGuruOptions = computed(() => {
     const arr = [...rombelIndex.value.map.values()].filter((e) => e.label)
     const fl = filterLembaga.value
-    const filtered = fl ? arr.filter((e) => e.lembaga === fl) : arr
+    let filtered = fl ? arr.filter((e) => e.lembaga === fl) : arr
+    // v.1.4.9: PJ terpilih → hanya rombel yang santrinya ber-PJ itu; dulu guru PJ lain
+    //   ikut ditawarkan dan mencentangnya selalu berujung daftar kosong.
+    if (filterPjPtpt.value) {
+      const t = _normPj(filterPjPtpt.value)
+      const { idToOpt } = rombelIndex.value
+      const milikPj = new Set()
+      for (const [id, opt] of idToOpt) {
+        if (_normPj(petaPjSantri.value.get(id)) === t) milikPj.add(opt)
+      }
+      filtered = filtered.filter((e) => milikPj.has(e.optKey))
+    }
     return filtered.sort((a, b) =>
       (a.lembaga + '|' + a.label).localeCompare(b.lembaga + '|' + b.label, 'id')
     )

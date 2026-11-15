@@ -50,6 +50,10 @@ export function usePushNotifications() {
     const td = targetDoc()
     if (!t || !td) return
     try {
+      // v.1.4.9: sesi dari localStorage bisa sudah mati (token dicabut) — tanpa sesi Supabase
+      //   RPC ini jalan sebagai anon dan selalu ditolak 401; lewati saja.
+      const { data } = await supabase.auth.getSession()
+      if (!data?.session) return
       // v.109: RPC kolom-scoped (bukan mergeOne upsert) — lolos RLS utk santri/wali
       //   termasuk anak yang di-switch. Lihat migration save_push_token_rpc.
       const { error } = await supabase.rpc('save_push_token', {

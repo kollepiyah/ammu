@@ -63,7 +63,7 @@
       >
         <div class="min-w-0">
           <h3 class="text-sm md:text-base font-black text-[var(--text-primary)]">
-            <i class="fas fa-door-open text-teal-600 mr-1.5"></i>{{ kelasLabel }} {{ g.kelas }}
+            <i class="fas fa-door-open text-teal-600 mr-1.5"></i>{{ g.kelas }}
           </h3>
           <p class="text-[11px] font-bold text-teal-700 dark:text-teal-300 mt-0.5">
             <i class="fas fa-chalkboard-teacher mr-1"></i>{{ g.guruLabel }}
@@ -149,7 +149,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useGuru } from '@/composables/useGuru'
 import { useLembaga, getPkbmSubTier, isSekolahLembaga } from '@/composables/useLembaga'
 import { useStatistikScope } from '@/composables/useStatistikScope'
-import { kelasKeySekolah, buildResolverQiraati } from '@/utils/kelasHitung'
+import { kelompokRombel, labelKelasSantri } from '@/utils/kelompokRombel'
+import { juzNum } from '@/utils/format'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import {
@@ -178,23 +179,8 @@ const namaLembaga = computed(() => String(route.params.nama || '').trim())
 const isSekolah = computed(() => isSekolahLembaga(namaLembaga.value, lembagaRaw.value))
 // Kolom Juz hanya untuk PTPT (santri ngaji per-juz).
 const isJuz = computed(() => namaLembaga.value.toUpperCase() === 'PTPT')
-const kelasLabel = 'Kelas'
 
 const _teks = (v) => String(v ?? '').trim()
-
-// Label grup guru: Qiraati = pasangan pagi/sore; Sekolah = daftar guru_sekolah.
-function guruLabelOf(g) {
-  if (g.guruSekolah && g.guruSekolah.length) return 'Guru: ' + g.guruSekolah.join(', ')
-  const gp = g.guruPagi,
-    gs = g.guruSore
-  if (gp && gs) return gp === gs ? `Guru Pagi/Sore: ${gp}` : `Pagi: ${gp} · Sore: ${gs}`
-  if (gp) return `Guru Pagi: ${gp}`
-  if (gs) return `Guru Sore: ${gs}`
-  // Field `guru` lama (pra guru_pagi/guru_sore) — dulu tak pernah dilabeli sehingga
-  //   grupnya tampil "belum ada guru" padahal gurunya ada.
-  if (g.guruLegacy) return `Guru: ${g.guruLegacy}`
-  return '— belum ada guru —'
-}
 
 // Santri lembaga ini (ter-scope), kelompok kelas → pasangan guru.
 const groups = computed(() => {
@@ -223,95 +209,34 @@ const groups = computed(() => {
         .toUpperCase() === up
     )
   })
-  // guruKey → grup (1 grup = 1 rombel = 1 kelas)
-  // v.1.1.9: kunci grup diambil dari utils/kelasHitung (SATU fungsi dgn dasbor), bukan
-  //   dirakit di sini lagi — dulu tiap tempat merakit sendiri lalu angkanya melenceng.
-  //   Kunci = NAMA GURU saja; jenjang TIDAK ikut, karena 1 guru bisa mengampu santri
-  //   campur jenjang (Ust. Muin: kelas 1 + 2 = tetap 1 kelas). Jenjang dikumpulkan
-  //   jadi label ("1, 2") lewat Set `jenjang`.
-  //   Santri TANPA guru TETAP ditampilkan lewat bucket cadangan supaya datanya
-  //   kelihatan & bisa dibetulkan, tapi `dihitung:false` -> tak menambah angka.
-  // v.1.2.4: kunci Qiraati lewat resolver — santri pagi-saja/sore-saja nempel ke
-  //   kelas PASANGAN yang berbagi gurunya (tak jadi kartu 1-santri sendiri).
-  const keyOfQiraati = isSek ? null : buildResolverQiraati(list)
-  const byKelas = new Map()
-  for (const s of list) {
-    const kls = (isSek ? s.kelas_sekolah || s.kelas : s.kelas) || '-'
-    const kunci = isSek ? kelasKeySekolah(s) : keyOfQiraati(s)
-    let gp = '',
-      gs = '',
-      gLegacy = '',
-      gsek = []
-    if (isSek) {
-      gsek = (Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []).filter(Boolean)
-    } else {
-      gp = s.guru_pagi || ''
-      gs = s.guru_sore || ''
-      if (!gp && !gs) gLegacy = s.guru || ''
-    }
-    const key = kunci || `__lain__|${gp}||${gs}|${gsek.slice().sort().join(' & ')}`
-    if (!byKelas.has(key))
-      byKelas.set(key, {
-        key,
-        jenjang: new Set(),
-        guruPagi: gp,
-        guruSore: gs,
-        guruLegacy: gLegacy,
-        guruSekolah: gsek,
-        dihitung: !!kunci,
-        santri: []
-      })
-    // v.1.2.4: lengkapi nama pasangan dari santri mana pun di grup — santri pagi-saja
-    //   sendiri hanya membawa guru pagi; santri pasangan mengisi guru sore-nya.
-    const bucket = byKelas.get(key)
-    if (!bucket.guruPagi && gp) bucket.guruPagi = gp
-    if (!bucket.guruSore && gs) bucket.guruSore = gs
-    if (!bucket.guruLegacy && gLegacy) bucket.guruLegacy = gLegacy
-    if (isSek && (!bucket.guruSekolah || !bucket.guruSekolah.length) && gsek.length)
-      bucket.guruSekolah = gsek
-    bucket.jenjang.add(kls)
-    // v.1.1.9 (Kyai): ekspor PDF menampilkan KEDUA sisi — ngaji & sekolah — supaya
-    //   dari daftar SDI pun kelihatan lembaga/kelas/juz/guru ngaji santrinya, dan
-    //   sebaliknya. Field-nya diambil di sini sekali, dipakai ekspor (UI tak berubah).
-    const guruNgaji = [...new Set([s.guru_pagi, s.guru_sore, s.guru].map(_teks).filter(Boolean))]
-    const guruSek = [
-      ...new Set((Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [s.guru_sekolah]).map(_teks))
-    ].filter(Boolean)
-    byKelas.get(key).santri.push({
+  // 1 grup = 1 rombel = 1 kelas (kunci = nama guru; jenjang campuran jadi label
+  //   "Kelas 1 & 2"). Santri tanpa guru tetap tampil tapi `dihitung:false`.
+  // v.1.4.9: dirakit di utils/kelompokRombel (dipakai juga PDF Data Santri) — label
+  //   kelas & juz dikanonkan; dulu 'Kelas 1, 2, Kelas 1' dan 'JUZ 4' bercampur '5'.
+  const lembagaList = lembagaRaw.value
+  return kelompokRombel(list, { sekolah: isSek, lembagaList }).map((g) => ({
+    ...g,
+    // Ekspor PDF menampilkan KEDUA sisi (ngaji & sekolah) — dari daftar SDI pun juz &
+    //   guru ngaji santrinya kelihatan, dan sebaliknya.
+    santri: g.santri.map((s) => ({
       id: String(s.id),
       nama: s.nama || '-',
-      juz: s.juz && s.juz !== '-' ? s.juz : '',
+      juz: juzNum(s.juz),
       capaian: s.prestasi_total || '',
       lembagaQiraati: _teks(s.lembaga),
-      kelasQiraati: _teks(s.kelas),
+      kelasQiraati: labelKelasSantri(s, false, lembagaList),
       lembagaSekolah: _teks(s.lembaga_sekolah),
-      kelasSekolah: _teks(s.kelas_sekolah),
-      guruNgaji: guruNgaji.join(', '),
-      guruSekolah: guruSek.join(', ')
-    })
-  }
-  const out = []
-  {
-    // Jenjang jadi LABEL saja (bisa lebih dari satu: "1, 2" utk rombel campuran),
-    //   bukan lagi penentu grup. Urutkan grup menurut jenjang terkecil lalu guru.
-    const grps = [...byKelas.values()].map((g) => ({
-      ...g,
-      kelas: [...g.jenjang]
-        .sort((a, b) => String(a).localeCompare(String(b), 'id', { numeric: true }))
+      kelasSekolah: labelKelasSantri(s, true, lembagaList),
+      guruNgaji: [...new Set([s.guru_pagi, s.guru_sore, s.guru].map(_teks).filter(Boolean))].join(
+        ', '
+      ),
+      guruSekolah: [
+        ...new Set((Array.isArray(s.guru_sekolah) ? s.guru_sekolah : [s.guru_sekolah]).map(_teks))
+      ]
+        .filter(Boolean)
         .join(', ')
     }))
-    grps.sort(
-      (a, b) =>
-        String(a.kelas).localeCompare(String(b.kelas), 'id', { numeric: true }) ||
-        guruLabelOf(a).localeCompare(guruLabelOf(b), 'id')
-    )
-    for (const g of grps) {
-      g.guruLabel = guruLabelOf(g)
-      g.santri.sort((a, b) => String(a.nama).localeCompare(String(b.nama), 'id'))
-      out.push(g)
-    }
-  }
-  return out
+  }))
 })
 
 const totalSantri = computed(() => groups.value.reduce((n, g) => n + g.santri.length, 0))
@@ -373,7 +298,7 @@ async function exportPdf() {
       }
       doc.setFont(font, 'bold')
       doc.setFontSize(10)
-      doc.text(`${kelasLabel} ${g.kelas} · ${g.guruLabel}`, 12, y)
+      doc.text(`${g.kelas} · ${g.guruLabel}`, 12, y)
       doc.setFont(font, 'normal')
       doc.setFontSize(9)
       doc.text(`Total Santri: ${g.santri.length}`, pageW - 12, y, { align: 'right' })
