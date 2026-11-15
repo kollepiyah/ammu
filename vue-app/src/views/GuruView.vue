@@ -469,18 +469,12 @@
                   </span>
                   <!-- v.1.1.9: label shift dari MASTER via shift_ids (dulu g.shift mentah —
                        kini field itu cuma cermin utk fp_sync, isinya bisa 'kosong'). -->
-                  <!-- v.1.5.0 (Kyai): label Pagi-Sore / Pagi / Sore, sama dengan kartu santri -->
+                  <!-- v.1.5.0 (Kyai): Induk / Non-Induk, diisi manual di form guru -->
                   <span
                     v-if="labelStatusInduk(g.status_induk)"
                     class="text-[10px] bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700 px-2 py-0.5 rounded font-bold"
                   >
                     {{ labelStatusInduk(g.status_induk) }}
-                  </span>
-                  <span
-                    v-if="shiftPagiSoreGuru(g)"
-                    class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-2 py-0.5 rounded font-bold"
-                  >
-                    {{ shiftPagiSoreGuru(g) }}
                   </span>
                   <span
                     v-if="shiftLabelGuru(g)"
@@ -630,8 +624,7 @@ import {
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
 // v.1.1.9: label shift kartu guru ikut master (sumber tunggal aturan shift)
 import { shiftsForGuru } from '@/utils/shiftDerive'
-// v.1.5.0 (Kyai): label Pagi-Sore/Pagi/Sore & penyaring jenis guru — satu sumber di utils.
-import { labelShiftPagiSore, shiftPagiSoreDariIds, isShiftPagiSore } from '@/utils/labelShift'
+// v.1.5.0 (Kyai): penyaring jenis guru & Induk/Non-Induk — satu sumber di utils.
 import {
   isPengajar,
   jenisGuru,
@@ -731,16 +724,13 @@ const alamatKelola = computed(() => alamatBawaFilter('/master-data', _route.quer
 //   bukan lagi g.shift mentah. g.shift kini sekadar cermin utk fp_sync dan bisa berisi
 //   'kosong' (penanda "tak ada shift") yang tak layak dipajang.
 const _settingsShift = useSettingsStore()
-//   v.1.5.0: pagi/sore (guru & pegawai) kini label sendiri "Pagi-Sore"/"Pagi"/"Sore" — baris
-//   "Shift:" tinggal memuat shift LAIN (Sekolah, shift kustom) supaya tak tertulis dua kali.
+// v.1.5.0 (Kyai 16 Nov 2026): label terpisah "Pagi-Sore/Pagi/Sore" untuk guru DICABUT — chip
+//   "Shift:" ini sudah memuatnya, dua chip berisi sama hanya menumpuk. Label itu khusus santri.
 function shiftLabelGuru(g) {
   const s = _settingsShift.settings || {}
-  const ids = [...shiftsForGuru(g, s)].filter((id) => !isShiftPagiSore(id))
+  const ids = [...shiftsForGuru(g, s)]
   if (ids.length === 0) return ''
   return ids.map((id) => shiftLabelOf(s, id)).join(' + ')
-}
-function shiftPagiSoreGuru(g) {
-  return labelShiftPagiSore(shiftPagiSoreDariIds(shiftsForGuru(g, _settingsShift.settings || {})))
 }
 
 // v.98: pita "Data Guru" (?tipe=guru) vs "Data Pegawai" (?tipe=pegawai) — pisah guru vs pegawai non-guru.

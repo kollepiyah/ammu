@@ -1,7 +1,8 @@
-// Kyai 16 Nov 2026: label shift Pagi-Sore / Pagi / Sore untuk santri DAN guru (dulu santri
-// hanya "Pagi saja"/"Sore saja"), dan penyaring jenis guru Qiraati-Sekolah/Qiraati/Sekolah/Pegawai.
+// Kyai 16 Nov 2026: label shift Pagi-Sore / Pagi / Sore untuk santri (dulu hanya "Pagi saja"/
+// "Sore saja"; kartu guru tetap memakai chip "Shift:" dari Master Shift), dan penyaring jenis guru
+// Qiraati-Sekolah/Qiraati/Sekolah/Pegawai.
 import { describe, it, expect } from 'vitest'
-import { labelShiftPagiSore, shiftPagiSoreDariIds, isShiftPagiSore } from '@/utils/labelShift'
+import { labelShiftPagiSore } from '@/utils/labelShift'
 import { jenisGuru, isPengajar, normStatusInduk, labelStatusInduk } from '@/utils/jenisGuru'
 import { shiftNgajiOf } from '@/utils/kelasHitung'
 
@@ -13,13 +14,6 @@ describe('label shift Pagi-Sore / Pagi / Sore', () => {
     expect(lbl({ guru_sore: 'Ust. A' })).toBe('Sore')
     expect(lbl({ guru_pagi: 'A', guru_sore: 'B' })).toBe('Pagi-Sore')
     expect(lbl({})).toBe('')
-  })
-  it('guru/pegawai: dari id shift; shift pegawai pagi/sore ikut, shift lain tidak', () => {
-    expect(labelShiftPagiSore(shiftPagiSoreDariIds(['pagi', 'sore', 'sekolah']))).toBe('Pagi-Sore')
-    expect(labelShiftPagiSore(shiftPagiSoreDariIds(new Set(['pegawai_pagi'])))).toBe('Pagi')
-    expect(labelShiftPagiSore(shiftPagiSoreDariIds(['sekolah']))).toBe('')
-    expect(isShiftPagiSore('sekolah')).toBe(false)
-    expect(isShiftPagiSore('pegawai_sore')).toBe(true)
   })
 })
 

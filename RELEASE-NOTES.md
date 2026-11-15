@@ -29,7 +29,7 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Peringkat Guru** di Tes Kenaikan → Rekap: guru diurutkan menurut jumlah santri yang lulus tes
   dari ajuannya, per bulan atau periode bebas.
 
-- **Label shift** "Pagi-Sore", "Pagi", atau "Sore" kini tampil untuk semua santri dan semua guru.
+- **Label shift** "Pagi-Sore", "Pagi", atau "Sore" kini tampil untuk semua santri.
 - **Data Guru bisa disaring per jenis**: Qiraati-Sekolah, Qiraati, Sekolah, atau Pegawai.
 - **Isian baru Induk / Non-Induk** di form guru, tampil sebagai label di kartu guru dan bisa
   disaring (termasuk "Belum diisi"); ikut kolom Excel guru.

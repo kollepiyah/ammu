@@ -814,7 +814,7 @@ const rilis = [
       'Top 10 santri prestasi (dulu Top 5) di Rekap Prestasi dan Laporan; ketuk kartunya untuk peringkat lengkap.',
       'Peringkat Guru di Tes Kenaikan → Rekap: jumlah santri yang lulus tes dari ajuan tiap guru, per bulan atau periode bebas.',
       'Tes Kenaikan PTPT: kunci glondongan untuk PJ kini benar-benar bekerja — PJ menunggu sampai semua blok glondongan selesai disimak.',
-      'Label shift "Pagi-Sore", "Pagi", atau "Sore" kini tampil di semua santri dan guru; Data Guru bisa disaring per jenis (Qiraati-Sekolah, Qiraati, Sekolah, Pegawai).',
+      'Label shift "Pagi-Sore", "Pagi", atau "Sore" kini tampil di semua santri; Data Guru bisa disaring per jenis (Qiraati-Sekolah, Qiraati, Sekolah, Pegawai).',
       'Isian baru Induk / Non-Induk di form guru: tampil sebagai label di kartu guru, bisa disaring, dan ikut kolom Excel guru.',
       `Tulisan juz kini "Juz 5" (huruf awal saja yang besar), dan nama berpetik seperti "Ma'rifatin" tak lagi tertulis "Ma'Rifatin".`,
       'Data Santri: penyaring kelas per guru kini berfungsi untuk guru bergelar (nama dengan koma, mis. "S.Pd., Gr."), dan pilihannya menyesuaikan PJ yang dipilih.',

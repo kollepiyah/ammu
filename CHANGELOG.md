@@ -40,7 +40,7 @@ Prestasi & Input Bulanan (3 santri sekelas terisi, ubah satu → "beragam"), Top
 lengkap 14 santri, penyaring Pondok Laju, kartu Top Santri di Laporan + "Lihat semua", Peringkat
 Guru per bulan & bebas + rincian santri.
 Diuji (label & jenis guru): vitest 128 berkas / 1.868 tes, vite build; di peramban (data rekaan +
-penjaga tulis): 5 guru rekaan berlabel Pagi-Sore/Pagi/Sore + penyaring 4 jenis, 3 santri berlabel;
+penjaga tulis): penyaring 4 jenis pada 5 guru rekaan, 3 santri berlabel Pagi-Sore/Pagi/Sore;
 Induk/Non-Induk: label + penyaring 3 pilihan + baris ekspor pada 3 guru rekaan, pilihan di form.
 Diuji (tahap 3): vitest 127 berkas / 1.863 tes, eslint 0 error, vite build; di peramban (data
 rekaan + penjaga tulis): Siap Tes satu kelas (2 siap · 1 menunggu simakan), seremonial pilih satu
@@ -98,10 +98,14 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 
 ### Added — label shift & jenis guru (Kyai, 16 Nov 2026)
 
-- **Label shift Pagi-Sore / Pagi / Sore** untuk SEMUA santri (dulu hanya "Pagi saja"/"Sore saja")
-  dan untuk guru/pegawai (dari shift absensinya; shift pegawai pagi/sore ikut). Di kartu guru, baris
-  "Shift:" kini hanya memuat shift lain (mis. Sekolah) supaya pagi/sore tak tertulis dua kali.
-  Pilihan shift ngaji di form santri ikut berlabel sama. Satu sumber: `utils/labelShift`.
+- **Label shift Pagi-Sore / Pagi / Sore** untuk SEMUA santri (dulu hanya "Pagi saja"/"Sore saja").
+  Pilihan shift ngaji di form santri ikut berlabel sama. Satu sumber: `utils/labelShift`. Kartu
+  guru/pegawai SENGAJA tak mendapat label ini (Kyai 16 Nov, "kalau numpuk mending enggak usah"):
+  chip "Shift:" dari Master Shift sudah memuat pagi/sore sejak v.1.1.9, dan penyaring jenis guru
+  tak menambah chip — lembaga ngaji & "Sekolah: …" di kartu sudah menunjukkannya. Lagi pula label
+  guru versi awal (turunan id shift `pagi`/`sore`) SALAH untuk data Kyai: di Master Shift produksi
+  id `sore` berlabel "PTPT-PPPH Pagi" dan shift sore memakai id lain (`tpq_sore`,
+  `pra_ptpt_ptpt_sore`), jadi guru shift pagi bisa terlabel "Sore". Versi itu tak pernah dirilis.
 - **Penyaring jenis guru** di Data Guru: Qiraati-Sekolah / Qiraati / Sekolah / Pegawai (`?jenis=`),
   dari lembaga ngaji & sekolah guru + jenis lembaga di master/lembaga. `_isPengajar` GuruView
   dipindah utuh ke `utils/jenisGuru.isPengajar`.

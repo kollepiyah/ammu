@@ -1205,7 +1205,7 @@ function formatGuru(s) {
 }
 
 // v.1.5.0 (Kyai 16 Nov 2026): label shift ngaji untuk SEMUA santri — "Pagi-Sore", "Pagi", "Sore"
-//   (dulu hanya "Pagi saja"/"Sore saja"). Teksnya satu sumber dengan kartu guru (utils/labelShift).
+//   (dulu hanya "Pagi saja"/"Sore saja"). Teksnya di utils/labelShift.
 function shiftNgajiLabel(s) {
   return labelShiftPagiSore(shiftNgajiOf(s))
 }
