@@ -251,7 +251,7 @@ export async function buildSesi() {
 
 /**
  * Logout Supabase — HANYA perangkat ini (scope 'local').
- * v.1.4.9: bawaan supabase-js adalah 'global' = mencabut SEMUA sesi akun itu. Keluar di HP
+ * v.1.5.0: bawaan supabase-js adalah 'global' = mencabut SEMUA sesi akun itu. Keluar di HP
  *   membuat web/Electron yang masih terbuka gagal refresh token (400) → "Sesi berakhir".
  */
 export async function signOut() {

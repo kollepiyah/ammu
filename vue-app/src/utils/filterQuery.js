@@ -57,7 +57,7 @@ export function bacaFilterQuery(query, spec) {
     // v.1.4.2: penyaring yang boleh dicentang LEBIH DARI SATU (mis. Kelas-Guru) disimpan
     //   sebagai satu kunci dipisah koma; potongan kosong dibuang supaya URL tempelan
     //   seperti `?kelasguru=,,` tak menghasilkan penyaring hantu.
-    // v.1.4.9: koma DI DALAM nilai di-escape (lihat _escItem) — nama guru bergelar
+    // v.1.5.0: koma DI DALAM nilai di-escape (lihat _escItem) — nama guru bergelar
     //   ("…, S.Pd., Gr.") dulu terpotong di sini sehingga centangannya tak cocok lagi.
     if (f.daftar) {
       out[f.kunci] = teks

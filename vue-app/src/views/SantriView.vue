@@ -619,7 +619,7 @@ const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
 import { getNamaGuruGelar, toTitleCase, normalizeWA, juzNum } from '@/utils/format'
-import { kelompokRombel, labelKelasSantri } from '@/utils/kelompokRombel' // v.1.4.9: PDF per rombel guru
+import { kelompokRombel, labelKelasSantri } from '@/utils/kelompokRombel' // v.1.5.0: PDF per rombel guru
 import { shiftNgajiOf } from '@/utils/kelasHitung' // v.1.2.4: label shift ngaji (pagi/sore saja)
 import { usiaKini } from '@/utils/usia' // umur santri auto dari tgl lahir (card + ekspor)
 import { useExcel } from '@/composables/useExcel'
@@ -1207,7 +1207,7 @@ async function cetakPdf() {
     const settingsObj = settingsStore.settings || {}
     // v.21.92.0527: helper kanonik — baca logoKop/kopLine* dari Pengaturan Web
     const kop = buildKopFromSettings(settingsObj)
-    // v.1.4.9: label kelas kanonik ('Kelas 1', bukan '1') butuh master/lembaga — dibaca
+    // v.1.5.0: label kelas kanonik ('Kelas 1', bukan '1') butuh master/lembaga — dibaca
     //   sekali saat cetak, bukan dilanggan sepanjang layar terbuka.
     const lembagaList = await getOne('master', 'lembaga')
       .then((d) => (Array.isArray(d?.list) ? d.list : []))
@@ -1228,7 +1228,7 @@ async function cetakPdf() {
     })
     // Kolom Juz hanya bila ada santri PTPT di daftar (lembaga lain tak berjenjang juz).
     const adaJuz = list.some((s) => String(s.lembaga || '').toUpperCase() === 'PTPT')
-    // v.1.4.9 (Kyai 15 Nov): PDF dikelompokkan per GURU KELAS (rombel pasangan pagi/sore)
+    // v.1.5.0 (Kyai 15 Nov): PDF dikelompokkan per GURU KELAS (rombel pasangan pagi/sore)
     //   bila daftarnya satu lembaga / PJ / kelas-guru — campuran semua lembaga tetap datar.
     const sisiSekolah =
       !!filterLembaga.value &&
@@ -1284,7 +1284,7 @@ async function kirimGoogleSheet() {
   sendingGsheet.value = true
   try {
     const ss = settingsStore.settings || {}
-    // v.1.4.10: kelas kanonik + Juz PTPT, cermin PDF (lihat cetakPdf).
+    // v.1.5.0: kelas kanonik + Juz PTPT, cermin PDF (lihat cetakPdf).
     const lembagaList = await getOne('master', 'lembaga')
       .then((d) => (Array.isArray(d?.list) ? d.list : []))
       .catch(() => [])

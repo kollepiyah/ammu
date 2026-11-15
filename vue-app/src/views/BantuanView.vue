@@ -803,7 +803,7 @@ async function resetFaq() {
 //   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
-    versi: 'v.1.4.10',
+    versi: 'v.1.5.0',
     tgl: 'November 2026',
     items: [
       'Data Santri: penyaring kelas per guru kini berfungsi untuk guru bergelar (nama dengan koma, mis. "S.Pd., Gr."), dan pilihannya menyesuaikan PJ yang dipilih.',

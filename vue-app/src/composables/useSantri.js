@@ -153,7 +153,7 @@ export function useSantri() {
     const arr = [...rombelIndex.value.map.values()].filter((e) => e.label)
     const fl = filterLembaga.value
     let filtered = fl ? arr.filter((e) => e.lembaga === fl) : arr
-    // v.1.4.9: PJ terpilih → hanya rombel yang santrinya ber-PJ itu; dulu guru PJ lain
+    // v.1.5.0: PJ terpilih → hanya rombel yang santrinya ber-PJ itu; dulu guru PJ lain
     //   ikut ditawarkan dan mencentangnya selalu berujung daftar kosong.
     if (filterPjPtpt.value) {
       const t = _normPj(filterPjPtpt.value)
@@ -231,7 +231,7 @@ export function useSantri() {
     for (const s of santriScope.value) {
       if (s.aktif === false) continue
       if (!cocokLembaga(s, fl)) continue
-      // v.1.4.10: label kanonik — dulu '1' dan 'Kelas 1' (dua ejaan PTPT) jadi dua opsi,
+      // v.1.5.0: label kanonik — dulu '1' dan 'Kelas 1' (dua ejaan PTPT) jadi dua opsi,
       //   dan memilih salah satunya menyembunyikan santri ejaan lainnya.
       for (const k of labelKelasDuaSisi(s, L)) {
         hitung.set(k, (hitung.get(k) || 0) + 1)

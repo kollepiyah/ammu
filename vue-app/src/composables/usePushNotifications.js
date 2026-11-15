@@ -50,7 +50,7 @@ export function usePushNotifications() {
     const td = targetDoc()
     if (!t || !td) return
     try {
-      // v.1.4.9: sesi dari localStorage bisa sudah mati (token dicabut) — tanpa sesi Supabase
+      // v.1.5.0: sesi dari localStorage bisa sudah mati (token dicabut) — tanpa sesi Supabase
       //   RPC ini jalan sebagai anon dan selalu ditolak 401; lewati saja.
       const { data } = await supabase.auth.getSession()
       if (!data?.session) return

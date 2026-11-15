@@ -211,7 +211,7 @@ const groups = computed(() => {
   })
   // 1 grup = 1 rombel = 1 kelas (kunci = nama guru; jenjang campuran jadi label
   //   "Kelas 1 & 2"). Santri tanpa guru tetap tampil tapi `dihitung:false`.
-  // v.1.4.9: dirakit di utils/kelompokRombel (dipakai juga PDF Data Santri) — label
+  // v.1.5.0: dirakit di utils/kelompokRombel (dipakai juga PDF Data Santri) — label
   //   kelas & juz dikanonkan; dulu 'Kelas 1, 2, Kelas 1' dan 'JUZ 4' bercampur '5'.
   const lembagaList = lembagaRaw.value
   return kelompokRombel(list, { sekolah: isSek, lembagaList }).map((g) => ({

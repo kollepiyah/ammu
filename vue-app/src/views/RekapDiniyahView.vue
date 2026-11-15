@@ -359,7 +359,7 @@ const kelasOptions = computed(() => {
       diniyahJenjang(s.lembaga_sekolah, s.kelas_sekolah) !== filterJenjang.value
     )
       return
-    // v.1.4.10: satu opsi per kelas — '1' dan 'Kelas 1' tak lagi jadi dua pilihan terpisah.
+    // v.1.5.0: satu opsi per kelas — '1' dan 'Kelas 1' tak lagi jadi dua pilihan terpisah.
     if (![...set].some((k) => kelasSama(k, s.kelas_sekolah))) set.add(s.kelas_sekolah)
   })
   return [...set].sort()

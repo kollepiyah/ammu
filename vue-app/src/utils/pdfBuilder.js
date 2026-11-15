@@ -370,7 +370,7 @@ export async function buildListPdf({
   rows = [],
   signature = null,
   filename = 'list.pdf',
-  // v.1.4.9: opsional — [{ judul, kanan, rows }] → satu tabel per kelompok (mis. per rombel
+  // v.1.5.0: opsional — [{ judul, kanan, rows }] → satu tabel per kelompok (mis. per rombel
   //   guru) dengan judul di atasnya. Bila diisi, `rows` diabaikan.
   groups = null
 }) {

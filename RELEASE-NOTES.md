@@ -5,7 +5,7 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
-## v.1.4.10 — November 2026
+## v.1.5.0 — November 2026
 
 **Perbaikan**
 

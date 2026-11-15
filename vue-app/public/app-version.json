@@ -24,7 +24,7 @@
   ],
   "android": {
     "versionCode": 150,
-    "versionName": "v.1.4.10",
+    "versionName": "v.1.5.0",
     "apkUrl": "",
     "halamanRilis": "https://play.google.com/store/apps/details?id=app.ammu.id",
     "wajib": false,

@@ -5,6 +5,8 @@ Semua perubahan penting Portal Mambaul Ulum tercatat di sini.
 Format: [Keep a Changelog](https://keepachangelog.com/id/1.1.0/)
 Versioning: semver `v.MAJOR.MINOR.PATCH` sejak v.1.1.x (mis: `v.1.2.7`); versionCode Android
 naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu}` (mis: `v.108.0527`).
+Sejak v.1.5.0 (keputusan Kyai, 15 Nov 2026): PATCH berhenti di 9 — sesudah `v.1.5.9` rilis
+berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AAB, dan Electron.
 
 ---
 
@@ -20,10 +22,11 @@ naik satu tiap rilis. Entri lama memakai skema lama `v.{nomor-urut}.{MMDDtahunmu
 
 ---
 
-## [v.1.4.10] — 2026-11-15 — Filter kelas-guru bergelar, PDF Data Santri per guru kelas + Juz, PDF Data Kelas rapi, logout tak mencabut perangkat lain
+## [v.1.5.0] — 2026-11-15 — Filter kelas-guru bergelar, PDF Data Santri per guru kelas + Juz, PDF Data Kelas rapi, logout tak mencabut perangkat lain
 
-**SIAP RILIS** — `versionCode` 150 / `versionName` `v.1.4.10`. Nomor baru, bukan gelombang
-v.1.4.9: Electron 1.4.9 sudah "Latest" di GitHub sejak 4 Nov 2026. Tanpa migrasi Supabase, tanpa
+**SIAP RILIS** — `versionCode` 150 / `versionName` `v.1.5.0`. Nomor baru, bukan gelombang
+v.1.4.9: Electron 1.4.9 sudah "Latest" di GitHub sejak 4 Nov 2026. Sempat di-commit sebagai
+v.1.4.10 (commit 0002f84–fae5630), lalu dinomori ulang 1.5.0 sebelum tayang. Tanpa migrasi Supabase, tanpa
 edge function, tanpa perubahan native. Urutan: deploy web → rebuild AAB → rilis Electron.
 
 Diuji: vitest 125 berkas / 1.843 tes (baru `kelompokRombel`, `kelasJuzSimpan`; `filterQuery` +1), eslint 0 error,
