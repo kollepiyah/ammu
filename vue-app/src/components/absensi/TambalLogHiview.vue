@@ -26,6 +26,8 @@ import { useConfirm } from '@/composables/useConfirm'
 import { todayJakarta } from '@/utils/format'
 import { guruAktifSaja } from '@/utils/guruScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
+// v.1.5.0: shift Pondok Laju per tanggal — aturan yang sama dengan kiriman langsung & sinkron Revo.
+import { idShiftLaju, penentuShiftLaju } from '@/utils/shiftLaju'
 import { shiftLabelOf } from '@/utils/shiftMaster'
 import { labelSumberAbsen } from '@/utils/absensiRekap'
 import { bacaCsv, scanDariLembar, samakanPin, tampakBiner } from '@/utils/logMesinHiview'
@@ -125,6 +127,7 @@ async function muatAda() {
       ['tanggal', '>=', dari.value],
       ['tanggal', '<=', sampai.value]
     ])
+    await muatLaju()
   } catch (e) {
     ada.value = []
     galatAda.value = 'Gagal membaca absen yang sudah ada: ' + (e?.message || e)
@@ -138,13 +141,45 @@ watch([dari, sampai], () => {
   if (!membaca.value && bacaan.value?.ok) muatAda()
 })
 
+// v.1.5.0: jadwal piket & guru kelas Pondok Laju di rentang ini — hanya bila Kyai sudah memilih
+//   shift tiap sesi. Gagal baca = tanpa shift harian (perilaku lama), tak menggagalkan tambal.
+const lajuJadwal = ref([])
+const lajuSantri = ref([])
+async function muatLaju() {
+  lajuJadwal.value = []
+  lajuSantri.value = []
+  if (!idShiftLaju(props.settings).size) return
+  try {
+    const [j, s] = await Promise.all([
+      queryColl('pondok_laju_jadwal', [
+        ['tanggal', '>=', dari.value],
+        ['tanggal', '<=', sampai.value]
+      ]),
+      queryColl('santri', [['is_pondok_laju', '==', true]])
+    ])
+    lajuJadwal.value = j
+    lajuSantri.value = s
+  } catch (e) {
+    console.warn('[tambal] jadwal Pondok Laju tak terbaca:', e?.message || e)
+  }
+}
+const shiftHarian = computed(() =>
+  penentuShiftLaju({
+    settings: props.settings,
+    jadwal: lajuJadwal.value,
+    santriList: lajuSantri.value
+  })
+)
+
 const saring = computed(() =>
   bacaan.value?.ok
     ? saringScan(bacaan.value.scans, { dari: dari.value, sampai: sampai.value, hariIni })
     : null
 )
 const kelompok = computed(() =>
-  saring.value ? kelompokkanScan(saring.value.dipakai, props.guru, props.settings) : null
+  saring.value
+    ? kelompokkanScan(saring.value.dipakai, props.guru, props.settings, shiftHarian.value)
+    : null
 )
 function susunRencana(waktu) {
   return rencanaTambalScan({

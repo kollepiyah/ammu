@@ -50,6 +50,50 @@
           </button>
         </div>
 
+        <!-- v.1.5.0 (Kyai): komputer menyala → Ammu Desktop menyala → langsung sinkron -->
+        <div class="fp-field fp-row">
+          <div class="fp-row-l">
+            <span class="fp-lab"
+              ><RibbonIcon name="refresh" :size="15" /> Buka saat Windows menyala</span
+            >
+            <span class="fp-hint"
+              >Ammu Desktop terbuka sendiri saat komputer menyala; bila sinkron otomatis aktif,
+              sinkron pertama berjalan ±20 detik sesudahnya. Login tetap harus tersimpan.</span
+            >
+          </div>
+          <button
+            type="button"
+            class="fp-switch"
+            role="switch"
+            :aria-checked="String(!!store.bukaSaatWindows)"
+            :data-on="!!store.bukaSaatWindows"
+            :disabled="store.bukaSaatWindows === null"
+            @click="ubahBukaSaatWindows"
+          >
+            <span class="sw"></span>
+          </button>
+        </div>
+
+        <label class="fp-field fp-row">
+          <div class="fp-row-l">
+            <span class="fp-lab"><RibbonIcon name="clock" :size="15" /> Rentang sinkron</span>
+            <span class="fp-hint"
+              >Hanya scan sekian hari terakhir yang diproses (hemat kuota data). 0 = semua
+              riwayat.</span
+            >
+          </div>
+          <span class="fp-interval">
+            <input
+              v-model.number="hariMundur"
+              type="number"
+              class="fp-input fp-num"
+              min="0"
+              step="1"
+            />
+            <em>hari</em>
+          </span>
+        </label>
+
         <label class="fp-field fp-row" :class="{ 'fp-dim': !autoSyncOn }">
           <div class="fp-row-l">
             <span class="fp-lab"><RibbonIcon name="clock" :size="15" /> Interval</span>
@@ -87,6 +131,12 @@
             <em class="fp-trig">({{ store.lastTrigger === 'auto' ? 'otomatis' : 'manual' }})</em>
           </span>
           <span v-else class="fp-status-v fp-muted">Belum pernah</span>
+        </div>
+        <!-- v.1.5.0: scan terbaru yang sudah ada di Personnel — tanda unduh otomatis Personnel
+             dari mesin berjalan. Kalau jauh tertinggal dari hari ini, Personnel belum mengunduh. -->
+        <div v-if="store.lastResult && store.lastResult.scanTerbaru" class="fp-status">
+          <span class="fp-lab">Scan terbaru di Personnel</span>
+          <span class="fp-status-v">{{ store.lastResult.scanTerbaru }}</span>
         </div>
 
         <!-- Hasil error -->
@@ -249,6 +299,22 @@ const interval = computed({
   get: () => store.intervalMin,
   set: (v) => store.setIntervalMin(v)
 })
+const hariMundur = computed({
+  get: () => store.hariMundur,
+  set: (v) => store.setHariMundur(v)
+})
+async function ubahBukaSaatWindows() {
+  try {
+    await store.setBukaSaatWindows(!store.bukaSaatWindows)
+    toast.success(
+      store.bukaSaatWindows
+        ? 'Ammu Desktop akan terbuka sendiri saat Windows menyala.'
+        : 'Ammu Desktop tidak lagi terbuka sendiri saat Windows menyala.'
+    )
+  } catch (e) {
+    toast.error('Gagal mengubah: ' + (e?.message || e))
+  }
+}
 
 async function syncNow() {
   if (!store.available()) {

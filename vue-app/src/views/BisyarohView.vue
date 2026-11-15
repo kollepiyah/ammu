@@ -1550,6 +1550,7 @@ import {
 } from '@/utils/periodeBisyaroh'
 // v.1.5.0: bisyaroh piket Pondok Laju per sesi — satu aturan dengan tab Bisyaroh di menu Pondok Laju.
 import { sesiLajuTerbayar, sesiTakDibayarGuru } from '@/utils/pondokLajuSesi'
+import { idShiftLaju, petaShiftSesiLaju } from '@/utils/shiftLaju'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -2366,7 +2367,8 @@ function ctxGuruPenuh(g, periode) {
         guruId: g.id,
         dalamPeriode: penyaringPeriodeBisyaroh(periode),
         sesiTakDibayar: sesiTakDibayarGuru(shiftIds, shiftList(s))
-      }).berbayar
+      }).berbayar,
+    shiftLaju: idShiftLaju(s)
   }
 }
 
@@ -2605,8 +2607,11 @@ function ctxGuru(g, periode) {
         guruId: g.id,
         dalamPeriode: penyaringPeriodeBisyaroh(periode),
         shiftIds,
-        sesiTakDibayar: sesiTakDibayarGuru(shiftsForGuru(g, s), shiftList(s))
-      }).dibayar
+        sesiTakDibayar: sesiTakDibayarGuru(shiftsForGuru(g, s), shiftList(s)),
+        shiftSesi: petaShiftSesiLaju(s)
+      }).dibayar,
+    // v.1.5.0: shift Pondok Laju tak ikut "× kehadiran" ber-scope kosong (dibayar per sesi).
+    shiftLaju: idShiftLaju(s)
   }
 }
 

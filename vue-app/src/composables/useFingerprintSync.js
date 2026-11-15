@@ -9,12 +9,27 @@
 // Tulis pakai source 'fingerprint' (auto) — beda dari 'fingerprint_import' (impor xlsx manual).
 // Logika = CERMIN AbsensiGuruView.importFingerprint + fp_sync.py (jembatan sementara).
 
-import { getAll, getOne, setOne, mergeOne } from '@/services/db'
+import { getAll, getOne, setOne, mergeOne, queryColl } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
 import { statusFor, shiftsForGuru, pilihShiftPulang } from '@/utils/shiftDerive'
 // v.1.4.6 gel. 3: pengelompokan scan (+ diagnosa scan tanpa absen) pindah ke utils/scanMesin,
 //   dipakai bersama tambal log HiView. Perilaku sinkron ini TIDAK berubah.
-import { kelompokkanScan, hitungScanTanpaAbsen } from '@/utils/scanMesin'
+import {
+  kelompokkanScan,
+  hitungScanTanpaAbsen,
+  shiftMilikHari,
+  saringScan
+} from '@/utils/scanMesin'
+// v.1.5.0: shift Pondok Laju yang aktif per tanggal (jadwal piket + Tadarus Pagi guru kelas).
+import { idShiftLaju, penentuShiftLaju } from '@/utils/shiftLaju'
+import { todayJakarta } from '@/utils/format'
+
+/** 'YYYY-MM-DD' mundur n hari (kalender, UTC — tanggalnya sudah tanggal WIB). */
+function mundurHari(iso, n) {
+  const d = new Date(iso + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() - n)
+  return d.toISOString().slice(0, 10)
+}
 
 // Tetap diekspor dari sini — pemanggil & tes lama mengimpornya dari composable ini.
 export { hitungScanTanpaAbsen }
@@ -32,22 +47,49 @@ export function useFingerprintSync() {
    * @param {object} opts
    * @param {string} [opts.personnelDir] folder install Fingerspot Personnel (kosong = default)
    * @param {boolean} [opts.commit=true] false = dry-run (hitung saja, tak menulis)
+   * @param {number} [opts.hariMundur=14] v.1.5.0: hanya scan N hari terakhir yang diproses
+   *   (0 = semua riwayat). Dulu SELURUH att_log sejak mesin dipasang dibaca ulang & dicek satu
+   *   per satu ke database tiap sinkron — boros kuota bila sinkron otomatis tiap 30 menit.
    * @returns ringkasan { scan, kandidat, written, skipIzin, skipSame, takKenal[], luar, rows[] }
    */
-  async function sync({ personnelDir = '', commit = true } = {}) {
+  async function sync({ personnelDir = '', commit = true, hariMundur = 14 } = {}) {
     if (!available()) {
       throw new Error('Sinkron mesin hanya tersedia di Ammu Desktop (Electron).')
     }
     const res = await window.electronAPI.readAttLog(personnelDir ? { personnelDir } : {})
     if (!res || !res.ok) throw new Error((res && res.error) || 'Gagal baca att_log mesin')
-    const scans = res.rows || []
+    const semuaScan = res.rows || []
+    const hariIni = todayJakarta()
+    const dari = Number(hariMundur) > 0 ? mundurHari(hariIni, Number(hariMundur)) : ''
+    const { dipakai: scans } = saringScan(semuaScan, { dari, hariIni })
+    // Scan terbaru di Personnel — tanda apakah unduh otomatis Personnel dari mesin berjalan.
+    const scanTerbaru = semuaScan.length ? String(semuaScan[semuaScan.length - 1].timestamp) : ''
 
     const settings = settingsStore.settings || {}
     const guru = await getAll('guru')
 
+    // v.1.5.0: shift Pondok Laju per tanggal — dibaca hanya bila Kyai sudah memilih shift sesi.
+    let shiftHarian
+    if (idShiftLaju(settings).size) {
+      try {
+        const [jadwal, santriList] = await Promise.all([
+          queryColl('pondok_laju_jadwal', dari ? [['tanggal', '>=', dari]] : []),
+          queryColl('santri', [['is_pondok_laju', '==', true]])
+        ])
+        shiftHarian = penentuShiftLaju({ settings, jadwal, santriList })
+      } catch (e) {
+        console.warn('[fp-sync] jadwal Pondok Laju tak terbaca:', e?.message || e)
+      }
+    }
+
     // agregasi per (pin, tanggal, shift) → scan TERAWAL = jam masuk; scan lain hari itu =
     //   kandidat PULANG. Aturannya di utils/scanMesin (murni + tes), dipakai juga tambal HiView.
-    const { agg, pulangScans, takKenal, luar, luarPer } = kelompokkanScan(scans, guru, settings)
+    const { agg, pulangScans, takKenal, luar, luarPer } = kelompokkanScan(
+      scans,
+      guru,
+      settings,
+      shiftHarian
+    )
 
     const nowIso = new Date().toISOString()
     let written = 0
@@ -97,7 +139,7 @@ export function useFingerprintSync() {
       const { g, date, times } = pulangScans[pk]
       const shiftRows = {}
       const barisMasuk = []
-      for (const sh of shiftsForGuru(g, settings)) {
+      for (const sh of shiftMilikHari(g, date, settings, shiftHarian)) {
         const docId = 'shift_' + g.id + '_' + date + '_' + sh
         const row = await getOne('absensi_shift_guru', docId)
         if (!row) continue
@@ -131,6 +173,9 @@ export function useFingerprintSync() {
 
     return {
       scan: scans.length,
+      scanSemua: semuaScan.length,
+      scanTerbaru,
+      dari,
       kandidat: Object.keys(agg).length,
       written,
       pulangWritten,

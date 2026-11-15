@@ -18,6 +18,16 @@
 import { deriveShift, statusFor, shiftsForGuru, pilihShiftPulang } from './shiftDerive'
 import { hitungBarisAutoGabungan } from './absensiMaterialize'
 
+/**
+ * Shift milik guru pada SATU tanggal = shift tetapnya + shift harian (v.1.5.0: Pondok Laju —
+ * jadwal piket & Tadarus Pagi, lihat utils/shiftLaju). `shiftHarian` opsional `(g, date) => Set`.
+ */
+export function shiftMilikHari(g, date, settings, shiftHarian) {
+  const milik = shiftsForGuru(g, settings)
+  if (typeof shiftHarian === 'function') for (const id of shiftHarian(g, date) || []) milik.add(id)
+  return milik
+}
+
 /** Timestamp 'YYYY-MM-DD HH:MM[:SS]' (WIB lokal, tanpa zona) → { date, hhmm, full }. */
 export function pisahWaktuScan(ts) {
   const m = String(ts || '')
@@ -81,10 +91,12 @@ export function hitungScanTanpaAbsen(luarPer, aggKeys, shiftsOf, batas = 100) {
  * @param {Array<{device_pin:string, timestamp:string}>} scans timestamp WIB 'YYYY-MM-DD HH:MM:SS'
  * @param {Array<object>} guruList semua guru — PIN dicocokkan ke `id_fingerprint`
  * @param {object} settings
+ * @param {(g:object, date:string)=>Set<string>} [shiftHarian] v.1.5.0: shift yang aktif hari itu
+ *   saja (Pondok Laju). Ikut dikembalikan supaya pass PULANG memakai shift yang sama.
  * @returns {{ agg: object, pulangScans: object, takKenal: Set<string>, luar: number,
- *   luarPer: object }}
+ *   luarPer: object, shiftHarian: Function|undefined }}
  */
-export function kelompokkanScan(scans, guruList, settings) {
+export function kelompokkanScan(scans, guruList, settings, shiftHarian) {
   const byPin = {}
   for (const g of guruList || []) {
     const pin = String(g.id_fingerprint || '').trim()
@@ -111,7 +123,12 @@ export function kelompokkanScan(scans, guruList, settings) {
       takKenal.add(pin)
       continue
     }
-    const sh = deriveShift(parts.hhmm, g, settings)
+    const sh = deriveShift(
+      parts.hhmm,
+      g,
+      settings,
+      typeof shiftHarian === 'function' ? shiftHarian(g, parts.date) : undefined
+    )
     if (!sh) {
       luar++
       const lk = pin + '|' + parts.date
@@ -133,7 +150,7 @@ export function kelompokkanScan(scans, guruList, settings) {
       catatKandidatPulang(pin, g, parts.date, parts.hhmm)
     }
   }
-  return { agg, pulangScans, takKenal, luar, luarPer }
+  return { agg, pulangScans, takKenal, luar, luarPer, shiftHarian }
 }
 
 /** Id baris absensi_shift_guru — bentuk yang sama di SEMUA penulis (mesin, impor, manual). */
@@ -244,7 +261,7 @@ export function rencanaTambalScan({ kelompok, ada, guruAktif, settings, sumber, 
   for (const { g, date, times } of Object.values(kelompok?.pulangScans || {})) {
     const shiftRows = {}
     const barisMasuk = []
-    for (const sh of shiftsForGuru(g, settings)) {
+    for (const sh of shiftMilikHari(g, date, settings, kelompok?.shiftHarian)) {
       const id = idBarisShift(g.id, date, sh)
       const row = baruById.get(id) || adaById.get(id)
       if (!row) continue

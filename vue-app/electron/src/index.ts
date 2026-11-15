@@ -611,6 +611,25 @@ ipcMain.handle('fingerprint:read-attlog', async (_event, config: { personnelDir?
   }
 })
 
+// v.1.5.0 (Kyai 16 Nov 2026): "jika komputer nyala maka otomatis langsung sinkron" — Ammu Desktop
+//   ikut menyala saat Windows login (per PC, dinyalakan dari Mesin Absensi). Sinkron otomatisnya
+//   sendiri dijalankan renderer (stores/fingerprint) begitu shell siap.
+ipcMain.handle('app:get-open-at-login', () => {
+  try {
+    return { ok: true, open: !!app.getLoginItemSettings().openAtLogin }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || String(e) }
+  }
+})
+ipcMain.handle('app:set-open-at-login', (_event, open: boolean) => {
+  try {
+    app.setLoginItemSettings({ openAtLogin: !!open })
+    return { ok: true, open: !!app.getLoginItemSettings().openAtLogin }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || String(e) }
+  }
+})
+
 // ─── Native Menu Bar ────────────────────────────────────────────────────────────
 // v.86.0526: Menu bar native (Berkas/Edit/Tampilan/Bantuan) — kyai req "header lengkap".
 function buildAppMenu() {

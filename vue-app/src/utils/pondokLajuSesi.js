@@ -413,6 +413,9 @@ export function sesiTakDibayarGuru(shiftIdsGuru, daftarShift) {
  * Kyai (`shiftIds`, dari scope Jenis Bisyaroh). Tanpa shift terpilih tak ada yang terbayar —
  * aturan Kyai: bisyaroh hanya bila guru absen di shift Pondok Laju. `sesiTakDibayar` (dari
  * sesiTakDibayarGuru) tetap terjadwal & tercatat, hanya tak dibayar.
+ * v.1.5.0: bila `shiftSesi` ({ laju1, laju2 } dari Pondok Laju → Pengaturan) terisi, tiap sesi
+ *   dibayar TEPAT bila ia hadir di shift sesi itu (Laju 1 ↔ shift Laju 1); sesi tanpa shift tak
+ *   dibayar. Tanpa `shiftSesi` berlaku aturan cadangan min(terjadwal, shift dihadiri).
  * @returns {{ terjadwal, berbayar, dibayar, rincian: Array<{tanggal, sesi: Array, hadir, dibayar}> }}
  */
 export function sesiLajuTerbayar({
@@ -421,9 +424,19 @@ export function sesiLajuTerbayar({
   guruId,
   dalamPeriode = () => true,
   shiftIds = [],
-  sesiTakDibayar = []
+  sesiTakDibayar = [],
+  shiftSesi = null
 } = {}) {
   const takDibayar = new Set(sesiTakDibayar || [])
+  const peta = {}
+  for (const k of SESI_PIKET) {
+    const id = String(shiftSesi?.[k] || '')
+      .trim()
+      .toLowerCase()
+    if (id) peta[k] = id
+  }
+  const pakaiPeta = Object.keys(peta).length > 0
+  if (pakaiPeta) shiftIds = Object.values(peta)
   const gid = String(guruId ?? '')
   const ids = new Set([...(shiftIds || [])].map((x) => String(x).toLowerCase()))
   const perTgl = new Map()
@@ -452,9 +465,12 @@ export function sesiLajuTerbayar({
   let dibayar = 0
   const rincian = []
   for (const [t, sesi] of [...perTgl.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    const hadir = hadirTgl.get(t)?.size || 0
+    const hadirSet = hadirTgl.get(t) || new Set()
+    const hadir = hadirSet.size
     const boleh = sesi.filter((s) => !takDibayar.has(s)).length
-    const bayar = Math.min(boleh, hadir)
+    const bayar = pakaiPeta
+      ? sesi.filter((s) => !takDibayar.has(s) && peta[s] && hadirSet.has(peta[s])).length
+      : Math.min(boleh, hadir)
     terjadwal += sesi.length
     berbayar += boleh
     dibayar += bayar
@@ -471,4 +487,90 @@ export function fmtTanggalPendek(iso) {
   if (!m) return '-'
   const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
   return `${_HARI[d.getUTCDay()]}, ${+m[3]} ${_BLN[+m[2] - 1]}`
+}
+
+// ── Templat Excel jadwal (Kyai 16 Nov 2026: "supaya tidak sulit menjadwalkannya") ──────────
+// Bentuk sama dengan tabel di layar: baris = tanggal, kolom = "<guru kelas> | Laju 1/2", sel =
+// nama guru piket. Tadarus Pagi tak ikut — otomatis guru kelas, bukan dijadwalkan.
+const _LABEL_PIKET = { laju1: 'Laju 1', laju2: 'Laju 2' }
+const _SESI_DARI_LABEL = { 'laju 1': 'laju1', laju1: 'laju1', 'laju 2': 'laju2', laju2: 'laju2' }
+
+/** Kolom templat: [{ header, kelas_key, sesi }]. */
+export function kolomTemplatJadwal(kelasList) {
+  const out = []
+  for (const k of kelasList || [])
+    for (const s of SESI_PIKET)
+      out.push({ header: `${k.guru || k.key} | ${_LABEL_PIKET[s]}`, kelas_key: k.key, sesi: s })
+  return out
+}
+
+/** Tanggal sel Excel (Date / 'YYYY-MM-DD' / 'DD/MM/YYYY') → 'YYYY-MM-DD' atau ''. */
+export function tanggalSelExcel(v) {
+  if (v instanceof Date && !isNaN(v)) return v.toISOString().slice(0, 10)
+  const t = String(v ?? '').trim()
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(t)
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
+  m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(t)
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
+  return ''
+}
+
+/**
+ * Baca baris hasil impor templat → perubahan jadwal. Sel kosong = kosongkan sel itu.
+ * Nama guru dicocokkan persis (tanpa beda huruf besar/spasi); bila tak ada, satu-satunya guru
+ * yang namanya MEMUAT teks itu. Selain itu dilaporkan, tidak ditebak.
+ * @returns {{ perubahan: Array<{tanggal, sesi, kelas_key, guru_id}>, galat: string[] }}
+ */
+export function bacaImporJadwal({ rows = [], kelasList = [], guruList = [], bulan = '' } = {}) {
+  const kelasPeta = new Map((kelasList || []).map((k) => [_norm(k.guru || k.key), k.key]))
+  const guruPeta = new Map()
+  for (const g of guruList || []) {
+    const n = _norm(g.nama)
+    if (n && !guruPeta.has(n)) guruPeta.set(n, String(g.id))
+  }
+  const cariGuru = (teks) => {
+    const n = _norm(teks)
+    if (guruPeta.has(n)) return guruPeta.get(n)
+    const mirip = [...guruPeta.entries()].filter(([nama]) => nama.includes(n))
+    return mirip.length === 1 ? mirip[0][1] : ''
+  }
+  const perubahan = []
+  const galat = []
+  const kolomSah = new Map()
+  for (const r of rows || []) {
+    for (const h of Object.keys(r)) {
+      if (kolomSah.has(h) || _norm(h) === 'tanggal') continue
+      const [kelasTeks, sesiTeks] = h.split('|').map((x) => _norm(x))
+      const kelas_key = kelasPeta.get(kelasTeks)
+      const sesi = _SESI_DARI_LABEL[sesiTeks]
+      kolomSah.set(h, kelas_key && sesi ? { kelas_key, sesi } : null)
+      if (!kelas_key || !sesi) galat.push(`Kolom "${h}" tak dikenali (kelas atau sesi tak cocok)`)
+    }
+  }
+  for (const r of rows || []) {
+    const kunciTgl = Object.keys(r).find((h) => _norm(h) === 'tanggal')
+    const tanggal = tanggalSelExcel(kunciTgl ? r[kunciTgl] : '')
+    if (!tanggal) {
+      galat.push(
+        `Baris tanpa tanggal yang sah (${String(kunciTgl ? r[kunciTgl] : '') || 'kosong'})`
+      )
+      continue
+    }
+    if (bulan && tanggal.slice(0, 7) !== bulan) {
+      galat.push(`${tanggal} di luar bulan ${bulan} — dilewati`)
+      continue
+    }
+    for (const [h, k] of kolomSah) {
+      if (!k) continue
+      const teks = String(r[h] ?? '').trim()
+      if (!teks) {
+        perubahan.push({ tanggal, ...k, guru_id: '' })
+        continue
+      }
+      const guru_id = cariGuru(teks)
+      if (!guru_id) galat.push(`${tanggal} ${h}: guru "${teks}" tak dikenali`)
+      else perubahan.push({ tanggal, ...k, guru_id })
+    }
+  }
+  return { perubahan, galat }
 }

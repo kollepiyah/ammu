@@ -333,6 +333,45 @@
           </div>
         </div>
 
+        <!-- v.1.5.0 (Kyai 16 Nov 2026): templat Excel — isi di Excel lalu impor -->
+        <div
+          v-if="bisaSusun"
+          class="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50/60 dark:bg-emerald-900/20 p-3 space-y-2"
+        >
+          <p
+            class="text-[11px] font-black text-emerald-800 dark:text-emerald-200 uppercase tracking-wider"
+          >
+            <i class="fas fa-file-excel mr-1"></i>Templat Excel
+          </p>
+          <p class="text-[10px] text-emerald-800 dark:text-emerald-300">
+            Unduh templat bulan ini (sudah berisi jadwal yang ada), isi nama guru di tiap sel, lalu
+            impor. Hasil impor masuk sebagai perubahan — periksa tabel, lalu SIMPAN JADWAL. Sel
+            kosong = sel itu dikosongkan.
+          </p>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              class="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
+              @click="unduhTemplat"
+            >
+              <i class="fas fa-file-arrow-down mr-1"></i>Unduh templat
+            </button>
+            <label
+              class="h-8 px-3 inline-flex items-center rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold cursor-pointer"
+              :class="impMemuat ? 'opacity-50 pointer-events-none' : ''"
+            >
+              <i class="fas fa-file-arrow-up mr-1"></i>{{ impMemuat ? 'Membaca…' : 'Impor Excel' }}
+              <input type="file" accept=".xlsx" class="hidden" @change="imporTemplat" />
+            </label>
+          </div>
+          <ul
+            v-if="impGalat.length"
+            class="text-[10px] text-rose-700 dark:text-rose-300 space-y-0.5"
+          >
+            <li v-for="(g, i) in impGalat.slice(0, 12)" :key="i">• {{ g }}</li>
+            <li v-if="impGalat.length > 12">…dan {{ impGalat.length - 12 }} lainnya</li>
+          </ul>
+        </div>
+
         <p v-if="bentrok.length" class="text-[11px] font-bold text-rose-600 dark:text-rose-400">
           <i class="fas fa-triangle-exclamation mr-1"></i>{{ bentrok.length }} bentrok: guru
           memegang lebih dari satu kelas di sesi yang sama —
@@ -548,13 +587,21 @@
           class="text-[11px] font-bold text-amber-700 dark:text-amber-300"
         >
           <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada Jenis Bisyaroh dengan cara
-          hitung "× sesi Pondok Laju". Atur di Pengaturan Keuangan → Jenis Bisyaroh, pilih shift
-          Pondok Laju di kolom Shift — tanpa itu tak ada sesi yang terbayar.
+          hitung "× sesi Pondok Laju" (tarif per sesi). Atur di Pengaturan Keuangan → Jenis
+          Bisyaroh.
         </p>
         <p v-else class="text-[10px] text-[var(--text-secondary)]">
-          Dibayar = sesi terjadwal yang gurunya hadir (scan) di shift
-          {{ jenisLaju[0].scope.shift.map(labelShift).join(' / ') || '—' }}. Otomatis masuk slip
-          bisyaroh lewat jenis "{{ jenisLaju[0].label }}".
+          Dibayar = sesi terjadwal yang gurunya hadir (scan) di shift sesinya —
+          <template v-if="petaSesiAktif.laju1 || petaSesiAktif.laju2"
+            >Laju 1: {{ labelShift(petaSesiAktif.laju1) || '—' }}, Laju 2:
+            {{ labelShift(petaSesiAktif.laju2) || '—' }}</template
+          ><template v-else
+            ><b class="text-amber-700 dark:text-amber-300"
+              >shift sesi belum dipilih di tab Pengaturan</b
+            >
+            (sementara dipakai kolom Shift jenis bisyaroh:
+            {{ jenisLaju[0].scope.shift.map(labelShift).join(' / ') || '—' }})</template
+          >. Otomatis masuk slip bisyaroh lewat jenis "{{ jenisLaju[0].label }}".
         </p>
         <div v-if="bMemuat" class="text-center text-sm text-[var(--text-secondary)] py-6">
           <i class="fas fa-spinner fa-spin mr-1"></i>Memuat jadwal & absensi…
@@ -601,8 +648,65 @@
       </div>
     </template>
 
-    <!-- ===================== PERAN ===================== -->
-    <template v-else-if="tab === 'peran'">
+    <!-- ===================== PENGATURAN ===================== -->
+    <template v-else-if="tab === 'pengaturan'">
+      <!-- v.1.5.0 (Kyai 16 Nov 2026): shift absen tiap sesi — aktif otomatis per tanggal -->
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
+      >
+        <p class="text-xs font-black text-[var(--text-primary)] uppercase">
+          <i class="fas fa-fingerprint text-teal-600 mr-1"></i>Shift absen tiap sesi
+        </p>
+        <p class="text-[11px] text-[var(--text-secondary)]">
+          Buat dulu shiftnya (dengan jam) di Pengaturan → Master Shift, lalu pilih di sini. Shift
+          Laju 1/Laju 2 aktif otomatis untuk guru pada tanggal ia dijadwalkan; Tadarus Pagi aktif
+          untuk guru kelas Pondok Laju setiap hari kecuali Ahad. Scan di jam itu tercatat dan muncul
+          di rekap absen guru; bisyaroh piket dibayar per sesi yang dihadiri.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <label v-for="s in SESI_LAJU" :key="s.key" class="block">
+            <span class="block text-[10px] font-black uppercase text-teal-700 mb-0.5">{{
+              s.label
+            }}</span>
+            <select
+              v-model="shiftSesiDraft[s.key]"
+              :aria-label="`Shift ${s.label}`"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+            >
+              <option value="">— belum dipilih —</option>
+              <option v-for="sh in shiftGuruOptions" :key="sh.id" :value="sh.id">
+                {{ sh.label }}
+              </option>
+            </select>
+          </label>
+        </div>
+        <label class="block w-full md:w-64">
+          <span class="block text-[10px] font-black uppercase text-teal-700 mb-0.5"
+            >Berlaku mulai</span
+          >
+          <input
+            v-model="shiftSesiMulai"
+            type="date"
+            aria-label="Shift Pondok Laju berlaku mulai"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+          <span class="block text-[10px] text-[var(--text-secondary)] mt-0.5"
+            >Tadarus Pagi baru dihitung sejak tanggal ini — hari sebelumnya tak jadi alpa.</span
+          >
+        </label>
+        <p v-if="shiftSesiGanda" class="text-[11px] font-bold text-rose-600">
+          <i class="fas fa-triangle-exclamation mr-1"></i>Satu shift dipakai dua sesi — pilih shift
+          yang berbeda untuk tiap sesi.
+        </p>
+        <button
+          :disabled="shiftSesiMenyimpan || shiftSesiGanda"
+          class="h-10 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black cursor-pointer"
+          @click="simpanShiftSesi"
+        >
+          Simpan shift sesi
+        </button>
+      </div>
+
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
       >
@@ -655,11 +759,13 @@ import { useSettingsStore } from '@/stores/settings'
 import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
+import { useExcel } from '@/composables/useExcel'
 import { queryColl, mergeOne, deleteOne, subscribeDoc, getOne } from '@/services/db'
 import { todayJakarta, fmtRp } from '@/utils/format'
 import { guruAktifSaja } from '@/utils/guruScope'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
+import { petaShiftSesiLaju, mulaiShiftLaju } from '@/utils/shiftLaju'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { jenisBisyarohList } from '@/utils/bisyarohScope'
 import { rentangPeriodeBisyaroh, penyaringPeriodeBisyaroh } from '@/utils/periodeBisyaroh'
@@ -684,6 +790,8 @@ import {
   bolehSusunJadwal,
   sesiLajuTerbayar,
   sesiTakDibayarGuru,
+  kolomTemplatJadwal,
+  bacaImporJadwal,
   fmtTanggalPendek
 } from '@/utils/pondokLajuSesi'
 
@@ -724,7 +832,8 @@ const tabs = computed(() => {
     { id: 'riwayat', label: 'Riwayat', icon: 'fa-clock-rotate-left' }
   ]
   if (bisaKeuangan.value) out.push({ id: 'bisyaroh', label: 'Bisyaroh', icon: 'fa-coins' })
-  if (isSuperAdmin(sesi.value)) out.push({ id: 'peran', label: 'Peran', icon: 'fa-user-shield' })
+  if (isSuperAdmin(sesi.value))
+    out.push({ id: 'pengaturan', label: 'Pengaturan', icon: 'fa-sliders' })
   return out
 })
 const tab = ref('capaian')
@@ -1126,7 +1235,8 @@ const rekapBisyaroh = computed(() => {
           guruId: gid,
           dalamPeriode: dalam,
           shiftIds: j.scope.shift,
-          sesiTakDibayar: takDibayar
+          sesiTakDibayar: takDibayar,
+          shiftSesi: petaShiftSesiLaju(s)
         })
         terjadwal = r.terjadwal
         dibayar = Math.max(dibayar, r.dibayar)
@@ -1145,6 +1255,94 @@ const rekapBisyaroh = computed(() => {
     })
     .sort((a, b) => a.nama.localeCompare(b.nama, 'id'))
 })
+
+// ─────────────────────── TEMPLAT EXCEL JADWAL ───────────────────────
+const { exportStyled, importFile } = useExcel()
+const impMemuat = ref(false)
+const impGalat = ref([])
+async function unduhTemplat() {
+  try {
+    const kolom = kolomTemplatJadwal(kelasList.value)
+    const rows = tanggalJadwal.value.map((t) => {
+      const r = { Tanggal: t }
+      for (const k of kolom) r[k.header] = namaGuru(nilaiSel(t, k.sesi, k.kelas_key)) || ''
+      return r
+    })
+    await exportStyled(rows, {
+      filename: `jadwal_pondok_laju_${jBulan.value}.xlsx`,
+      sheetName: 'Jadwal',
+      columns: [
+        { key: 'Tanggal', header: 'Tanggal', width: 12 },
+        ...kolom.map((k) => ({ key: k.header, header: k.header, width: 24 }))
+      ]
+    })
+    toast.success('Templat terunduh. Isi nama guru (sesuai Data Guru), lalu impor.')
+  } catch (e) {
+    toast.error('Gagal membuat templat: ' + (e?.message || e))
+  }
+}
+async function imporTemplat(ev) {
+  const file = ev?.target?.files?.[0]
+  if (ev?.target) ev.target.value = ''
+  if (!file) return
+  impMemuat.value = true
+  impGalat.value = []
+  try {
+    const rows = await importFile(file)
+    const { perubahan, galat } = bacaImporJadwal({
+      rows,
+      kelasList: kelasList.value,
+      guruList: guruOptions.value,
+      bulan: jBulan.value
+    })
+    for (const u of perubahan) ubahSel(u.tanggal, u.sesi, u.kelas_key, u.guru_id)
+    impGalat.value = galat
+    toast[galat.length ? 'warning' : 'success'](
+      `Impor: ${jumlahDraft.value} perubahan siap disimpan` +
+        (galat.length ? ` · ${galat.length} catatan perlu dicek` : '')
+    )
+  } catch (e) {
+    toast.error('Gagal membaca berkas: ' + (e?.message || e))
+  } finally {
+    impMemuat.value = false
+  }
+}
+
+// ─────────────────────── SHIFT TIAP SESI ───────────────────────
+// Disimpan di settings.pondokLajuShift (umum) — dibaca app, sinkron Desktop, & fungsi HiView.
+const shiftSesiDraft = reactive({ tadarus: '', laju1: '', laju2: '' })
+const shiftSesiMulai = ref('')
+const shiftSesiMenyimpan = ref(false)
+const petaSesiAktif = computed(() => petaShiftSesiLaju(settingsStore.settings || {}))
+watch(
+  () => settingsStore.settings?.pondokLajuShift,
+  () => {
+    Object.assign(shiftSesiDraft, petaShiftSesiLaju(settingsStore.settings || {}))
+    shiftSesiMulai.value = mulaiShiftLaju(settingsStore.settings || {}) || todayJakarta()
+  },
+  { immediate: true, deep: true }
+)
+const shiftGuruOptions = computed(() =>
+  shiftList(settingsStore.settings || {}).filter((sh) => sh.untuk !== 'pegawai')
+)
+const shiftSesiGanda = computed(() => {
+  const isi = Object.values(shiftSesiDraft).filter(Boolean)
+  return new Set(isi).size !== isi.length
+})
+async function simpanShiftSesi() {
+  if (shiftSesiMenyimpan.value || shiftSesiGanda.value) return
+  shiftSesiMenyimpan.value = true
+  try {
+    await settingsStore.save({
+      pondokLajuShift: { ...shiftSesiDraft, mulai: shiftSesiMulai.value || todayJakarta() }
+    })
+    toast.success('Shift tiap sesi Pondok Laju tersimpan.')
+  } catch (e) {
+    toast.error('Gagal menyimpan: ' + (e?.message || e))
+  } finally {
+    shiftSesiMenyimpan.value = false
+  }
+}
 
 // ─────────────────────────── PERAN ───────────────────────────
 const peranDraft = ref([])

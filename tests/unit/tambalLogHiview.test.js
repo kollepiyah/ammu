@@ -642,7 +642,8 @@ describe('nilaiMesinDiam', () => {
 describe('cermin: satu aturan, dipasang di layar', () => {
   it('sinkron Revo memakai kelompokkanScan yang sama — tak lagi punya salinan sendiri', () => {
     const src = baca('vue-app/src/composables/useFingerprintSync.js')
-    expect(src).toMatch(/kelompokkanScan\(scans, guru, settings\)/)
+    // v.1.5.0: argumen ke-4 = shift harian Pondok Laju (utils/shiftLaju) — tetap fungsi yang sama.
+    expect(src).toMatch(/kelompokkanScan\(\s*scans,\s*guru,\s*settings(,\s*shiftHarian)?\s*\)/)
     expect(src).not.toMatch(/const agg = \{\}/)
     expect(src).toMatch(/export \{ hitungScanTanpaAbsen \}/)
   })

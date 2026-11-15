@@ -21,6 +21,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, handlePreflight, json } from '../_shared/cors.ts'
 import { deriveShift, statusFor, pilihShiftPulang, shiftsForGuru } from './shiftDerive.ts'
+// v.1.5.0: shift Pondok Laju yang aktif hari itu (jadwal piket + Tadarus Pagi guru kelas).
+import { idShiftLaju, guruKelasLajuSet, shiftLajuAktif, namaCocok } from './shiftLaju.ts'
 
 const SECRET = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
 
@@ -211,6 +213,43 @@ async function fetchSettings(db: any): Promise<Record<string, unknown>> {
   return { ...(w.data?.value || {}), ...(g.data?.value || {}) }
 }
 
+// v.1.5.0 (Kyai 16 Nov 2026): shift Pondok Laju yang aktif HARI ITU bagi guru ini — Laju 1/2 dari
+//   jadwal piket, Tadarus Pagi bila ia guru kelas Pondok Laju. Hanya bila Kyai sudah memilih shift
+//   tiap sesi (settings.pondokLajuShift); gagal baca (mis. tabel belum dimigrasi) = tanpa tambahan.
+async function shiftLajuHariIni(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  // deno-lint-ignore no-explicit-any
+  guru: any,
+  // deno-lint-ignore no-explicit-any
+  settings: any,
+  tanggal: string
+): Promise<Set<string>> {
+  if (!idShiftLaju(settings).size) return new Set()
+  try {
+    const [jd, st] = await Promise.all([
+      db
+        .from('pondok_laju_jadwal')
+        .select('sesi')
+        .eq('tanggal', tanggal)
+        .eq('guru_id', String(guru.id)),
+      db.from('santri').select('*').eq('data->>is_pondok_laju', 'true')
+    ])
+    // deno-lint-ignore no-explicit-any
+    const sesi = (jd.data || []).map((r: any) => String(r.sesi || ''))
+    const kelas = guruKelasLajuSet((st.data || []).map(flattenGuru))
+    return shiftLajuAktif({
+      settings,
+      tanggal,
+      sesiTerjadwal: sesi,
+      guruKelas: namaCocok(guru.nama, kelas)
+    })
+  } catch (e) {
+    console.error('[hiview] shift Pondok Laju gagal dibaca:', (e as Error)?.message || e)
+    return new Set()
+  }
+}
+
 // Scan ke-2 dst = ABSEN PULANG. Tempel jam_pulang ke baris masuk (hadir/terlambat) hari
 // ini milik guru, pada shift yang PALING BELAKANGAN dimasuki (shiftDerive.pilihShiftPulang).
 // Berlaku SEMUA shift (ngaji pagi/sore-saja jg scan 2×) dan tak lagi mensyaratkan shift-nya
@@ -226,11 +265,13 @@ async function catatPulang(
   guru: any,
   // deno-lint-ignore no-explicit-any
   settings: any,
-  t: { date: string; hhmm: string }
+  t: { date: string; hhmm: string },
+  tambahan: Set<string> = new Set()
 ): Promise<string[]> {
   const tercatat: string[] = []
   try {
     const milik = shiftsForGuru(guru, settings)
+    for (const id of tambahan) milik.add(id) // v.1.5.0: shift Pondok Laju hari ini
     if (!milik || milik.size === 0) return tercatat
     const { data: rows } = await db
       .from('absensi_shift_guru')
@@ -310,7 +351,14 @@ Deno.serve(async (req) => {
   // Hanya event autentikasi orang (major 5 + ada employeeNo). Sisanya diabaikan
   // (isapiOk: balas statusCode 1 supaya mesin tak retry-storm & tak tampil "gagal").
   if (!ace || major !== 5 || !empNo) {
-    const reason = !ace ? 'no-event' : major !== 5 ? `major=${major}` : 'no-employee'
+    // v.1.5.0 (Kyai 16 Nov 2026, kartu e-Qiraati): kartu yang belum terdaftar datang tanpa
+    //   employeeNo tapi MEMBAWA cardNo — dicatat supaya nomornya bisa dibaca di Jejak Mesin
+    //   lalu didaftarkan ke orangnya di mesin, tanpa menebak urutan byte UID.
+    const kartu = String(ace?.cardNo ?? '').trim()
+    const reason =
+      (!ace ? 'no-event' : major !== 5 ? `major=${major}` : 'no-employee') +
+      (ace && ace.minorEventType != null ? ` minor=${ace.minorEventType}` : '') +
+      (kartu ? ` kartu=${kartu}` : '')
     console.log(`[hiview] diabaikan reason=${reason}`)
     // Event TANPA AccessControllerEvent (heartbeat mesin, keep-alive) sengaja tak
     // dicatat — jumlahnya jauh melebihi scan orang dan akan menenggelamkan jejaknya.
@@ -353,10 +401,11 @@ Deno.serve(async (req) => {
     const jejakGuru = { guruId: String(guru.id), guruNama: String(guru.nama || '') }
 
     const settings = await fetchSettings(db)
-    const shift = deriveShift(t.hhmm, guru, settings)
+    const tambahan = await shiftLajuHariIni(db, guru, settings, t.date)
+    const shift = deriveShift(t.hhmm, guru, settings, tambahan)
     if (!shift) {
       // Di luar window masuk → coba catat sebagai absen pulang (scan ke-2).
-      const pulang = await catatPulang(db, guru, settings, t)
+      const pulang = await catatPulang(db, guru, settings, t, tambahan)
       await catatJejak(db, {
         empNo,
         dateTime,
@@ -405,7 +454,7 @@ Deno.serve(async (req) => {
       // langsung dibuang → baris tetap "belum pulang". (Kyai, 22 Jul 2026)
       if (exjam && exjam <= t.hhmm) {
         console.log(`[hiview] scan-ke-2 dalam window ${docId} existing=${exjam} → coba pulang`)
-        const pulang = await catatPulang(db, guru, settings, t)
+        const pulang = await catatPulang(db, guru, settings, t, tambahan)
         await catatJejak(db, {
           empNo,
           dateTime,

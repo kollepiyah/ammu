@@ -105,11 +105,15 @@ export function shiftBatas(shift, settings) {
 // penting: selama sebuah scan masih jatuh di window inti shift mana pun, toleransi
 // shift lain TIDAK boleh merebutnya — jadi menyetel toleransi tak pernah memindahkan
 // absen yang selama ini sudah benar.
-export function deriveShift(hhmm, g, settings) {
+// v.1.5.0 (Kyai 16 Nov 2026): `tambahan` = shift yang aktif HARI ITU SAJA bagi guru ini — shift
+//   Pondok Laju dari jadwal piket & Tadarus Pagi guru kelas (utils/shiftLaju). Tanpa tambahan
+//   perilakunya persis seperti dulu.
+export function deriveShift(hhmm, g, settings, tambahan) {
   const t = normHHMM(hhmm)
   if (!t) return null
   const list = shiftList(settings) // sudah terurut `urutan`
   const milik = shiftsForGuru(g, settings)
+  for (const id of tambahan || []) milik.add(String(id))
   const punyaWindow = []
   for (const sh of list) {
     if (!milik.has(sh.id)) continue

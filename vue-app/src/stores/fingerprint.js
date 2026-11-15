@@ -15,6 +15,10 @@ import { useFingerprintSync } from '@/composables/useFingerprintSync'
 const LS_KEY = 'ammu_fp_sync_cfg'
 const DEFAULT_INTERVAL = 30 // menit (selaras jembatan Task Scheduler lama)
 const MIN_INTERVAL = 5
+// v.1.5.0: rentang sinkron (hari ke belakang). 0 = seluruh riwayat att_log.
+const DEFAULT_HARI_MUNDUR = 14
+// v.1.5.0: jeda sinkron pertama sesudah Ammu Desktop dibuka (login & data awal sempat siap).
+const JEDA_SINKRON_AWAL_MS = 20000
 
 function loadCfg() {
   try {
@@ -33,6 +37,11 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
   const personnelDir = ref(String(cfg.personnelDir || '').trim())
   const autoSync = ref(!!cfg.autoSync)
   const intervalMin = ref(Math.max(MIN_INTERVAL, parseInt(cfg.intervalMin, 10) || DEFAULT_INTERVAL))
+  const hariMundur = ref(
+    Number.isFinite(parseInt(cfg.hariMundur, 10))
+      ? Math.max(0, parseInt(cfg.hariMundur, 10))
+      : DEFAULT_HARI_MUNDUR
+  )
 
   // Status (lastSyncAt persist; result/error hanya sesi ini)
   const running = ref(false)
@@ -59,6 +68,7 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
           personnelDir: personnelDir.value,
           autoSync: autoSync.value,
           intervalMin: intervalMin.value,
+          hariMundur: hariMundur.value,
           lastSyncAt: lastSyncAt.value
         })
       )
@@ -75,7 +85,11 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
     lastError.value = null
     lastTrigger.value = trigger
     try {
-      const res = await fp.sync({ personnelDir: personnelDir.value, commit: true })
+      const res = await fp.sync({
+        personnelDir: personnelDir.value,
+        commit: true,
+        hariMundur: hariMundur.value
+      })
       lastResult.value = res
       lastSyncAt.value = new Date().toISOString()
       persist()
@@ -127,19 +141,49 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
     persist()
     if (autoSync.value) startScheduler() // restart dgn interval baru
   }
+  function setHariMundur(v) {
+    const n = parseInt(v, 10)
+    hariMundur.value = Number.isFinite(n) ? Math.max(0, n) : DEFAULT_HARI_MUNDUR
+    persist()
+  }
+
+  // v.1.5.0 (Kyai 16 Nov 2026): Ammu Desktop ikut menyala saat Windows login — per PC, lewat
+  //   jembatan Electron. null = belum terbaca / bukan desktop.
+  const bukaSaatWindows = ref(null)
+  async function muatBukaSaatWindows() {
+    try {
+      const r = await window.electronAPI?.getOpenAtLogin?.()
+      bukaSaatWindows.value = r && r.ok ? !!r.open : null
+    } catch (e) {
+      bukaSaatWindows.value = null
+    }
+  }
+  async function setBukaSaatWindows(v) {
+    const r = await window.electronAPI?.setOpenAtLogin?.(!!v)
+    if (!r || !r.ok) throw new Error((r && r.error) || 'Versi Ammu Desktop ini belum mendukung.')
+    bukaSaatWindows.value = !!r.open
+  }
 
   // Dipanggil 1× saat shell desktop mount → resume auto-sync pasca-restart.
-  // TIDAK menjalankan sync langsung (hindari race dgn login/sesi); tunggu tick pertama.
+  // v.1.5.0: sinkron PERTAMA kini berjalan sendiri sesudah jeda singkat (dulu menunggu satu
+  //   interval penuh, 30 menit) — "jika komputer nyala maka otomatis langsung sinkron".
+  //   Shell ini hanya ter-mount sesudah login, jadi sesinya sudah ada.
   function init() {
     if (_inited) return
     _inited = true
-    if (autoSync.value && available()) startScheduler()
+    if (available()) muatBukaSaatWindows()
+    if (autoSync.value && available()) {
+      startScheduler()
+      setTimeout(() => runNow('auto'), JEDA_SINKRON_AWAL_MS)
+    }
   }
 
   return {
     personnelDir,
     autoSync,
     intervalMin,
+    hariMundur,
+    bukaSaatWindows,
     running,
     lastSyncAt,
     lastResult,
@@ -152,6 +196,9 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
     setPersonnelDir,
     setAutoSync,
     setIntervalMin,
+    setHariMundur,
+    setBukaSaatWindows,
+    muatBukaSaatWindows,
     init,
     MIN_INTERVAL
   }

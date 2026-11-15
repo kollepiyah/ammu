@@ -58,6 +58,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Fingerprint sync (Fase 1): baca att_log dari Fingerspot Personnel (MySQL throwaway read-only)
   readAttLog: (config?: { personnelDir?: string }) =>
     ipcRenderer.invoke('fingerprint:read-attlog', config || {}),
+  // v.1.5.0: Ammu Desktop ikut menyala saat Windows login (per PC)
+  getOpenAtLogin: () => ipcRenderer.invoke('app:get-open-at-login'),
+  setOpenAtLogin: (open: boolean) => ipcRenderer.invoke('app:set-open-at-login', !!open),
 
   // Platform info
   platform: process.platform,

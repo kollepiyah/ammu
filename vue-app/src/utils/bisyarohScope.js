@@ -54,7 +54,7 @@ export const HITUNGAN_OPTIONS = [
   {
     value: 'per_sesi_laju',
     label: '× sesi Pondok Laju',
-    hint: 'Tarif × sesi Laju 1/Laju 2 yang DIJADWALKAN untuk guru ini dan ia hadir (scan) di shift yang dipilih di kolom Shift. Shift wajib diisi; jabatan & lembaga tak menyaring (semua guru bisa dapat piket).'
+    hint: 'Tarif × sesi Laju 1/Laju 2 yang DIJADWALKAN untuk guru ini dan ia hadir (scan) di shift sesi itu (Pondok Laju → Pengaturan). Kolom Shift hanya cadangan bila shift sesi belum dipilih; jabatan & lembaga tak menyaring (semua guru bisa dapat piket).'
   }
 ]
 
@@ -195,9 +195,14 @@ function refPencocok(j, refs) {
 // Jumlah hadir yang dihitung utk 1 jenis per_hadir.
 //   scope.shift kosong → SEMUA shift guru dijumlahkan.
 //   scope.shift diisi  → hanya shift itu.
-function hadirUntuk(j, hadirPerShift) {
+//   v.1.5.0: scope kosong TIDAK ikut menghitung shift Pondok Laju (`shiftLaju`) — piket Laju
+//   dibayar per sesi (× sesi Pondok Laju) dan Tadarus Pagi tanpa bisyaroh (Kyai). Jenis yang
+//   sengaja menyebut shift Laju di scope-nya tetap menghitungnya.
+function hadirUntuk(j, hadirPerShift, shiftLaju) {
   let n = 0
+  const kosong = !(j.scope?.shift && j.scope.shift.length)
   for (const [sh, cnt] of Object.entries(hadirPerShift || {})) {
+    if (kosong && shiftLaju && shiftLaju.has(sh)) continue
     if (cocokKriteria(j.scope?.shift, sh)) n += Number(cnt) || 0
   }
   return n
@@ -223,7 +228,7 @@ function hitungDasar(j, ctx, ref) {
   if (j.hitungan === 'per_hadir' || j.hitungan === 'per_tepat') {
     // per_tepat = hanya hadir TEPAT WAKTU (buang terlambat) → sumber hadir berbeda.
     const src = j.hitungan === 'per_tepat' ? ctx?.hadirTepatPerShift : ctx?.hadirPerShift
-    const qty = hadirUntuk(j, src)
+    const qty = hadirUntuk(j, src, ctx?.shiftLaju)
     return { hitungan: j.hitungan, qty, tarif: j.nominal, nominal: qty * j.nominal }
   }
   if (j.hitungan === 'per_jp') {

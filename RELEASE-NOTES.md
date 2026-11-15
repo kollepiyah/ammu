@@ -38,6 +38,12 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
     langsung masuk slip bisyaroh. Guru yang punya shift sekolah SD–PKBM tidak dibayar untuk Laju 1,
     karena jam itu sudah terbayar sebagai jam pelajaran sekolah.
   - Wali santri bisa melihat capaian Pondok Laju anaknya di halaman Capaian Prestasi.
+  - **Absen Pondok Laju otomatis**: guru yang dijadwalkan Laju 1/Laju 2 otomatis mendapat shift itu
+    di hari tersebut, dan guru kelas mendapat shift Tadarus Pagi. Scan di jam itu tercatat dan
+    muncul di rekap absen guru.
+  - **Templat Excel jadwal**: unduh, isi nama guru, lalu impor.
+- **Ammu Desktop** bisa diatur menyala sendiri saat komputer dinyalakan dan langsung menyinkron
+  mesin Fingerspot. Sinkron kini hanya memproses scan dua minggu terakhir supaya lebih hemat.
 
 - **Label shift** "Pagi-Sore", "Pagi", atau "Sore" kini tampil untuk semua santri.
 - **Data Guru bisa disaring per jenis**: Qiraati-Sekolah, Qiraati, Sekolah, atau Pegawai.

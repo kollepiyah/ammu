@@ -1425,6 +1425,8 @@ import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.
 import { lembagaKalenderShift, lembagaLabelShift } from '@/utils/lembagaShift'
 // v.1.3.8: "tanggal ini jadwal mengajarnya atau bukan" — guru paruh-waktu tak lagi dialpakan.
 import { guruMasukPada, tanggalBukanJadwal } from '@/utils/jadwalGuru'
+// v.1.5.0 (Kyai 16 Nov 2026): shift Pondok Laju aktif per tanggal (jadwal piket + Tadarus Pagi).
+import { idShiftLaju, penentuShiftLaju } from '@/utils/shiftLaju'
 // v.1.4.1: "shift ini sudah dimulai belum" (Kyai, 5 Sep 2026) — sumber tunggal aturan jamnya.
 import { jamJakarta, jamMulaiShift, kunciBelumMulai, setDariKunci } from '@/utils/shiftBerjalan'
 // v.1.4.6 gel. 3 (27 Sep 2026): mesin HiView diam sejak 24 Sep 17:44 WIB — peringatannya &
@@ -1539,6 +1541,8 @@ function _rederiveShiftRow(a) {
   //   Guru yang MEMANG punya shift itu dibiarkan.
   const milik = shiftsForGuru(guru, settingsStore.settings || {})
   if (milik.has(String(a.shift))) return null
+  // v.1.5.0: shift Pondok Laju memang bukan shift tetap guru (aktif per jadwal) — bukan usang.
+  if (lajuIds.value.has(String(a.shift))) return null
   const jam = String(a.jam || '').trim()
   if (!jam) return null // manual tanpa jam → tak bisa diturunkan
   const st = String(a.status || 'hadir').toLowerCase()
@@ -1939,7 +1943,7 @@ const SHIFT_COLS = computed(() =>
 const guruShifts = computed(() => {
   const s = settingsStore.settings || {}
   const m = {}
-  for (const g of guruAktif.value) m[g.id] = [...shiftsForGuru(g, s)]
+  for (const g of guruAktif.value) m[g.id] = [...shiftHariGuru(g, tglHarian.value, s)]
   return m
 })
 
@@ -2048,7 +2052,7 @@ async function saveHarian() {
   const writes = []
   for (const g of guruAktif.value) {
     // v.1.1.9: iterasi shift MILIK guru (ikut master), bukan lagi 5 shift hardcoded.
-    const allow = shiftsForGuru(g, settingsStore.settings || {})
+    const allow = shiftHariGuru(g, today, settingsStore.settings || {})
     for (const shift of allow) {
       if (!harianForm.value[g.id + '_' + shift + '_hadir']) continue
       const jam = String(harianForm.value[g.id + '_' + shift + '_jam'] || '').trim()
@@ -2328,6 +2332,69 @@ function kelompokKeyOf(lembaga) {
   return getLembagaBroadGroup(lembaga) || 'lainnya'
 }
 
+// ── v.1.5.0 · SHIFT PONDOK LAJU (Kyai 16 Nov 2026) ─────────────────────────────
+// "Ketika saya menjadwalkan guru … otomatis ada shift yang diaktifkan pada hari itu untuk guru
+//   itu. Jadi di rekap absen guru itu muncul juga." Shift Laju 1/2 aktif pada tanggal guru
+//   dijadwalkan piket; Tadarus Pagi aktif untuk guru kelas Pondok Laju (kecuali Ahad). Di luar
+//   tanggal itu barisnya "bukan jadwal" — tak pernah jadi alpa. Aturan: utils/shiftLaju.
+const lajuIds = computed(() => idShiftLaju(settingsStore.settings || {}))
+const lajuJadwal = ref([])
+const lajuSantri = ref([])
+async function muatLajuBulan() {
+  lajuJadwal.value = []
+  if (!lajuIds.value.size) return
+  const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
+  try {
+    const [j, st] = await Promise.all([
+      queryColl('pondok_laju_jadwal', [['periode', '==', ym]]),
+      lajuSantri.value.length
+        ? Promise.resolve(lajuSantri.value)
+        : queryColl('santri', [['is_pondok_laju', '==', true]])
+    ])
+    lajuJadwal.value = j
+    lajuSantri.value = st
+  } catch (e) {
+    console.warn('[absensi] jadwal Pondok Laju tak terbaca:', e?.message || e)
+  }
+}
+watch([selectedYear, selectedMonth, () => lajuIds.value.size], muatLajuBulan, { immediate: true })
+const shiftLajuHari = computed(() =>
+  penentuShiftLaju({
+    settings: settingsStore.settings || {},
+    jadwal: lajuJadwal.value,
+    santriList: lajuSantri.value
+  })
+)
+/** Shift guru pada satu tanggal = shift tetap + shift Pondok Laju yang aktif hari itu. */
+function shiftHariGuru(g, iso, s) {
+  const out = shiftsForGuru(g, s)
+  for (const id of shiftLajuHari.value(g, iso)) out.add(id)
+  return out
+}
+/** Shift yang muncul sebagai baris bulan ini: tetap + Laju yang aktif di salah satu tanggalnya. */
+function shiftBerlakuBulan(g) {
+  const out = shiftsForGuru(g, settingsStore.settings || {})
+  if (!lajuIds.value.size) return out
+  for (let d = 1; d <= daysInMonth.value; d++)
+    for (const id of shiftLajuHari.value(g, isoDateOf(d))) out.add(id)
+  return out
+}
+/** Shift Laju yang BUKAN shift tetap guru: masuk hanya pada tanggal ia aktif. */
+function lajuDinamis(g, shift) {
+  return (
+    lajuIds.value.has(String(shift)) &&
+    !shiftsForGuru(g, settingsStore.settings || {}).has(String(shift))
+  )
+}
+function masukPadaLaju(g, shift, iso) {
+  if (lajuDinamis(g, shift)) return shiftLajuHari.value(g, iso).has(String(shift))
+  return guruMasukPada(g, shift, iso)
+}
+function bukanJadwalLaju(g, shift, kerja) {
+  if (!lajuDinamis(g, shift)) return tanggalBukanJadwal(g, shift, kerja)
+  return new Set(kerja.filter((iso) => !shiftLajuHari.value(g, iso).has(String(shift))))
+}
+
 const rekapUnitData = computed(() => {
   const idx = indexAbsensiHarian(absensi.value || [])
   const range = tanggalRentang(rekapPeriode.value.start, rekapPeriode.value.end)
@@ -2335,7 +2402,7 @@ const rekapUnitData = computed(() => {
   const s = settingsStore.settings || {}
   const km = new Map() // kelompokKey -> Map(lembaga -> {lembaga, rows, sub})
   for (const g of guruAktif.value) {
-    for (const shift of shiftsForGuru(g, s)) {
+    for (const shift of shiftBerlakuBulan(g)) {
       const lembaga = lembagaOfShift(g, shift) // judul kelompok
       // v.1.2.3: hari kerja PER LEMBAGA shift ini — libur sekolah tak meng-alpa-kan ngaji.
       // v.1.3.7: yang dipakai menyaring libur WAJIB lembaga kalender, bukan judul di atas —
@@ -2352,7 +2419,7 @@ const rekapUnitData = computed(() => {
         shift,
         kerja,
         today,
-        tanggalBukanJadwal(g, shift, kerja),
+        bukanJadwalLaju(g, shift, kerja),
         shiftBelumMulaiSet.value.has(String(shift))
       )
       if (sel.total === 0) continue // tak ada aktivitas & bukan hari kerja lewat → lewati
@@ -2599,7 +2666,7 @@ const rekapRows = computed(() => {
   const only = String(filterShift.value || '').toLowerCase()
   const rows = []
   for (const g of guruAktif.value) {
-    const shifts = shiftsForGuru(g, settingsStore.settings || {})
+    const shifts = shiftBerlakuBulan(g)
     const keys = order.filter((k) => shifts.has(k) && (!only || k === only))
     keys.forEach((key, idx) => {
       // nama guru di-merge (rowspan) sekali per guru: isFirst + jumlah baris (span)
@@ -2745,7 +2812,7 @@ const matriksBulanan = computed(() =>
     //   boleh menebak (v.1.3.7), dan tak bergantung tanggal.
     lembagaOf: (g, shift) => lembagaKalenderShift(g, shift, settingsStore.settings || {}),
     liburOf: isLiburIso,
-    masukOf: guruMasukPada,
+    masukOf: masukPadaLaju,
     labelShiftOf: shiftLabel,
     belumMulaiOf: (shift) => shiftBelumMulaiSet.value.has(String(shift))
   })

@@ -248,3 +248,110 @@ describe('Kyai 16 Nov: guru shift sekolah SD–PKBM tak dibayar Laju 1', () => {
     expect([sekolah.terjadwal, sekolah.berbayar, sekolah.dibayar]).toEqual([3, 1, 1])
   })
 })
+
+describe('templat Excel jadwal Pondok Laju', () => {
+  const kelas = [
+    { key: 'ust. laju', guru: 'Ust. Laju' },
+    { key: 'ust. kedua', guru: 'Ust. Kedua' }
+  ]
+  const guru = [
+    { id: 'g1', nama: 'Siti Ma’rifatin, S.Pd.' },
+    { id: 'g2', nama: 'Ahmad Fauzi' },
+    { id: 'g3', nama: 'Ahmad Faruq' }
+  ]
+  it('kolom templat & tanggal sel Excel', async () => {
+    const { kolomTemplatJadwal, tanggalSelExcel } = await import('@/utils/pondokLajuSesi')
+    expect(kolomTemplatJadwal(kelas).map((k) => k.header)).toEqual([
+      'Ust. Laju | Laju 1',
+      'Ust. Laju | Laju 2',
+      'Ust. Kedua | Laju 1',
+      'Ust. Kedua | Laju 2'
+    ])
+    expect(tanggalSelExcel(new Date(Date.UTC(2026, 10, 17)))).toBe('2026-11-17')
+    expect(tanggalSelExcel('17/11/2026')).toBe('2026-11-17')
+    expect(tanggalSelExcel('2026-11-7')).toBe('2026-11-07')
+    expect(tanggalSelExcel('besok')).toBe('')
+  })
+  it('impor: nama persis / memuat (unik), sel kosong = kosongkan, galat dilaporkan', async () => {
+    const { bacaImporJadwal } = await import('@/utils/pondokLajuSesi')
+    const r = bacaImporJadwal({
+      bulan: '2026-11',
+      kelasList: kelas,
+      guruList: guru,
+      rows: [
+        {
+          Tanggal: '17/11/2026',
+          'Ust. Laju | Laju 1': 'siti ma’rifatin, s.pd.',
+          'Ust. Laju | Laju 2': 'Fauzi',
+          'Ust. Kedua | Laju 1': 'Ahmad',
+          'Ust. Kedua | Laju 2': '',
+          'Kelas Hantu | Laju 1': 'Ahmad Fauzi'
+        },
+        { Tanggal: '2026-12-01', 'Ust. Laju | Laju 1': 'Ahmad Fauzi' }
+      ]
+    })
+    expect(r.perubahan).toEqual([
+      { tanggal: '2026-11-17', kelas_key: 'ust. laju', sesi: 'laju1', guru_id: 'g1' },
+      { tanggal: '2026-11-17', kelas_key: 'ust. laju', sesi: 'laju2', guru_id: 'g2' },
+      { tanggal: '2026-11-17', kelas_key: 'ust. kedua', sesi: 'laju2', guru_id: '' }
+    ])
+    expect(r.galat).toEqual([
+      'Kolom "Kelas Hantu | Laju 1" tak dikenali (kelas atau sesi tak cocok)',
+      '2026-11-17 Ust. Kedua | Laju 1: guru "Ahmad" tak dikenali',
+      '2026-12-01 di luar bulan 2026-11 — dilewati'
+    ])
+  })
+})
+
+describe('bisyaroh piket dengan shift tiap sesi (Pengaturan Pondok Laju)', () => {
+  it('Laju 1 dibayar hanya bila hadir di shift Laju 1, Laju 2 di shift Laju 2', () => {
+    const jadwal = [
+      { guru_id: 'g1', tanggal: '2026-11-17', sesi: 'laju1' },
+      { guru_id: 'g1', tanggal: '2026-11-17', sesi: 'laju2' },
+      { guru_id: 'g1', tanggal: '2026-11-18', sesi: 'laju2' }
+    ]
+    const absensi = [
+      { guru_id: 'g1', tanggal: '2026-11-17', shift: 'laju_1', status: 'hadir' }, // hanya L1
+      { guru_id: 'g1', tanggal: '2026-11-18', shift: 'laju_1', status: 'hadir' } // salah shift
+    ]
+    const shiftSesi = { laju1: 'laju_1', laju2: 'laju_2' }
+    const r = sesiLajuTerbayar({ jadwal, absensi, guruId: 'g1', shiftSesi })
+    expect([r.terjadwal, r.dibayar]).toEqual([3, 1])
+    // aturan cadangan (tanpa peta) membayar 2 — itulah alasan peta dibuat
+    expect(
+      sesiLajuTerbayar({ jadwal, absensi, guruId: 'g1', shiftIds: ['laju_1', 'laju_2'] }).dibayar
+    ).toBe(2)
+    // guru SD–PKBM: Laju 1 tetap tak dibayar walau hadir di shift-nya
+    expect(
+      sesiLajuTerbayar({ jadwal, absensi, guruId: 'g1', shiftSesi, sesiTakDibayar: ['laju1'] })
+        .dibayar
+    ).toBe(0)
+  })
+  it('× kehadiran ber-scope kosong tak menghitung shift Pondok Laju', async () => {
+    const { barisBisyaroh, normalizeJenisBisyaroh } = await import('@/utils/bisyarohScope')
+    const j = normalizeJenisBisyaroh({
+      id: 'bonus',
+      label: 'Bonus hadir',
+      hitungan: 'per_hadir',
+      nominal: 1000
+    })
+    const jLaju = normalizeJenisBisyaroh({
+      id: 'b2',
+      label: 'Bonus Laju',
+      hitungan: 'per_hadir',
+      nominal: 500,
+      scope: { shift: ['laju_1'] }
+    })
+    const ctx = {
+      refs: [{ lembaga: 'PTPT', jabatan_di_sini: 'Guru' }],
+      shiftIds: new Set(['sore', 'laju_1']),
+      hadirPerShift: { sore: 20, laju_1: 5, tadarus_pagi: 10 },
+      shiftLaju: new Set(['laju_1', 'tadarus_pagi'])
+    }
+    const b = barisBisyaroh([j, jLaju], ctx)
+    expect(b.map((x) => [x.jenis_id, x.qty])).toEqual([
+      ['bonus', 20],
+      ['b2', 5]
+    ])
+  })
+})
