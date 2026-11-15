@@ -35,7 +35,8 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   - **Jadwal piket** Laju 1 dan Laju 2, bisa direncanakan sebulan secara bergilir oleh Admin Pondok
     Laju, PJ, atau admin.
   - **Bisyaroh piket** dibayar per sesi bila guru yang terjadwal hadir di shift Pondok Laju, dan
-    langsung masuk slip bisyaroh.
+    langsung masuk slip bisyaroh. Guru yang punya shift sekolah SD–PKBM tidak dibayar untuk Laju 1,
+    karena jam itu sudah terbayar sebagai jam pelajaran sekolah.
   - Wali santri bisa melihat capaian Pondok Laju anaknya di halaman Capaian Prestasi.
 
 - **Label shift** "Pagi-Sore", "Pagi", atau "Sore" kini tampil untuk semua santri.

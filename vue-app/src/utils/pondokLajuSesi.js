@@ -379,20 +379,51 @@ export function bolehSusunJadwal(sesi, lembagaList) {
 }
 
 // ── Bisyaroh piket ───────────────────────────────────────────────────────────
+// Kyai 16 Nov 2026: guru yang punya shift sekolah "dari SD sampai PKBM" TIDAK dibayar Laju 1 —
+//   jam itu sudah terbayar sebagai jam pelajaran sekolah. Dikenali dari Master Shift: shift guru
+//   yang kolom Khusus Lembaga-nya memuat SDI/PKBM (bukan dari id shift — id sudah dinamai ulang).
+//   TK & Kelas Baca tidak termasuk. Laju 2 tetap dibayar.
+export const LEMBAGA_SEKOLAH_TANPA_LAJU1 = ['SDI', 'PKBM']
+
 /**
- * Sesi Laju yang DIBAYAR satu guru. Per tanggal: dibayar = min(sesi terjadwal, shift Pondok
- * Laju yang ia hadiri hari itu). Hadir = status hadir/terlambat di shift yang dipilih Kyai
- * (`shiftIds`, dari scope Jenis Bisyaroh). Tanpa shift terpilih tak ada yang terbayar —
- * aturan Kyai: bisyaroh hanya bila guru absen di shift Pondok Laju.
- * @returns {{ terjadwal: number, dibayar: number, rincian: Array<{tanggal, sesi: Array, hadir: number, dibayar: number}> }}
+ * Sesi yang tak dibayar untuk guru ini: ['laju1'] bila ia punya shift sekolah SD–PKBM, selain itu [].
+ * @param {Iterable} shiftIdsGuru shiftsForGuru(g, settings).
+ * @param {Array} daftarShift shiftList(settings) — tiap shift { id, lembaga: [] }.
+ */
+export function sesiTakDibayarGuru(shiftIdsGuru, daftarShift) {
+  const punya = new Set([...(shiftIdsGuru || [])].map((x) => String(x)))
+  const sekolah = new Set(LEMBAGA_SEKOLAH_TANPA_LAJU1)
+  const kena = (daftarShift || []).some(
+    (sh) =>
+      punya.has(String(sh?.id)) &&
+      (Array.isArray(sh?.lembaga) ? sh.lembaga : []).some((l) =>
+        sekolah.has(
+          String(l || '')
+            .trim()
+            .toUpperCase()
+        )
+      )
+  )
+  return kena ? ['laju1'] : []
+}
+
+/**
+ * Sesi Laju yang DIBAYAR satu guru. Per tanggal: dibayar = min(sesi terjadwal yang boleh dibayar,
+ * shift Pondok Laju yang ia hadiri hari itu). Hadir = status hadir/terlambat di shift yang dipilih
+ * Kyai (`shiftIds`, dari scope Jenis Bisyaroh). Tanpa shift terpilih tak ada yang terbayar —
+ * aturan Kyai: bisyaroh hanya bila guru absen di shift Pondok Laju. `sesiTakDibayar` (dari
+ * sesiTakDibayarGuru) tetap terjadwal & tercatat, hanya tak dibayar.
+ * @returns {{ terjadwal, berbayar, dibayar, rincian: Array<{tanggal, sesi: Array, hadir, dibayar}> }}
  */
 export function sesiLajuTerbayar({
   jadwal = [],
   absensi = [],
   guruId,
   dalamPeriode = () => true,
-  shiftIds = []
+  shiftIds = [],
+  sesiTakDibayar = []
 } = {}) {
+  const takDibayar = new Set(sesiTakDibayar || [])
   const gid = String(guruId ?? '')
   const ids = new Set([...(shiftIds || [])].map((x) => String(x).toLowerCase()))
   const perTgl = new Map()
@@ -417,16 +448,19 @@ export function sesiLajuTerbayar({
     }
   }
   let terjadwal = 0
+  let berbayar = 0
   let dibayar = 0
   const rincian = []
   for (const [t, sesi] of [...perTgl.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const hadir = hadirTgl.get(t)?.size || 0
-    const bayar = Math.min(sesi.length, hadir)
+    const boleh = sesi.filter((s) => !takDibayar.has(s)).length
+    const bayar = Math.min(boleh, hadir)
     terjadwal += sesi.length
+    berbayar += boleh
     dibayar += bayar
     rincian.push({ tanggal: t, sesi, hadir, dibayar: bayar })
   }
-  return { terjadwal, dibayar, rincian }
+  return { terjadwal, berbayar, dibayar, rincian }
 }
 
 const _HARI = ['Ahad', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']

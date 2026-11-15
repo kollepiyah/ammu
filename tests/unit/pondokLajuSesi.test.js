@@ -213,3 +213,38 @@ describe('Jenis Bisyaroh × sesi Pondok Laju → baris slip', () => {
     expect(barisBisyaroh([j], { ...ctx, sesiLaju: undefined })).toEqual([])
   })
 })
+
+describe('Kyai 16 Nov: guru shift sekolah SD–PKBM tak dibayar Laju 1', () => {
+  // Bentuk Master Shift produksi: id sudah dinamai ulang, yang menentukan kolom Khusus Lembaga.
+  const daftar = [
+    { id: 'sore', lembaga: ['PTPT', 'PPPH'] },
+    { id: 'tk', lembaga: ['TK'] },
+    { id: 'sdi_pkbm', lembaga: ['SDI', 'PKBM'] },
+    { id: 'kelas_baca', lembaga: ['Kelas Baca'] },
+    { id: 'khusus_pkbm', lembaga: [' pkbm '] }
+  ]
+  it('dikenali dari lembaga shift, bukan id; TK & Kelas Baca tidak termasuk', async () => {
+    const { sesiTakDibayarGuru } = await import('@/utils/pondokLajuSesi')
+    expect(sesiTakDibayarGuru(new Set(['sore', 'sdi_pkbm']), daftar)).toEqual(['laju1'])
+    expect(sesiTakDibayarGuru(['khusus_pkbm'], daftar)).toEqual(['laju1'])
+    expect(sesiTakDibayarGuru(['sore', 'tk', 'kelas_baca'], daftar)).toEqual([])
+    expect(sesiTakDibayarGuru([], daftar)).toEqual([])
+  })
+  it('Laju 1 tetap terjadwal tapi tak dibayar; Laju 2 tetap dibayar', () => {
+    const jadwal = [
+      { guru_id: 'g1', tanggal: '2026-11-17', sesi: 'laju1' },
+      { guru_id: 'g1', tanggal: '2026-11-17', sesi: 'laju2' },
+      { guru_id: 'g1', tanggal: '2026-11-18', sesi: 'laju1' }
+    ]
+    const absensi = [
+      { guru_id: 'g1', tanggal: '2026-11-17', shift: 'laju_1', status: 'hadir' },
+      { guru_id: 'g1', tanggal: '2026-11-17', shift: 'laju_2', status: 'hadir' },
+      { guru_id: 'g1', tanggal: '2026-11-18', shift: 'laju_1', status: 'hadir' }
+    ]
+    const dasar = { jadwal, absensi, guruId: 'g1', shiftIds: ['laju_1', 'laju_2'] }
+    const biasa = sesiLajuTerbayar(dasar)
+    const sekolah = sesiLajuTerbayar({ ...dasar, sesiTakDibayar: ['laju1'] })
+    expect([biasa.terjadwal, biasa.berbayar, biasa.dibayar]).toEqual([3, 3, 3])
+    expect([sekolah.terjadwal, sekolah.berbayar, sekolah.dibayar]).toEqual([3, 1, 1])
+  })
+})

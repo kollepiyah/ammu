@@ -1549,7 +1549,7 @@ import {
   labelPeriodeBisyaroh
 } from '@/utils/periodeBisyaroh'
 // v.1.5.0: bisyaroh piket Pondok Laju per sesi — satu aturan dengan tab Bisyaroh di menu Pondok Laju.
-import { sesiLajuTerbayar } from '@/utils/pondokLajuSesi'
+import { sesiLajuTerbayar, sesiTakDibayarGuru } from '@/utils/pondokLajuSesi'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -2359,13 +2359,14 @@ function ctxGuruPenuh(g, periode) {
     tahunPengabdian: tahunPengabdian(g.tanggal_mengabdi, akhirBulanPeriode(periode)),
     bebanJPByLembaga: bebanJP,
     jpDiajarByLembaga,
-    // v.1.5.0: hadir penuh = semua sesi piket yang terjadwal terbayar.
+    // v.1.5.0: hadir penuh = semua sesi piket terjadwal yang BOLEH dibayar terbayar.
     sesiLaju: () =>
       sesiLajuTerbayar({
         jadwal: jadwalLaju.value,
         guruId: g.id,
-        dalamPeriode: penyaringPeriodeBisyaroh(periode)
-      }).terjadwal
+        dalamPeriode: penyaringPeriodeBisyaroh(periode),
+        sesiTakDibayar: sesiTakDibayarGuru(shiftIds, shiftList(s))
+      }).berbayar
   }
 }
 
@@ -2596,13 +2597,15 @@ function ctxGuru(g, periode) {
     bebanJPByLembaga: bebanJP,
     jpDiajarByLembaga,
     // v.1.5.0: per_sesi_laju — sesi piket terjadwal yang gurunya hadir di shift Laju (scope.shift).
+    //   Guru shift sekolah SD–PKBM: Laju 1 tak dibayar (sudah terbayar sbg jam pelajaran).
     sesiLaju: (shiftIds) =>
       sesiLajuTerbayar({
         jadwal: jadwalLaju.value,
         absensi: absensiShift.value,
         guruId: g.id,
         dalamPeriode: penyaringPeriodeBisyaroh(periode),
-        shiftIds
+        shiftIds,
+        sesiTakDibayar: sesiTakDibayarGuru(shiftsForGuru(g, s), shiftList(s))
       }).dibayar
   }
 }

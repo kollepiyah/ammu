@@ -434,7 +434,7 @@
         class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm"
       >
         <p class="text-xs font-black text-[var(--text-primary)] uppercase mb-2">
-          <i class="fas fa-user-clock text-teal-600 mr-1"></i>Jadwal piket saya
+          <i class="fas fa-user-clock text-teal-600 mr-1"></i>Jadwal Pondok Laju
         </p>
         <ul class="space-y-1">
           <li
@@ -576,7 +576,15 @@
                 :key="r.guru_id"
                 class="border-t border-[var(--border-subtle)]"
               >
-                <td class="p-2 font-bold text-[var(--text-primary)]">{{ r.nama }}</td>
+                <td class="p-2 font-bold text-[var(--text-primary)]">
+                  {{ r.nama }}
+                  <span
+                    v-if="r.tanpaLaju1"
+                    class="block text-[9px] font-bold text-amber-700 dark:text-amber-300"
+                    title="Guru shift sekolah SD–PKBM: jam Laju 1 sudah terbayar sebagai jam pelajaran"
+                    >Laju 1 tak dibayar (shift SD–PKBM)</span
+                  >
+                </td>
                 <td class="p-2 text-center">{{ r.terjadwal }}</td>
                 <td class="p-2 text-center font-black text-emerald-600">{{ r.dibayar }}</td>
                 <td class="p-2 text-right">{{ fmtRp(r.tarif) }}</td>
@@ -651,7 +659,8 @@ import { queryColl, mergeOne, deleteOne, subscribeDoc, getOne } from '@/services
 import { todayJakarta, fmtRp } from '@/utils/format'
 import { guruAktifSaja } from '@/utils/guruScope'
 import { isSuperAdmin } from '@/utils/roleScope'
-import { shiftLabelOf } from '@/utils/shiftMaster'
+import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
+import { shiftsForGuru } from '@/utils/shiftDerive'
 import { jenisBisyarohList } from '@/utils/bisyarohScope'
 import { rentangPeriodeBisyaroh, penyaringPeriodeBisyaroh } from '@/utils/periodeBisyaroh'
 import {
@@ -674,6 +683,7 @@ import {
   adminPondokLaju,
   bolehSusunJadwal,
   sesiLajuTerbayar,
+  sesiTakDibayarGuru,
   fmtTanggalPendek
 } from '@/utils/pondokLajuSesi'
 
@@ -1105,20 +1115,33 @@ const rekapBisyaroh = computed(() => {
           dalamPeriode: dalam
         }).terjadwal
       }
+      // Kyai 16 Nov: guru shift sekolah SD–PKBM tak dibayar Laju 1 (aturan yang sama dgn slip).
+      const s = settingsStore.settings || {}
+      const g = petaGuru.value.get(gid)
+      const takDibayar = g ? sesiTakDibayarGuru(shiftsForGuru(g, s), shiftList(s)) : []
       for (const j of jenisLaju.value) {
         const r = sesiLajuTerbayar({
           jadwal: bJadwal.value,
           absensi: bAbsensi.value,
           guruId: gid,
           dalamPeriode: dalam,
-          shiftIds: j.scope.shift
+          shiftIds: j.scope.shift,
+          sesiTakDibayar: takDibayar
         })
         terjadwal = r.terjadwal
         dibayar = Math.max(dibayar, r.dibayar)
         tarif += j.nominal
         total += r.dibayar * j.nominal
       }
-      return { guru_id: gid, nama: namaGuru(gid), terjadwal, dibayar, tarif, total }
+      return {
+        guru_id: gid,
+        nama: namaGuru(gid),
+        terjadwal,
+        dibayar,
+        tarif,
+        total,
+        tanpaLaju1: takDibayar.includes('laju1')
+      }
     })
     .sort((a, b) => a.nama.localeCompare(b.nama, 'id'))
 })

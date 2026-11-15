@@ -813,7 +813,7 @@ const rilis = [
       'Pondok Laju: prestasi bulanan cukup diisi sekali per kelas, dan Rekap Prestasi bisa disaring khusus santri Pondok Laju.',
       'Top 10 santri prestasi (dulu Top 5) di Rekap Prestasi dan Laporan; ketuk kartunya untuk peringkat lengkap.',
       'Peringkat Guru di Tes Kenaikan → Rekap: jumlah santri yang lulus tes dari ajuan tiap guru, per bulan atau periode bebas.',
-      'Menu baru Pondok Laju: catat capaian bacaan Tadarus Pagi, Laju 1, Laju 2 (juz, halaman, surah, ayat), jadwal piket bergilir sebulan, dan bisyaroh piket per sesi. Wali bisa melihat capaian anaknya.',
+      'Menu baru Pondok Laju: catat capaian bacaan Tadarus Pagi, Laju 1, Laju 2 (juz, halaman, surah, ayat), jadwal Pondok Laju bergilir sebulan, dan bisyaroh piket per sesi (guru shift sekolah SD–PKBM tidak dibayar Laju 1). Wali bisa melihat capaian anaknya.',
       'Tes Kenaikan PTPT: kunci glondongan untuk PJ kini benar-benar bekerja — PJ menunggu sampai semua blok glondongan selesai disimak.',
       'Label shift "Pagi-Sore", "Pagi", atau "Sore" kini tampil di semua santri; Data Guru bisa disaring per jenis (Qiraati-Sekolah, Qiraati, Sekolah, Pegawai).',
       'Isian baru Induk / Non-Induk di form guru: tampil sebagai label di kartu guru, bisa disaring, dan ikut kolom Excel guru.',

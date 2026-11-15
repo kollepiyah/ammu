@@ -38,6 +38,9 @@ fungsi → rebuild AAB → rilis Electron. **Sesudah rilis, Kyai mengatur:** (1)
 Laju 1/Laju 2 dengan jamnya; (2) Pengaturan Keuangan → Jenis Bisyaroh — cara hitung "× sesi Pondok
 Laju", tarif per sesi, kolom Shift = shift Laju; (3) menu Pondok Laju → Peran — Admin Pondok Laju.
 
+Diuji (Laju 1 guru sekolah): vitest 130 berkas / 1.890 tes, build; di peramban (data tiruan):
+guru ber-shift "SDI - PKBM" terjadwal 3 sesi hadir semua → dibayar 1 (Laju 2) di rekap DAN slip,
+guru biasa 2/2; judul "Jadwal Pondok Laju".
 Diuji (tahap 5): vitest 130 berkas / 1.888 tes (baru `pondokLajuSesi`: mushaf 604 hal. bolak-balik,
 114 surah = 6.236 ayat, rantai posisi, jadwal bergilir, bisyaroh per sesi, baris slip), migrasi di
 PGlite sebagai role biasa (penyusun jadwal: super/PJ/Admin Pondok Laju ya, guru biasa ditolak; wali
@@ -160,7 +163,7 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
   jadwal boleh semua.
 - **Jadwal**: tabel sebulan, satu guru per kelas per sesi Laju; "Rencanakan sebulan (bergilir)"
   memutar guru terpilih per tanggal → sesi → kelas tanpa Ahad, bisa diubah per sel; peringatan bila
-  satu guru memegang dua kelas di sesi yang sama; "Jadwal piket saya" untuk tiap guru. Penyusun =
+  satu guru memegang dua kelas di sesi yang sama; daftar "Jadwal Pondok Laju" milik tiap guru. Penyusun =
   admin, PJ PTPT, atau **Admin Pondok Laju** (tab Peran, super admin; disimpan di master/lembaga
   PTPT `admin_pondok_laju`, cermin RLS `auth_is_admin_pondok_laju`).
 - **Riwayat** per kelas per bulan (n/N santri tercatat per sesi, posisi bersama atau "beragam").
@@ -169,7 +172,12 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
   tanggal dibayar = min(sesi terjadwal, shift Laju yang dihadiri). Tanpa shift terpilih tak ada yang
   terbayar. Masuk slip sebagai baris tambahan "Pondok Laju"; tab Bisyaroh di menu Pondok Laju
   menampilkan rekap yang sama (`sesiLajuTerbayar`, satu sumber). Simulasi plafon = semua sesi
-  terjadwal terbayar.
+  terjadwal yang boleh dibayar terbayar.
+- **Guru shift sekolah SD–PKBM tak dibayar Laju 1** (Kyai 16 Nov: jam itu sudah terbayar sebagai jam
+  pelajaran sekolah). Dikenali dari Master Shift — shift guru yang Khusus Lembaga-nya memuat SDI/PKBM
+  (di produksi: shift "SDI - PKBM"), bukan dari id shift; TK & Kelas Baca tidak termasuk. Laju 1
+  tetap terjadwal & dicatat, hanya tak dibayar; Laju 2 tetap dibayar (`sesiTakDibayarGuru`). Rekap
+  Bisyaroh menandai guru itu "Laju 1 tak dibayar (shift SD–PKBM)".
 - **Wali** melihat kartu "Capaian Pondok Laju" (posisi terakhir + riwayat singkat) di Capaian Prestasi.
 
 ### Fixed — gerbang PJ glondongan tak pernah mengunci (sejak 19 Jul 2026, bfa80e1)
