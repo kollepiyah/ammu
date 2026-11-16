@@ -11,6 +11,7 @@ import {
   petaRombel,
   petaKunciRombel,
   rombelSantri,
+  rombelIdSesudahUbah,
   pasanganLengkap,
   konteksRombel,
   usulRombelDariSantri
@@ -159,6 +160,39 @@ describe('jalur baca: Ahmad akhirnya terlihat oleh Siti', () => {
     const lepas = S('lepas', { lembaga: 'TPQ Sore', guru_pagi: 'Umar' })
     expect(kelasKeyQiraati(lepas, ctx)).toBe('umar||')
     expect(ownsNgaji(lepas, 'Umar', ctx)).toBe(true)
+  })
+})
+
+describe('rombelIdSesudahUbah — guru santri diganti di form', () => {
+  const rombel = [
+    { id: 'r1', lembaga: 'TPQ Pagi', guru_pagi: 'Siti', guru_sore: 'Indah' },
+    { id: 'r2', lembaga: 'TPQ Pagi', guru_pagi: 'Umar', guru_sore: 'Zahra' }
+  ]
+  const peta = petaRombel(rombel)
+  const petaK = petaKunciRombel(rombel)
+
+  it('rombel lama dipertahankan selama masih memuat guru santri', () => {
+    const s = S('a', { rombel_id: 'r1', guru_sore: 'Indah' })
+    expect(rombelIdSesudahUbah(s, peta, petaK)).toBe('r1')
+  })
+
+  it('pindah ke rombel yang cocok begitu gurunya diganti', () => {
+    const s = S('a', { rombel_id: 'r1', guru_pagi: 'Umar', guru_sore: 'Zahra' })
+    expect(rombelIdSesudahUbah(s, peta, petaK)).toBe('r2')
+  })
+
+  it('DIKOSONGKAN kalau tak ada yang cocok — jangan menunjuk kelas yang salah', () => {
+    const s = S('a', { rombel_id: 'r1', guru_pagi: 'Entah', guru_sore: 'Siapa' })
+    expect(rombelIdSesudahUbah(s, peta, petaK)).toBe('')
+  })
+
+  it('santri tanpa guru tak menunjuk rombel apa pun', () => {
+    expect(rombelIdSesudahUbah(S('a', { rombel_id: 'r1' }), peta, petaK)).toBe('')
+  })
+
+  it('santri baru tanpa rombel_id langsung dapat yang cocok', () => {
+    const s = S('baru', { guru_pagi: 'Siti', guru_sore: 'Indah' })
+    expect(rombelIdSesudahUbah(s, peta, petaK)).toBe('r1')
   })
 })
 

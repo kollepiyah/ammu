@@ -1444,6 +1444,7 @@ import { createPdf, savePdf, buildKopLembaga } from '@/utils/pdfBuilder'
 import { gambarRekapPrestasi } from '@/utils/rekapPrestasiPdf'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
+import { useKonteksRombel } from '@/composables/useKonteksRombel'
 import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
 import { isFullFilterRole, isSuperAdmin } from '@/utils/roleScope'
 import { ownsSekolah, deteksiTipeGuru, scopeQiraati } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual; v.1.2.8: scopeQiraati = scope kepala per-sisi
@@ -1539,6 +1540,7 @@ const busy = ref(false)
 const search = ref('')
 const filterLembaga = ref('')
 const auth = useAuthStore()
+const { ctxRombel } = useKonteksRombel()
 
 // v.107 CRUD (super_admin): koreksi/hapus snapshot prestasi bulanan (koleksi riwayat_prestasi).
 const confirmDlg = useConfirm()
@@ -1669,7 +1671,10 @@ const isGuruMode = computed(() => !isFullFilter.value)
 // v.1.4.8 (Kyai 3 Nov 2026: "Di akun PJ masih tampil semua santri PTPT"): PJ PTPT dibatasi ke
 //   santri yang PJ efektifnya dia — peta yang sama dengan penyaring PJ di bawah.
 const qs = computed(() =>
-  scopeQiraati(auth.sesiAktif, { pjSantri: (s) => petaPjSantri.value.get(String(s?.id)) })
+  scopeQiraati(auth.sesiAktif, {
+    pjSantri: (s) => petaPjSantri.value.get(String(s?.id)),
+    rombel: ctxRombel.value
+  })
 )
 function _lowS(v) {
   return String(v || '')

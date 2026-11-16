@@ -143,18 +143,21 @@ export function scopeQiraati(sesi, opts = {}) {
       return !!namaN && _lower(opts.pjSantri(s)) === namaN
     return true
   }
+  // v.1.5.0 (Kyai 17 Nov): `opts.rombel` = konteksRombel(). Dengan itu, santri yang hanya
+  //   diisi salah satu dari pasangan guru tetap milik KEDUANYA. Tanpa opts, perilaku lama.
+  const ctxRombel = opts.rombel || null
   return {
     adminPenuh,
     kepala,
     lihat(s) {
       if (adminPenuh) return true
       if (kepala && pimpinNgaji(s)) return true
-      return ownsNgaji(s, nama) || ownsSekolah(s, nama)
+      return ownsNgaji(s, nama, ctxRombel) || ownsSekolah(s, nama)
     },
     edit(s) {
       if (adminPenuh) return true
       if (kepala && pimpinNgaji(s)) return true
-      return ownsNgaji(s, nama)
+      return ownsNgaji(s, nama, ctxRombel)
     }
   }
 }

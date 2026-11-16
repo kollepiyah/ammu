@@ -469,6 +469,7 @@ import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { ownsNgaji, ownsSekolah } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
+import { useKonteksRombel } from '@/composables/useKonteksRombel'
 import { useSantri } from '@/composables/useSantri'
 import { sortSantri } from '@/utils/santriSort'
 
@@ -490,6 +491,7 @@ const guruName = computed(() =>
     .toLowerCase()
     .trim()
 )
+const { ctxRombel } = useKonteksRombel()
 
 function _low(v) {
   return String(v || '')
@@ -501,7 +503,8 @@ function _low(v) {
 //   selalu larik, sehingga baris lama yang menyimpannya sebagai teks tunggal membuat
 //   guru sekolah kehilangan seluruh santrinya di layar Absensi.
 function ownNgaji(s) {
-  return ownsNgaji(s, guruName.value)
+  // v.1.5.0: konteks rombel — santri yang cuma diisi guru sore tetap milik guru paginya.
+  return ownsNgaji(s, guruName.value, ctxRombel.value)
 }
 function ownSekolah(s) {
   return ownsSekolah(s, guruName.value)

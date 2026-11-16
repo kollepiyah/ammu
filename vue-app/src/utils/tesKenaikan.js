@@ -43,8 +43,10 @@ export function isEligibleForTes(s) {
  * @param {Array}  santriList daftar santri (sudah ter-scope peran oleh useSantri)
  * @param {object} sesi       auth.sesiAktif
  */
-export function santriBisaDiajukanTes(santriList, sesi) {
-  const scope = scopeQiraati(sesi)
+export function santriBisaDiajukanTes(santriList, sesi, opts = {}) {
+  // v.1.5.0: `opts.rombel` = konteksRombel(), diteruskan apa adanya ke scopeQiraati supaya
+  //   guru pasangan (pagi/sore) sama-sama boleh mengajukan santri sekelasnya.
+  const scope = scopeQiraati(sesi, opts)
   return (santriList || []).filter((s) => isEligibleForTes(s) && scope.edit(s))
 }
 

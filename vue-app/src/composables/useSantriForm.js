@@ -11,6 +11,8 @@ import {
   subscribeDoc
 } from '@/services/db'
 import { ajuanBasiKarenaJuz, juzNum } from '@/utils/tesKenaikan'
+import { rombelIdSesudahUbah } from '@/utils/rombel'
+import { useKonteksRombel } from '@/composables/useKonteksRombel'
 import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
@@ -94,6 +96,7 @@ function emptyForm() {
 
 export function useSantriForm() {
   const toast = useToast()
+  const { ctxRombel } = useKonteksRombel()
   const settings = useSettingsStore()
   const form = ref(emptyForm())
   const lembagaRaw = ref([])
@@ -547,6 +550,20 @@ export function useSantriForm() {
       }
       // v.99: merge:true — jangan menimpa/hapus field tersimpan yg tak ada di payload
       //   (mis. wa_2, psb_id, shift_qiraati, lembaga_refs) saat edit santri.
+      // v.1.5.0 (Kyai 17 Nov): rombel santri ikut dibetulkan setiap kali gurunya diubah.
+      //   Tanpa ini, rombel_id lama tertinggal menunjuk kelas yang sudah bukan kelasnya —
+      //   dan karena rombel_id diutamakan saat membaca, santri itu terus terhitung di kelas
+      //   lama tanpa ada yang tahu. Aturannya di utils/rombel (pure + diuji).
+      try {
+        const { peta, petaKunci } = ctxRombel.value
+        data.rombel_id = rombelIdSesudahUbah(
+          { ...data, rombel_id: data.rombel_id },
+          peta,
+          petaKunci
+        )
+      } catch (e) {
+        /* daftar rombel belum termuat → biarkan apa adanya, jangan menebak */
+      }
       await mergeOne('santri', String(data.id), data)
       // K1-b: akun login lahir bersama datanya (senyap — simpan tak boleh gagal
       //   gara-gara pembuatan akun). Dipanggil juga saat EDIT: kunci akun santri

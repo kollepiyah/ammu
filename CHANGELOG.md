@@ -556,10 +556,31 @@ halaman login, sisipannya sudah dicabut, nol tulisan ke produksi): kasus Ahmad t
 pratinjau meleburnya ke "Siti + Indah" jadi 2 santri, sementara santri yang gurunya
 berpasangan dengan dua orang dilaporkan sebagai tak-bisa-ditebak, bukan ditebak.
 
-**BELUM ada**: pemilihan rombel di form santri, dan penyambungan `ctx` di layar-layar pemakai
-(Absensi, Rapor, Input Bulanan, Naik Kelas, Tes Kenaikan, statistik). Sampai itu dikerjakan,
-rombel sudah bisa disusun & diganti gurunya, tapi **efek "Ahmad terlihat oleh Siti" belum
-terasa di layar-layar itu**.
+### Added — rombel tersambung ke layar-layar pemakainya (Kyai, 17 Nov 2026 — gelombang 3)
+
+Fondasi & layarnya sudah ada; gelombang ini yang membuat efeknya benar-benar terasa.
+
+- **`composables/useKonteksRombel`** — daftar rombel ditarik **SEKALI** lalu dipakai ulang
+  semua layar (cache tingkat modul + satu janji bersama), bukan sekali per layar. Beranda,
+  Absensi, Rapor, dan Naik Kelas bisa dibuka berurutan dalam satu sesi; menariknya berulang
+  hanya menghabiskan egress. Gagal menarik bukan keadaan darurat — konteks kosong berarti
+  aturan lama, layarnya tetap jalan.
+- **`scopeQiraati(sesi, opts)` menerima `opts.rombel`**, jadi satu sambungan itu sekaligus
+  mengurus Tes Kenaikan, Tes Sekolah, dan Rekap Prestasi yang memang sudah lewat sana.
+- Tersambung: **Absensi Santri, Input Bulanan, Naik Kelas** (dua tempat: form & riwayat),
+  **Tes Kenaikan**, **Rekap Prestasi**. Sejak ini, guru pagi dan guru sore satu rombel
+  sama-sama melihat santri yang hanya diisi salah satu dari mereka.
+- **`rombelIdSesudahUbah`** + disambung di `useSantriForm`: tiap kali guru seorang santri
+  diubah di form, `rombel_id`-nya ikut dibetulkan. Rombel lama dipertahankan selama masih
+  memuat salah satu gurunya; kalau tidak, dicarikan yang cocok; kalau tak ada yang cocok
+  **dikosongkan** — lebih baik tak menunjuk apa-apa daripada menunjuk kelas yang salah.
+  Tanpa ini, `rombel_id` lama tertinggal dan santrinya terus terhitung di kelas lama tanpa
+  ada yang tahu, sebab rombel_id diutamakan saat membaca.
+
+Diuji (17 Nov): vitest 138 berkas / 1.999 tes (rombel jadi 35 tes, baru `rombelIdSesudahUbah`
+5 tes: rombel lama dipertahankan, pindah saat guru diganti, dikosongkan saat tak ada yang
+cocok, santri tanpa guru, santri baru); eslint 0 error; build vue. **Belum diuji** dengan akun
+& data nyata — dan efeknya baru kelihatan sesudah rombel benar-benar disusun di Master Data.
 
 ---
 

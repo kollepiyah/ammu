@@ -145,6 +145,34 @@ export function petaKunciRombel(rombelList) {
 }
 
 /**
+ * `rombel_id` yang PANTAS untuk santri sesudah gurunya diubah di form.
+ *
+ * Tanpa ini, mengganti guru seorang santri meninggalkan `rombel_id` lama yang menunjuk kelas
+ * yang sudah bukan kelasnya — dan karena rombel_id diutamakan saat membaca, santri itu akan
+ * terus terhitung di kelas lamanya tanpa ada yang tahu.
+ *
+ * Urutannya: pertahankan rombel lama kalau masih memuat salah satu guru santri; kalau tidak,
+ * carikan yang pasangannya cocok; kalau tak ada yang cocok, KOSONGKAN — lebih baik tak
+ * menunjuk apa-apa daripada menunjuk kelas yang salah.
+ *
+ * @returns {string} id rombel, atau '' bila tak ada yang pantas.
+ */
+export function rombelIdSesudahUbah(s, peta, petaKunci) {
+  const { pagi, sore } = slotGuruSantri(s)
+  if (!pagi && !sore) return ''
+  const lama = asli(s?.rombel_id)
+  if (lama && peta?.get) {
+    const r = peta.get(lama)
+    if (r && (rombelPunyaGuru(r, pagi) || rombelPunyaGuru(r, sore))) return lama
+  }
+  if (petaKunci?.get) {
+    const r = petaKunci.get(`${norm(s?.lembaga)}|${kunciPasangan(pagi, sore)}`)
+    if (r) return String(r.id)
+  }
+  return ''
+}
+
+/**
  * Susun USULAN rombel dari data santri yang sudah ada, lalu gabungkan yang sebelah slotnya
  * kosong ke pasangan lengkap yang cocok. Ini inti perbaikan data Kyai.
  *

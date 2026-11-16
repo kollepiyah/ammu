@@ -1441,6 +1441,7 @@ import {
 } from '@/utils/promosiKenaikan' // v.100d: logika naik bersama
 import { juzNum, todayJakarta } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
 import { ownsNgaji, ownsSekolah, deteksiTipeGuru, guruAktifSaja } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
+import { useKonteksRombel } from '@/composables/useKonteksRombel'
 // v.1.1.9: 1 kelas Qiraati = sepasang guru (pagi & sore) — dropdown menampilkan 2 nama.
 import {
   pasanganQiraati,
@@ -1484,6 +1485,7 @@ const isSantriRole = computed(() => authStore.sesiAktif?.role === 'santri')
 const canKelola = computed(() => isAdmin.value || isGuru.value)
 // v.100b: tipe guru (Qiraati / Sekolah) dari assignment santri → toggle kategori untuk guru dual-role.
 const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
+const { ctxRombel } = useKonteksRombel()
 const guruTipe = computed(() => deteksiTipeGuru(santriList.value, myNamaGuru.value))
 const guruDual = computed(() => guruTipe.value.qiraati && guruTipe.value.sekolah)
 
@@ -1756,7 +1758,7 @@ const filteredFormSantri = computed(() => {
     const gname = myNamaGuru.value
     let list = santriList.value.filter((s) => s.aktif !== false)
     if (kenaikanKategori.value === 'sekolah') list = list.filter((s) => ownsSekolah(s, gname))
-    else list = list.filter((s) => ownsNgaji(s, gname))
+    else list = list.filter((s) => ownsNgaji(s, gname, ctxRombel.value))
     if (searchFormSantri.value) {
       const kw = searchFormSantri.value.toLowerCase()
       list = list.filter((s) =>
@@ -1954,7 +1956,7 @@ const riwayatList = computed(() => {
   if (isGuru.value) {
     const nm = myNamaGuru.value
     const isSek = sekolahKenaikanList.value.includes(riwayatLembaga.value)
-    const punya = (s) => (isSek ? ownsSekolah(s, nm) : ownsNgaji(s, nm))
+    const punya = (s) => (isSek ? ownsSekolah(s, nm) : ownsNgaji(s, nm, ctxRombel.value))
     list = list.filter(punya)
     alumni = alumni.filter(punya)
   }

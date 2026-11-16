@@ -1154,6 +1154,7 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useSantri } from '@/composables/useSantri'
 import { useTesKenaikan } from '@/composables/useTesKenaikan'
 import { useAuthStore } from '@/stores/auth' // v.100d: nama guru utk scope ngaji-only
+import { useKonteksRombel } from '@/composables/useKonteksRombel'
 import { guruAktifSaja } from '@/utils/guruScope'
 import { getOne, mergeOne, subscribeColl } from '@/services/db' // v.100d: muat dokumen santri penuh utk auto-naik
 import { buildKenaikanQiraatiPayload, writeKenaikan } from '@/utils/promosiKenaikan' // v.100d
@@ -1405,6 +1406,7 @@ const settings = computed(() => settingsStore.settings || {})
 const pondokWa = computed(() => settings.value.kopLine2 || 'Pondok Pesantren Mambaul Ulum')
 
 const auth = useAuthStore()
+const { ctxRombel } = useKonteksRombel()
 
 // v.100d: filter UI (Lembaga/Jenis/Cari) — berguna utk Kepala/PJ & admin lintas-lembaga.
 const fLembaga = ref('')
@@ -1638,7 +1640,9 @@ async function cetakRekapHasil() {
 //   selalu penguji — sehingga Kepala SDI yang juga guru ngaji PTPT menerima SELURUH santri SDI
 //   di daftar ajuan Qiraati, kelas PTPT-nya sendiri tenggelam. Aturannya kini di
 //   utils/tesKenaikan.santriBisaDiajukanTes (satu sumber dengan Rekap Prestasi).
-const santriDalamScope = computed(() => santriBisaDiajukanTes(santri.value, auth.sesiAktif))
+const santriDalamScope = computed(() =>
+  santriBisaDiajukanTes(santri.value, auth.sesiAktif, { rombel: ctxRombel.value })
+)
 const santriEligible = computed(() => {
   const list = santriDalamScope.value
   return fLembaga.value ? list.filter((s) => s.lembaga === fLembaga.value) : list

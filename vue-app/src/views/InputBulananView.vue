@@ -584,6 +584,7 @@ import { sortSantri } from '@/utils/santriSort'
 import { todayJakarta } from '@/utils/format' // v.1.3.7: batas "bulan berjalan" (WIB)
 import { usiaKini } from '@/utils/usia' // usia tampil dihitung hidup, bukan dari kolom simpanan
 import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
+import { useKonteksRombel } from '@/composables/useKonteksRombel'
 // v.1.3.7: angka prestasi MILIK BULAN — sumber tunggal, sama dengan RekapPrestasiView.
 import {
   periodePrestasi,
@@ -604,6 +605,7 @@ const { guruRaw } = useGuru()
 const toast = useToast()
 const { isMobile } = useMobileShell()
 const auth = useAuthStore()
+const { ctxRombel } = useKonteksRombel()
 const route = useRoute()
 
 const NAMA_BULAN = [
@@ -700,7 +702,8 @@ const filteredSantri = computed(() => {
     const myNama = sesi?.guru || sesi?.nama || ''
     list = list.filter(
       (s) =>
-        ownsNgaji(s, myNama) ||
+        // v.1.5.0: konteks rombel — pasangan guru pagi/sore saling melihat santrinya.
+        ownsNgaji(s, myNama, ctxRombel.value) ||
         ownsSekolah(s, myNama) ||
         headsLembaga(sesi, s.lembaga) ||
         headsLembaga(sesi, s.lembaga_sekolah)
