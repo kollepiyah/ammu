@@ -514,11 +514,43 @@ peleburan satu-calon, penolakan menebak saat ambigu, beda lembaga tak pernah dil
 harus sama, dan penegasan bahwa tanpa konteks perilaku lama utuh); migrasi diuji di PGlite;
 eslint 0; build vue.
 
-**BELUM ada**: layar Master Data → Rombel (menyusun dari data santri dengan pratinjau,
-mengganti guru satu rombel sekaligus, menamai rombel), pemilihan rombel di form santri, dan
-penyambungan `ctx` di layar-layar pemakai (Absensi, Rapor, Input Bulanan, Naik Kelas, Tes
-Kenaikan, statistik). Sampai itu dikerjakan, **tak ada yang berubah bagi pengguna** — tabelnya
-ada tapi masih kosong.
+### Added — layar Rombel + perapian Pondok Laju (Kyai, 17 Nov 2026 — gelombang 3)
+
+- **Menu baru Akademik → Rombel** (`/rombel`, admin). Isinya tiga pekerjaan: melihat rombel
+  sebagai barang, **menyusunnya dari data santri lama**, dan **mengganti guru satu rombel
+  sekaligus** — yang terakhir ini permintaan Kyai supaya tak lagi santri per santri.
+- **Pratinjau dulu, baru tulis.** Penyusunan menyentuh ratusan baris santri sekaligus, jadi
+  tombolnya hanya menghitung: tabel usulan + daftar yang **tak bisa ditebak** tampil lebih
+  dulu, dan tak satu baris pun berubah sampai "Simpan" ditekan.
+- Id rombel **diturunkan dari isinya** (`idRombel`), bukan dari jam pembuatan — menekan
+  "Susun" dua kali tidak melahirkan kembaran.
+- Mengganti guru rombel ikut menulis ulang kolom guru di santrinya, sebab banyak layar dan
+  ekspor masih membaca `guru_pagi`/`guru_sore` langsung. Santri satu shift tetap satu shift:
+  slot yang memang kosong **tidak** diisi paksa — itu justru yang dulu memecah kelas.
+- Menghapus rombel melepas penunjuk di santrinya (data santri tak ikut terhapus), dan
+  jumlahnya disebut di konfirmasi sebelum dihapus.
+- Penarikannya **tanpa realtime** (admin-only, jarang dibuka, santri tabel terbesar).
+
+**Pondok Laju, dua perapian (Kyai 17 Nov):**
+
+- Kisi jadwal menulis **"Laju 1" / "Laju 2"**, bukan singkatan "L1"/"L2".
+- **Pegawai non-pengajar tak lagi muncul** di daftar guru piket Pondok Laju (`isPengajar`) —
+  yang menyimak bacaan santri itu pengajar, bukan staf. Berlaku sekaligus di kisi jadwal,
+  perencana bergilir, dan rekap bisyaroh karena ketiganya memakai `guruOptions` yang sama.
+- Catatan: penjadwalan Pondok Laju **sudah** per kelas sejak awal (satu guru per kelas per
+  sesi; kisinya satu kolom per kelas). Yang tampak "satu guru" di produksi karena baru ada
+  **1 kelas / 1 santri** yang ditandai Pondok Laju.
+
+Diuji (17 Nov): vitest 138 berkas / 1.994 tes (rombel jadi 30 tes, baru `idRombel`), eslint 0,
+build vue. Di peramban dengan data tiruan + **penjaga tulis** (layar dipasang sementara di
+halaman login, sisipannya sudah dicabut, nol tulisan ke produksi): kasus Ahmad terbukti —
+pratinjau meleburnya ke "Siti + Indah" jadi 2 santri, sementara santri yang gurunya
+berpasangan dengan dua orang dilaporkan sebagai tak-bisa-ditebak, bukan ditebak.
+
+**BELUM ada**: pemilihan rombel di form santri, dan penyambungan `ctx` di layar-layar pemakai
+(Absensi, Rapor, Input Bulanan, Naik Kelas, Tes Kenaikan, statistik). Sampai itu dikerjakan,
+rombel sudah bisa disusun & diganti gurunya, tapi **efek "Ahmad terlihat oleh Siti" belum
+terasa di layar-layar itu**.
 
 ---
 

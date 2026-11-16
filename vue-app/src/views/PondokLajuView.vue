@@ -422,8 +422,9 @@
                 </td>
                 <td v-for="k in kelasList" :key="k.key" class="p-1.5 align-top">
                   <div v-for="s in SESI_PIKET" :key="s" class="flex items-center gap-1 mb-0.5">
-                    <span class="text-[9px] font-black text-teal-700 w-6">{{
-                      s === 'laju1' ? 'L1' : 'L2'
+                    <!-- Kyai 17 Nov: tulis "Laju 1"/"Laju 2", jangan disingkat L1/L2. -->
+                    <span class="text-[9px] font-black text-teal-700 w-10 shrink-0">{{
+                      labelSesi(s)
                     }}</span>
                     <select
                       v-if="jEdit === t"
@@ -769,6 +770,7 @@ import { useExcel } from '@/composables/useExcel'
 import { queryColl, mergeOne, deleteOne, subscribeDoc, getOne } from '@/services/db'
 import { todayJakarta, fmtRp } from '@/utils/format'
 import { guruAktifSaja } from '@/utils/guruScope'
+import { isPengajar } from '@/utils/jenisGuru'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
 import { petaShiftSesiLaju } from '@/utils/shiftLaju'
@@ -846,10 +848,12 @@ const tab = ref('capaian')
 
 const kelasList = computed(() => kelasPondokLaju(santriRaw.value))
 const jumlahSantri = computed(() => kelasList.value.reduce((n, k) => n + k.santri.length, 0))
+// Kyai 17 Nov 2026: pegawai non-pengajar JANGAN masuk daftar piket Pondok Laju — yang
+//   menyimak bacaan santri itu pengajar (guru kelas, guru PTPT, dst), bukan staf.
 const guruOptions = computed(() =>
-  guruAktifSaja(guruRaw.value || []).sort((a, b) =>
-    String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
-  )
+  guruAktifSaja(guruRaw.value || [])
+    .filter(isPengajar)
+    .sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
 )
 const petaGuru = computed(() => new Map((guruRaw.value || []).map((g) => [String(g.id), g])))
 function namaGuru(id) {

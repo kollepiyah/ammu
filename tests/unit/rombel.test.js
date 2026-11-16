@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   slotGuruSantri,
+  idRombel,
   kunciPasangan,
   labelRombel,
   rombelPunyaGuru,
@@ -56,6 +57,29 @@ describe('kunciPasangan & labelRombel', () => {
 
   it('nama yang diberi Kyai mengalahkan label turunan', () => {
     expect(labelRombel({ nama: 'Kelas Melati', guru_pagi: 'Siti' })).toBe('Kelas Melati')
+  })
+})
+
+describe('idRombel', () => {
+  it('diturunkan dari isinya, jadi menyusun ulang tak melahirkan kembaran', () => {
+    const a = idRombel('TPQ Pagi', 'Siti', 'Indah')
+    expect(idRombel('tpq  pagi', ' siti ', 'INDAH')).toBe(a)
+  })
+
+  it('rombel yang berbeda tak pernah bertabrakan id', () => {
+    const ids = [
+      idRombel('TPQ Pagi', 'Siti', 'Indah'),
+      idRombel('TPQ Pagi', 'Siti', ''),
+      idRombel('TPQ Pagi', '', 'Siti'),
+      idRombel('PTPT', 'Siti', 'Indah')
+    ]
+    expect(new Set(ids).size).toBe(4)
+  })
+
+  it('nama bergelar dengan titik & koma tetap jadi id yang sah', () => {
+    expect(idRombel('PTPT', 'Lilik Masudah, S.Pd.', 'Ani')).toMatch(
+      /^rb_[a-z0-9-]+_[a-z0-9-]+__[a-z0-9-]+$/
+    )
   })
 })
 

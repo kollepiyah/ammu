@@ -44,6 +44,20 @@ export function kunciPasangan(guruPagi, guruSore) {
   return p || s ? `${p}||${s}` : ''
 }
 
+const _slug = (v) =>
+  norm(v)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+/**
+ * Id rombel yang DITURUNKAN dari isinya, bukan dari jam pembuatan.
+ * Disengaja: menyusun ulang rombel dari data santri jadi idempoten — rombel yang sama
+ * menghasilkan id yang sama, jadi tak lahir kembaran tiap kali tombolnya ditekan.
+ */
+export function idRombel(lembaga, guruPagi, guruSore) {
+  return `rb_${_slug(lembaga) || 'x'}_${_slug(guruPagi) || 'x'}__${_slug(guruSore) || 'x'}`
+}
+
 /** Kunci sebuah baris rombel. */
 export function kunciRombel(r) {
   return kunciPasangan(r?.guru_pagi, r?.guru_sore)

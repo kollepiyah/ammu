@@ -110,6 +110,8 @@ const TABS = [
             to: '/kelas-guru',
             gate: 'admin'
           },
+          // v.1.5.0 (Kyai 17 Nov): rombel = pasangan guru pagi+sore sebagai satu barang.
+          { type: 'small', icon: 'users', label: 'Rombel', to: '/rombel', gate: 'admin' },
           { type: 'small', icon: 'book', label: 'Mapel', to: '/mapel-lembaga', gate: 'admin' },
           { type: 'small', icon: 'trophy', label: 'Nilai / Rapor', to: '/rapor' },
           { type: 'small', icon: 'check', label: 'Absensi', to: '/absensi-santri' },
@@ -431,6 +433,7 @@ const TAB_PATHS = {
     '/guru',
     '/kelas',
     '/kelas-guru',
+    '/rombel',
     '/mapel-lembaga',
     '/rapor',
     '/absensi-santri',
