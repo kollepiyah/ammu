@@ -263,6 +263,20 @@ describe('ringkasUntukWidget', () => {
     })
   })
 
+  it('batas lebih besar mengirim bekal lebih banyak — widget menyaring sendiri nanti', () => {
+    const hasil = susunTugasSaya({
+      guruId: 'g1',
+      hariIni: HARI_INI,
+      jadwalLaju: [
+        jadwal(HARI_INI, 'laju1', 'g1', 'A'),
+        jadwal('2026-11-17', 'laju1', 'g1', 'B'),
+        jadwal('2026-11-18', 'laju1', 'g1', 'C'),
+        jadwal('2026-11-19', 'laju1', 'g1', 'D')
+      ]
+    })
+    expect(ringkasUntukWidget(hasil, 12)).toHaveLength(4)
+  })
+
   it('aman dipanggil dengan hasil kosong', () => {
     expect(ringkasUntukWidget(null)).toEqual([])
     expect(ringkasUntukWidget({ terjadwal: [], perlu: [] })).toEqual([])

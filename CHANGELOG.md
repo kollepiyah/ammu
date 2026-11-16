@@ -405,6 +405,12 @@ membuka Ammu akan melihat piket kemarin seolah hari ini; dengan saringan ini wid
 jadi KOSONG, bukan salah. `updatePeriodMillis` 30 menit menggambar ulang, jadi pergantian hari
 membersihkan sendiri. Warna titik per jenis disalin dari `JENIS_TUGAS`. Diketuk → membuka Ammu.
 
+Widget memajang 3 baris tapi yang **dikirim 12** — sengaja. Dengan bekal sepekan penuh, widget
+tetap benar berhari-hari sesudah app terakhir dibuka: baris hari ini habis, besok naik
+menggantikan. Kalau cuma dikirim 3, widget kosong begitu ketiganya lewat padahal masih ada piket
+lusa. Ini menutup sebagian besar kebutuhan "tarik berkala" tanpa kredensial apa pun di HP; yang
+tersisa hanya kasus **jadwal BERUBAH sesudah app terakhir dibuka**.
+
 **Belum disambungkan** (sudah didukung dan diuji di `susunTugasSaya`, tinggal diisi pemanggil):
 izin guru yang menunggu persetujuan — perlu aturan penyetuju + lingkup lembaga dari `useIzinGuru`,
 jangan ditebak karena salah tebak berarti izin orang lain ikut terlihat — dan jumlah input bulanan

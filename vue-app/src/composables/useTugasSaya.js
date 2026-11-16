@@ -13,7 +13,14 @@ import { pushWidgetData } from '@/composables/useWidgetSync'
 
 const KOSONG = { terjadwal: [], perlu: [], total: 0 }
 
-export function useTugasSaya({ horizonHari = 7, maksWidget = 3 } = {}) {
+// Widget cuma memajang 3 baris, tapi yang DIKIRIM jauh lebih banyak dengan sengaja:
+// widget hanya dapat data baru saat beranda dibuka, dan ia menyaring sendiri baris yang sudah
+// lewat. Dengan bekal sepekan penuh, widget tetap benar berhari-hari sesudah app terakhir
+// dibuka — baris hari ini habis, besok naik menggantikan. Kalau cuma dikirim 3, widget kosong
+// begitu ketiganya lewat walau sebenarnya masih ada piket lusa.
+const MUATAN_WIDGET = 12
+
+export function useTugasSaya({ horizonHari = 7, maksWidget = MUATAN_WIDGET } = {}) {
   const auth = useAuthStore()
   const hasil = ref({ ...KOSONG })
   const memuat = ref(false)
