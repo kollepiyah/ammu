@@ -5,6 +5,9 @@ import { APP_VERSION } from '@/utils/appVersion'
 import { useAuthStore } from '@/stores/auth'
 import { computed } from 'vue'
 import DashboardGreeting from '@/components/dashboard/DashboardGreeting.vue'
+// v.1.5.0 gelombang 3: kartu tugas guru — ditaruh tepat di bawah salam supaya di HP
+// jadi hal kedua yang terlihat, sebelum jam & kalender.
+import DashboardTugasSaya from '@/components/dashboard/DashboardTugasSaya.vue'
 import DashboardJamHijri from '@/components/dashboard/DashboardJamHijri.vue'
 import DashboardKalender from '@/components/dashboard/DashboardKalender.vue'
 import DashboardPosts from '@/components/dashboard/DashboardPosts.vue'
@@ -33,6 +36,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="space-y-4">
         <DashboardGreeting />
+        <DashboardTugasSaya />
         <DashboardJamHijri />
       </div>
       <DashboardKalender @see-all="goKalenderFull" />

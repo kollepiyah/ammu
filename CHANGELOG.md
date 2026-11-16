@@ -28,7 +28,7 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.0] — 2026-11-16 — Pondok Laju: status santri, tes/glondongan/seremonial satu kelas, prestasi per kelas, Top 10, peringkat guru, menu Pondok Laju (jadwal piket, capaian, bisyaroh), "Non-mukim"
+## [v.1.5.0] — 2026-11-16 — Pondok Laju: status santri, tes/glondongan/seremonial satu kelas, prestasi per kelas, Top 10, peringkat guru, menu Pondok Laju (jadwal piket, capaian, bisyaroh), "Non-mukim", kartu Tugas Saya di beranda
 
 **DITAHAN (Kyai, 15 Nov 2026)** — jangan deploy / rebuild AAB / rilis Electron dulu: v.1.5.0
 dirilis BERSAMA fitur Pondok Laju. Kelima tahap selesai di gelombang ini (16 Nov); tinggal tinjauan
@@ -366,6 +366,49 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
   diuji di PGlite (idempoten, gelar "S.Pd., Gr." tak tersentuh).
 - **Build gagal di commit 4e66df5**: kalimat rilis di BantuanView memuat petik "Ma'had" di dalam
   string berpetik tunggal. Diganti template literal.
+
+### Added — Kartu "Tugas Saya" di beranda (Kyai, 16 Nov 2026 — gelombang 3)
+
+Keluhan Kyai: beranda cuma memuat jam, kalender pendidikan, dan postingan — guru tak punya tempat
+melihat "apa tugas saya hari ini". Sekarang ada kartu **Tugas Saya** tepat di bawah salam, jadi
+hal kedua yang terlihat begitu beranda dibuka di HP.
+
+- **Satu sumber daftar tugas**: `utils/tugasSaya.js` (`susunTugasSaya`) — fungsi pure, dan tanggal
+  hari ini DIKIRIM pemanggil, bukan dibaca dari jam mesin, supaya bisa diuji dan tak berubah
+  sendiri lewat tengah malam. Daftar yang sama nanti dipakai halaman Tugas dan widget Android,
+  jadi aturannya sengaja tidak boleh tinggal di komponen — ini kelas bug "cermin yang berpisah"
+  yang sudah beberapa kali menggigit (lihat shift guru).
+- **Dua laci**: *Terjadwal* (Hari ini / Besok / Minggu ini) untuk tugas bertanggal — piket Pondok
+  Laju dan seremonial PTPT tempat guru menjadi penyimak — dan **"Perlu Dikerjakan"** untuk
+  penugasan tanpa tanggal: capaian Pondok Laju yang belum diisi, tes glondongan dan tes sekolah
+  yang belum dinilai. Kyai menolak kata "tunggakan" karena terdengar seperti punya utang; katanya
+  disimpan satu tempat di `LABEL_PERLU` dan ikut diuji agar tak kembali diam-diam.
+- Penugasan tanpa tanggal **diringkas satu baris per jenis** ("4 blok belum dinilai"), supaya kartu
+  beranda tak tenggelam oleh puluhan baris tes.
+- Kartu hanya muncul untuk **role guru**; wali santri dan santri tidak melihatnya. Tidak punya
+  tugas adalah keadaan NORMAL dan paling sering, jadi tampilannya bukan seperti kegagalan
+  ("Tak ada tugas terjadwal").
+- Penarikan di `composables/useTugasSaya.js` sengaja **TANPA realtime**: beranda dibuka semua orang
+  tiap hari, dan channel realtime di beranda pernah jadi biang lonjakan egress Supabase. Seremonial
+  tak bisa disaring di server (penyimak ada di ekor jsonb) jadi ditarik yang akan datang saja lalu
+  disaring di utils. Satu kartu yang gagal tidak mematikan beranda.
+- Hasil yang sama sudah didorong ke jembatan widget Android (`pushWidgetData({ tugas })`), lengkap
+  dengan tanggalnya supaya widget bisa menyaring sendiri saat menggambar — sisi Java menyusul.
+
+**Belum disambungkan** (sudah didukung dan diuji di `susunTugasSaya`, tinggal diisi pemanggil):
+izin guru yang menunggu persetujuan — perlu aturan penyetuju + lingkup lembaga dari `useIzinGuru`,
+jangan ditebak karena salah tebak berarti izin orang lain ikut terlihat — dan jumlah input bulanan
+yang belum dikerjakan. **Belum ada**: halaman `/tugas` penuh, widget home screen Android, dan
+penarikan berkala di native (Kyai 16 Nov: "tarik berkala gak apa-apa").
+
+Diuji (16 Nov): vitest 134 berkas / 1.937 tes (baru `tugasSaya`, 23 tes — batas horizon, piket milik
+guru lain, capaian yang menutup tugas, capaian guru lain yang TIDAK menutup, seremonial tanpa nama
+saya, status selesai, urutan tanggal lalu jam, ringkasan widget, dan penjaga kata "tunggakan"),
+eslint 0, build vue + `build:css`. Di peramban dengan data tiruan — komponen dipasang SEMENTARA di
+halaman login, tak ada satu pun bacaan ke produksi, sisipannya sudah dicabut: kartu memuat "Hari
+ini" 2 baris (jam 08:00 pada seremonial), "Besok" 1 baris, "Perlu Dikerjakan" 2 baris, lencana 5,
+nol galat konsol, dan rapi di lebar HP 375px. **Belum diuji**: mode gelap di beranda sungguhan dan
+dengan data nyata.
 
 ---
 
