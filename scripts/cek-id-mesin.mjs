@@ -32,8 +32,13 @@ for (const f of [berkasMesin, berkasAmmu]) {
     console.error(`Berkas tak ditemukan: ${f}`)
     process.exit(1)
   }
+  // Mesin HiView & aplikasi Fingerspot menulis .xls lama (BIFF8/OLE2) yang tak bisa
+  // dibaca ExcelJS. Konversinya sekali klik, jadi tak perlu menambah pustaka baru.
   if (f.toLowerCase().endsWith('.xls')) {
-    console.error(`${path.basename(f)} masih .xls — buka di Excel lalu "Simpan Sebagai" .xlsx.`)
+    console.error(
+      `${path.basename(f)} masih .xls (bentuk Excel lama).\n` +
+        'Buka di Excel → Simpan Sebagai → "Buku Kerja Excel (*.xlsx)", lalu ulangi perintah ini.'
+    )
     process.exit(1)
   }
 }
@@ -54,30 +59,69 @@ const idRapi = (s) => rapi(s).replace(/\.0+$/, '') // Excel kadang menulis 42 ja
 // bisa dijodohkan dengan "Nurul Layyina" yang tertulis di mesin.
 const GELAR = /\b(h|hj|drs|dra|s ?pd|s ?sos|s ?e|s ?h|s ?ag|m ?pd|m ?si|gr|a ?ma|st|se|lc)\b/g
 
+/**
+ * Petik DIBUANG sama sekali. Mesin HiView menulis "Rohmatul A''Liyyah" (petik ganda,
+ * kapital sesudahnya) untuk "Rohmatul A'liyyah" — kalau petik dipertahankan, orang yang
+ * sama dilaporkan sebagai dua orang. Terbukti 16 Nov 2026 pada ekspor asli.
+ */
 function intiNama(s) {
   return rapi(s)
     .toLowerCase()
     .split(',')[0] // gelar di belakang koma
-    .replace(/[^a-z' ]/g, ' ')
+    .replace(/['`’]/g, '')
+    .replace(/[^a-z ]/g, ' ')
+    .replace(/\s+/g, ' ')
     .replace(GELAR, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
 
+/** Jarak sunting, untuk salah ketik di mesin seperti "Lalilatul" vs "Lailatul". */
+function jarakSunting(a, b) {
+  let baris = Array.from({ length: b.length + 1 }, (_, j) => j)
+  for (let i = 1; i <= a.length; i++) {
+    const baru = [i]
+    for (let j = 1; j <= b.length; j++) {
+      baru[j] = Math.min(
+        baris[j] + 1,
+        baru[j - 1] + 1,
+        baris[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      )
+    }
+    baris = baru
+  }
+  return baris[b.length]
+}
+
 /**
- * Seberapa mirip dua nama: bagian kata yang sama.
- *
- * Satu kata yang sama TAK cukup bila kedua nama berkata banyak — "Siti Mu'alimah" dan
- * "Siti Ma'rifatin" bukan orang yang sama, dan tebakan semacam itu justru menyesatkan.
+ * Seberapa mirip dua nama. Tiga kelonggaran yang semuanya lahir dari data asli:
+ *  - AWALAN: Fingerspot memotong nama di ~15 huruf ("Hidayatul Choir").
+ *  - SALAH KETIK: beda satu-dua huruf ("Lalilatul" vs "Lailatul").
+ *  - GELAR & PETIK: diabaikan oleh intiNama.
+ * Satu kata yang sama TAK pernah cukup — "Siti Mu'alimah" dan "Siti Ma'rifatin" bukan
+ * orang yang sama, dan tebakan semacam itu lebih berbahaya daripada tak menebak.
  */
 function mirip(a, b) {
-  const A = new Set(intiNama(a).split(' ').filter(Boolean))
-  const B = new Set(intiNama(b).split(' ').filter(Boolean))
-  if (!A.size || !B.size) return 0
+  const A = intiNama(a)
+  const B = intiNama(b)
+  if (!A || !B) return 0
+  if (A === B) return 1
+  const [pendek, panjang] = A.length <= B.length ? [A, B] : [B, A]
+  if (pendek.length >= 8 && panjang.startsWith(pendek)) return 1
+  if (Math.abs(A.length - B.length) <= 2 && jarakSunting(A, B) <= 2) return 0.95
+  const sA = new Set(A.split(' ').filter(Boolean))
+  const sB = new Set(B.split(' ').filter(Boolean))
+  // Satu kata panjang yang berdiri sendiri: mesin menulis "Nasrulloh" untuk
+  // "Much. Nasrulloh". Batas 7 huruf menjaga agar "nabila" tak menyambar "Nabil Anwar".
+  const [kecil, besar] = sA.size <= sB.size ? [sA, sB] : [sB, sA]
+  if (kecil.size === 1) {
+    const kata = [...kecil][0]
+    if (kata.length >= 7 && besar.has(kata)) return 0.9
+  }
   let sama = 0
-  for (const w of A) if (B.has(w)) sama++
-  if (sama < 2 && Math.min(A.size, B.size) > 1) return 0
-  return sama / Math.max(A.size, B.size)
+  for (const w of sA) if (sB.has(w)) sama++
+  if (sama < 2) return 0
+  return sama / Math.max(sA.size, sB.size)
 }
 
 async function bukaBuku(f) {
@@ -207,5 +251,10 @@ judul('RINGKASAN')
 console.log(`  A. ID tertukar orang         : ${aAda}`)
 console.log(`  B. ID mesin tak dikenal Ammu : ${bAda}`)
 console.log(`  C. Guru Ammu tak ada di mesin: ${cAda}`)
-console.log('\nCatatan: daftar mesin hanya memuat orang yang SCAN pada periode AllReport itu.')
-console.log('Guru yang memang tak masuk pada bulan itu ikut muncul di C — itu bukan salah ID.')
+console.log('\nCatatan: daftar mesin diambil dari periode AllReport itu (lihat baris "Made Date"),')
+console.log(
+  'jadi guru yang baru didaftarkan SESUDAH periode itu ikut muncul di C tanpa salah apa-apa.'
+)
+console.log(
+  'Ekspor ulang AllReport untuk bulan berjalan sebelum menyimpulkan ada yang belum terdaftar.'
+)
