@@ -81,7 +81,7 @@ export function useFingerprintSync() {
 
     // agregasi per (pin, tanggal, shift) → scan TERAWAL = jam masuk; scan lain hari itu =
     //   kandidat PULANG. Aturannya di utils/scanMesin (murni + tes), dipakai juga tambal HiView.
-    const { agg, pulangScans, takKenal, luar, luarPer } = kelompokkanScan(
+    const { agg, pulangScans, takKenal, luar, luarPer, ganda } = kelompokkanScan(
       scans,
       guru,
       settings,
@@ -179,6 +179,11 @@ export function useFingerprintSync() {
       skipIzin,
       skipSame,
       takKenal: [...takKenal],
+      // v.1.5.0: PIN yang dipegang >1 guru Aktif (ikut takKenal) — sebut nama-namanya.
+      idGanda: [...(ganda || new Map())].map(([pin, list]) => ({
+        pin,
+        nama: list.map((g) => g.nama || g.id).join(', ')
+      })),
       luar,
       luarGuru,
       luarGuruLebih,

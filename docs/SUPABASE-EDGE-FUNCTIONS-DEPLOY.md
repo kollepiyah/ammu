@@ -317,6 +317,7 @@ dulu tampak sama persis dari layar absensi:
 | tanggal itu **kosong sama sekali** | mesin tidak berhasil mengirim → periksa jaringan & HTTP Listening, bukan data guru |
 | ada baris, hasil **`luar_window`** | scan sampai tapi jamnya di luar shift → setel *toleransi scan* di Pengaturan → Master Shift, atau betulkan shift guru |
 | ada baris, hasil **`pin_tak_dikenal`** | `employeeNo` mesin ≠ `guru.id_fingerprint` |
+| ada baris, hasil **`id_ganda`** (sejak v.1.5.0) | `employeeNo` itu dipegang >1 guru Aktif → Data Guru, saring "ID Fingerprint ganda" |
 
 Tabelnya lahir dari migrasi `20260806120000_hiview_scan_log.sql` — **`supabase db push`
 dulu**, kalau belum, tab Jejak akan bilang tabelnya belum ada.

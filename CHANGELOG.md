@@ -44,6 +44,11 @@ shift Laju 1/Laju 2 & Admin Pondok Laju; (3) Pengaturan Keuangan → Jenis Bisya
 "× sesi Pondok Laju", tarif per sesi; (4) di PC kantor (Ammu Desktop → Mesin Absensi): nyalakan
 "Buka saat Windows menyala" dan "Sinkron otomatis".
 
+Diuji (ID mesin ganda, 16 Nov): vitest 133 berkas / 1.913 tes (baru `idMesin`: aturan pilih,
+cermin HiView, kelompokkanScan), build, sintaks edge (esbuild); di peramban (data rekaan, tulisan
+dicegat): saringan Data Guru "ganda" = Eko+Gita (ID 7) & Ahmad (ID 12, juga Dewi nonaktif),
+"belum ada" = Budi; formulir menolak ID 7/21/12 milik guru aktif lain, menyimpan " 99 " sebagai "99",
+guru nonaktif ber-ID 12 tersimpan dengan peringatan.
 Diuji (absen pulang, 16 Nov): vitest 132 berkas / 1.907 tes (baru `absenPulang`), build; di
 peramban (data tiruan, tulisan dicegat): sel SDI tanpa absen pulang = "A — tanpa absen pulang",
 dengan pulang = H; guru pagi terjadwal Laju 1 yang pulang 11.30 → materialisasi `auto_pulang_laju`
@@ -256,6 +261,25 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
   pulangnya — tanpa ini guru gabungan jadi alpa di shift sekolah wajib-pulang. Sumbernya harus
   hadir SAH (shift wajib-pulang tanpa pulang tak memicu apa pun). Baris buatan manusia tetap tak
   pernah ditimpa.
+
+### Fixed — scan HiView ditolak diam-diam bila ID Fingerprint dipegang dua guru (Kyai 16 Nov 2026)
+
+- **Alpa palsu dari ID ganda.** Webhook `hiview-absen` mencari guru dengan
+  `.eq('id_fingerprint', empNo).maybeSingle()` tanpa melihat status. Bila dua guru — termasuk guru
+  lama yang sudah Nonaktif — memegang ID yang sama, `maybeSingle` galat, galatnya tertelan, dan
+  scan dicatat "PIN tak dikenal": guru yang sudah scan tampak alpa. Kini satu aturan
+  `utils/idMesin.pilihGuruDariId` (cermin `hiview-absen/idMesin.ts`): guru **Aktif** menang; dua guru
+  Aktif ber-ID sama → tak menebak orang, Jejak Mesin mencatat hasil baru **"ID dipakai >1 guru"**
+  beserta nama-namanya. Galat baca database kini dibalas 500 (mesin mengulang), bukan ditelan.
+- Sinkron Fingerspot & tambal log (`kelompokkanScan`) memakai aturan yang sama — dulu guru
+  TERAKHIR pemegang PIN yang menang (bisa guru Nonaktif); PIN ganda disebut di Mesin Absensi &
+  Tambal Log. Impor absensi lama di Absensi Guru juga.
+- **Formulir guru** menolak ID yang sudah dipakai guru Aktif lain (menyebut namanya), memberi tahu
+  bila pemegang lain Nonaktif, dan memangkas spasi (ID " 7 " tak pernah cocok dengan kiriman mesin).
+- **Data Guru**: saringan baru "ID Fingerprint belum ada / ganda" dengan chip ID & pemegang lainnya
+  — bahan cek sebelum Kyai mendaftarkan kartu e-Qiraati ke mesin HiView (kartu MIFARE terbaca; nomor
+  mesin = UID dibalik urut byte-nya). Ammu tak menyimpan nomor kartu: scan kartu datang dengan ID
+  orang yang sama dengan sidik jarinya.
 
 ### Fixed — Rekap Unit menghitung "alpa" tertulis sebagai hadir
 

@@ -202,8 +202,14 @@ const takKenal = computed(() => {
   if (!kelompok.value) return []
   const nama = new Map()
   for (const s of saring.value.dipakai) if (!nama.has(s.device_pin)) nama.set(s.device_pin, s.nama)
+  // v.1.5.0: PIN yang dipegang >1 guru Aktif ikut di sini — sebut para pemegangnya.
+  const ganda = kelompok.value.ganda || new Map()
   return [...kelompok.value.takKenal]
-    .map((pin) => ({ pin, nama: nama.get(pin) || '' }))
+    .map((pin) => ({
+      pin,
+      nama: nama.get(pin) || '',
+      ganda: (ganda.get(pin) || []).map((g) => g.nama || g.id).join(', ')
+    }))
     .sort((a, b) => a.pin.localeCompare(b.pin, 'id', { numeric: true }))
 })
 const tanpaAbsen = computed(() =>
@@ -520,7 +526,10 @@ async function tulis() {
           <ul class="mt-1 space-y-0.5">
             <li v-for="t in takKenal" :key="t.pin" class="text-[var(--text-secondary)]">
               PIN <b class="font-mono">{{ t.pin }}</b
-              ><template v-if="t.nama"> — {{ t.nama }}</template>
+              ><template v-if="t.nama"> — {{ t.nama }}</template
+              ><span v-if="t.ganda" class="text-amber-700 dark:text-amber-300">
+                · dipakai lebih dari satu guru aktif: {{ t.ganda }}</span
+              >
             </li>
           </ul>
         </details>

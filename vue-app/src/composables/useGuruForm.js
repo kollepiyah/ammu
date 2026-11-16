@@ -1,7 +1,7 @@
 // useGuruForm — manage guru CRUD form state
 // Phase 5.13b (v.41.0526) — port logic legacy simpanGuru + editAdminGuru
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getOne, mergeOne, subscribeDoc, getAll } from '@/services/db'
+import { getOne, mergeOne, subscribeDoc, getAll, queryColl } from '@/services/db'
 import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { nextNigForNew } from '@/utils/nigGenerator' // v.100 Batch16: NIG guru baru = append (lanjut NNN)
 import { useToast } from '@/composables/useToast'
@@ -12,6 +12,8 @@ import { gedungList } from '@/utils/gedung'
 // v.1.1.9: shift ikut master; shiftsForGuru dipakai utk menurunkan centangan awal data lama.
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { normStatusInduk } from '@/utils/jenisGuru' // v.1.5.0: Induk / Non-Induk
+import { normIdMesin, pemakaiLainId } from '@/utils/idMesin' // v.1.5.0: satu ID mesin = satu guru
+import { isGuruAktif } from '@/utils/guruScope'
 import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
 // v.1.1.9: unit tugas dari master/jabatan (ganti tebakan regex lama)
 import {
@@ -684,7 +686,7 @@ export function useGuruForm() {
         status: f.status,
         // v.1.1.9: rek_bmt (tujuan transfer bisyaroh via BMT) — DULU tak ikut disimpan.
         rek_bmt: String(f.rek_bmt || '').trim(),
-        id_fingerprint: f.id_fingerprint || '',
+        id_fingerprint: normIdMesin(f.id_fingerprint), // spasi membuat scan HiView tak cocok
         tipe_pegawai: f.tipe_pegawai,
         status_induk: normStatusInduk(f.status_induk),
         // v.1.1.9: shift_ids = sumber kebenaran. shift & shift_pegawai TETAP DITULIS
@@ -722,6 +724,34 @@ export function useGuruForm() {
           }
         } catch (e) {
           /* ignore */
+        }
+      }
+      // v.1.5.0 (Kyai 16 Nov 2026): ID yang dipegang dua guru Aktif membuat scan mesin ditolak
+      //   (tak menebak orang) — tolak di sini. Pemegang lain yang Nonaktif cukup diingatkan.
+      if (data.id_fingerprint) {
+        const lain = pemakaiLainId(
+          await queryColl('guru', [['id_fingerprint', '==', data.id_fingerprint]]),
+          data.id_fingerprint,
+          data.id
+        )
+        const sebut = (l) => l.map((g) => g.nama || g.id).join(', ')
+        if (lain.aktif.length && isGuruAktif(data)) {
+          toast.warning(
+            `ID Fingerprint ${data.id_fingerprint} sudah dipakai ${sebut(lain.aktif)}. ` +
+              'Satu ID hanya untuk satu guru — perbaiki dulu ID di data guru itu.',
+            7000
+          )
+          return false
+        }
+        const lainnya = [...lain.aktif, ...lain.nonaktif]
+        if (lainnya.length) {
+          toast.info(
+            `ID ${data.id_fingerprint} juga masih tercatat di ${sebut(lainnya)}. ` +
+              (isGuruAktif(data)
+                ? 'Mereka nonaktif — scan mesin tetap dibaca milik guru ini.'
+                : 'Guru ini nonaktif, jadi scan dengan ID ini tak dicatat untuknya.'),
+            6000
+          )
         }
       }
       // v.21.25.0526: log payload utk debug

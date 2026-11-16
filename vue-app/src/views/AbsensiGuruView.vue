@@ -1429,6 +1429,7 @@ import { guruMasukPada, tanggalBukanJadwal } from '@/utils/jadwalGuru'
 import { idShiftLaju, penentuShiftLaju } from '@/utils/shiftLaju'
 // v.1.5.0 (Kyai 16 Nov 2026): shift bertanda "hadir dari absen pulang" — tanpa pulang = alpa.
 import { shiftWajibPulang, barisEfektif } from '@/utils/absenPulang'
+import { normIdMesin, pilihGuruDariId } from '@/utils/idMesin' // v.1.5.0: aturan ID mesin bersama
 // v.1.4.1: "shift ini sudah dimulai belum" (Kyai, 5 Sep 2026) — sumber tunggal aturan jamnya.
 import { jamJakarta, jamMulaiShift, kunciBelumMulai, setDariKunci } from '@/utils/shiftBerjalan'
 // v.1.4.6 gel. 3 (27 Sep 2026): mesin HiView diam sejak 24 Sep 17:44 WIB — peringatannya &
@@ -1650,6 +1651,7 @@ const HASIL_META = {
   izin_sakit: { label: 'Izin/sakit', buruk: false },
   luar_window: { label: 'Di luar jam shift', buruk: true },
   pin_tak_dikenal: { label: 'PIN tak dikenal', buruk: true },
+  id_ganda: { label: 'ID dipakai >1 guru', buruk: true }, // v.1.5.0
   waktu_tak_terbaca: { label: 'Waktu tak terbaca', buruk: true },
   bukan_absen: { label: 'Bukan event absen', buruk: true }
 }
@@ -1742,10 +1744,13 @@ async function handleImportFingerprint(ev) {
         if (fpId) {
           // match PIN: AMMU simpan PIN fingerprint di kolom riil `id_fingerprint`
           // (fingerprint_id/fp_id = alias legacy). trim sekali, aman spasi.
-          const fpKey = String(fpId).trim()
-          guru = guruRaw.value.find(
-            (g) => String(g.id_fingerprint || g.fingerprint_id || g.fp_id || '').trim() === fpKey
-          )
+          // v.1.5.0: PIN ganda → guru Aktif menang (utils/idMesin), bukan yang pertama ketemu.
+          const fpKey = normIdMesin(fpId)
+          guru = pilihGuruDariId(
+            guruRaw.value.filter(
+              (g) => normIdMesin(g.id_fingerprint || g.fingerprint_id || g.fp_id) === fpKey
+            )
+          ).guru
         }
         if (!guru && nama) {
           guru = guruRaw.value.find(

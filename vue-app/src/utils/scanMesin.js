@@ -17,6 +17,7 @@
 
 import { deriveShift, statusFor, shiftsForGuru, pilihShiftPulang } from './shiftDerive'
 import { hitungBarisAutoGabungan } from './absensiMaterialize'
+import { petaPemilikId } from './idMesin'
 
 /**
  * Shift milik guru pada SATU tanggal = shift tetapnya + shift harian (v.1.5.0: Pondok Laju —
@@ -94,14 +95,13 @@ export function hitungScanTanpaAbsen(luarPer, aggKeys, shiftsOf, batas = 100) {
  * @param {(g:object, date:string)=>Set<string>} [shiftHarian] v.1.5.0: shift yang aktif hari itu
  *   saja (Pondok Laju). Ikut dikembalikan supaya pass PULANG memakai shift yang sama.
  * @returns {{ agg: object, pulangScans: object, takKenal: Set<string>, luar: number,
- *   luarPer: object, shiftHarian: Function|undefined }}
+ *   luarPer: object, shiftHarian: Function|undefined, ganda: Map<string, object[]> }}
+ *   `ganda` (v.1.5.0) = PIN yang dipegang >1 guru Aktif — ikut `takKenal`, tak ditebak orangnya.
  */
 export function kelompokkanScan(scans, guruList, settings, shiftHarian) {
-  const byPin = {}
-  for (const g of guruList || []) {
-    const pin = String(g.id_fingerprint || '').trim()
-    if (pin) byPin[pin] = g
-  }
+  // v.1.5.0: dulu guru TERAKHIR yang memegang PIN menang (bisa guru Nonaktif) — kini aturan
+  //   bersama dengan webhook HiView (utils/idMesin).
+  const { pemilik, ganda } = petaPemilikId(guruList)
   const agg = {}
   const pulangScans = {} // pin|date -> { g, date, times:[hhmm] }
   const takKenal = new Set()
@@ -118,7 +118,7 @@ export function kelompokkanScan(scans, guruList, settings, shiftHarian) {
     const pin = String(r.device_pin || '').trim()
     const parts = pisahWaktuScan(r.timestamp)
     if (!pin || !parts) continue
-    const g = byPin[pin]
+    const g = pemilik.get(pin)
     if (!g) {
       takKenal.add(pin)
       continue
@@ -150,7 +150,7 @@ export function kelompokkanScan(scans, guruList, settings, shiftHarian) {
       catatKandidatPulang(pin, g, parts.date, parts.hhmm)
     }
   }
-  return { agg, pulangScans, takKenal, luar, luarPer, shiftHarian }
+  return { agg, pulangScans, takKenal, luar, luarPer, shiftHarian, ganda }
 }
 
 /** Id baris absensi_shift_guru — bentuk yang sama di SEMUA penulis (mesin, impor, manual). */

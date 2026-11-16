@@ -45,6 +45,10 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Hadir dihitung dari absen pulang** (bisa diatur per shift di Master Shift, untuk shift
   sekolah): hari tanpa absen pulang dihitung alpa, dan JP serta bonus kehadiran hari itu tidak
   dibayar. Guru terjadwal Laju 1 yang absen pulang di jam akhir Laju 1 otomatis tercatat hadir Laju 1.
+- **Absen tak lagi hilang karena ID Fingerprint ganda.** Dulu bila dua guru (termasuk guru yang
+  sudah tidak aktif) memegang ID yang sama, scan di mesin HiView ditolak dan guru tercatat alpa.
+  Kini guru yang aktif yang dipakai. Data Guru bisa disaring "ID Fingerprint belum ada / ganda",
+  dan form guru menolak ID yang sudah dipakai guru aktif lain.
 - **Ammu Desktop** bisa diatur menyala sendiri saat komputer dinyalakan dan langsung menyinkron
   mesin Fingerspot. Sinkron kini hanya memproses scan dua minggu terakhir supaya lebih hemat.
 

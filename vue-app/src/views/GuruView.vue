@@ -285,6 +285,15 @@
             </option>
             <option value="kosong">Belum diisi</option>
           </select>
+          <!-- v.1.5.0 (Kyai 16 Nov 2026): cek ID mesin absen sebelum mendaftarkan kartu -->
+          <select
+            v-model="filterIdMesin"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua ID Fingerprint</option>
+            <option value="kosong">ID Fingerprint belum ada</option>
+            <option value="ganda">ID Fingerprint ganda</option>
+          </select>
           <select
             v-model="filterStatus"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
@@ -477,6 +486,18 @@
                     {{ labelStatusInduk(g.status_induk) }}
                   </span>
                   <span
+                    v-if="filterIdMesin"
+                    class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-2 py-0.5 rounded font-bold"
+                  >
+                    {{
+                      normIdMesin(g.id_fingerprint)
+                        ? 'ID Fingerprint ' + normIdMesin(g.id_fingerprint)
+                        : 'Belum ada ID Fingerprint'
+                    }}<template v-if="filterIdMesin === 'ganda'">
+                      · juga: {{ pemegangLainId(g) }}</template
+                    >
+                  </span>
+                  <span
                     v-if="shiftLabelGuru(g)"
                     class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold uppercase"
                   >
@@ -635,6 +656,7 @@ import {
 } from '@/utils/jenisGuru'
 import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@/utils/shiftMaster'
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
+import { normIdMesin, idGanda } from '@/utils/idMesin' // v.1.5.0: cek ID Fingerprint kosong/ganda
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
 import { queryDariDaftar } from '@/utils/navKembali'
 // v.1.4.2: penyaring ⇄ URL + alamat "Kelola" yang membawa penyaring.
@@ -684,12 +706,14 @@ const router = useRouter()
 //   kalah cepat dari antrean watcher (`flush: 'pre'`). Lihat utils/filterQuery.js.
 const filterJenis = ref('') // v.1.5.0: Qiraati-Sekolah / Qiraati / Sekolah / Pegawai
 const filterInduk = ref('') // v.1.5.0: 'induk' | 'non_induk' | 'kosong' (belum diisi)
+const filterIdMesin = ref('') // v.1.5.0: 'kosong' | 'ganda' (ID Fingerprint)
 const SPEC_FILTER = [
   { kunci: 'q' },
   { kunci: 'lembaga' },
   { kunci: 'jabatan' },
   { kunci: 'jenis' },
   { kunci: 'induk' },
+  { kunci: 'idmesin' },
   { kunci: 'status', bawaan: 'aktif' }
 ]
 // `tipe` = pita Data Guru vs Data Pegawai; `tab`/`sub` = Master Data sebagai halaman induk.
@@ -700,6 +724,7 @@ const refFilter = {
   jabatan: filterJabatan,
   jenis: filterJenis,
   induk: filterInduk,
+  idmesin: filterIdMesin,
   status: filterStatus
 }
 function syncFiltersFromQuery() {
@@ -759,8 +784,20 @@ const guruShown = computed(() => {
     const want = filterInduk.value === 'kosong' ? '' : filterInduk.value
     list = list.filter((g) => normStatusInduk(g.status_induk) === want)
   }
+  if (filterIdMesin.value === 'kosong') list = list.filter((g) => !normIdMesin(g.id_fingerprint))
+  else if (filterIdMesin.value === 'ganda') {
+    list = list.filter((g) => petaIdGanda.value.has(normIdMesin(g.id_fingerprint)))
+  }
   return list
 })
+// v.1.5.0: ganda dihitung dari SEMUA guru (termasuk nonaktif) — sama dengan webhook HiView.
+const petaIdGanda = computed(() => idGanda(guruRaw.value))
+function pemegangLainId(g) {
+  return (petaIdGanda.value.get(normIdMesin(g.id_fingerprint)) || [])
+    .filter((x) => String(x.id) !== String(g.id))
+    .map((x) => `${x.nama || x.id} (${x.status || 'Aktif'})`)
+    .join(', ')
+}
 // v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
 function goProfil(g, e) {
   if (e && e.target && e.target.closest('button, a, input, label')) return
@@ -832,6 +869,7 @@ const hasFilter = computed(
     !!filterJabatan.value ||
     !!filterJenis.value ||
     !!filterInduk.value ||
+    !!filterIdMesin.value ||
     filterStatus.value !== 'aktif'
 )
 

@@ -183,6 +183,14 @@
             PIN belum tertaut id_fingerprint guru:
             <code>{{ store.lastResult.takKenal.join(', ') }}</code>
           </p>
+          <!-- v.1.5.0: PIN ganda ikut terhitung "tak dikenal" — sebutkan pemegangnya -->
+          <p v-if="(store.lastResult.idGanda || []).length" class="fp-takkenal">
+            <RibbonIcon name="info" :size="14" />
+            PIN dipakai lebih dari satu guru aktif (scan dilewati — perbaiki di Data Guru):
+            <span v-for="d in store.lastResult.idGanda" :key="d.pin" class="block">
+              <code>{{ d.pin }}</code> — {{ d.nama }}
+            </span>
+          </p>
 
           <!-- Guru yang scan-nya terbaca tapi TAK jadi baris absen sama sekali hari itu.
                Inilah bentuk nyata keluhan "absen guru X tidak masuk" — sebelumnya hanya

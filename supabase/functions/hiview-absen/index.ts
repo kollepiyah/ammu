@@ -23,6 +23,7 @@ import { corsHeaders, handlePreflight, json } from '../_shared/cors.ts'
 import { deriveShift, statusFor, pilihShiftPulang, shiftsForGuru } from './shiftDerive.ts'
 // v.1.5.0: shift Pondok Laju yang aktif hari itu (jadwal piket Laju 1/2).
 import { idShiftLaju, shiftLajuAktif } from './shiftLaju.ts'
+import { pilihGuruDariId } from './idMesin.ts'
 
 const SECRET = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
 
@@ -140,6 +141,7 @@ type HasilScan =
   | 'pulang' // ditempel sbg jam_pulang
   | 'luar_window' // di luar jam shift & tak ada baris masuk utk ditempeli
   | 'pin_tak_dikenal' // employeeNo tak ada di guru.id_fingerprint
+  | 'id_ganda' // v.1.5.0: employeeNo dipegang >1 guru Aktif — tak menebak orang
   | 'izin_sakit' // baris hari itu izin/sakit, sengaja tak ditimpa
   | 'duplikat' // scan ulang di window yang sama, jam tak lebih awal
   | 'bukan_absen' // event orang tapi tanpa employeeNo / bukan autentikasi
@@ -371,12 +373,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { data: gRow } = await db
+    // v.1.5.0: bukan maybeSingle — ID yang dipegang dua guru membuatnya galat, galatnya
+    //   tertelan, dan scan dicatat "tak dikenal" diam-diam (alpa palsu). Aturan pilih: idMesin.ts.
+    const { data: gRows, error: gErr } = await db
       .from('guru')
       .select('*')
       .eq('id_fingerprint', empNo)
-      .maybeSingle()
-    const guru = flattenGuru(gRow)
+    if (gErr) throw gErr
+    const { guru, ganda } = pilihGuruDariId((gRows || []).map(flattenGuru))
+    if (!guru && ganda.length) {
+      // deno-lint-ignore no-explicit-any
+      const nama = ganda.map((g: any) => `${g.nama || g.id} (${g.status || 'Aktif'})`).join(', ')
+      console.log(`[hiview] employeeNo ${empNo} dipakai ${ganda.length} guru: ${nama}`)
+      await catatJejak(db, {
+        empNo,
+        dateTime,
+        tanggal: t.date,
+        jam: t.hhmm,
+        hasil: 'id_ganda',
+        catatan: `ID dipakai ${ganda.length} guru: ${nama} — perbaiki ID Fingerprint di Data Guru`
+      })
+      return isapiOk(req)
+    }
     if (!guru) {
       console.log(`[hiview] employeeNo ${empNo} tak terdaftar (guru.id_fingerprint)`)
       await catatJejak(db, {
