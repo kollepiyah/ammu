@@ -143,7 +143,7 @@ export function bangunSel({ d, iso, absen, libur, bukanJadwal, lampau, bolehAlpa
     iso,
     teks,
     kelas,
-    judul: `${iso} — ${a.status || 'hadir'}${a.jam ? ' (' + a.jam + ')' : ''}${pulangTxt} [${labelShift}]`,
+    judul: `${iso} — ${a._tanpaPulang ? 'alpa — tanpa absen pulang' : a.status || 'hadir'}${a.jam ? ' (' + a.jam + ')' : ''}${pulangTxt} [${labelShift}]`,
     libur: false,
     bukanJadwal,
     lampau,

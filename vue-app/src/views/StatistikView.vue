@@ -712,7 +712,9 @@ import RingkasanSantriLembaga from '@/components/statistik/RingkasanSantriLembag
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 import { kelasKeyQiraati, kelasKeySekolah } from '@/utils/kelasHitung'
-import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+import { juzNum, todayJakarta } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
+// v.1.5.0: shift wajib-pulang tanpa absen pulang = alpa — aturan yang sama dgn matriks absensi.
+import { shiftWajibPulang, barisEfektif } from '@/utils/absenPulang'
 // v.110: Ringkasan admin = KPI + Statistik Lembaga + grafik Kenaikan Tes (potret cepat).
 // Grafik perkembangan lain (kehadiran/kas/capaian/santri) pindah ke tab domain di Laporan.
 // Scope di sini cukup utk TrenCapaian guru/kepala (scopedSantriAktif).
@@ -1040,7 +1042,10 @@ const kehadiranGuru = computed(() => {
   const sakitSet = new Set()
   const izinSet = new Set()
   const alpaSet = new Set()
-  for (const row of absensiShiftGuru.value) {
+  const wajib = shiftWajibPulang(settings.settings || {})
+  const hari = todayJakarta()
+  for (const row0 of absensiShiftGuru.value) {
+    const row = barisEfektif(row0, wajib, hari)
     const tgl = String(row.tanggal || '')
     if (!tgl.startsWith(prefix)) continue
     if (String(row.guru_id || row.guruId || '') !== String(g.id)) continue

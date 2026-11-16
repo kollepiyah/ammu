@@ -135,6 +135,9 @@ export function normalizeShift(raw) {
     // jam pulang default (opsional) utk prefill/isi-massal absen pulang — tak nge-gate hadir.
     pulang_default: normHHMM(r.pulang_default) || '',
     hadir_ikut: [...new Set(hadirIkut)],
+    // v.1.5.0 (Kyai 16 Nov 2026): hadir di shift ini dihitung dari ABSEN PULANG — tanpa pulang =
+    //   alpa (JP & bonus hari itu tak dibayar). Lihat utils/absenPulang. APP-ONLY.
+    wajib_pulang: r.wajib_pulang === true,
     lembaga,
     urutan: Number(r.urutan) > 0 ? Number(r.urutan) : 99,
     // fallback milik shift bawaan (pegawai → jam guru) — tak bisa diubah lewat UI.

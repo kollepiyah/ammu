@@ -42,6 +42,9 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
     di hari tersebut; scan di jam itu tercatat dan muncul di rekap absen guru. Untuk Laju 2, absen
     shift sore otomatis dihitung hadir Laju 2 — cukup sekali scan.
   - **Templat Excel jadwal**: unduh, isi nama guru, lalu impor.
+- **Hadir dihitung dari absen pulang** (bisa diatur per shift di Master Shift, untuk shift
+  sekolah): hari tanpa absen pulang dihitung alpa, dan JP serta bonus kehadiran hari itu tidak
+  dibayar. Guru terjadwal Laju 1 yang absen pulang di jam akhir Laju 1 otomatis tercatat hadir Laju 1.
 - **Ammu Desktop** bisa diatur menyala sendiri saat komputer dinyalakan dan langsung menyinkron
   mesin Fingerspot. Sinkron kini hanya memproses scan dua minggu terakhir supaya lebih hemat.
 

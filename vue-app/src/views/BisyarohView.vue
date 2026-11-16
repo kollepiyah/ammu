@@ -1551,6 +1551,9 @@ import {
 // v.1.5.0: bisyaroh piket Pondok Laju per sesi — satu aturan dengan tab Bisyaroh di menu Pondok Laju.
 import { sesiLajuTerbayar, sesiTakDibayarGuru } from '@/utils/pondokLajuSesi'
 import { idShiftLaju, petaShiftSesiLaju, penentuShiftLaju } from '@/utils/shiftLaju'
+// v.1.5.0 (Kyai 16 Nov 2026): shift wajib-pulang tanpa absen pulang = alpa → JP & bonus hari itu
+//   tak dibayar. Satu aturan dengan matriks absensi (utils/absenPulang).
+import { shiftWajibPulang, hadirSah } from '@/utils/absenPulang'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -2182,11 +2185,11 @@ function hadirPerShiftGuru(guruId, periode) {
   const out = {}
   const gid = String(guruId)
   const dalamJendela = penyaringPeriodeBisyaroh(periode)
+  const wajib = shiftWajibPulang(settingsStore.settings || {})
   for (const a of absensiShift.value || []) {
     if (String(a.guru_id) !== gid) continue
     if (!dalamJendela(a.tanggal)) continue
-    const st = String(a.status || '').toLowerCase()
-    if (st !== 'hadir' && st !== 'terlambat') continue
+    if (!hadirSah(a, wajib)) continue // v.1.5.0: tanpa absen pulang di shift wajib-pulang
     const sh = String(a.shift || '').toLowerCase()
     if (!sh) continue
     out[sh] = (out[sh] || 0) + 1
@@ -2200,10 +2203,12 @@ function hadirTepatPerShiftGuru(guruId, periode) {
   const out = {}
   const gid = String(guruId)
   const dalamJendela = penyaringPeriodeBisyaroh(periode)
+  const wajib = shiftWajibPulang(settingsStore.settings || {})
   for (const a of absensiShift.value || []) {
     if (String(a.guru_id) !== gid) continue
     if (!dalamJendela(a.tanggal)) continue
     if (String(a.status || '').toLowerCase() !== 'hadir') continue // tepat waktu saja
+    if (!hadirSah(a, wajib)) continue // v.1.5.0: tanpa absen pulang di shift wajib-pulang
     const sh = String(a.shift || '').toLowerCase()
     if (!sh) continue
     out[sh] = (out[sh] || 0) + 1
@@ -2250,12 +2255,13 @@ function tanggalHadirSekolah(guruId, periode, shiftIds) {
   const gid = String(guruId)
   const ids = new Set((shiftIds && shiftIds.length ? shiftIds : ['sekolah']).map(String))
   const dalamJendela = penyaringPeriodeBisyaroh(periode) // v.1.4.1: jendela 25→24
+  const wajib = shiftWajibPulang(settingsStore.settings || {})
   const out = new Set()
   for (const a of absensiShift.value || []) {
     if (String(a.guru_id) !== gid) continue
     if (!ids.has(String(a.shift || '').toLowerCase())) continue
-    const st = String(a.status || '').toLowerCase()
-    if (st !== 'hadir' && st !== 'terlambat') continue // izin/sakit/cuti/alpa → JP hangus
+    // izin/sakit/cuti/alpa → JP hangus; v.1.5.0: juga hari sekolah tanpa absen pulang (Kyai).
+    if (!hadirSah(a, wajib)) continue
     const tgl = String(a.tanggal || '')
     if (!dalamJendela(tgl)) continue
     out.add(tgl.slice(0, 10))

@@ -1427,6 +1427,8 @@ import { lembagaKalenderShift, lembagaLabelShift } from '@/utils/lembagaShift'
 import { guruMasukPada, tanggalBukanJadwal } from '@/utils/jadwalGuru'
 // v.1.5.0 (Kyai 16 Nov 2026): shift Pondok Laju aktif per tanggal (jadwal piket Laju 1/2).
 import { idShiftLaju, penentuShiftLaju } from '@/utils/shiftLaju'
+// v.1.5.0 (Kyai 16 Nov 2026): shift bertanda "hadir dari absen pulang" — tanpa pulang = alpa.
+import { shiftWajibPulang, barisEfektif } from '@/utils/absenPulang'
 // v.1.4.1: "shift ini sudah dimulai belum" (Kyai, 5 Sep 2026) — sumber tunggal aturan jamnya.
 import { jamJakarta, jamMulaiShift, kunciBelumMulai, setDariKunci } from '@/utils/shiftBerjalan'
 // v.1.4.6 gel. 3 (27 Sep 2026): mesin HiView diam sejak 24 Sep 17:44 WIB — peringatannya &
@@ -2192,7 +2194,9 @@ async function sinkronGabungan(silent = false) {
   const s = settingsStore.settings || {}
   // Guard: tanpa shift ber-"Hadir Otomatis Ikut Shift", fitur ini diam-diam TAK melakukan apa pun.
   //   Dulu tampil "sudah tercatat" (menyesatkan) — kini beri peringatan yang bisa ditindaklanjuti.
-  const adaTarget = shiftList(s).some((sh) => (sh.hadir_ikut || []).length)
+  // v.1.5.0: shift Pondok Laju (hadir dari jam pulang) juga butuh materialisasi.
+  const adaTarget =
+    shiftList(s).some((sh) => (sh.hadir_ikut || []).length) || lajuIds.value.size > 0
   if (!adaTarget) {
     if (!silent)
       toast.warning(
@@ -2392,7 +2396,9 @@ function bukanJadwalLaju(g, shift, kerja) {
 }
 
 const rekapUnitData = computed(() => {
-  const idx = indexAbsensiHarian(absensi.value || [])
+  const wajib = shiftWajibPulang(settingsStore.settings || {})
+  const hari = todayJakarta()
+  const idx = indexAbsensiHarian((absensi.value || []).map((a) => barisEfektif(a, wajib, hari)))
   const range = tanggalRentang(rekapPeriode.value.start, rekapPeriode.value.end)
   const today = todayJakarta()
   const s = settingsStore.settings || {}
@@ -2694,8 +2700,11 @@ const absensiByGuruShiftDay = computed(() => {
   return map
 })
 
+// v.1.5.0: baris dibaca EFEKTIF — shift wajib-pulang tanpa jam pulang di hari lampau = alpa.
+const wajibPulang = computed(() => shiftWajibPulang(settingsStore.settings || {}))
 function getAbsensiCell(guruId, shift, d) {
-  return absensiByGuruShiftDay.value[guruId + '_' + shift + '_' + d] || null
+  const a = absensiByGuruShiftDay.value[guruId + '_' + shift + '_' + d] || null
+  return a ? barisEfektif(a, wajibPulang.value, hariIniWib.value) : null
 }
 
 // =====================================================

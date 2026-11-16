@@ -36,12 +36,18 @@ RLS + `auth_is_admin_pondok_laju`). **Dua edge function berubah**: `auto-generat
 `matchStatusOnly`) dan `hiview-absen` (shift Pondok Laju harian + nomor kartu di Jejak Mesin) →
 deploy ulang keduanya. **Electron wajib dirilis ulang** (IPC "buka saat Windows menyala").
 Urutan: `supabase db push` → deploy web → deploy kedua fungsi → rebuild AAB → rilis Electron.
-**Sesudah rilis, Kyai mengatur:** (1) Master Shift — shift Laju 1 & Laju 2 dengan jamnya; pada
-Laju 2 isi "Hadir otomatis ikut shift" = shift-shift sore; (2) menu Pondok Laju → Pengaturan — pilih
+**Sesudah rilis, Kyai mengatur:** (1) Master Shift — shift Laju 1 & Laju 2 dengan jamnya (Laju 1 =
+rentang jam PULANG-nya, mis. 11.00–11.45); pada Laju 2 isi "Hadir otomatis ikut shift" = shift-shift
+sore; centang "Hadir dihitung dari absen pulang" pada shift-shift sekolah (SDI - PKBM, TK, Kelas
+Baca); (2) menu Pondok Laju → Pengaturan — pilih
 shift Laju 1/Laju 2 & Admin Pondok Laju; (3) Pengaturan Keuangan → Jenis Bisyaroh — cara hitung
 "× sesi Pondok Laju", tarif per sesi; (4) di PC kantor (Ammu Desktop → Mesin Absensi): nyalakan
 "Buka saat Windows menyala" dan "Sinkron otomatis".
 
+Diuji (absen pulang, 16 Nov): vitest 132 berkas / 1.907 tes (baru `absenPulang`), build; di
+peramban (data tiruan, tulisan dicegat): sel SDI tanpa absen pulang = "A — tanpa absen pulang",
+dengan pulang = H; guru pagi terjadwal Laju 1 yang pulang 11.30 → materialisasi `auto_pulang_laju`
+11.30 (tanggal tanpa jadwal tidak). Rekap Unit diuji lewat tes unit.
 Diuji (absen guru & shift Pondok Laju, 16 Nov): vitest 131 berkas / 1.901 tes (baru
 `shiftLajuMirrorEdge`: app ⇄ fungsi HiView identik + sapuan 00:00–23:59 dengan shift harian),
 build web, `tsc` Electron. Di peramban (data tiruan, tulisan dicegat): matriks Absensi Guru memuat
@@ -229,6 +235,33 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
 - **Nomor kartu di Jejak Mesin** (kartu e-Qiraati): kartu yang belum terdaftar di mesin HiView kini
   meninggalkan jejak `kartu=<nomor>` (+ kode minor event), sehingga nomor yang dipakai mesin bisa
   dibaca lalu didaftarkan ke orangnya tanpa menebak urutan byte UID.
+
+### Added — hadir dihitung dari absen pulang (Kyai 16 Nov 2026)
+
+- **"Hari sekolah tanpa scan pulang menjadi alpa; JP dan bonus kehadiran sekolah hari itu tidak
+  dibayar."** Master Shift mendapat tanda per shift "Hadir dihitung dari absen pulang"
+  (`wajib_pulang`). Untuk shift bertanda, baris hadir/terlambat tanpa jam pulang di hari yang SUDAH
+  LEWAT dibaca alpa — di matriks (keterangan "tanpa absen pulang"), Rekap Unit, rekap pribadi,
+  kartu statistik, JP sekolah (`per_jp`), dan bonus `× kehadiran`/`× tepat waktu`. Hari ini belum
+  dihukum. Baris di database tak diubah: begitu jam pulang menyusul, hadirnya sah lagi. Aturan
+  satu sumber `utils/absenPulang` (`barisEfektif`, `hadirSah`).
+- **Hadir Laju dari jam pulang.** "Guru sudah scan pagi ketika masuk, setelah Laju 1 dia pulang —
+  scan pulang pada waktu itu dihitung hadir Laju 1." Guru terjadwal yang jam pulangnya (shift mana
+  pun) jatuh di jam shift Laju 1 (termasuk toleransi) mendapat baris hadir otomatis
+  `auto_pulang_laju` (`hitungBarisLajuDariPulang`, ikut materialisasi di Absensi Guru/Bisyaroh).
+  `deriveShift` kini mendahulukan shift TETAP guru (inti lalu toleransi) sebelum shift harian Pondok
+  Laju — scan 11.30 tetap jadi pulang pagi, tak direbut sebagai masuk Laju 1 (app & cermin HiView).
+- **Hadir ikut membawa jam pulang.** Baris otomatis "hadir ikut" (mis. Sekolah ikut Pagi) kini
+  mewarisi jam pulang sumbernya, dan baris otomatis yang lahir sebelum sumbernya pulang disusul jam
+  pulangnya — tanpa ini guru gabungan jadi alpa di shift sekolah wajib-pulang. Sumbernya harus
+  hadir SAH (shift wajib-pulang tanpa pulang tak memicu apa pun). Baris buatan manusia tetap tak
+  pernah ditimpa.
+
+### Fixed — Rekap Unit menghitung "alpa" tertulis sebagai hadir
+
+- `absensiRekap.hitungSel` hanya mengenal hadir/terlambat/izin/sakit/cuti; baris berstatus `alpa`
+  (perbaikan manual Kyai) jatuh ke H. Kini A, sama dengan matriks. Rekap pribadi (Personal)
+  serupa: baris `alpa` tak lagi mengisi slot — dihitung alpa.
 
 ### Fixed — gerbang PJ glondongan tak pernah mengunci (sejak 19 Jul 2026, bfa80e1)
 

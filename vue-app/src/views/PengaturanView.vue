@@ -584,6 +584,12 @@
                   class="block text-[9px] text-teal-600 dark:text-teal-400 italic font-sans font-normal"
                   >&#8618; hadir ikut {{ sh.hadir_ikut.map(shiftLabelById).join(', ') }}</span
                 >
+                <!-- v.1.5.0 (Kyai 16 Nov 2026) -->
+                <span
+                  v-if="sh.wajib_pulang"
+                  class="block text-[9px] text-amber-700 dark:text-amber-300 italic font-sans font-normal"
+                  >&#8617; hadir dihitung dari absen pulang</span
+                >
               </td>
               <td class="px-3 py-2 text-[var(--text-secondary)] text-xs">
                 {{ sh.untuk === 'pegawai' ? 'Pegawai' : 'Guru' }}
@@ -810,6 +816,29 @@
               Untuk prefill &amp; isi-massal absen pulang. Tidak memengaruhi status hadir.
             </p>
           </div>
+          <!-- v.1.5.0 (Kyai 16 Nov 2026): "hari sekolah tanpa scan pulang menjadi alpa" -->
+          <label
+            class="flex items-start gap-2 rounded-lg border px-3 py-2 cursor-pointer"
+            :class="
+              dlgShift.wajib_pulang
+                ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20'
+                : 'border-[var(--border-default)]'
+            "
+          >
+            <input
+              v-model="dlgShift.wajib_pulang"
+              type="checkbox"
+              class="accent-amber-500 mt-0.5"
+            />
+            <span class="text-xs text-[var(--text-primary)]">
+              <b>Hadir dihitung dari absen pulang</b>
+              <span class="block text-[10px] text-[var(--text-tertiary)]"
+                >Hari yang sudah lewat tanpa absen pulang di shift ini dihitung <b>alpa</b> — JP dan
+                bonus kehadiran hari itu tidak dibayar. Hari ini belum dihitung alpa (masih bisa
+                pulang).</span
+              >
+            </span>
+          </label>
           <div v-if="shiftLainOptions.length">
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
               >Hadir Otomatis Ikut Shift</label

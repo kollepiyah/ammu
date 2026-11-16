@@ -106,14 +106,23 @@ export function shiftBatas(shift, settings) {
 // shift lain TIDAK boleh merebutnya — jadi menyetel toleransi tak pernah memindahkan
 // absen yang selama ini sudah benar.
 // v.1.5.0 (Kyai 16 Nov 2026): `tambahan` = shift yang aktif HARI ITU SAJA bagi guru ini — shift
-//   Pondok Laju dari jadwal piket & Tadarus Pagi guru kelas (utils/shiftLaju). Tanpa tambahan
+//   Pondok Laju dari jadwal piket (utils/shiftLaju). Shift TETAP guru selalu didahulukan (inti
+//   lalu toleransi); shift harian baru dicoba bila tak satu pun shift tetap menampung scan itu.
+//   Jadi scan pulang pagi pukul 11.30 tetap jadi pulang pagi — hadir Laju 1-nya diturunkan dari
+//   jam pulang itu (absensiMaterialize) — dan tak direbut sebagai masuk Laju 1. Tanpa tambahan
 //   perilakunya persis seperti dulu.
 export function deriveShift(hhmm, g, settings, tambahan) {
   const t = normHHMM(hhmm)
   if (!t) return null
   const list = shiftList(settings) // sudah terurut `urutan`
-  const milik = shiftsForGuru(g, settings)
-  for (const id of tambahan || []) milik.add(String(id))
+  const tetap = shiftsForGuru(g, settings)
+  const tetapKena = _cariShift(t, list, tetap)
+  if (tetapKena) return tetapKena
+  const harian = new Set([...(tambahan || [])].map(String).filter((id) => !tetap.has(id)))
+  return harian.size ? _cariShift(t, list, harian) : null
+}
+
+function _cariShift(t, list, milik) {
   const punyaWindow = []
   for (const sh of list) {
     if (!milik.has(sh.id)) continue

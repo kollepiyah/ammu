@@ -156,6 +156,9 @@ export function hitungSel(
     else if (st === 'izin') I++
     else if (st === 'sakit') S++
     else if (st === 'cuti') C++
+    // v.1.5.0: baris 'alpa' (perbaikan manual / tanpa absen pulang) dulu jatuh ke H — alpa yang
+    //   Kyai tandai sendiri terhitung HADIR di Rekap Unit. Kini masuk A, sama dengan matriks.
+    else if (st === 'alpa') A++
     else H++
     if ((st === 'hadir' || st === 'terlambat') && !String(a.jam_pulang || '').trim()) belumPulang++
   }

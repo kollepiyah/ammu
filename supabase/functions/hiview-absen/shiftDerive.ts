@@ -117,8 +117,8 @@ export function shiftBatas(shift: string, settings: SettingsLike): string {
 // shift lain TIDAK boleh merebutnya — jadi menyetel toleransi tak pernah memindahkan
 // absen yang selama ini sudah benar.
 // v.1.5.0 (Kyai 16 Nov 2026): `tambahan` = shift yang aktif HARI ITU SAJA bagi guru ini — shift
-//   Pondok Laju dari jadwal piket & Tadarus Pagi guru kelas (utils/shiftLaju). Tanpa tambahan
-//   perilakunya persis seperti dulu.
+//   Pondok Laju dari jadwal piket. Shift TETAP selalu didahulukan; shift harian hanya menampung
+//   scan yang tak jatuh di shift tetap mana pun (cermin shiftDerive.js).
 export function deriveShift(
   hhmm: string,
   g: GuruLike,
@@ -128,8 +128,14 @@ export function deriveShift(
   const t = normHHMM(hhmm)
   if (!t) return null
   const list = shiftList(settings) // sudah terurut `urutan`
-  const milik = shiftsForGuru(g, settings)
-  for (const id of tambahan || []) milik.add(String(id))
+  const tetap = shiftsForGuru(g, settings)
+  const tetapKena = _cariShift(t, list, tetap)
+  if (tetapKena) return tetapKena
+  const harian = new Set([...(tambahan || [])].map(String).filter((id) => !tetap.has(id)))
+  return harian.size ? _cariShift(t, list, harian) : null
+}
+
+function _cariShift(t: string, list: ShiftItem[], milik: Set<string>): string | null {
   const punyaWindow: { id: string; w: WindowShift }[] = []
   for (const sh of list) {
     if (!milik.has(sh.id)) continue

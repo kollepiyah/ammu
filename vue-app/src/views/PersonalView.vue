@@ -529,6 +529,8 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { subscribeColl, getOne, mergeOne, serverTimestamp } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { fmtRp, hitungLamaMengajar, todayJakarta } from '@/utils/format'
+// v.1.5.0: shift wajib-pulang tanpa absen pulang = alpa — aturan yang sama dgn matriks absensi.
+import { shiftWajibPulang, barisEfektif } from '@/utils/absenPulang'
 // v.21.110.0527: catatan supervisi
 import { useToast } from '@/composables/useToast'
 import { isKepalaLembaga } from '@/utils/roleScope'
@@ -707,7 +709,10 @@ const kelasStatusHadir = (st) => STATUS_HADIR[st]?.[1] || 'bg-slate-100 text-sla
 const trenKehadiran = computed(() => {
   const id = String(auth.sesiAktif?.id || '')
   const byMonth = {}
-  for (const row of absensiGuru.value) {
+  const wajib = shiftWajibPulang(settingsStore.settings || {})
+  const hari = todayJakarta()
+  for (const row0 of absensiGuru.value) {
+    const row = barisEfektif(row0, wajib, hari)
     if (String(row.guru_id || row.guruId || '') !== id) continue
     const p = String(row.tanggal || '').slice(0, 7)
     if (!/^\d{4}-\d{2}$/.test(p)) continue

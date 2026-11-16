@@ -5,6 +5,7 @@
 // Aturan alpa TIDAK berubah dan tetap meminjam util bersama (libur per lembaga, jadwal masuk,
 // jam mulai shift) supaya kartu guru tak berselisih dengan layar admin.
 import { shiftsForGuru } from './shiftDerive'
+import { shiftWajibPulang, barisEfektif } from './absenPulang' // v.1.5.0
 import { buildLiburScope, liburKenaLembaga } from './liburScope'
 import { guruMasukPada } from './jadwalGuru'
 import { jamMulaiShift, slotBolehAlpa } from './shiftBerjalan'
@@ -37,6 +38,7 @@ export function rekapKehadiranBulan({
 }) {
   const id = String(guruId || '')
   const prefix = `${tahun}-${pad(bulan)}-`
+  const wajibPulang = shiftWajibPulang(settings) // v.1.5.0: hadir dari absen pulang
   let tepat = 0,
     terlambat = 0,
     sakit = 0,
@@ -49,8 +51,11 @@ export function rekapKehadiranBulan({
   for (const row of rows || []) {
     if (!String(row.tanggal || '').startsWith(prefix)) continue
     if (String(row.guru_id || row.guruId || '') !== id) continue
-    const st = String(row.status || '').toLowerCase()
+    const efektif = barisEfektif(row, wajibPulang, todayIso)
+    const st = String(efektif.status || '').toLowerCase()
     const sh = String(row.shift || '').toLowerCase()
+    // v.1.5.0: 'alpa' (manual / tanpa absen pulang) tak mengisi slot → dihitung alpa di bawah.
+    if (st === 'alpa') continue
     filled.add(String(row.tanggal).slice(0, 10) + '|' + sh)
     if (st === 'hadir' || st === 'masuk') tepat++
     else if (st === 'terlambat') terlambat++
