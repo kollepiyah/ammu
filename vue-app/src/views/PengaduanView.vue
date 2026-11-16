@@ -308,12 +308,15 @@ const myMsgs = computed(() =>
   )
 )
 
+// Kyai 17 Nov 2026: label "Akademik" diganti "Pendidikan". Kunci `v` SENGAJA tetap
+//   'akademik' — nilainya tersimpan di kolom `kategori` tiap pengaduan lama; mengubahnya
+//   membuat pengaduan lama kehilangan kategorinya.
 const KATEGORI = [
   { v: 'fasilitas', label: 'Fasilitas & Sarana', icon: '🏫' },
   { v: 'kebersihan', label: 'Kebersihan', icon: '🧹' },
   { v: 'keamanan', label: 'Keamanan', icon: '🛡️' },
   { v: 'pelayanan', label: 'Pelayanan', icon: '🤝' },
-  { v: 'akademik', label: 'Akademik', icon: '📚' },
+  { v: 'akademik', label: 'Pendidikan', icon: '📚' },
   { v: 'lainnya', label: 'Lainnya', icon: '💬' }
 ]
 function kategoriIcon(k) {

@@ -43,7 +43,7 @@ const tabs = [
   { id: 'ringkasan', label: 'Ringkasan', icon: 'fa-gauge-high' },
   { id: 'santri', label: 'Santri', icon: 'fa-users' },
   { id: 'keuangan', label: 'Keuangan', icon: 'fa-coins' },
-  { id: 'akademik', label: 'Akademik', icon: 'fa-graduation-cap' },
+  { id: 'akademik', label: 'Pendidikan', icon: 'fa-graduation-cap' },
   { id: 'absensi', label: 'Absensi', icon: 'fa-clipboard-user' },
   { id: 'pegawai', label: 'Pegawai', icon: 'fa-chalkboard-teacher' }
 ]

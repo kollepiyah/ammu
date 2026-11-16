@@ -24,7 +24,7 @@ const TABS = [
       },
       { label: 'Waktu & Kalender', items: [{ type: 'clock' }] },
       {
-        label: 'Akses Akademik',
+        label: 'Akses Pendidikan',
         items: [
           {
             type: 'large',
@@ -101,7 +101,7 @@ const TABS = [
         ]
       },
       {
-        label: 'Akademik',
+        label: 'Pendidikan',
         items: [
           {
             type: 'large',

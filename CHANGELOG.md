@@ -534,6 +534,12 @@ eslint 0; build vue.
   jumlahnya disebut di konfirmasi sebelum dihapus.
 - Penarikannya **tanpa realtime** (admin-only, jarang dibuka, santri tabel terbesar).
 
+- **"Akademik" diganti "Pendidikan"** di seluruh label yang dilihat pengguna (Kyai: "dari dulu
+  saya pengen akademik itu diganti pendidikan"): grup pita "Akademik" & "Akses Akademik", tab
+  Laporan, tab Statistik, dan kategori Pengaduan. **Kunci datanya TIDAK diubah** — `id`/`v`
+  tetap `'akademik'`, sebab nilai itu tersimpan di kolom `kategori` tiap pengaduan lama;
+  menggantinya akan membuat pengaduan lama kehilangan kategorinya.
+
 **Pondok Laju, dua perapian (Kyai 17 Nov):**
 
 - Kisi jadwal menulis **"Laju 1" / "Laju 2"**, bukan singkatan "L1"/"L2".
