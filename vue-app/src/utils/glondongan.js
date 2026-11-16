@@ -12,6 +12,13 @@ export const PTPT_JUZ_PER_KELAS = 5
 export const PTPT_TOTAL_JUZ = 30
 export const PTPT_TOTAL_KELAS = PTPT_TOTAL_JUZ / PTPT_JUZ_PER_KELAS // 6
 
+/**
+ * Pilihan juz PTPT untuk dropdown — bentuk tulisannya SAMA dengan `utils/format.juzSimpan`.
+ * Sebelum 17 Nov 2026 juz diketik tangan di form santri, dan itulah sebab ekspor berisi
+ * 'JUZ 6', '6', 'juz 06' bercampur (keluhan Kyai). Satu daftar, satu bentuk tulisan.
+ */
+export const JUZ_PILIHAN = Array.from({ length: PTPT_TOTAL_JUZ }, (_, i) => `Juz ${i + 1}`)
+
 // Kelas (1..6) dari nomor juz. NaN kalau juz di luar 1..30.
 export function kelasFromJuz(juz) {
   const j = Number(juz)

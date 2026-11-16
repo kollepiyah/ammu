@@ -10,6 +10,7 @@
 import { toTitleCase, parseMultipleWA, juzSimpan } from '@/utils/format'
 import { canonLembaga } from '@/composables/useLembaga'
 import { usiaKini } from '@/utils/usia'
+import { labelStatusSantri } from '@/utils/statusSantri'
 
 const _s = (v) => String(v ?? '').trim()
 
@@ -40,6 +41,13 @@ export function parseBool(v) {
     .toLowerCase()
     .trim()
   return ['true', 'ya', 'y', '1', 'aktif', 'mukim', 'fullday'].includes(s)
+}
+
+// Label terbaca untuk ekspor — kodenya tetap 'pagi_sore'/'pagi'/'sore' di basis data.
+export const LABEL_SHIFT_NGAJI = {
+  pagi_sore: 'Pagi-Sore',
+  pagi: 'Pagi',
+  sore: 'Sore'
 }
 
 // v.1.2.4: normalisasi Shift Ngaji dari sel impor. 'pagi'/'sore'/'pagi_sore'.
@@ -253,15 +261,28 @@ export const SANTRI_FIELDS = [
     }
   },
   // v.1.2.4: shift ngaji santri — 'pagi_sore' | 'pagi' | 'sore' (kosong = pagi_sore).
+  //   Kyai 17 Nov 2026: yang keluar di ekspor kini LABEL yang terbaca ("Pagi-Sore"), bukan
+  //   kode mentah 'pagi_sore'. Impor tetap aman karena parseShiftNgaji cuma mencari kata
+  //   "pagi"/"sore" di dalam sel, jadi ekspor lama MAUPUN baru sama-sama terbaca.
   {
     header: 'Shift Ngaji',
     width: 14,
     aliases: ['shift_ngaji', 'Shift'],
-    note: 'pagi_sore | pagi | sore',
-    exp: (s) => s.shift_ngaji || '',
+    note: 'Pagi-Sore | Pagi | Sore',
+    exp: (s) => LABEL_SHIFT_NGAJI[parseShiftNgaji(s.shift_ngaji)] || '',
     imp: (d, v) => {
       d.shift_ngaji = parseShiftNgaji(v)
     }
+  },
+  // Kyai 17 Nov 2026: status yang tampil di kartu santri (Non-mukim / Fullday / Ma'had /
+  //   Pondok Laju) ikut keluar di ekspor. Turunan dari tiga kolom boolean di atas, jadi
+  //   SENGAJA tanpa `imp` — kalau bisa diimpor, ia bakal bertengkar dengan kolom aslinya.
+  {
+    header: 'Status Santri',
+    width: 14,
+    tpl: false,
+    exportOnly: true,
+    exp: (s) => labelStatusSantri(s)
   },
   {
     header: 'Lembaga Sekolah',

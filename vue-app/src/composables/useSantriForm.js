@@ -1,7 +1,16 @@
 // useSantriForm — manage santri CRUD form state (create + edit)
 // Phase 5.13 (v.40.0526) — port logic legacy simpanSantri + editAdminSantri
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { getOne, mergeOne, getAll, subscribeColl, subscribeDoc } from '@/services/db'
+import {
+  getOne,
+  mergeOne,
+  getAll,
+  queryColl,
+  updateOne,
+  subscribeColl,
+  subscribeDoc
+} from '@/services/db'
+import { ajuanBasiKarenaJuz, juzNum } from '@/utils/tesKenaikan'
 import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
@@ -365,6 +374,49 @@ export function useSantriForm() {
     return null
   }
 
+  /**
+   * Juz PTPT diedit manual → batalkan ajuan tes yang jadi basi (Kyai, 17 Nov 2026).
+   *
+   * Keluhan Kyai: banyak santri sudah naik di luar aplikasi, juznya dibetulkan manual,
+   * tapi ajuan tes lamanya tetap menggantung — antrian tes jadi menumpuk berisi anak yang
+   * sebenarnya sudah lewat. Sekarang ajuan yang `juz_asal`-nya tak lagi sama dengan juz
+   * santri ditutup sendiri.
+   *
+   * Sengaja SENYAP kalau gagal: menyimpan data santri tak boleh ikut gagal gara-gara
+   * pembersihan ini. Yang sudah dinilai tak pernah disentuh (lihat ajuanBasiKarenaJuz).
+   */
+  async function batalkanAjuanBasi(data, juzLama) {
+    try {
+      if (!editingId.value) return
+      if (
+        String(data.lembaga || '')
+          .trim()
+          .toUpperCase() !== 'PTPT'
+      )
+        return
+      if (juzNum({ juz: juzLama }) === juzNum({ juz: data.juz })) return
+      const ajuan = await queryColl('tes_kenaikan', [
+        ['santri_id', '==', String(data.id)],
+        ['status', '==', 'diajukan']
+      ])
+      const basi = ajuanBasiKarenaJuz(ajuan, data.juz)
+      if (!basi.length) return
+      for (const a of basi) {
+        await updateOne('tes_kenaikan', String(a.id), {
+          status: 'dibatalkan',
+          catatan_hasil: `Dibatalkan otomatis: juz santri diubah ke ${juzSimpan(data.juz)}`,
+          tgl_hasil: new Date().toISOString()
+        })
+      }
+      toast.info(
+        `${basi.length} ajuan tes dibatalkan karena juz santri berubah` +
+          (juzLama ? ` (dari ${juzSimpan(juzLama)})` : '')
+      )
+    } catch (e) {
+      /* pembersihan gagal tak boleh menggagalkan simpan */
+    }
+  }
+
   async function save() {
     if (isSaving.value) return false
     const err = validate()
@@ -476,10 +528,12 @@ export function useSantriForm() {
         prestasi_total: ''
       }
       // Kalau edit, preserve existing fields
+      let juzLama = ''
       if (editingId.value) {
         try {
           const old = await getOne('santri', String(editingId.value))
           if (old) {
+            juzLama = old.juz || ''
             data.foto = old.foto || ''
             data.riwayat = old.riwayat || []
             data.prestasi_awal = old.prestasi_awal || ''
@@ -499,6 +553,7 @@ export function useSantriForm() {
       //   diturunkan dari No. Induk/WA, jadi mengubahnya butuh akun baru.
       provisionAkunSenyap({ collection: 'santri', docId: data.id })
       toast.success(editingId.value ? 'Data santri diupdate' : 'Santri baru disimpan')
+      await batalkanAjuanBasi(data, juzLama)
       return true
     } catch (e) {
       toast.error('Error simpan: ' + (e.message || e))

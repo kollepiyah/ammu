@@ -428,6 +428,46 @@ nol galat konsol, dan rapi di lebar HP 375px. Sisi Android: `gradlew compileRele
 manifest + strings sah). **Belum diuji**: mode gelap di beranda sungguhan, kartu dengan data
 nyata, dan **widget di HP sungguhan** — itu baru bisa sesudah AAB vc150 di-build Kyai.
 
+### Changed — perapian data santri (Kyai, 16–17 Nov 2026 — gelombang 3)
+
+Latar: Kyai sedang merapikan data yang kadung berantakan. Banyak santri naik kelas/juz tapi tak
+pernah dinaikkan di aplikasi, dan banyak ajuan tes menggantung sejak PJ lama, sehingga antrian
+tes menumpuk. Empat perubahan di bawah menutup penyebabnya, bukan menambal gejalanya.
+
+- **Gerbang PJ PTPT DICABUT — keduanya.** Dulu `terkunci = glondongan belum selesai ATAU guru
+  kelas belum klik "Siap Tes"`. Temuan yang menentukan: kunci glondongan **mati tak sengaja
+  sejak 19 Jul 2026** (juz dibaca dari teks `'JUZ 6'` lewat `Number()` = NaN), jadi selama empat
+  bulan yang benar-benar menahan PJ hanyalah "Siap Tes" — dan perbaikan pembacaan juz 16 Nov
+  **akan menghidupkannya lagi** begitu v.1.5.0 rilis. Mencabut "Siap Tes" saja berarti PJ tetap
+  terkunci, cuma oleh pintu lain. Kyai memutuskan dua-duanya dicabut: PJ-lah yang berwenang
+  memutuskan lulus. Ikut hilang: tombol "Siap Tes" per santri, tombol **"Siap Tes satu kelas"**
+  (baru ditambah tahap 3 rilis ini), `setSiapTes`, dan `kelasSiapTesLaju`. Kolom `siap_tes`
+  dibiarkan di basis data tapi tak ada lagi yang menulis/membacanya. Keterangan "belum disimak"
+  **tetap dipajang sebagai peringatan** beserta tombol "buat ulang baris" — alat perbaikannya
+  sayang dibuang — tapi tombol Lulus / Belum Lulus tak pernah lagi dimatikan.
+- **Juz PTPT jadi dropdown** (`SantriFormView`, daftar `JUZ_PILIHAN` di `utils/glondongan`).
+  Sebelumnya diketik tangan — itulah sebab ekspor berisi `JUZ 6`, `6`, `juz 06` bercampur. Nilai
+  lama yang bentuknya belum baku tetap disisipkan sebagai opsi, supaya membuka form tidak
+  diam-diam mengosongkan juz santri.
+- **Ajuan tes batal sendiri kalau juz diedit manual** (`ajuanBasiKarenaJuz` + `useSantriForm`).
+  Santri juz 22 punya ajuan naik ke 23; Kyai membetulkan juznya jadi 25 → ajuan itu ditutup
+  dengan status `dibatalkan` dan catatan sebabnya. Hanya yang masih `diajukan`; yang sudah
+  dinilai adalah riwayat dan tak disentuh. Juz dibandingkan sebagai ANGKA (`JUZ 6` = `Juz 6` =
+  `6`). Juz baru yang tak terbaca → tak membatalkan apa pun, lebih baik diam daripada salah.
+  Pembersihan ini senyap bila gagal — menyimpan data santri tak boleh ikut gagal karenanya.
+- **Ekspor Data Santri: dua kolom lebih jujur.** Kolom baru **"Status Santri"** (Non-mukim /
+  Fullday / Ma'had / Pondok Laju) memakai `labelStatusSantri` yang sama dengan kartu santri —
+  `exportOnly`, sengaja tak bisa diimpor karena ia turunan tiga kolom boolean dan akan
+  bertengkar dengan sumbernya. Kolom **"Shift Ngaji"** kini mengeluarkan label terbaca
+  ("Pagi-Sore"/"Pagi"/"Sore") alih-alih kode mentah `pagi_sore`; impor tetap aman karena
+  `parseShiftNgaji` hanya mencari kata "pagi"/"sore" di dalam sel — ekspor lama maupun baru
+  sama-sama terbaca.
+
+Diuji (17 Nov): vitest 136 berkas / 1.957 tes — baru `ajuanBasiKarenaJuz` (9 tes: beda cara
+menulis juz, riwayat tak disentuh, juz tak terbaca diam, juz turun tetap basi) dan
+`eksporSantriKolom` (10 tes, termasuk ekspor→impor bolak-balik tak berubah makna); eslint 0;
+build vue. **Belum diuji**: keempatnya dengan akun & data nyata.
+
 ---
 
 ## [v.1.5.0 · gelombang 1] — 2026-11-15 — Filter kelas-guru bergelar, PDF Data Santri per guru kelas + Juz, PDF Data Kelas rapi, logout tak mencabut perangkat lain

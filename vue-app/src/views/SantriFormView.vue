@@ -583,11 +583,15 @@
             <label class="block text-xs font-bold text-rose-600 mb-1 uppercase"
               >Juz (PTPT only)</label
             >
-            <input
+            <!-- Kyai 17 Nov 2026: dulu diketik tangan, itu sebab ekspor berisi 'JUZ 6'/'6'/
+                 'juz 06' bercampur. Sekarang dropdown dengan satu bentuk tulisan. -->
+            <select
               v-model="form.juz"
-              type="text"
-              class="w-full px-3 py-2 text-sm rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-800 focus:ring-2 focus:ring-rose-500 outline-none"
-            />
+              class="w-full px-3 py-2 text-sm rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-800 cursor-pointer focus:ring-2 focus:ring-rose-500 outline-none"
+            >
+              <option value="">-- Pilih --</option>
+              <option v-for="j in juzOptions" :key="j" :value="j">{{ j }}</option>
+            </select>
           </div>
         </div>
         <!-- v.111: Gedung (scope admin keuangan & akademik) + PJ PTPT (khusus PTPT) -->
@@ -785,6 +789,7 @@ import { useSantriForm } from '@/composables/useSantriForm'
 import { definePageSave } from '@/composables/useRibbonContext'
 // v.1.4.1: alamat daftar yang dititipkan lewat ?kembali= (divalidasi — lihat utils-nya).
 import { targetKembali } from '@/utils/navKembali'
+import { JUZ_PILIHAN } from '@/utils/glondongan'
 import MultiSelectGuruPengajar from '@/components/form/MultiSelectGuruPengajar.vue'
 import MultiSelectGuruSekolah from '@/components/form/MultiSelectGuruSekolah.vue'
 
@@ -811,6 +816,13 @@ const {
   resetForm,
   save
 } = useSantriForm()
+
+// Pilihan juz PTPT. Nilai lama yang bentuknya belum baku ('JUZ 6', '6') tetap disisipkan
+// sebagai opsi, supaya membuka form tidak diam-diam mengosongkan juz santri.
+const juzOptions = computed(() => {
+  const kini = String(form.juz || '').trim()
+  return kini && !JUZ_PILIHAN.includes(kini) ? [kini, ...JUZ_PILIHAN] : JUZ_PILIHAN
+})
 
 // v.1.2.4: opsi Shift Ngaji santri (ikut pagi/sore/keduanya)
 const SHIFT_NGAJI_OPSI = [

@@ -145,8 +145,19 @@ export function useTesKenaikan() {
     }
     return m
   })
-  // Gerbang PJ: hanya PTPT jenis 'juz'. Lainnya tak pernah terkunci.
-  //   terkunci = glondongan/berjalan belum 'selesai' ATAU guru kelas belum klik 'Siap Tes'.
+  // GERBANG PJ DICABUT (Kyai, 16 Nov 2026). PJ sekarang SELALU boleh menilai & meluluskan.
+  //
+  // Dulu ada DUA kunci: `terkunci = glondongan belum selesai ATAU guru kelas belum klik
+  // "Siap Tes"`. Kunci glondongan sebenarnya mati tak sengaja sejak 19 Jul 2026 (juz dibaca
+  // dari teks 'JUZ 6' lewat Number() = NaN), jadi yang terasa menahan PJ cuma "Siap Tes" —
+  // dan perbaikan pembacaan juz 16 Nov 2026 akan MENGHIDUPKANNYA lagi. Kyai memutuskan
+  // keduanya dicabut: antrian tes menumpuk justru karena menunggu klik yang tak pernah datang,
+  // dan PJ-lah yang memang berwenang memutuskan lulus.
+  //
+  // Fungsinya sengaja DIPERTAHANKAN (bukan dihapus) supaya pemanggil tetap mendapat bentuk
+  // yang sama, dan supaya informasi "baris glondongan hilang" masih bisa dipakai sebagai
+  // PERINGATAN — bukan sebagai penghalang. Kolom `siap_tes` di basis data dibiarkan apa adanya;
+  // tak ada lagi yang membacanya.
   function gerbangFor(ajuan) {
     const kosong = {
       berlaku: false,
@@ -161,23 +172,17 @@ export function useTesKenaikan() {
       String(ajuan.lembaga || '')
         .trim()
         .toUpperCase() === 'PTPT' && (ajuan.jenis || '') === 'juz'
-    if (!isPtptJuz) return kosong
-    // v.1.4.8: "langsung tes" — glondongan & review juz berjalan dilewati atas pilihan
-    //   pengaju; tak ada baris yang ditunggu, tak ada gerbang.
-    if (ajuan.tanpa_glondongan) return { ...kosong, tanpaGlondongan: true }
+    if (!isPtptJuz || ajuan.tanpa_glondongan) return kosong
+    // Dihitung hanya untuk tahu baris simakan yang belum ada/selesai — isinya dipajang
+    // sebagai keterangan, dan `terkunci` TETAP false apa pun hasilnya.
     const g = gerbangGlondongan(ajuan.juz_asal, glondonganByAjuan.value[String(ajuan.id)] || [])
-    const siapTes = !!ajuan.siap_tes
     return {
       ...g,
-      berlaku: true,
-      glondonganTerkunci: g.terkunci,
-      siapTes,
-      terkunci: g.terkunci || !siapTes
+      berlaku: false,
+      glondonganTerkunci: false,
+      siapTes: true,
+      terkunci: false
     }
-  }
-  // Guru kelas / pengaju: tandai santri SIAP dites PJ (setelah glondongan+berjalan selesai).
-  async function setSiapTes(ajuanId, val = true) {
-    await updateOne('tes_kenaikan', String(ajuanId), { siap_tes: !!val })
   }
 
   // Ajukan batch. items: [{ santri, jenis, target }]. guruList utk resolve kepala (push Fase B).
@@ -237,7 +242,8 @@ export function useTesKenaikan() {
           _ts: now.getTime(),
           batch_id: batchId,
           ...(laju ? { pondok_laju: true, kelompok_laju: kelompok } : {}),
-          ...(langsungTes ? { tanpa_glondongan: true, siap_tes: true } : {})
+          // `siap_tes` tak lagi ditulis — gerbangnya sudah dicabut (lihat gerbangFor).
+          ...(langsungTes ? { tanpa_glondongan: true } : {})
         })
         ok++
         // v.111: PTPT jenis 'juz' -> spawn baris glondongan + review juz berjalan.
@@ -557,7 +563,6 @@ export function useTesKenaikan() {
     // v.111.x gerbang glondongan PJ
     glondonganByAjuan,
     gerbangFor,
-    buatUlangGlondongan,
-    setSiapTes
+    buatUlangGlondongan
   }
 }

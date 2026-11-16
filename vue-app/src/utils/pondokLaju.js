@@ -35,31 +35,8 @@ export function bolehBelumLulus(ajuan) {
   return ajuan?.pondok_laju !== true
 }
 
-/**
- * Kelas Pondok Laju di tab Status Ajuan untuk tombol "Siap Tes satu kelas" (Kyai 16 Nov).
- * Hanya ajuan 'diajukan' yang bergerbang. `siap` = semua simakannya selesai tapi belum ditandai;
- * `menunggu` = masih ada blok glondongan/berjalan; `sudah` = sudah ditandai siap.
- * @param {Array} ajuanList ajuan milik guru ini.
- * @param {Object} gerbang peta { [ajuanId]: { berlaku, glondonganTerkunci, siapTes } }.
- * @returns {Array<{key, juz, siap: Array, menunggu: number, sudah: number}>}
- */
-export function kelasSiapTesLaju(ajuanList, gerbang) {
-  const peta = new Map()
-  for (const a of ajuanList || []) {
-    if (!a?.kelompok_laju || a.status !== 'diajukan') continue
-    const g = gerbang?.[a.id]
-    if (!g?.berlaku) continue
-    let k = peta.get(a.kelompok_laju)
-    if (!k) {
-      k = { key: a.kelompok_laju, juz: juzNum(a.juz_asal), siap: [], menunggu: 0, sudah: 0 }
-      peta.set(a.kelompok_laju, k)
-    }
-    if (g.glondonganTerkunci) k.menunggu++
-    else if (g.siapTes) k.sudah++
-    else k.siap.push(a)
-  }
-  return [...peta.values()].filter((k) => k.siap.length || k.menunggu)
-}
+// kelasSiapTesLaju DIHAPUS (Kyai, 16 Nov 2026) bersama gerbang PJ — tombol "Siap Tes satu
+// kelas" tak punya alasan lagi begitu PJ selalu boleh menilai.
 
 /**
  * Kelas Pondok Laju di antara kandidat seremonial (Tahap 3, Kyai 16 Nov): santri yang lulus

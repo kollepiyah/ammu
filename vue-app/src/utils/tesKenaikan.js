@@ -77,6 +77,34 @@ export function canNaikKelasPtpt(s) {
   return Number.isFinite(j) && j > 0 && j < 30 && j % 5 === 0
 }
 
+/**
+ * Ajuan tes yang jadi BASI karena juz santri diubah manual (Kyai, 17 Nov 2026).
+ *
+ * Setiap ajuan lahir dari `juz_asal`. Begitu juz santri tak lagi sama dengan juz_asal,
+ * ajuan itu menguji keadaan yang sudah tak ada — dan inilah salah satu sebab antrian tes
+ * menumpuk berisi santri yang sebenarnya sudah naik lama.
+ *
+ * Yang dianggap basi HANYA yang masih 'diajukan'. Ajuan yang sudah dinilai adalah RIWAYAT
+ * dan tak boleh disentuh. Juz dibandingkan sebagai ANGKA supaya 'JUZ 6', 'Juz 6', dan '6'
+ * dihitung sama — perbedaan tulisan itu masalah lama yang terpisah.
+ *
+ * @param {Array} ajuanList baris tes_kenaikan milik santri ini.
+ * @param {string|number} juzBaru juz santri sesudah diedit.
+ * @returns {Array} ajuan yang pantas dibatalkan (bisa kosong).
+ */
+export function ajuanBasiKarenaJuz(ajuanList, juzBaru) {
+  const baru = juzNum({ juz: juzBaru })
+  // Juz baru tak terbaca → jangan membatalkan apa pun. Lebih baik tak berbuat daripada
+  // membatalkan ajuan yang sah karena salah baca.
+  if (!Number.isFinite(baru) || baru <= 0) return []
+  return (ajuanList || []).filter((a) => {
+    if (String(a?.status || '') !== 'diajukan') return false
+    const asal = juzNum({ juz: a?.juz_asal })
+    if (!Number.isFinite(asal) || asal <= 0) return false
+    return asal !== baru
+  })
+}
+
 // Flatten semua item sub-level dari schema (dipakai jenis 'jilid': 1A,1B,1C,2A…).
 function flattenItems(lembaga, settings) {
   const sch = getKartuKenaikanSchema(lembaga, settings)

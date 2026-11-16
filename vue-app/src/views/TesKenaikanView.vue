@@ -203,33 +203,8 @@
         <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
         <p class="text-sm text-[var(--text-secondary)] italic">Belum ada ajuan tes dari Anda.</p>
       </div>
-      <!-- v.1.5.0 (Kyai): Pondok Laju — tandai Siap Tes satu kelas sekaligus. Hanya santri yang
-           semua simakannya sudah selesai yang ditandai; yang masih menunggu disebut jumlahnya. -->
-      <div
-        v-for="k in kelasSiapTes"
-        :key="k.key"
-        class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-300 dark:border-amber-700 flex flex-wrap items-center gap-2 text-[11px]"
-      >
-        <span class="font-black text-amber-800 dark:text-amber-200">
-          <i class="fas fa-people-group mr-1"></i>Pondok Laju<template v-if="k.juz">
-            · Juz {{ k.juz }}</template
-          >
-        </span>
-        <span class="text-[var(--text-secondary)]">
-          {{ k.siap.length }} santri siap dites<template v-if="k.menunggu">
-            · {{ k.menunggu }} masih menunggu simakan</template
-          ><template v-if="k.sudah"> · {{ k.sudah }} sudah ditandai</template>
-        </span>
-        <button
-          v-if="k.siap.length"
-          :disabled="siapKelasBusy === k.key"
-          class="ml-auto px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black"
-          @click="siapTesKelas(k)"
-        >
-          <i class="fas fa-flag-checkered mr-1"></i
-          >{{ siapKelasBusy === k.key ? '...' : `Siap Tes satu kelas (${k.siap.length})` }}
-        </button>
-      </div>
+      <!-- v.1.5.0 (Kyai 16 Nov): tombol "Siap Tes satu kelas" DICABUT bersama gerbangnya —
+           PJ kini selalu boleh menilai, jadi tak ada lagi yang perlu ditandai. -->
       <div
         v-for="a in myAjuan"
         :key="a.id"
@@ -377,43 +352,7 @@
           </div>
         </div>
 
-        <!-- Siap Tes (guru kelas) — hanya PTPT juz yang masih diajukan -->
-        <div
-          v-if="a.status === 'diajukan' && gerbangMy[a.id] && gerbangMy[a.id].berlaku"
-          class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-2 text-[11px]"
-        >
-          <template v-if="gerbangMy[a.id].glondonganTerkunci">
-            <span class="text-amber-700 dark:text-amber-300">
-              <i class="fas fa-hourglass-half mr-1"></i>Menunggu simakan:
-              {{ pendingLabel(gerbangMy[a.id]) }}
-            </span>
-          </template>
-          <template v-else-if="gerbangMy[a.id].siapTes">
-            <span class="text-emerald-700 dark:text-emerald-300 font-bold">
-              <i class="fas fa-circle-check mr-1"></i>Sudah ditandai SIAP dites PJ
-            </span>
-            <button
-              :disabled="siapTesBusy === a.id"
-              class="text-rose-600 hover:underline font-bold disabled:opacity-50"
-              @click="toggleSiapTes(a, false)"
-            >
-              batal
-            </button>
-          </template>
-          <template v-else>
-            <span class="text-[var(--text-secondary)]"
-              >Semua sudah disimak. Tandai santri siap dites PJ:</span
-            >
-            <button
-              :disabled="siapTesBusy === a.id"
-              class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black"
-              @click="toggleSiapTes(a, true)"
-            >
-              <i class="fas fa-flag-checkered mr-1"></i
-              >{{ siapTesBusy === a.id ? '...' : 'Siap Tes' }}
-            </button>
-          </template>
-        </div>
+        <!-- Blok "Siap Tes" guru kelas DICABUT (Kyai 16 Nov) — PJ tak lagi menunggu ditandai. -->
       </div>
     </div>
 
@@ -544,28 +483,27 @@
             @input="setTgl(a.id, $event.target.value)"
           />
         </div>
+        <!-- Gerbang dicabut (Kyai 16 Nov): ini PERINGATAN, bukan penghalang. Tombol Lulus /
+             Belum Lulus tetap hidup; keterangan ini hanya memberi tahu PJ bahwa masih ada
+             simakan yang belum selesai, plus alat perbaikan kalau barisnya memang tak lahir. -->
         <div
-          v-if="gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci"
-          class="mt-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-[11px] text-amber-800 dark:text-amber-200"
+          v-if="gerbangAntrian[a.id] && gerbangAntrian[a.id].pending?.length"
+          class="mt-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)]"
         >
-          <i class="fas fa-lock mr-1"></i>
-          <b>Belum bisa dites PJ</b> —
-          <template v-if="gerbangAntrian[a.id].glondonganTerkunci">
-            belum disimak: {{ pendingLabel(gerbangAntrian[a.id]) }}.
-            <button
-              v-if="gerbangAntrian[a.id].adaBarisHilang"
-              :disabled="buatUlangBusy === a.id"
-              class="ml-1 underline font-bold hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50"
-              @click="buatUlangGlond(a)"
-            >
-              {{ buatUlangBusy === a.id ? 'membuat…' : 'buat ulang baris' }}
-            </button>
-          </template>
-          <template v-else>menunggu guru kelas menekan tombol "Siap Tes".</template>
+          <i class="fas fa-circle-info mr-1"></i>
+          Belum disimak: {{ pendingLabel(gerbangAntrian[a.id]) }}.
+          <button
+            v-if="gerbangAntrian[a.id].adaBarisHilang"
+            :disabled="buatUlangBusy === a.id"
+            class="ml-1 underline font-bold hover:text-[var(--text-primary)] disabled:opacity-50"
+            @click="buatUlangGlond(a)"
+          >
+            {{ buatUlangBusy === a.id ? 'membuat…' : 'buat ulang baris' }}
+          </button>
         </div>
         <div class="flex gap-2 mt-2">
           <button
-            :disabled="busyId === a.id || (gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci)"
+            :disabled="busyId === a.id"
             class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black"
             @click="openLulus(a)"
           >
@@ -574,7 +512,7 @@
           <!-- v.1.5.0: santri Pondok Laju selalu naik — tak ada Belum Lulus -->
           <button
             v-if="bolehBelumLulus(a)"
-            :disabled="busyId === a.id || (gerbangAntrian[a.id] && gerbangAntrian[a.id].terkunci)"
+            :disabled="busyId === a.id"
             class="flex-1 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black"
             @click="decide(a, 'tidak_lulus')"
           >
@@ -1253,7 +1191,7 @@ import {
   partnerPagi
 } from '@/utils/pasanganGuru'
 import { isPjLembaga, splitGlondongan, testedJuz } from '@/utils/glondongan' // v.1.2.2: kandidat PJ PTPT; v.1.4.8: langsung tes
-import { kelasLajuDiajukan, bolehBelumLulus, kelasSiapTesLaju } from '@/utils/pondokLaju' // v.1.5.0: Pondok Laju
+import { kelasLajuDiajukan, bolehBelumLulus } from '@/utils/pondokLaju' // v.1.5.0: Pondok Laju
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useDesktopShell } from '@/composables/useDesktopShell'
@@ -1299,8 +1237,7 @@ const {
   hapusAjuan,
   gerbangFor,
   glondonganByAjuan, // v.1.1.9: baris glondongan per ajuan — utk kontak penyimak
-  buatUlangGlondongan,
-  setSiapTes
+  buatUlangGlondongan
 } = useTesKenaikan()
 
 // v.111.x GERBANG glondongan: status per ajuan antrian + buat-ulang baris hilang.
@@ -1317,13 +1254,6 @@ function pendingLabel(g) {
     )
     .join(', ')
 }
-// Gerbang utk ajuan SAYA (tab Status) — utk tombol "Siap Tes" guru kelas.
-const gerbangMy = computed(() => {
-  const m = {}
-  for (const a of myAjuan.value) m[a.id] = gerbangFor(a)
-  return m
-})
-
 // ── v.1.1.9 (Kyai 21 Jul): guru kelas yang MENGAJUKAN perlu bisa menghubungi ──
 //   (a) wali santrinya, dan (b) penyimak glondongan begitu ditugaskan koordinator.
 //   Sebelumnya guru pengaju tak punya jalan sama sekali untuk tahu siapa penyimaknya.
@@ -1386,36 +1316,8 @@ function penyimakGlondonganAjuan(a) {
       }
     })
 }
-const siapTesBusy = ref(null)
-// v.1.5.0: Siap Tes satu kelas Pondok Laju — aksi yang sama dengan tombol per santri.
-const kelasSiapTes = computed(() => kelasSiapTesLaju(myAjuan.value, gerbangMy.value))
-const siapKelasBusy = ref(null)
-async function siapTesKelas(k) {
-  siapKelasBusy.value = k.key
-  let ok = 0
-  try {
-    for (const a of k.siap) {
-      await setSiapTes(a.id, true)
-      ok++
-    }
-    toast.success(`${ok} santri ditandai SIAP dites PJ`)
-  } catch (e) {
-    toast.error(`Gagal setelah ${ok} santri: ` + (e.message || e))
-  } finally {
-    siapKelasBusy.value = null
-  }
-}
-async function toggleSiapTes(a, val) {
-  siapTesBusy.value = a.id
-  try {
-    await setSiapTes(a.id, val)
-    toast.success(val ? 'Santri ditandai SIAP dites PJ' : 'Tanda siap dibatalkan')
-  } catch (e) {
-    toast.error('Gagal: ' + (e.message || e))
-  } finally {
-    siapTesBusy.value = null
-  }
-}
+// v.1.5.0 (Kyai 16 Nov): siapTesBusy / kelasSiapTes / siapTesKelas / toggleSiapTes DIHAPUS
+//   bersama gerbangnya — tak ada lagi yang perlu ditandai sebelum PJ menilai.
 const buatUlangBusy = ref(null)
 async function buatUlangGlond(a) {
   buatUlangBusy.value = a.id
@@ -2213,11 +2115,8 @@ async function submitLulus() {
   const a = lulusFor.value
   const s = lulusSantri.value
   if (!a) return
-  // GERBANG: jangan tulis kenaikan bila glondongan/berjalan belum selesai (cegah race).
-  if (gerbangFor(a).terkunci) {
-    toast.error('Glondongan/berjalan belum selesai disimak — belum bisa meluluskan.')
-    return
-  }
+  // Gerbang dicabut (Kyai 16 Nov) — PJ berwenang memutuskan lulus tanpa menunggu simakan
+  // atau tanda "Siap Tes". Keterangan simakan yang belum selesai tetap dipajang di kartu.
   if (!s) {
     toast.error('Data santri belum termuat.')
     return

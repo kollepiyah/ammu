@@ -128,28 +128,10 @@ describe('penyimak sibuk', () => {
   })
 })
 
-describe('Siap Tes satu kelas (tab Status Ajuan)', () => {
-  it('memilah siap / masih menunggu simakan / sudah ditandai per kelas', async () => {
-    const { kelasSiapTesLaju } = await import('@/utils/pondokLaju')
-    const A = (id, extra = {}) => ({
-      id,
-      status: 'diajukan',
-      kelompok_laju: 'k1',
-      juz_asal: 'Juz 7',
-      ...extra
-    })
-    const ajuan = [A('a'), A('b'), A('c'), A('d'), A('e', { kelompok_laju: '' })]
-    const gerbang = {
-      a: { berlaku: true, glondonganTerkunci: false, siapTes: false },
-      b: { berlaku: true, glondonganTerkunci: false, siapTes: false },
-      c: { berlaku: true, glondonganTerkunci: true, siapTes: false },
-      d: { berlaku: true, glondonganTerkunci: false, siapTes: true },
-      e: { berlaku: true, glondonganTerkunci: false, siapTes: false }
-    }
-    const [k] = kelasSiapTesLaju(ajuan, gerbang)
-    expect(k.siap.map((a) => a.id)).toEqual(['a', 'b'])
-    expect(k).toMatchObject({ juz: '7', menunggu: 1, sudah: 1 })
-    expect(kelasSiapTesLaju([A('x')], { x: { berlaku: true, siapTes: true } })).toEqual([])
+describe('Siap Tes satu kelas (DICABUT, Kyai 16 Nov 2026)', () => {
+  it('kelasSiapTesLaju sudah tak ada — gerbang PJ dihapus, tak ada yang perlu ditandai', async () => {
+    const mod = await import('@/utils/pondokLaju')
+    expect(mod.kelasSiapTesLaju).toBeUndefined()
   })
 })
 
