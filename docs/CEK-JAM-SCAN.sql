@@ -138,7 +138,16 @@ select
   g.nama,
   trim(coalesce(g.id_fingerprint, ''))  as pin,
   g.lembaga,
-  g.shift,
+  -- Sumber kebenaran shift = `shift_ids` (jsonb). Kolom `g.shift` cuma CERMIN untuk
+  -- fp_sync.py dan bernilai 'kosong' begitu guru tak punya shift pagi/sore — padahal
+  -- dia bisa saja punya shift sekolah/pegawai/Pondok Laju. Jangan dibaca sebagai
+  -- "tak punya shift". Lihat shiftMaster.SHIFT_LEGACY_KOSONG.
+  case jsonb_typeof(g.data->'shift_ids')
+    when 'array' then array_to_string(
+      array(select jsonb_array_elements_text(g.data->'shift_ids')), ', ')
+    else ''
+  end                                   as shift_ids,
+  g.shift                               as shift_cermin_lama,
   coalesce(j.scan_terakhir, '')         as scan_terakhir,
   coalesce(j.hasil_terakhir, '')        as hasil_terakhir,
   coalesce(j.jumlah_scan, 0)            as scan_30_hari
