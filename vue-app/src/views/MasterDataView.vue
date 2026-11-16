@@ -15,6 +15,7 @@ import MateriTesKelolaView from './MateriTesKelolaView.vue'
 import FieldSchemaView from './FieldSchemaView.vue'
 import GuruView from './GuruView.vue'
 import SantriView from './SantriView.vue'
+import RombelView from './RombelView.vue'
 import { useLembaga } from '@/composables/useLembaga'
 import { useSantri } from '@/composables/useSantri'
 import { useConfirm } from '@/composables/useConfirm'
@@ -536,6 +537,8 @@ const TABS = [
   { id: 'tp', label: 'Tahun Pelajaran', icon: 'fa-calendar', color: 'orange' },
   { id: 'guru', label: 'Guru/Pegawai', icon: 'fa-user-tie', color: 'purple' },
   { id: 'santri', label: 'Data Santri', icon: 'fa-user-graduate', color: 'teal' },
+  // Kyai 17 Nov 2026: rombel tempatnya DI SINI, bukan menu tersendiri.
+  { id: 'rombel', label: 'Rombel', icon: 'fa-people-group', color: 'emerald' },
   { id: 'audit', label: 'Audit Data', icon: 'fa-stethoscope', color: 'rose' }
 ]
 
@@ -1014,6 +1017,11 @@ async function simpanPengaturanRekap() {
       class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
     >
       <SantriView mode="master" />
+    </div>
+
+    <!-- TAB: ROMBEL (Kyai 17 Nov 2026) — pasangan guru pagi+sore sebagai satu barang. -->
+    <div v-else-if="activeTab === 'rombel'" class="-mx-3 md:-mx-5">
+      <RombelView />
     </div>
 
     <!-- TAB 5: RAPOR -->

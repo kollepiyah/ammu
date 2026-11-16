@@ -516,7 +516,10 @@ eslint 0; build vue.
 
 ### Added — layar Rombel + perapian Pondok Laju (Kyai, 17 Nov 2026 — gelombang 3)
 
-- **Menu baru Akademik → Rombel** (`/rombel`, admin). Isinya tiga pekerjaan: melihat rombel
+- **Master Data → tab "Rombel"** (Kyai 17 Nov: "taruh aja di master data" — semula saya taruh
+  sebagai item pita di grup Akademik, dan itu keliru; layar bertipe data induk tempatnya di
+  Master Data). Ikut terkunci `super_admin` seperti Master Data; rute `/rombel` tetap ada untuk
+  tautan langsung dengan kunci yang sama ketatnya. Isinya tiga pekerjaan: melihat rombel
   sebagai barang, **menyusunnya dari data santri lama**, dan **mengganti guru satu rombel
   sekaligus** — yang terakhir ini permintaan Kyai supaya tak lagi santri per santri.
 - **Pratinjau dulu, baru tulis.** Penyusunan menyentuh ratusan baris santri sekaligus, jadi

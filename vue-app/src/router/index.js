@@ -197,7 +197,14 @@ const routes = [
       { path: 'kelas', name: 'kelas', component: KelasView, meta: { admin: true } },
       // v.98: assign guru+santri (pita Pendidikan -> Kelas)
       { path: 'kelas-guru', name: 'kelas-guru', component: KelasGuruView, meta: { admin: true } },
-      { path: 'rombel', name: 'rombel', component: RombelView, meta: { admin: true } },
+      // Rombel tinggal di Master Data (Kyai 17 Nov). Rute ini tetap ada untuk tautan
+      //   langsung, dan dikunci SAMA ketatnya — layarnya menulis ulang ratusan baris santri.
+      {
+        path: 'rombel',
+        name: 'rombel',
+        component: RombelView,
+        meta: { admin: true, roleSistem: 'super_admin' }
+      },
       // v.98: halaman khusus Electron — Mapel lembaga formal + Pengaturan (hub)
       {
         path: 'mapel-lembaga',
