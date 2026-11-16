@@ -14,6 +14,11 @@
 // SEMUA penghitung kelas WAJIB lewat sini. Sudah 2 kali angka melenceng gara-gara
 //   ada file yang merakit kuncinya sendiri (useStatistikDashboard, lalu grid kartu
 //   di RingkasanSantriLembaga). Kalau butuh hitung kelas: impor, jangan tulis ulang.
+//
+// v.1.5.0 (Kyai 17 Nov 2026): rombel kini punya baris sendiri. Kalau pemanggil menyertakan
+//   konteks rombel, kunci kelas diambil dari PASANGAN LENGKAP milik rombel — lihat
+//   kelasKeyQiraati. Tanpa konteks, perilakunya persis seperti sebelumnya.
+import { rombelSantri, pasanganLengkap } from '@/utils/rombel'
 
 const norm = (v) =>
   String(v ?? '')
@@ -74,7 +79,22 @@ function effGuru(s) {
 
 // Kunci rombel Qiraati 1 santri (tanpa lembaga). '' bila TAK ADA GURU.
 //   Bentuk `pagi||sore`; menghormati shift (pagi-saja → `pagi||`).
-export function kelasKeyQiraati(s) {
+//
+// Dengan `ctx` (konteksRombel) kuncinya diambil dari PASANGAN LENGKAP milik rombelnya, bukan
+// dari dua kolom di baris santri. Itulah yang menyatukan Ahmad (sore saja, `||indah`) dengan
+// teman sekelasnya (`siti||indah`) — sebelum ini mereka terhitung dua rombel. Kunci tetap
+// berbentuk `pagi||sore`, bukan id rombel, supaya santri yang sudah ditunjuk rombel dan yang
+// belum menghasilkan kunci yang SAMA selama masa peralihan.
+export function kelasKeyQiraati(s, ctx = null) {
+  if (ctx) {
+    const r = rombelSantri(s, ctx.peta, ctx.petaKunci)
+    if (r) {
+      const { pagi, sore } = pasanganLengkap(s, r)
+      const p = norm(pagi)
+      const so = norm(sore)
+      if (p || so) return `${p}||${so}`
+    }
+  }
   const { pagi, sore } = effGuru(s)
   if (!pagi && !sore) return ''
   return `${pagi}||${sore}`

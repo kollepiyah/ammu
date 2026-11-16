@@ -5,6 +5,7 @@
 //     - Sekolah  : guru muncul di guru_sekolah[] (wali kelas sekolah) di santri.
 //   Tipe guru (kyai): 1) Qiraati+Sekolah, 2) Qiraati saja, 3) Sekolah saja.
 import { LEMBAGA_GROUPS, getLembagaGroup, getLembagaBroadGroup } from '@/composables/useLembaga'
+import { rombelSantri, pasanganLengkap } from '@/utils/rombel'
 
 // v.1.4.8: spasi ganda dirapatkan — "Siti  Aminah" (ketikan/impor) harus cocok dengan
 //   "Siti Aminah" di sesi. Tanpa ini santri hilang dari akun gurunya tanpa sebab yang terlihat.
@@ -72,9 +73,20 @@ function _naungi(dipimpin, target) {
 //   sama dengan kelasHitung (legacy → pagi) dan Data Santri. Field itu tak selalu ikut
 //   dikosongkan saat santri pindah guru (impor/penugasan kelas hanya menulis yang terisi),
 //   jadi dulu guru LAMA tetap melihat santri yang sudah pindah di Rapor & Absensi.
-export function ownsNgaji(s, nama) {
+export function ownsNgaji(s, nama, ctx = null) {
   const gn = _lower(nama)
   if (!gn || !s) return false
+  // Rombel sebagai entitas (Kyai 17 Nov 2026): santri yang cuma diisi SALAH SATU dari
+  // pasangan guru tetap milik keduanya. Ahmad ikut sore saja di rombel Siti+Indah —
+  // sebelum ini ia hilang dari akun Siti. Tanpa `ctx` perilakunya persis seperti dulu,
+  // jadi layar yang belum menarik rombel tidak berubah apa-apa.
+  if (ctx) {
+    const r = rombelSantri(s, ctx.peta, ctx.petaKunci)
+    if (r) {
+      const { pagi, sore } = pasanganLengkap(s, r)
+      return _lower(pagi) === gn || _lower(sore) === gn
+    }
+  }
   const gp = _lower(s.guru_pagi)
   const gs = _lower(s.guru_sore)
   if (gp || gs) return gp === gn || gs === gn

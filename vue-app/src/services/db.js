@@ -43,8 +43,14 @@ const COLS = {
     'aktif',
     'is_mukim',
     'is_fullday',
-    'foto'
+    'foto',
+    // Rombel sebagai entitas (Kyai 17 Nov 2026, migrasi 20261117100000). Boleh kosong
+    // selama peralihan — aplikasi jatuh ke pencocokan pasangan nama guru.
+    'rombel_id'
   ],
+  // 1 baris = 1 rombel. Ngaji: pasangan guru_pagi/guru_sore di kolom riil.
+  //   Sekolah: daftarnya di data->'guru_sekolah'. SENGAJA bukan realtime (jarang berubah).
+  rombel: ['lembaga', 'kategori', 'nama', 'guru_pagi', 'guru_sore', 'aktif'],
   guru: [
     'nama',
     'nik',

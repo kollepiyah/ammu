@@ -476,13 +476,49 @@ menulis juz, riwayat tak disentuh, juz tak terbaca diam, juz turun tetap basi) d
 `slotGuruUntukShift` (7 tes) — seluruhnya 137 berkas / 1.964 tes; eslint 0; build vue.
 **Belum diuji**: kelimanya dengan akun & data nyata.
 
-**Belum dikerjakan, menunggu keputusan Kyai** (dua keluhan yang akarnya sama): (a) santri yang
-hanya diisi salah satu dari pasangan guru pagi/sore TIDAK muncul di akun guru pasangannya,
-dan (b) belum bisa mengganti guru satu rombel sekaligus. Sebabnya satu: **rombel bukan entitas**
-— pasangannya disimpan per-santri sebagai `guru_pagi||guru_sore` (`utils/kelasHitung`), jadi
-begitu satu sisi kosong, pasangannya hilang dan santri itu terhitung rombel tersendiri. Ada
-bahan yang bisa dipakai: `master/lembaga.list[i].kelas_guru[kelas]` sudah menyimpan pasangan
-`{guru_pagi, guru_sore}` per kelas.
+### Added — Rombel jadi ENTITAS, fondasinya (Kyai, 17 Nov 2026 — gelombang 3)
+
+Dua keluhan Kyai ternyata satu penyakit: "kelas ngaji" tak pernah berupa barang, cuma kunci
+turunan `guru_pagi||guru_sore` yang dirakit ulang dari tiap baris santri. Siti mengajar pagi,
+Indah sore, satu rombel; Ahmad ikut sore saja sehingga hanya `guru_sore` terisi — kuncinya
+`||indah`, **beda** dari `siti||indah`. Ahmad pun hilang dari akun Siti dan ikut memecah
+hitungan kelas. Dan tak ada satu barang pun yang bisa diganti gurunya sekali jalan. Kyai
+memilih jalan yang benar: rombel diberi baris sendiri.
+
+- **Migrasi `20261117100000_rombel.sql`** — tabel `rombel` (pola hybrid: `lembaga, kategori,
+  nama, guru_pagi, guru_sore, aktif` riil; `data` untuk `guru_sekolah[]`) + kolom
+  `santri.rombel_id` + indeks + RLS (dibaca semua yang login karena hampir tiap layar
+  akademik perlu tahu santri siapa milik guru mana; ditulis admin/pengelola atau PJ lembaga).
+  Diuji di PGlite: dua kali jalan (idempoten), RLS menyala, 4 kebijakan, sambungan
+  santri→rombel terbaca.
+- **Migrasi SENGAJA tidak mengisi datanya.** Penyusunan rombel dari data santri lama
+  dikerjakan di aplikasi memakai `usulRombelDariSantri` yang sudah diuji, dengan pratinjau
+  dulu. Menulis ulang aturan peleburan itu dalam SQL berarti membuat cermin kedua yang pasti
+  berpisah dari aslinya — kelas bug yang sudah beberapa kali menggigit repo ini.
+- **`utils/rombel.js` (pure)** — aturan peleburan yang berhati-hati: pasangan "sebelah"
+  (`||indah`) dilebur ke pasangan LENGKAP di lembaga sama yang memuat guru itu di SLOT SAMA,
+  dan **hanya kalau calonnya tepat satu**. Kalau Indah berpasangan dengan Siti DAN Ani, tak
+  ada yang bisa ditebak dengan jujur: dibiarkan berdiri sendiri dan dilaporkan sebagai
+  `ambigu` supaya Kyai yang memutuskan.
+- **Jalur baca disambungkan di dua titik saja**, keduanya sumber tunggal yang sudah ada:
+  `guruScope.ownsNgaji(s, nama, ctx)` dan `kelasHitung.kelasKeyQiraati(s, ctx)`. Dengan
+  konteks rombel, Ahmad kini milik Siti juga dan sekunci dengan teman sekelasnya. **Tanpa**
+  konteks perilakunya persis seperti sebelumnya — layar yang belum menarik rombel tidak
+  berubah apa pun, jadi peralihannya bisa bertahap dan tak ada yang mendadak rusak.
+- Kuncinya tetap berbentuk `pagi||sore`, bukan id rombel, supaya santri yang sudah ditunjuk
+  rombel dan yang belum menghasilkan kunci yang SAMA selama masa peralihan. Santri tanpa
+  `rombel_id` masih dicocokkan lewat pasangan nama gurunya.
+
+Diuji (17 Nov): vitest 138 berkas / 1.991 tes (baru `rombel` 27 tes — kasus Ahmad apa adanya,
+peleburan satu-calon, penolakan menebak saat ambigu, beda lembaga tak pernah dilebur, slot
+harus sama, dan penegasan bahwa tanpa konteks perilaku lama utuh); migrasi diuji di PGlite;
+eslint 0; build vue.
+
+**BELUM ada**: layar Master Data → Rombel (menyusun dari data santri dengan pratinjau,
+mengganti guru satu rombel sekaligus, menamai rombel), pemilihan rombel di form santri, dan
+penyambungan `ctx` di layar-layar pemakai (Absensi, Rapor, Input Bulanan, Naik Kelas, Tes
+Kenaikan, statistik). Sampai itu dikerjakan, **tak ada yang berubah bagi pengguna** — tabelnya
+ada tapi masih kosong.
 
 ---
 
