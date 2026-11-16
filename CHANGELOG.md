@@ -14,11 +14,17 @@ berikutnya `v.1.6.0`, dan seterusnya (tak ada `v.1.4.10`). Nomor sama di web, AA
 
 ### Planned
 
-- Capacitor Android first build + sideload APK
-- Capacitor iOS setup
-- Tauri Desktop scaffold
-- Phase 1 palette migration: `bg-blue-600/700` action button → `bg-teal-600/700` (~62 occurrences)
-- DOMPurify integration untuk template literal innerHTML yang inject user data
+- Capacitor iOS setup — belum pernah dibahas lagi sejak Jun 2026
+- Midtrans: ganti kunci sandbox (`SB-`) ke production + uji satu transaksi nyata, **wajib
+  sebelum Januari 2027** saat akun wali santri dibagikan (lihat `docs/SUPABASE-EDGE-FUNCTIONS-DEPLOY.md` §9c)
+- Midtrans tahap 2: nomor VA tetap per santri, dibuat otomatis tiap tagihan terbit
+- Unggah ulang 8 logo KOP lembaga (Master Data → Lembaga → Pengaturan) — URL lamanya di
+  Firebase Storage yang mati sejak Sep 2026; audit `docs/AUDIT-FIREBASE-STORAGE.sql`
+
+Dicoret 16 Nov 2026 karena sudah terlampaui, bukan karena dibatalkan: Capacitor Android first
+build (AAB rutin dirilis sejak v.1.1.8), Tauri Desktop scaffold (dipilih Electron), migrasi
+palet `bg-blue-600/700` (0 kemunculan tersisa), DOMPurify (tak ada lagi `innerHTML` yang
+menyuntikkan data pengguna).
 
 ---
 
