@@ -35,6 +35,30 @@ export function shiftNgajiOf(s) {
   return norm(s?.guru) ? 'pagi' : ''
 }
 
+/**
+ * Slot mana yang harus diisi saat seorang guru dicentang di form santri (Kyai, 17 Nov 2026).
+ *
+ * Dulu selalu pagi dulu, baru sore. Akibatnya santri "sore saja" tetap masuk slot PAGI dan
+ * Kyai harus mengklik "Sore" satu per satu — padahal shift santrinya sudah dipilih. Lebih
+ * buruk lagi, slot pagi pada santri sore itu MUBAZIR: `effGuru` membuangnya saat menghitung
+ * kelas, jadi isiannya tak berpengaruh ke mana-mana.
+ *
+ * @param {string} shiftNgaji 'pagi' | 'sore' | 'pagi_sore' | '' (kosong = anggap pagi_sore)
+ * @param {{guruPagi?:string, guruSore?:string}} terisi slot yang sudah berisi nama.
+ * @returns {'pagi'|'sore'|null} null = tak ada slot yang pantas (sudah penuh).
+ */
+export function slotGuruUntukShift(shiftNgaji, terisi = {}) {
+  const pagi = norm(terisi.guruPagi)
+  const sore = norm(terisi.guruSore)
+  const sh = norm(shiftNgaji)
+  // Santri satu shift hanya punya SATU slot yang berarti — jangan tumpahkan ke slot lain.
+  if (sh === 'pagi') return pagi ? null : 'pagi'
+  if (sh === 'sore') return sore ? null : 'sore'
+  if (!pagi) return 'pagi'
+  if (!sore) return 'sore'
+  return null
+}
+
 // Guru pagi & sore EFEKTIF 1 santri, menghormati shift_ngaji: santri 'pagi' tak
 //   membawa guru sore (walau kolomnya terisi), dan sebaliknya. Field `guru` lama
 //   dianggap guru pagi bila guru_pagi/guru_sore dua-duanya kosong.

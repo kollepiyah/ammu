@@ -90,11 +90,15 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { slotGuruUntukShift } from '@/utils/kelasHitung'
 
 const props = defineProps({
   guruPagi: { type: String, default: '' },
   guruSore: { type: String, default: '' },
-  guruList: { type: Array, default: () => [] } // [{ nama, jk, ... }]
+  guruList: { type: Array, default: () => [] }, // [{ nama, jk, ... }]
+  // Shift ngaji santri yang sedang diisi — menentukan slot mana yang terisi saat guru
+  // dicentang (Kyai 17 Nov 2026). Kosong = anggap ikut pagi & sore.
+  shiftNgaji: { type: String, default: '' }
 })
 const emit = defineEmits(['update:guruPagi', 'update:guruSore'])
 
@@ -152,19 +156,21 @@ function onToggle(nama, checked) {
     if (props.guruSore === nama) emit('update:guruSore', '')
     return
   }
-  // Check: limit 2 guru
-  const totalSelected =
-    (props.guruPagi ? 1 : 0) + (props.guruSore && props.guruSore !== props.guruPagi ? 1 : 0)
-  if (totalSelected >= 2) {
-    toast.warning('Maksimal 2 guru. Uncheck satu dulu.')
+  // Slot ditentukan SHIFT SANTRI, bukan selalu pagi dulu (lihat slotGuruUntukShift).
+  const slot = slotGuruUntukShift(props.shiftNgaji, {
+    guruPagi: props.guruPagi,
+    guruSore: props.guruSore
+  })
+  if (!slot) {
+    const sh = String(props.shiftNgaji || '').toLowerCase()
+    toast.warning(
+      sh === 'pagi' || sh === 'sore'
+        ? `Santri ini hanya ikut ${sh === 'pagi' ? 'Pagi' : 'Sore'} — slotnya sudah terisi. Uncheck dulu.`
+        : 'Maksimal 2 guru. Uncheck satu dulu.'
+    )
     return
   }
-  // Auto-pick shift: kalau slot pagi kosong → pagi, kalau sore kosong → sore
-  if (!props.guruPagi) {
-    emit('update:guruPagi', nama)
-  } else if (!props.guruSore) {
-    emit('update:guruSore', nama)
-  }
+  emit(slot === 'pagi' ? 'update:guruPagi' : 'update:guruSore', nama)
 }
 
 function setShift(nama, shift) {

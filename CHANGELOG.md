@@ -463,10 +463,26 @@ tes menumpuk. Empat perubahan di bawah menutup penyebabnya, bukan menambal gejal
   `parseShiftNgaji` hanya mencari kata "pagi"/"sore" di dalam sel — ekspor lama maupun baru
   sama-sama terbaca.
 
+- **Pilih guru ikut shift santri.** Dulu mencentang guru SELALU mengisi slot Pagi dulu, jadi
+  santri "sore saja" tetap masuk slot Pagi dan Kyai harus mengklik "Sore" satu per satu.
+  Lebih buruk: isian pagi pada santri sore itu MUBAZIR — `effGuru` membuangnya saat menghitung
+  kelas, jadi tak berpengaruh ke mana pun. Sekarang slot ditentukan `shift_ngaji` santri
+  (`slotGuruUntukShift` di `utils/kelasHitung`): sore saja → langsung slot Sore; pagi saja →
+  slot Pagi; pagi-sore tetap berurutan. Santri satu shift tak lagi tumpah ke slot sebelah.
+
 Diuji (17 Nov): vitest 136 berkas / 1.957 tes — baru `ajuanBasiKarenaJuz` (9 tes: beda cara
 menulis juz, riwayat tak disentuh, juz tak terbaca diam, juz turun tetap basi) dan
-`eksporSantriKolom` (10 tes, termasuk ekspor→impor bolak-balik tak berubah makna); eslint 0;
-build vue. **Belum diuji**: keempatnya dengan akun & data nyata.
+`eksporSantriKolom` (10 tes, termasuk ekspor→impor bolak-balik tak berubah makna) dan
+`slotGuruUntukShift` (7 tes) — seluruhnya 137 berkas / 1.964 tes; eslint 0; build vue.
+**Belum diuji**: kelimanya dengan akun & data nyata.
+
+**Belum dikerjakan, menunggu keputusan Kyai** (dua keluhan yang akarnya sama): (a) santri yang
+hanya diisi salah satu dari pasangan guru pagi/sore TIDAK muncul di akun guru pasangannya,
+dan (b) belum bisa mengganti guru satu rombel sekaligus. Sebabnya satu: **rombel bukan entitas**
+— pasangannya disimpan per-santri sebagai `guru_pagi||guru_sore` (`utils/kelasHitung`), jadi
+begitu satu sisi kosong, pasangannya hilang dan santri itu terhitung rombel tersendiri. Ada
+bahan yang bisa dipakai: `master/lembaga.list[i].kelas_guru[kelas]` sudah menyimpan pasangan
+`{guru_pagi, guru_sore}` per kelas.
 
 ---
 

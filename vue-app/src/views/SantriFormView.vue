@@ -636,6 +636,7 @@
             v-model:guru-pagi="form.guru_pagi"
             v-model:guru-sore="form.guru_sore"
             :guru-list="guruByLembaga"
+            :shift-ngaji="form.shift_ngaji"
           />
         </div>
         <!-- v.1.2.4: Shift Ngaji santri — tandai yg HANYA ikut pagi/sore agar tak jadi kelas sendiri -->
