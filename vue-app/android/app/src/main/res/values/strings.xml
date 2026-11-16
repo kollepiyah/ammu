@@ -8,4 +8,6 @@
     <string name="widget_jam_hijri_description">Jam digital + tanggal Masehi &amp; Hijriyah</string>
     <string name="widget_kalender_label">Kalender Pendidikan Ammu</string>
     <string name="widget_kalender_description">Agenda kalender pendidikan terdekat</string>
+    <string name="widget_tugas_label">Tugas Saya Ammu</string>
+    <string name="widget_tugas_description">Piket Pondok Laju, seremonial, dan penugasan yang belum dikerjakan</string>
 </resources>

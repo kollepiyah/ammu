@@ -254,7 +254,13 @@ describe('ringkasUntukWidget', () => {
     })
     const ringkas = ringkasUntukWidget(hasil, 3)
     expect(ringkas).toHaveLength(3)
-    expect(ringkas[0]).toEqual({ t: HARI_INI, j: '', h: 'Piket Laju 1', d: 'A' })
+    expect(ringkas[0]).toEqual({
+      t: HARI_INI,
+      j: '',
+      h: 'Piket Laju 1',
+      d: 'A',
+      n: 'piket_laju'
+    })
   })
 
   it('aman dipanggil dengan hasil kosong', () => {

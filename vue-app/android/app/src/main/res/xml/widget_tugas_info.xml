@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v.1.5.0 gelombang 3: widget "Tugas Saya" (4x2). updatePeriodMillis 30 menit — itu hanya
+     MENGGAMBAR ULANG dari data tersimpan (supaya baris yang sudah lewat hilang sendiri saat
+     ganti hari); penarikan data baru dilakukan app saat beranda dibuka. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_tugas"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:previewImage="@mipmap/ic_launcher"
+    android:description="@string/widget_tugas_description" />

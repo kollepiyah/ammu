@@ -395,11 +395,22 @@ hal kedua yang terlihat begitu beranda dibuka di HP.
 - Hasil yang sama sudah didorong ke jembatan widget Android (`pushWidgetData({ tugas })`), lengkap
   dengan tanggalnya supaya widget bisa menyaring sendiri saat menggambar — sisi Java menyusul.
 
+**Widget home screen Android "Tugas Saya"** (`widgets/TugasWidget.java` + `widget_tugas.xml` +
+`widget_tugas_info.xml`, 4×2, tiga slot tetap seperti widget Kalender — tanpa `RemoteViewsService`
+yang lebih berat). Isinya DIDORONG app lewat `WidgetBridge` (kunci baru `tugas`), jadi widget tak
+pernah menyusun daftarnya sendiri. Satu-satunya keputusan di sisi Java: **membuang baris bertanggal
+yang sudah lewat**, dihitung dengan tanggal **Asia/Jakarta** (bukan zona HP, yang bisa meleset).
+Itu penting karena data hanya segar saat app dibuka — tanpa saringan ini, guru yang tiga hari tak
+membuka Ammu akan melihat piket kemarin seolah hari ini; dengan saringan ini widget paling buruk
+jadi KOSONG, bukan salah. `updatePeriodMillis` 30 menit menggambar ulang, jadi pergantian hari
+membersihkan sendiri. Warna titik per jenis disalin dari `JENIS_TUGAS`. Diketuk → membuka Ammu.
+
 **Belum disambungkan** (sudah didukung dan diuji di `susunTugasSaya`, tinggal diisi pemanggil):
 izin guru yang menunggu persetujuan — perlu aturan penyetuju + lingkup lembaga dari `useIzinGuru`,
 jangan ditebak karena salah tebak berarti izin orang lain ikut terlihat — dan jumlah input bulanan
-yang belum dikerjakan. **Belum ada**: halaman `/tugas` penuh, widget home screen Android, dan
-penarikan berkala di native (Kyai 16 Nov: "tarik berkala gak apa-apa").
+yang belum dikerjakan. **Belum ada**: halaman `/tugas` penuh, dan **penarikan berkala sungguhan**
+di native — widget masih bergantung pada app dibuka untuk mendapat data baru (Kyai 16 Nov sudah
+menyetujui "tarik berkala"; butuh edge function + token per perangkat, lihat Planned).
 
 Diuji (16 Nov): vitest 134 berkas / 1.937 tes (baru `tugasSaya`, 23 tes — batas horizon, piket milik
 guru lain, capaian yang menutup tugas, capaian guru lain yang TIDAK menutup, seremonial tanpa nama
@@ -407,8 +418,9 @@ saya, status selesai, urutan tanggal lalu jam, ringkasan widget, dan penjaga kat
 eslint 0, build vue + `build:css`. Di peramban dengan data tiruan — komponen dipasang SEMENTARA di
 halaman login, tak ada satu pun bacaan ke produksi, sisipannya sudah dicabut: kartu memuat "Hari
 ini" 2 baris (jam 08:00 pada seremonial), "Besok" 1 baris, "Perlu Dikerjakan" 2 baris, lencana 5,
-nol galat konsol, dan rapi di lebar HP 375px. **Belum diuji**: mode gelap di beranda sungguhan dan
-dengan data nyata.
+nol galat konsol, dan rapi di lebar HP 375px. Sisi Android: `gradlew compileReleaseJavaWithJavac` lolos (Java + layout +
+manifest + strings sah). **Belum diuji**: mode gelap di beranda sungguhan, kartu dengan data
+nyata, dan **widget di HP sungguhan** — itu baru bisa sesudah AAB vc150 di-build Kyai.
 
 ---
 

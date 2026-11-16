@@ -251,6 +251,7 @@ export function susunTugasSaya(opt = {}) {
  * Kunci sengaja satu huruf: isinya ikut setiap kali beranda dibuka, dan widget Android
  * membacanya mentah. Tanggal tetap dibawa supaya widget bisa MENYARING SENDIRI saat
  * menggambar; kalau guru lama tak membuka aplikasi, widget jadi kosong — bukan salah.
+ * `n` = jenis, dipakai widget untuk warna titik — bukan untuk memutuskan apa pun.
  */
 export function ringkasUntukWidget(hasil, maks = 3) {
   const semua = [...(hasil?.terjadwal || []), ...(hasil?.perlu || [])]
@@ -258,6 +259,7 @@ export function ringkasUntukWidget(hasil, maks = 3) {
     t: t.tanggal || '',
     j: t.jam || '',
     h: t.judul || '',
-    d: t.detail || ''
+    d: t.detail || '',
+    n: t.jenis || ''
   }))
 }

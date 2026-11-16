@@ -92,6 +92,18 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_kalender_info" />
         </receiver>
+        <!-- v.1.5.0 gelombang 3: Widget "Tugas Saya" home screen -->
+        <receiver
+            android:name=".widgets.TugasWidget"
+            android:exported="true"
+            android:label="@string/widget_tugas_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_tugas_info" />
+        </receiver>
     </application>
 
     <!-- Permissions -->
