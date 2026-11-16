@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest'
 import {
   SESI_PIKET,
   kelasPondokLaju,
+  penandaGuruKelasLaju,
   rentangHalamanJuz,
   juzDariHalaman,
   SURAH,
@@ -80,6 +81,20 @@ describe('kelas Pondok Laju & rantai posisi', () => {
       ['Ust. A', '7', ['Ahmad', 'Bima', 'Cici']],
       ['Ust. B', '2', ['Dodi']]
     ])
+  })
+  it('label guru Pondok Laju = guru kelas santri Pondok Laju (nama tak peka huruf/spasi)', () => {
+    const laju = penandaGuruKelasLaju([
+      s(1, 'Bima', 'Ust. A', 'Juz 7'),
+      s(4, 'Dodi', 'Ust.  B ', 'Juz 2'),
+      s(5, 'Eka', 'Ust. C', 'Juz 7', false), // santri bukan Laju
+      { ...s(6, 'Fia', 'Ust. D', 'Juz 3'), aktif: false } // santri tak aktif
+    ])
+    expect(laju({ nama: 'ust. a' })).toBe(true)
+    expect(laju({ nama: 'Ust. B' })).toBe(true)
+    expect(laju({ nama: 'Ust. C' })).toBe(false)
+    expect(laju({ nama: 'Ust. D' })).toBe(false)
+    expect(laju({ nama: '' })).toBe(false)
+    expect(penandaGuruKelasLaju([])({ nama: 'Ust. A' })).toBe(false)
   })
   it('Tadarus Pagi → Laju 1 → Laju 2 → esok hari bersambung', () => {
     const rows = [

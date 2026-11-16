@@ -816,6 +816,7 @@ const rilis = [
       'Menu baru Pondok Laju: catat capaian bacaan Tadarus Pagi, Laju 1, Laju 2 (juz, halaman, surah, ayat), jadwal Pondok Laju bergilir sebulan, dan bisyaroh piket per sesi (guru shift sekolah SD–PKBM tidak dibayar Laju 1). Wali bisa melihat capaian anaknya.',
       'Absen Pondok Laju otomatis: guru yang dijadwalkan Laju 1/Laju 2 mendapat shift itu di harinya dan muncul di rekap absen guru; absen shift sore otomatis dihitung hadir Laju 2. Jadwal bisa diisi lewat templat Excel.',
       'Ammu Desktop bisa menyala sendiri saat komputer dinyalakan dan langsung menyinkron mesin Fingerspot (Mesin Absensi).',
+      'Data Guru: label "Pondok Laju" otomatis untuk guru kelas santri Pondok Laju.',
       'Absen tak lagi hilang karena ID Fingerprint ganda (dua guru memegang ID sama): guru yang aktif yang dipakai. Data Guru bisa disaring "ID Fingerprint belum ada / ganda", form guru menolak ID milik guru aktif lain.',
       'Master Shift: tanda "Hadir dihitung dari absen pulang" — hari tanpa absen pulang dihitung alpa (JP & bonus hari itu tak dibayar). Guru terjadwal Laju 1 yang absen pulang di jam akhir Laju 1 otomatis hadir Laju 1.',
       'Tes Kenaikan PTPT: kunci glondongan untuk PJ kini benar-benar bekerja — PJ menunggu sampai semua blok glondongan selesai disimak.',

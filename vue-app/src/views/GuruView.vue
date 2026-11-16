@@ -478,6 +478,14 @@
                   </span>
                   <!-- v.1.1.9: label shift dari MASTER via shift_ids (dulu g.shift mentah —
                        kini field itu cuma cermin utk fp_sync, isinya bisa 'kosong'). -->
+                  <!-- v.1.5.0 (Kyai 16 Nov 2026): guru kelas santri Pondok Laju — warna sama
+                       dengan label Pondok Laju di Data Santri -->
+                  <span
+                    v-if="guruKelasLaju(g)"
+                    class="text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-2 py-0.5 rounded font-bold"
+                  >
+                    Pondok Laju
+                  </span>
                   <!-- v.1.5.0 (Kyai): Induk / Non-Induk, diisi manual di form guru -->
                   <span
                     v-if="labelStatusInduk(g.status_induk)"
@@ -657,6 +665,8 @@ import {
 import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@/utils/shiftMaster'
 import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
 import { normIdMesin, idGanda } from '@/utils/idMesin' // v.1.5.0: cek ID Fingerprint kosong/ganda
+import { penandaGuruKelasLaju } from '@/utils/pondokLajuSesi' // v.1.5.0: label guru Pondok Laju
+import { useCollectionsStore } from '@/stores/collections'
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
 import { queryDariDaftar } from '@/utils/navKembali'
 // v.1.4.2: penyaring ⇄ URL + alamat "Kelola" yang membawa penyaring.
@@ -790,6 +800,10 @@ const guruShown = computed(() => {
   }
   return list
 })
+// v.1.5.0 (Kyai 16 Nov 2026): label "Pondok Laju" = guru kelas santri Pondok Laju (dari data santri).
+const _koleksi = useCollectionsStore()
+_koleksi.ensure('santri')
+const guruKelasLaju = computed(() => penandaGuruKelasLaju(_koleksi.santri))
 // v.1.5.0: ganda dihitung dari SEMUA guru (termasuk nonaktif) — sama dengan webhook HiView.
 const petaIdGanda = computed(() => idGanda(guruRaw.value))
 function pemegangLainId(g) {

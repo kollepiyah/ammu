@@ -71,6 +71,17 @@ export function kelasPondokLaju(santriList) {
     .sort((a, b) => a.guru.localeCompare(b.guru, 'id'))
 }
 
+/**
+ * Kyai 16 Nov 2026: guru berlabel "Pondok Laju" = guru kelas santri Pondok Laju (bukan guru
+ * piket — jadwal berganti tiap bulan). Satu sumber dengan daftar kelas di menu Pondok Laju.
+ * @returns {(g: object) => boolean}
+ */
+export function penandaGuruKelasLaju(santriList) {
+  const nama = new Set(kelasPondokLaju(santriList).map((k) => _norm(k.guru)))
+  nama.delete('')
+  return (g) => nama.has(_norm(g?.nama))
+}
+
 // ── Mushaf Usmani Indonesia (604 halaman) ────────────────────────────────────
 // Kyai 15 Nov: juz 1 berakhir di hal. 21, juz 2 mulai hal. 22; tiap juz berikutnya 20 halaman,
 // juz 30 sampai hal. 604.

@@ -44,6 +44,9 @@ shift Laju 1/Laju 2 & Admin Pondok Laju; (3) Pengaturan Keuangan → Jenis Bisya
 "× sesi Pondok Laju", tarif per sesi; (4) di PC kantor (Ammu Desktop → Mesin Absensi): nyalakan
 "Buka saat Windows menyala" dan "Sinkron otomatis".
 
+Diuji (label guru Pondok Laju, 16 Nov): vitest `pondokLajuSesi` 20 tes (+1); di peramban (data
+rekaan, tulisan dicegat): label hanya pada guru kelas santri Laju yang aktif, termasuk nama bergelar
+"…, S.Pd."; guru dengan santri bukan Laju / santri Laju nonaktif tak berlabel.
 Diuji (ID mesin ganda, 16 Nov): vitest 133 berkas / 1.913 tes (baru `idMesin`: aturan pilih,
 cermin HiView, kelompokkanScan), build, sintaks edge (esbuild); di peramban (data rekaan, tulisan
 dicegat): saringan Data Guru "ganda" = Eko+Gita (ID 7) & Ahmad (ID 12, juga Dewi nonaktif),
@@ -261,6 +264,13 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
   pulangnya — tanpa ini guru gabungan jadi alpa di shift sekolah wajib-pulang. Sumbernya harus
   hadir SAH (shift wajib-pulang tanpa pulang tak memicu apa pun). Baris buatan manusia tetap tak
   pernah ditimpa.
+
+### Added — label "Pondok Laju" di kartu Data Guru (Kyai 16 Nov 2026)
+
+- Kyai: santri sudah berlabel Pondok Laju, guru belum. Pilihan Kyai: yang berlabel = **guru kelas**
+  santri Pondok Laju (pemegang Tadarus Pagi), bukan guru piket — jadwal piket berganti tiap bulan.
+  Otomatis dari data santri, satu sumber dengan daftar kelas di menu Pondok Laju
+  (`pondokLajuSesi.penandaGuruKelasLaju`); warna amber sama dengan label santri.
 
 ### Fixed — scan HiView ditolak diam-diam bila ID Fingerprint dipegang dua guru (Kyai 16 Nov 2026)
 
