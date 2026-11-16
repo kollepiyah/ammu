@@ -44,6 +44,12 @@ shift Laju 1/Laju 2 & Admin Pondok Laju; (3) Pengaturan Keuangan → Jenis Bisya
 "× sesi Pondok Laju", tarif per sesi; (4) di PC kantor (Ammu Desktop → Mesin Absensi): nyalakan
 "Buka saat Windows menyala" dan "Sinkron otomatis".
 
+Diuji (absen santri kosong & deploy, 16 Nov): build; fungsi `salinGanti` diuji langsung dari
+berkas skripnya (tujuan baru, tujuan berisi sisa deploy gagal, pulih sesudah 2 kali ENOENT,
+dan melempar pesan menuntun sesudah 5 kali); di peramban (data rekaan, tulisan dicegat) sebagai
+GURU: daftar kosong → pesan sebab + toast peringatan + 0 tulisan ke database, daftar berisi →
+tetap tersimpan seperti biasa. Kueri cek guru kelas sekolah diuji di PGlite (larik, teks tunggal,
+santri nonaktif, nama kosong).
 Diuji (label guru Pondok Laju, 16 Nov): vitest `pondokLajuSesi` 20 tes (+1); di peramban (data
 rekaan, tulisan dicegat): label hanya pada guru kelas santri Laju yang aktif, termasuk nama bergelar
 "…, S.Pd."; guru dengan santri bukan Laju / santri Laju nonaktif tak berlabel.
@@ -265,12 +271,39 @@ penyaring status, centang Pondok Laju di form (tersembunyi untuk Ma'had), dan mu
   hadir SAH (shift wajib-pulang tanpa pulang tak memicu apa pun). Baris buatan manusia tetap tak
   pernah ditimpa.
 
+### Fixed — Absensi Santri mengaku "tersimpan" padahal tak menulis apa pun (Kyai 16 Nov 2026)
+
+- Guru melapor "tidak bisa mengisi absen, tulisannya tersimpan tapi datanya 0". Sebabnya daftar
+  santrinya KOSONG: `simpanSemua` memutari `filteredSantri`, dan daftar kosong menghasilkan
+  `count = 0` lalu tetap memanggil `toast.success("Absensi 0 santri tersimpan")`. Kini daftar
+  kosong ditolak dengan peringatan dan **tak ada satu pun tulisan ke database**.
+- Pesan layar kosongnya pun menyesatkan: "Tidak ada santri di lembaga ." — guru tak pernah
+  memilih lembaga, jadi kalimat itu menyembunyikan sebab sesungguhnya. Untuk guru kini disebut
+  terang: belum ada santri yang mencantumkan namanya sebagai guru kelas, dan namanya harus sama
+  persis dengan nama di Data Guru.
+- AKAR MASALAHNYA DI DATA, bukan di kode: kepemilikan santri dicocokkan dari NAMA
+  (`guruScope.ownsSekolah` — `santri.guru_sekolah` vs nama guru di sesi; huruf besar-kecil, spasi
+  tepi & spasi ganda sudah diabaikan sejak v.1.4.8, tapi gelar yang beda tetap tak cocok).
+  Kyai menjalankan kueri cek untuk menemukan guru yang nol santri & nama yang tak cocok.
+
 ### Added — label "Pondok Laju" di kartu Data Guru (Kyai 16 Nov 2026)
 
 - Kyai: santri sudah berlabel Pondok Laju, guru belum. Pilihan Kyai: yang berlabel = **guru kelas**
   santri Pondok Laju (pemegang Tadarus Pagi), bukan guru piket — jadwal piket berganti tiap bulan.
   Otomatis dari data santri, satu sumber dengan daftar kelas di menu Pondok Laju
   (`pondokLajuSesi.penandaGuruKelasLaju`); warna amber sama dengan label santri.
+
+### Fixed — deploy mati di tengah karena berkas masih dipegang Windows (Kyai 16 Nov 2026)
+
+- `npm run firebase:deploy` gagal `ENOENT ... publicuessets` sesudah build 2m52s (~4x
+  biasanya), menyisakan 142 dari 186 berkas dan tanpa `index.html`; perintah yang sama berhasil
+  saat diulang. Penghapusan folder di Windows tidak selesai seketika — pemindai antivirus yang
+  masih memegang berkas baru membuat folder "pending delete", lalu `cpSync` berikutnya gagal di
+  dalamnya. Langkah salin-ganti (`public/vue` & `public/psb`) kini diulang sampai 5 kali dengan
+  jeda menaik (`salinGanti`), dan bila tetap gagal pesannya menuntun: tutup Ammu Desktop/Explorer
+  atau kecualikan folder project dari pemindaian antivirus.
+- Yang TIDAK berubah: skrip tetap `process.exit(1)` sebelum `firebase deploy`, jadi salinan
+  separuh jadi tak pernah ikut ter-deploy.
 
 ### Fixed — scan HiView ditolak diam-diam bila ID Fingerprint dipegang dua guru (Kyai 16 Nov 2026)
 

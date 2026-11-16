@@ -25,6 +25,42 @@ function run(cmd) {
   execSync(cmd, { stdio: 'inherit' })
 }
 
+/**
+ * Ganti isi folder tujuan dengan isi folder sumber, tahan gangguan Windows.
+ *
+ * Kyai 16 Nov 2026: deploy mati di tengah dengan
+ *   `ENOENT ... '\\?\D:\...\public\vue\assets'`
+ * padahal perintah yang SAMA berhasil saat diulang beberapa detik kemudian (186 berkas
+ * tersalin lengkap). Build-nya pun 2m52s, ~4x biasanya. Tandanya jelas: pemindai
+ * antivirus/pengindeks masih memegang berkas yang baru ditulis Vite, dan di Windows
+ * penghapusan folder TIDAK selesai seketika — folder "pending delete" membuat cpSync
+ * berikutnya gagal ENOENT di dalamnya. Logikanya benar, lingkungannya yang bermusuhan,
+ * jadi obatnya mengulang — bukan mengubah cara menyalin.
+ */
+function salinGanti(src, dst, nama) {
+  const PERCOBAAN = 5
+  const tidur = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+  for (let ke = 1; ke <= PERCOBAAN; ke++) {
+    try {
+      if (fs.existsSync(dst)) fs.rmSync(dst, { recursive: true, force: true })
+      fs.mkdirSync(dst, { recursive: true })
+      fs.cpSync(src, dst, { recursive: true })
+      if (ke > 1) log(`  ✓ ${nama} berhasil pada percobaan ke-${ke}`)
+      return
+    } catch (e) {
+      if (ke === PERCOBAAN) {
+        throw new Error(
+          `${nama}: gagal menyalin sesudah ${PERCOBAAN} percobaan (${e.code || ''} ${e.message}). ` +
+            'Tutup Ammu Desktop/Explorer yang membuka folder itu, atau kecualikan folder project ' +
+            'dari pemindaian antivirus, lalu ulangi.'
+        )
+      }
+      log(`  ⚠ ${nama} gagal (${e.code || e.message}) — ulang dalam ${ke} detik…`)
+      tidur(ke * 1000)
+    }
+  }
+}
+
 try {
   // v.100f: JANGAN bake debug token App Check ke bundle WEB (publik bisa diekstrak -> bypass).
   //   Web pakai reCAPTCHA asli; debug token HANYA utk build NATIVE (AAB/Electron).
@@ -40,8 +76,7 @@ try {
   if (!fs.existsSync(VUE_DIST)) {
     throw new Error('vue-app/dist tidak ada setelah build — deploy dibatalkan.')
   }
-  if (fs.existsSync(VUE_TARGET)) fs.rmSync(VUE_TARGET, { recursive: true, force: true })
-  fs.cpSync(VUE_DIST, VUE_TARGET, { recursive: true })
+  salinGanti(VUE_DIST, VUE_TARGET, 'vue-app/dist → public/vue')
   log('✓ Vue dist copied → public/vue/')
 
   // v.86.0526: copy PWA assets + splash ke public/vue/ supaya Firebase main serve manifest+icons+splash
@@ -82,8 +117,7 @@ try {
     const PSB_DIST = path.join(__dirname, '..', 'vue-app-psb', 'dist')
     const PSB_TARGET = path.join(PUBLIC, 'psb')
     if (fs.existsSync(PSB_DIST)) {
-      if (fs.existsSync(PSB_TARGET)) fs.rmSync(PSB_TARGET, { recursive: true, force: true })
-      fs.cpSync(PSB_DIST, PSB_TARGET, { recursive: true })
+      salinGanti(PSB_DIST, PSB_TARGET, 'vue-app-psb/dist → public/psb')
       log('✓ PSB dist copied → public/psb/')
     } else {
       log('⚠ vue-app-psb/dist tidak ada, skip PSB sync (deploy public/psb existing)')

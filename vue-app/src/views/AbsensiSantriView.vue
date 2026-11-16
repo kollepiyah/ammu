@@ -314,7 +314,15 @@
         class="bg-white dark:bg-slate-800 rounded-2xl p-10 border border-dashed border-slate-300 dark:border-slate-600 text-center"
       >
         <i class="fas fa-calendar-times text-slate-300 text-4xl mb-2"></i>
-        <p class="text-sm text-slate-500 italic">
+        <!-- v.1.5.0 (Kyai 16 Nov 2026): guru tak pernah memilih lembaga, jadi pesan lama
+             "Tidak ada santri di lembaga ." menyembunyikan sebab yang sebenarnya. -->
+        <p v-if="isGuru" class="text-sm text-slate-500 italic">
+          Belum ada santri yang mencantumkan nama Anda sebagai guru
+          {{ kategori === 'ngaji' ? 'ngaji' : 'kelas sekolah' }}.<br />
+          Minta admin memeriksa data santrinya — nama guru di data santri harus
+          <b>sama persis</b> dengan nama Anda di Data Guru (termasuk gelar dan spasinya).
+        </p>
+        <p v-else class="text-sm text-slate-500 italic">
           Tidak ada santri di lembaga {{ selectedLembaga }}.
         </p>
       </div>
@@ -695,6 +703,15 @@ watch([periode, () => absRaw.value.length, step], loadRows)
 
 async function simpanSemua() {
   if (saving.value) return
+  // Kyai 16 Nov 2026 (guru melapor "tersimpan tapi data 0"): daftar KOSONG dulu tetap
+  //   dilaporkan sukses — "Absensi 0 santri tersimpan" — sehingga guru mengira absennya
+  //   masuk padahal tak ada satu baris pun ditulis. Sebab kosongnya ada di data (nama guru
+  //   di `santri.guru_sekolah` tak sama persis dengan nama di Data Guru), bukan di sini;
+  //   yang wajib diperbaiki di sini: jangan mengaku berhasil saat tak menulis apa-apa.
+  if (!filteredSantri.value.length) {
+    toast.warning('Tidak ada santri di daftar ini — tak ada absen yang disimpan.')
+    return
+  }
   saving.value = true
   try {
     let count = 0
