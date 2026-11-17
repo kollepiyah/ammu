@@ -585,3 +585,73 @@ export function bacaImporJadwal({ rows = [], kelasList = [], guruList = [], bula
   }
   return { perubahan, galat }
 }
+
+/**
+ * kartuJurnalHari — kartu Jurnal apa saja yang muncul untuk SATU tanggal.
+ *
+ * Kyai 17 Nov 2026: tab Jurnal tak lagi memakai dropdown sesi & kelas; yang dipajang adalah
+ * jadwalnya sendiri. Aturan "siapa melihat kartu apa" ditaruh di sini, bukan di layar, supaya
+ * bisa diuji dan tak berpisah dari jalur lain yang membaca jadwal yang sama.
+ *
+ * Tiga sumber kartu, dalam urutan ini:
+ *  1. Tadarus Pagi — TANPA jadwal: yang mencatat guru kelasnya sendiri (Kyai 16 Nov), jadi
+ *     kartunya muncul kalau `guruNama` memang guru salah satu kelas Pondok Laju.
+ *  2. Baris jadwal Laju 1 / Laju 2. Guru biasa hanya miliknya; `semuaKelas` (admin penuh /
+ *     penyusun jadwal) melihat seluruh jadwal hari itu supaya jurnal terlupa bisa ditambal
+ *     tanpa meminjam akun guru.
+ *  3. `manual` — kartu tambahan yang dipilih sendiri admin/PJ untuk kelas di luar jadwal.
+ *
+ * @param {object} p
+ * @param {Array} p.jadwal baris `pondok_laju_jadwal` tanggal itu
+ * @param {Array} p.kelasList hasil `kelasPondokLaju(santri)`
+ * @param {string} p.guruId id sesi yang login
+ * @param {string} p.guruNama nama sesi yang login (pencocokan guru kelas lewat NAMA)
+ * @param {boolean} [p.semuaKelas=false]
+ * @param {Array} [p.manual=[]] `[{ sesi, kelasKey }]`
+ * @returns {Array<{key: string, sesi: string, kelas: object, piketGuruId: string, piketNama: string}>}
+ */
+export function kartuJurnalHari({
+  jadwal = [],
+  kelasList = [],
+  guruId = '',
+  guruNama = '',
+  semuaKelas = false,
+  manual = []
+} = {}) {
+  const peta = new Map((kelasList || []).map((k) => [k.key, k]))
+  const out = []
+  const sudah = new Set()
+  const tambah = (sesi, kelas, piketGuruId, piketNama) => {
+    if (!sesi || !kelas) return
+    const key = `${sesi}|${kelas.key}`
+    if (sudah.has(key)) return // satu kelas × sesi cukup satu kartu
+    sudah.add(key)
+    out.push({
+      key,
+      sesi,
+      kelas,
+      piketGuruId: String(piketGuruId || ''),
+      piketNama: String(piketNama || '')
+    })
+  }
+
+  // Tadarus Pagi tak punya piket — sengaja tanpa `piketGuruId`, supaya kartunya tak
+  // berlabel "piket <nama saya>" yang menyesatkan.
+  const kelasSaya = (kelasList || []).find((k) => k.key === _norm(guruNama))
+  if (kelasSaya) tambah('tadarus', kelasSaya, '', '')
+
+  for (const r of jadwal || []) {
+    if (!r || r.sesi === 'tadarus') continue
+    if (!semuaKelas && String(r.guru_id) !== String(guruId)) continue
+    tambah(r.sesi, peta.get(r.kelas_key), r.guru_id, r.guru_nama || r.data?.guru_nama || '')
+  }
+
+  for (const m of manual || []) tambah(m?.sesi, peta.get(m?.kelasKey), '', '')
+
+  const urut = { tadarus: 0, laju1: 1, laju2: 2 }
+  return out.sort(
+    (a, b) =>
+      (urut[a.sesi] ?? 9) - (urut[b.sesi] ?? 9) ||
+      String(a.kelas.guru || '').localeCompare(String(b.kelas.guru || ''), 'id')
+  )
+}

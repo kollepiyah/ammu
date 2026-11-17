@@ -36,8 +36,10 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="space-y-4">
         <DashboardGreeting />
-        <DashboardTugasSaya />
+        <!-- Kyai 17 Nov 2026: Tugas Saya DI BAWAH Jam Hijri — jam & tanggal yang dicari lebih
+             sering, jadi ia tetap di puncak; daftar tugas menyusul di bawahnya. -->
         <DashboardJamHijri />
+        <DashboardTugasSaya />
       </div>
       <DashboardKalender @see-all="goKalenderFull" />
     </div>

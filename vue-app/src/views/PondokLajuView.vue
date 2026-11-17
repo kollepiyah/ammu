@@ -40,171 +40,73 @@
       Belum ada santri Pondok Laju. Centang "Pondok Laju" di form santri terlebih dahulu.
     </div>
 
-    <!-- ===================== CAPAIAN ===================== -->
+    <!-- ============ JURNAL: satu kartu per sesi yang memang terjadwal ============ -->
     <template v-else-if="tab === 'capaian'">
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-2 md:grid-cols-4 gap-2"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm flex flex-wrap items-center gap-2"
       >
         <input
           v-model="cTanggal"
           type="date"
-          aria-label="Tanggal capaian"
+          aria-label="Tanggal jurnal"
           class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
         />
-        <select
-          v-model="cSesi"
-          aria-label="Sesi"
-          class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
-        >
-          <option v-for="s in SESI_LAJU" :key="s.key" :value="s.key">{{ s.label }}</option>
-        </select>
-        <select
-          v-if="perluPilihKelas"
-          v-model="cKelas"
-          aria-label="Kelas"
-          class="col-span-2 px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
-        >
-          <option value="">— Pilih kelas —</option>
-          <option v-for="k in kelasBolehCatat" :key="k.key" :value="k.key">
-            {{ k.guru || '— tanpa guru —' }} · Juz {{ k.juz || '-' }} ({{ k.santri.length }})
-            <template v-if="piketDari(k.key)"> · piket {{ piketDari(k.key) }}</template>
-          </option>
-        </select>
-        <p
-          v-else-if="cKelasObj"
-          class="col-span-2 px-3 py-2 text-sm rounded-xl bg-[var(--bg-muted)] text-[var(--text-secondary)] font-bold truncate"
-        >
-          <i class="fas fa-people-group mr-1 text-teal-600"></i
-          >{{ cKelasObj.guru || 'Kelas Anda' }} · {{ cKelasObj.santri.length }} santri
+        <p class="text-[11px] text-[var(--text-secondary)] grow min-w-[8rem]">
+          {{ kartuJurnal.length }} kartu, mengikuti jadwal piket tanggal ini
         </p>
-        <p
-          v-if="!kelasBolehCatat.length"
-          class="col-span-2 md:col-span-4 text-[11px] text-amber-700 dark:text-amber-300"
-        >
-          <i class="fas fa-circle-info mr-1"></i>
-          {{
-            cSesi === 'tadarus'
-              ? 'Tadarus Pagi dicatat guru kelas masing-masing — Anda tidak tercatat sebagai guru kelas Pondok Laju.'
-              : `Anda tidak terjadwal piket ${labelSesi(cSesi)} pada tanggal ini.`
-          }}
-        </p>
+        <!-- Admin/PJ: menambal kelas lain. Guru biasa tak melihat pemilih apa pun. -->
+        <template v-if="bisaSemuaKelas">
+          <select
+            v-model="tSesi"
+            aria-label="Sesi kartu tambahan"
+            class="px-2 py-2 text-xs rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          >
+            <option v-for="s in SESI_LAJU" :key="s.key" :value="s.key">{{ s.label }}</option>
+          </select>
+          <select
+            v-model="tKelas"
+            aria-label="Kelas kartu tambahan"
+            class="px-2 py-2 text-xs rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] max-w-[12rem]"
+          >
+            <option value="">— kelas lain —</option>
+            <option v-for="k in kelasList" :key="k.key" :value="k.key">
+              {{ k.guru || '— tanpa guru —' }} ({{ k.santri.length }})
+            </option>
+          </select>
+          <button
+            class="h-9 px-3 rounded-xl bg-[var(--bg-muted)] hover:bg-[var(--border-subtle)] text-xs font-bold cursor-pointer"
+            @click="tambahKartu"
+          >
+            <i class="fas fa-plus mr-1"></i>Tambah kartu
+          </button>
+        </template>
       </div>
 
       <div
-        v-if="cKelasObj"
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-3"
+        v-if="!kartuJurnal.length"
+        class="bg-[var(--bg-card)] rounded-2xl p-6 text-center text-sm text-[var(--text-secondary)] border border-[var(--border-subtle)]"
       >
-        <div v-if="cMemuat" class="text-center text-sm text-[var(--text-secondary)] py-6">
-          <i class="fas fa-spinner fa-spin mr-1"></i>Memuat capaian…
-        </div>
-        <template v-else>
-          <!-- isi sekelas: satu kelas membaca bersama -->
-          <div
-            class="rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50/60 dark:bg-teal-900/20 p-3 space-y-2"
-          >
-            <!-- Kyai 17 Nov 2026: satu kelas membaca BERSAMA, jadi isiannya satu saja dan
-                 besar — bukan satu baris kecil per santri. Nama santri sengaja tak dipajang
-                 di sini: yang dicatat sama untuk semuanya. -->
-            <p class="text-xs font-black text-teal-800 dark:text-teal-200 uppercase tracking-wider">
-              <i class="fas fa-book-open-reader mr-1"></i>Pencapaian
-            </p>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <label class="block">
-                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1"
-                  >Halaman</span
-                >
-                <input
-                  v-model="kls.halaman"
-                  type="text"
-                  inputmode="numeric"
-                  aria-label="Halaman sekelas"
-                  class="w-full text-center rounded-xl border-2 border-teal-300 p-2.5 text-base font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                  @input="kls.juz = juzDariHalaman(Number(kls.halaman)) || kls.juz"
-                />
-              </label>
-              <label class="block">
-                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1">Juz</span>
-                <input
-                  v-model="kls.juz"
-                  type="text"
-                  inputmode="numeric"
-                  aria-label="Juz sekelas"
-                  class="w-full text-center rounded-xl border-2 border-teal-300 p-2.5 text-base font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                />
-              </label>
-              <label class="block col-span-2">
-                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1">Surah</span>
-                <select
-                  v-model="kls.surah"
-                  aria-label="Surah sekelas"
-                  class="w-full rounded-xl border-2 border-teal-300 p-2.5 text-sm font-bold bg-[var(--bg-card)] text-[var(--text-primary)]"
-                >
-                  <option value="">—</option>
-                  <option v-for="(s, i) in SURAH" :key="i" :value="String(i + 1)">
-                    {{ i + 1 }}. {{ s[0] }}
-                  </option>
-                </select>
-              </label>
-              <label class="block">
-                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1">Ayat</span>
-                <input
-                  v-model="kls.ayat"
-                  type="text"
-                  inputmode="numeric"
-                  :placeholder="kls.surah ? `1–${jumlahAyat(kls.surah)}` : ''"
-                  aria-label="Ayat sekelas"
-                  class="w-full text-center rounded-xl border-2 border-teal-300 p-2.5 text-base font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                />
-              </label>
-              <label class="block col-span-2 md:col-span-3">
-                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1"
-                  >Catatan (opsional)</span
-                >
-                <input
-                  v-model="kls.catatan"
-                  type="text"
-                  aria-label="Catatan sekelas"
-                  class="w-full rounded-xl border-2 border-teal-300 p-2.5 text-sm bg-[var(--bg-card)] text-[var(--text-primary)]"
-                />
-              </label>
-            </div>
-            <button
-              class="w-full h-11 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-black cursor-pointer"
-              @click="terapkanSekelas"
-            >
-              <i class="fas fa-arrow-down mr-1"></i>Terapkan ke {{ cBaris.length }} santri
-            </button>
-            <p v-if="cTerisi" class="text-[11px] font-bold text-teal-800 dark:text-teal-200">
-              <i class="fas fa-circle-check mr-1"></i>{{ cTerisi }} santri siap disimpan
-            </p>
-          </div>
-
-          <!-- Metodenya: satu kelas membaca BERSAMA, jatahnya jatah KELAS bukan per anak
-               (Kyai 17 Nov 2026). Karena itu tak ada daftar per santri di sini sama sekali —
-               isian di atas berlaku untuk semuanya. Baris per santri tetap dibentuk di skrip
-               (cBaris) sebab itulah yang disimpan, cuma tak perlu dipandangi. -->
-          <p v-if="adaGalat" class="text-[11px] font-bold text-rose-600">
-            <i class="fas fa-triangle-exclamation mr-1"></i>{{ galatSekelas.join(' · ') }}
-          </p>
-
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="text-[11px] text-[var(--text-secondary)]">
-              {{ labelSesi(cSesi) }} · {{ fmtTgl(cTanggal) }} · {{ cTerisi }} dari
-              {{ cBaris.length }} santri terisi
-            </p>
-            <button
-              :disabled="cMenyimpan || !cTerisi || adaGalat"
-              class="h-10 px-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black cursor-pointer"
-              @click="simpanCapaian"
-            >
-              <i :class="['fas', cMenyimpan ? 'fa-spinner fa-spin' : 'fa-save']"></i>
-              {{ cMenyimpan ? 'Menyimpan…' : 'SIMPAN' }}
-            </button>
-          </div>
-        </template>
+        <i class="fas fa-calendar-xmark text-2xl block mb-2 text-[var(--text-tertiary)]"></i>
+        Tidak ada jadwal piket pada tanggal ini.
+        <span v-if="bisaSemuaKelas" class="block mt-1 text-[11px]">
+          Pilih sesi &amp; kelas di atas lalu "Tambah kartu" untuk mengisikan jurnal kelas mana pun.
+        </span>
+        <span v-else class="block mt-1 text-[11px]">
+          Kartu muncul sendiri pada tanggal Anda piket. Tadarus Pagi muncul kalau Anda guru kelas
+          Pondok Laju.
+        </span>
       </div>
-    </template>
 
+      <JurnalKartu
+        v-for="k in kartuJurnal"
+        :key="k.key"
+        :tanggal="cTanggal"
+        :sesi="k.sesi"
+        :kelas="k.kelas"
+        :piket-nama="k.piketNama"
+        :pencatat="pencatat"
+      />
+    </template>
     <!-- ===================== JADWAL ===================== -->
     <template v-else-if="tab === 'jadwal'">
       <div
@@ -446,19 +348,19 @@
       </div>
     </template>
 
-    <!-- ===================== RIWAYAT ===================== -->
+    <!-- ============ RIWAYAT & REKAP SEBULAN ============ -->
     <template v-else-if="tab === 'riwayat'">
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-1 md:grid-cols-4 gap-2"
       >
         <select
           v-model="rKelas"
           aria-label="Kelas riwayat"
           class="md:col-span-2 px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
         >
-          <option value="">— Pilih kelas —</option>
+          <option value="">&mdash; Semua kelas &mdash;</option>
           <option v-for="k in kelasList" :key="k.key" :value="k.key">
-            {{ k.guru || '— tanpa guru —' }} · Juz {{ k.juz || '-' }} ({{ k.santri.length }})
+            {{ k.guru || 'tanpa guru' }} &middot; Juz {{ k.juz || '-' }} ({{ k.santri.length }})
           </option>
         </select>
         <input
@@ -467,56 +369,145 @@
           aria-label="Bulan riwayat"
           class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
         />
-      </div>
-      <div
-        v-if="rKelas"
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm"
-      >
-        <div v-if="rMemuat" class="text-center text-sm text-[var(--text-secondary)] py-6">
-          <i class="fas fa-spinner fa-spin mr-1"></i>Memuat riwayat…
-        </div>
-        <p
-          v-else-if="!riwayatSesi.length"
-          class="text-xs text-[var(--text-tertiary)] italic text-center py-6"
+        <button
+          :disabled="rCetak || rMemuat"
+          class="h-10 px-3 inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-black cursor-pointer"
+          @click="eksporRekapPdf"
         >
-          Belum ada capaian tercatat di bulan ini.
-        </p>
-        <ol v-else class="space-y-1">
-          <li v-for="g in riwayatSesi" :key="g.key">
-            <button
-              class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[var(--border-subtle)] hover:bg-teal-50 dark:hover:bg-teal-900/20 text-left text-xs cursor-pointer"
-              :aria-expanded="rBuka === g.key"
-              @click="rBuka = rBuka === g.key ? '' : g.key"
-            >
-              <span class="w-24 font-bold text-[var(--text-primary)] flex-shrink-0">{{
-                fmtTgl(g.tanggal)
-              }}</span>
-              <span class="w-20 text-teal-700 font-bold flex-shrink-0">{{
-                labelSesi(g.sesi)
-              }}</span>
-              <span class="flex-1 min-w-0 truncate text-[var(--text-secondary)]">{{
-                g.posisi
-              }}</span>
-              <span class="flex-shrink-0 font-black text-[var(--text-primary)]"
-                >{{ g.rows.length }}/{{ rKelasObj?.santri.length || 0 }}</span
-              >
-            </button>
-            <ul v-if="rBuka === g.key" class="mt-1 pl-8 space-y-0.5">
-              <li
-                v-for="x in g.rows"
-                :key="x.id"
-                class="text-[11px] text-[var(--text-secondary)] flex justify-between gap-2"
-              >
-                <span class="truncate"
-                  ><b class="text-[var(--text-primary)]">{{ x.santri_nama || x.santri_id }}</b> ·
-                  {{ teksPosisi(x) }}<template v-if="x.catatan"> · {{ x.catatan }}</template></span
-                >
-                <span class="flex-shrink-0">{{ x.guru_nama || '' }}</span>
-              </li>
-            </ul>
-          </li>
-        </ol>
+          <i :class="['fas', rCetak ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
+          {{ rCetak ? 'Menyiapkan...' : 'EKSPOR PDF' }}
+        </button>
       </div>
+
+      <div v-if="rMemuat" class="text-center text-sm text-[var(--text-secondary)] py-6">
+        <i class="fas fa-spinner fa-spin mr-1"></i>Memuat rekap...
+      </div>
+
+      <template v-else>
+        <!-- Ringkasan sebulan: yang dicari sekali lihat. -->
+        <div
+          class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-2 md:grid-cols-5 gap-2 text-center"
+        >
+          <div
+            v-for="r in ringkasanRekap"
+            :key="r.label"
+            class="rounded-xl bg-[var(--bg-muted)] p-2"
+          >
+            <p class="text-lg font-black text-[var(--text-primary)]">{{ r.nilai }}</p>
+            <p class="text-[10px] font-bold uppercase text-[var(--text-secondary)]">
+              {{ r.label }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Rekap per kelas -->
+        <div
+          class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm overflow-x-auto"
+        >
+          <p class="text-xs font-black uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+            <i class="fas fa-layer-group mr-1"></i>Rekap per kelas &middot; {{ rBulan }}
+          </p>
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="text-[var(--text-secondary)] text-left">
+                <th class="py-1 pr-2">Kelas (guru)</th>
+                <th class="py-1 pr-2 text-center">Santri</th>
+                <th class="py-1 pr-2 text-center">Sesi</th>
+                <th class="py-1 pr-2 text-center">Hari</th>
+                <th class="py-1 pr-2">Posisi awal</th>
+                <th class="py-1 pr-2">Posisi akhir</th>
+                <th class="py-1 text-center">Maju</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="k in rekapBulan.kelas"
+                :key="k.key"
+                class="border-t border-[var(--border-subtle)]"
+                :class="!k.nSesi ? 'opacity-60' : ''"
+              >
+                <td class="py-1.5 pr-2 font-bold text-[var(--text-primary)]">
+                  {{ k.guru || k.key || '-' }}
+                  <span class="font-normal text-[var(--text-secondary)]"
+                    >&middot; Juz {{ k.juz || '-' }}</span
+                  >
+                </td>
+                <td class="py-1.5 pr-2 text-center">{{ k.nSantriKelas }}</td>
+                <td class="py-1.5 pr-2 text-center font-black">{{ k.nSesi }}</td>
+                <td class="py-1.5 pr-2 text-center">{{ k.nHari }}</td>
+                <td class="py-1.5 pr-2 text-[var(--text-secondary)]">{{ k.awal || '-' }}</td>
+                <td class="py-1.5 pr-2 text-[var(--text-secondary)]">{{ k.akhir || '-' }}</td>
+                <td class="py-1.5 text-center">
+                  <span
+                    v-if="k.majuHalaman"
+                    :class="k.majuHalaman > 0 ? 'text-emerald-600' : 'text-amber-600'"
+                  >
+                    {{ k.majuHalaman > 0 ? '+' : '' }}{{ k.majuHalaman }} hal
+                  </span>
+                  <span v-else class="text-[var(--text-tertiary)]">-</span>
+                </td>
+              </tr>
+              <tr v-if="!rekapBulan.kelas.length">
+                <td colspan="7" class="py-6 text-center text-[var(--text-tertiary)] italic">
+                  Belum ada kelas Pondok Laju.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Rincian per sesi, bisa dibuka untuk melihat santrinya -->
+        <div
+          class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm"
+        >
+          <p class="text-xs font-black uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+            <i class="fas fa-list-check mr-1"></i>Rincian per sesi
+          </p>
+          <p
+            v-if="!rekapBulan.sesi.length"
+            class="text-xs text-[var(--text-tertiary)] italic text-center py-6"
+          >
+            Belum ada jurnal tercatat di bulan ini.
+          </p>
+          <ol v-else class="space-y-1">
+            <li v-for="g in rekapBulan.sesi" :key="g.key">
+              <button
+                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[var(--border-subtle)] hover:bg-teal-50 dark:hover:bg-teal-900/20 text-left text-xs cursor-pointer"
+                :aria-expanded="rBuka === g.key"
+                @click="rBuka = rBuka === g.key ? '' : g.key"
+              >
+                <span class="w-24 font-bold text-[var(--text-primary)] flex-shrink-0">{{
+                  fmtTgl(g.tanggal)
+                }}</span>
+                <span class="w-20 text-teal-700 font-bold flex-shrink-0">{{ g.sesiLabel }}</span>
+                <span class="w-32 truncate flex-shrink-0 text-[var(--text-secondary)]">{{
+                  namaKelasPeta[g.kelasKey] || g.kelasKey
+                }}</span>
+                <span class="flex-1 min-w-0 truncate text-[var(--text-secondary)]">{{
+                  g.posisi
+                }}</span>
+                <span class="flex-shrink-0 font-black text-[var(--text-primary)]">{{
+                  g.nSantri
+                }}</span>
+              </button>
+              <ul v-if="rBuka === g.key" class="mt-1 pl-8 space-y-0.5">
+                <li
+                  v-for="x in barisSesi(g)"
+                  :key="x.id"
+                  class="text-[11px] text-[var(--text-secondary)] flex justify-between gap-2"
+                >
+                  <span class="truncate"
+                    ><b class="text-[var(--text-primary)]">{{ x.santri_nama || x.santri_id }}</b>
+                    &middot; {{ teksPosisi(x)
+                    }}<template v-if="x.catatan"> &middot; {{ x.catatan }}</template></span
+                  >
+                  <span class="flex-shrink-0">{{ x.guru_nama || '' }}</span>
+                </li>
+              </ul>
+            </li>
+          </ol>
+        </div>
+      </template>
     </template>
 
     <!-- ===================== BISYAROH ===================== -->
@@ -751,20 +742,16 @@ import { petaShiftSesiLaju } from '@/utils/shiftLaju'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { jenisBisyarohList } from '@/utils/bisyarohScope'
 import { rentangPeriodeBisyaroh, penyaringPeriodeBisyaroh } from '@/utils/periodeBisyaroh'
+import { rekapJurnalBulan } from '@/utils/jurnalRekap'
+import JurnalKartu from '@/components/pondoklaju/JurnalKartu.vue'
 import {
   SESI_LAJU,
   SESI_PIKET,
   labelSesi,
   kelasPondokLaju,
-  SURAH,
-  jumlahAyat,
-  juzDariHalaman,
-  validasiPosisi,
+  kartuJurnalHari,
   teksPosisi,
-  posisiSebelum,
-  urutTerbaru,
   idJadwal,
-  idCapaian,
   tanggalBulan,
   rencanaBergilir,
   bentrokJadwal,
@@ -840,15 +827,25 @@ function labelShift(id) {
   return shiftLabelOf(settingsStore.settings || {}, id)
 }
 
-// ─────────────────────────── CAPAIAN ───────────────────────────
+// ─────────────────── JURNAL — kartu mengikuti jadwal ───────────────────
+// Kyai 17 Nov 2026: "kalau seumpama tidak perlu memilih dropdown gimana, jadi langsung isian
+//   kartu sendiri (Tadarrus Pagi, Laju 1, Laju 2), kartunya muncul sesuai daftar jadwal."
+//   Dua pemilih (sesi + kelas) dihapus; yang dipajang jadwalnya sendiri, satu kartu per sesi ×
+//   kelas, isian & simpan ada di components/pondoklaju/JurnalKartu.vue. Jadi guru yang piket dua
+//   sesi sehari mengisi keduanya di satu layar, dan sesi yang bukan miliknya tak pernah tampil —
+//   itulah pesan "Anda tidak terjadwal piket" yang dulu terasa seperti kerusakan.
 const cTanggal = ref(todayJakarta())
-const cSesi = ref('tadarus')
-const cKelas = ref('')
 const cJadwalHari = ref([]) // jadwal piket tanggal terpilih
-const cMemuat = ref(false)
-const cMenyimpan = ref(false)
-const cBaris = ref([])
-const kls = reactive({ juz: '', halaman: '', surah: '', ayat: '', catatan: '' })
+const kartuManual = ref([]) // {sesi, kelasKey} — tambahan admin/PJ untuk menambal kelas lain
+const tSesi = ref('laju1')
+const tKelas = ref('')
+
+// Yang MENCATAT, bukan yang piket: admin yang menambal jurnal tetap tercatat sebagai pencatat.
+const pencatat = computed(() => ({ id: myId.value, nama: myNama.value }))
+// Perilaku lama `kelasBolehCatat` dipertahankan: admin penuh & penyusun jadwal (PJ / Admin
+// Pondok Laju) boleh mengisikan kelas mana pun — sekarang lewat "Tambah kartu", bukan dropdown
+// yang selalu terpampang. RLS pondok_laju_capaian memang cukup auth_can_akademik.
+const bisaSemuaKelas = computed(() => adminPenuh.value || bisaSusun.value)
 
 async function muatJadwalHari() {
   try {
@@ -857,149 +854,39 @@ async function muatJadwalHari() {
     cJadwalHari.value = []
   }
 }
-watch(cTanggal, muatJadwalHari, { immediate: true })
-
-function piketDari(kelasKey) {
-  if (cSesi.value === 'tadarus') return ''
-  const r = cJadwalHari.value.find((x) => x.sesi === cSesi.value && x.kelas_key === kelasKey)
-  return r ? namaGuru(r.guru_id) || r.guru_nama : ''
-}
-// Siapa mencatat kelas mana: Tadarus Pagi = guru kelasnya; Laju = guru piket terjadwal.
-//   Penyusun jadwal & admin boleh semua (koreksi). RLS cukup auth_can_akademik.
-const kelasBolehCatat = computed(() => {
-  if (adminPenuh.value || bisaSusun.value) return kelasList.value
-  if (cSesi.value === 'tadarus') return kelasList.value.filter((k) => k.key === _norm(myNama.value))
-  const ids = new Set(
-    cJadwalHari.value
-      .filter((r) => r.sesi === cSesi.value && String(r.guru_id) === myId.value)
-      .map((r) => r.kelas_key)
-  )
-  return kelasList.value.filter((k) => ids.has(k.key))
-})
-watch(kelasBolehCatat, (list) => {
-  if (cKelas.value && !list.some((k) => k.key === cKelas.value)) cKelas.value = ''
-  if (!cKelas.value && list.length === 1) cKelas.value = list[0].key
-})
-const cKelasObj = computed(() => kelasList.value.find((k) => k.key === cKelas.value) || null)
-
-// Kyai 17 Nov 2026: "tidak perlu pilih kelas". Kalau guru ini cuma pegang SATU kelas pada
-//   sesi & tanggal itu — keadaan yang paling sering — kelasnya dipilihkan sendiri dan
-//   pemilihnya disembunyikan. Pemilih hanya muncul kalau memang ada lebih dari satu.
-const perluPilihKelas = computed(() => kelasBolehCatat.value.length > 1)
 watch(
-  kelasBolehCatat,
-  (list) => {
-    if (list.length === 1) cKelas.value = list[0].key
-    else if (!list.some((k) => k.key === cKelas.value)) cKelas.value = ''
+  cTanggal,
+  () => {
+    kartuManual.value = [] // kartu tambahan milik tanggal yang membuatnya
+    muatJadwalHari()
   },
   { immediate: true }
 )
 
-async function muatCapaian() {
-  const k = cKelasObj.value
-  cBaris.value = []
-  if (!k) return
-  cMemuat.value = true
-  try {
-    const ids = k.santri.map((s) => String(s.id))
-    // Terbaru dulu, dibatasi: cukup untuk menemukan posisi terakhir tiap santri sekelas.
-    const rows = await queryColl(
-      'pondok_laju_capaian',
-      [
-        ['santri_id', 'in', ids],
-        ['tanggal', '<=', cTanggal.value]
-      ],
-      [['tanggal', 'desc']],
-      ids.length * 8
-    )
-    cBaris.value = k.santri.map((s) => {
-      const sid = String(s.id)
-      const ini = rows.find(
-        (r) => String(r.santri_id) === sid && r.tanggal === cTanggal.value && r.sesi === cSesi.value
-      )
-      const lalu = posisiSebelum(rows, sid, cTanggal.value, cSesi.value)
-      const src = ini || lalu || {}
-      return {
-        santri_id: sid,
-        nama: s.nama || '',
-        juz: String(src.juz ?? ''),
-        halaman: String(src.halaman ?? ''),
-        surah: src.surah ? String(src.surah) : '',
-        ayat: String(src.ayat ?? ''),
-        catatan: ini?.catatan || '',
-        sudah: !!ini,
-        sebelumnya: lalu
-          ? `${teksPosisi(lalu)} (${labelSesi(lalu.sesi)} ${fmtTgl(lalu.tanggal)})`
-          : ''
-      }
-    })
-  } catch (e) {
-    toast.error('Gagal memuat capaian: ' + (e?.message || e))
-  } finally {
-    cMemuat.value = false
-  }
-}
-watch([cKelas, cTanggal, cSesi], muatCapaian)
+// Aturan "siapa melihat kartu apa" ada di utils/pondokLajuSesi.kartuJurnalHari (pure + diuji);
+// di sini cuma nama guru piketnya yang disegarkan dari data guru hidup, sebab nama tersimpan di
+// baris jadwal bisa sudah berubah (guru berganti gelar — lihat kepemilikan santri via nama).
+const kartuJurnal = computed(() =>
+  kartuJurnalHari({
+    jadwal: cJadwalHari.value,
+    kelasList: kelasList.value,
+    guruId: myId.value,
+    guruNama: myNama.value,
+    semuaKelas: bisaSemuaKelas.value,
+    manual: kartuManual.value
+  }).map((k) => ({
+    ...k,
+    piketNama: k.piketGuruId ? namaGuru(k.piketGuruId) || k.piketNama : ''
+  }))
+)
 
-function terapkanSekelas() {
-  for (const r of cBaris.value) {
-    if (kls.halaman !== '') r.halaman = String(kls.halaman)
-    if (kls.juz !== '') r.juz = String(kls.juz)
-    if (kls.surah !== '') r.surah = String(kls.surah)
-    if (kls.ayat !== '') r.ayat = String(kls.ayat)
-    if (kls.catatan !== '') r.catatan = String(kls.catatan)
+function tambahKartu() {
+  if (!tKelas.value) {
+    toast.warning('Pilih kelas lain dulu.')
+    return
   }
-}
-const _terisi = (r) => String(r.juz).trim() !== '' || String(r.halaman).trim() !== ''
-function galatBaris(r) {
-  return _terisi(r) ? validasiPosisi(r) : []
-}
-const cTerisi = computed(() => cBaris.value.filter(_terisi).length)
-const adaGalat = computed(() => cBaris.value.some((r) => galatBaris(r).length))
-// Satu kelas = satu isian, jadi galatnya pun sama untuk semua. Ditampilkan SEKALI, bukan
-// per santri — tak ada lagi daftar per santri yang bisa menampungnya.
-const galatSekelas = computed(() => {
-  const set = new Set()
-  for (const r of cBaris.value) for (const g of galatBaris(r)) set.add(g)
-  return [...set]
-})
-
-async function simpanCapaian() {
-  if (cMenyimpan.value || adaGalat.value) return
-  const k = cKelasObj.value
-  if (!k) return
-  cMenyimpan.value = true
-  let ok = 0
-  try {
-    for (const r of cBaris.value) {
-      if (!_terisi(r)) continue
-      const id = idCapaian(cTanggal.value, cSesi.value, r.santri_id)
-      await mergeOne('pondok_laju_capaian', id, {
-        id,
-        tanggal: cTanggal.value,
-        sesi: cSesi.value,
-        santri_id: r.santri_id,
-        guru_id: myId.value,
-        periode: cTanggal.value.slice(0, 7),
-        juz: Number(r.juz),
-        halaman: Number(r.halaman),
-        surah: r.surah ? Number(r.surah) : '',
-        ayat: r.ayat ? Number(r.ayat) : '',
-        catatan: String(r.catatan || '').trim(),
-        kelas_key: k.key,
-        santri_nama: r.nama,
-        guru_nama: myNama.value,
-        dicatat_at: new Date().toISOString()
-      })
-      ok++
-    }
-    toast.success(`Capaian ${labelSesi(cSesi.value)} tersimpan untuk ${ok} santri.`)
-    await muatCapaian()
-  } catch (e) {
-    toast.error(`Gagal menyimpan (${ok} sudah tersimpan): ` + (e?.message || e))
-  } finally {
-    cMenyimpan.value = false
-  }
+  kartuManual.value.push({ sesi: tSesi.value, kelasKey: tKelas.value })
+  tKelas.value = ''
 }
 
 // ─────────────────────────── JADWAL ───────────────────────────
@@ -1135,48 +1022,97 @@ async function simpanJadwal() {
   }
 }
 
-// ─────────────────────────── RIWAYAT ───────────────────────────
+// --- RIWAYAT & REKAP SEBULAN ---
+// Kyai 17 Nov 2026: "saya ingin jurnal itu ada rekapannya selama satu bulan, bisa ekspor pdf."
+//   Angkanya disusun utils/jurnalRekap (pure + diuji) lalu dipakai BERSAMA layar & PDF, jadi
+//   kertas tak mungkin berselisih dengan layar. Kelas boleh dikosongkan = seluruh kelas.
 const rKelas = ref('')
 const rBulan = ref(todayJakarta().slice(0, 7))
 const rRows = ref([])
 const rMemuat = ref(false)
 const rBuka = ref('')
+const rCetak = ref(false)
 const rKelasObj = computed(() => kelasList.value.find((k) => k.key === rKelas.value) || null)
+
 async function muatRiwayat() {
   rRows.value = []
+  rBuka.value = ''
   const k = rKelasObj.value
-  if (!k) return
   rMemuat.value = true
   try {
-    rRows.value = await queryColl('pondok_laju_capaian', [
-      ['santri_id', 'in', k.santri.map((s) => String(s.id))],
-      ['periode', '==', rBulan.value]
-    ])
+    // Satu kelas -> saring di server lewat santri_id. Seluruh kelas -> cukup `periode`: baris
+    // sebulan tak banyak, sedangkan daftar id seluruh santri Pondok Laju justru kueri berat.
+    rRows.value = k
+      ? await queryColl('pondok_laju_capaian', [
+          ['santri_id', 'in', k.santri.map((s) => String(s.id))],
+          ['periode', '==', rBulan.value]
+        ])
+      : await queryColl('pondok_laju_capaian', [['periode', '==', rBulan.value]])
   } catch (e) {
     toast.error('Gagal memuat riwayat: ' + (e?.message || e))
   } finally {
     rMemuat.value = false
   }
 }
-watch([rKelas, rBulan], muatRiwayat)
-const riwayatSesi = computed(() => {
-  const peta = new Map()
-  for (const r of urutTerbaru(rRows.value)) {
-    const key = `${r.tanggal}|${r.sesi}`
-    if (!peta.has(key)) peta.set(key, { key, tanggal: r.tanggal, sesi: r.sesi, rows: [] })
-    peta.get(key).rows.push(r)
-  }
-  return [...peta.values()].map((g) => {
-    const teks = [...new Set(g.rows.map((x) => teksPosisi(x)))]
-    return {
-      ...g,
-      rows: g.rows.sort((a, b) =>
-        String(a.santri_nama || '').localeCompare(String(b.santri_nama || ''), 'id')
-      ),
-      posisi: teks.length === 1 ? teks[0] : 'beragam'
-    }
+watch([rKelas, rBulan], muatRiwayat, { immediate: true })
+
+const rekapBulan = computed(() =>
+  rekapJurnalBulan(rRows.value, {
+    bulan: rBulan.value,
+    // Kelas terpilih saja; tanpa pilihan, seluruh kelas - termasuk yang NOL catatan, sebab
+    // kelas yang tak pernah mengisi itulah yang paling perlu terlihat.
+    kelasList: rKelasObj.value ? [rKelasObj.value] : kelasList.value
   })
+)
+const ringkasanRekap = computed(() => {
+  const t = rekapBulan.value.total || {}
+  return [
+    { label: 'sesi tercatat', nilai: t.nSesi || 0 },
+    { label: 'hari', nilai: t.nHari || 0 },
+    { label: 'kelas berjalan', nilai: t.nKelasAktif || 0 },
+    { label: 'kelas kosong', nilai: t.nKelasKosong || 0 },
+    { label: 'santri', nilai: t.nSantri || 0 }
+  ]
 })
+const namaKelasPeta = computed(() => {
+  const o = {}
+  for (const k of kelasList.value) o[k.key] = k.guru || k.key
+  return o
+})
+/** Baris mentah satu sesi - hanya dibaca saat barisnya dibuka. */
+function barisSesi(g) {
+  return rRows.value
+    .filter(
+      (r) =>
+        r.tanggal === g.tanggal &&
+        r.sesi === g.sesi &&
+        String(r.kelas_key || '') === String(g.kelasKey || '')
+    )
+    .sort((a, b) => String(a.santri_nama || '').localeCompare(String(b.santri_nama || ''), 'id'))
+}
+
+async function eksporRekapPdf() {
+  if (rCetak.value) return
+  if (!rekapBulan.value.total.nSesi) {
+    toast.warning('Belum ada jurnal tercatat di bulan ini.')
+    return
+  }
+  rCetak.value = true
+  try {
+    // Dimuat saat dipakai: jsPDF berat, dan tab ini lebih sering dibaca daripada dicetak.
+    const { cetakRekapJurnalPdf } = await import('@/utils/jurnalPdf')
+    await cetakRekapJurnalPdf(rekapBulan.value, {
+      settings: settingsStore.settings || {},
+      lembagaList: lembagaList.value,
+      pencetak: myNama.value
+    })
+    toast.success('PDF rekap jurnal diunduh.')
+  } catch (e) {
+    toast.error('Gagal membuat PDF: ' + (e?.message || e))
+  } finally {
+    rCetak.value = false
+  }
+}
 
 // ─────────────────────────── BISYAROH ───────────────────────────
 const bPeriode = ref(todayJakarta().slice(0, 7))

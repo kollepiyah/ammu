@@ -754,6 +754,78 @@ Diuji: vitest `skripBuildAndroid` 3 tes; lalu `npm run build:apk` UTUH sampai se
 `BUILD SUCCESSFUL`, `app-release.apk` **5,80 MB**, versionCode 150 / `v.1.5.0`, ber-signature
 `signingConfigs.release`. **Belum dipasang & dicoba di HP.**
 
+### Changed — Jurnal Pondok Laju: dropdown dibuang, kartunya mengikuti jadwal (Kyai, 17 Nov 2026)
+
+Kyai menjadwalkan seorang guru di Laju 2, lalu membuka menu Pondok Laju dan melihat "Anda tidak
+terjadwal piket". Pesan itu sebenarnya BENAR — jadwalnya untuk BESOK dan piketnya guru lain —
+tapi ia baru muncul SESUDAH memilih sesi di dropdown, jadi terbaca seperti kerusakan. Kyai: "kalau
+seumpama tidak perlu memilih dropdown gimana, jadi langsung isian kartu sendiri (Tadarrus Pagi,
+Laju 1, Laju 2), kartunya muncul sesuai daftar jadwal."
+
+- **Dua pemilih (sesi + kelas) dihapus.** Yang dipajang jadwalnya sendiri: satu kartu per sesi
+  × kelas, masing-masing dengan isian & SIMPAN sendiri, jadi guru yang piket dua sesi sehari
+  mengisi keduanya di satu layar. Sesi yang bukan miliknya tak pernah tampil — tak ada lagi
+  pesan "tidak terjadwal" yang muncul setelah salah pilih.
+- **Aturan siapa-melihat-kartu-apa diangkat ke `utils/pondokLajuSesi.kartuJurnalHari`** (pure, 11
+  tes): Tadarus Pagi dari guru kelasnya sendiri (tanpa jadwal), Laju 1/2 dari baris jadwal, lalu
+  kartu tambahan manual. Tak ada kartu kembar untuk satu kelas × sesi.
+- **Admin & penyusun jadwal (PJ / Admin Pondok Laju) melihat SELURUH jadwal hari itu**, berlabel
+  nama guru piketnya, plus "Tambah kartu" untuk kelas di luar jadwal — kemampuan lama
+  `kelasBolehCatat` dipertahankan, cuma tak lagi berupa dropdown yang selalu terpampang. RLS
+  `pondok_laju_capaian` memang sudah mengizinkan (`auth_can_akademik`), jadi batasan lama itu
+  murni di layar.
+- Langkah "Terapkan ke N santri" yang dulu terpisah **dihapus**: satu isian untuk sekelas membuat
+  tombol antara itu cuma langkah yang bisa terlupa. SIMPAN yang menerapkannya. Isian kartu terisi
+  sendiri dari posisi terakhir kelas, jadi guru tinggal melanjutkan.
+- Isian & simpan pindah ke `components/pondoklaju/JurnalKartu.vue`; bentuk simpanan di
+  `pondok_laju_capaian` TIDAK berubah (tetap satu baris per santri).
+
+### Added — Rekap Jurnal sebulan + ekspor PDF (Kyai, 17 Nov 2026)
+
+Kyai: "saya ingin jurnal itu ada rekapannya selama satu bulan, bisa ekspor pdf." Tab Riwayat dulu
+hanya daftar sesi satu kelas — tak ada angka yang terbaca sekali lihat, dan tak bisa dibawa ke
+kertas.
+
+- **Kelas boleh dikosongkan = seluruh kelas.** Satu kelas disaring di server lewat `santri_id`;
+  seluruh kelas cukup `periode` (baris sebulan sedikit, sedangkan daftar id seluruh santri Pondok
+  Laju justru kueri yang berat).
+- **Ringkasan sebulan**: sesi tercatat, hari, kelas berjalan, **kelas tanpa catatan**, santri.
+  Kelas yang bulan itu NOL tetap dipajang — justru itu yang perlu terlihat.
+- **Rekap per kelas**: sesi, hari, posisi awal → akhir, dan kemajuan halaman. Mundur (murojaah)
+  dibiarkan negatif, tidak disembunyikan.
+- **Ekspor PDF** (`utils/jurnalPdf`, mendatar F4, KOP lembaga PTPT): ringkasan + tabel per kelas +
+  rincian per sesi. Angkanya dari `utils/jurnalRekap` yang SAMA dengan layar — kertas tak mungkin
+  berselisih dengan layar. jsPDF dimuat saat dipakai saja.
+
+### Changed — Rombel: santri kelas lain boleh dicentang langsung (Kyai, 17 Nov 2026)
+
+Kyai: "saya ingin mengatur ulang banyak kelas, bisakah saya pindah santri ke guru lain dari sini,
+karena yang bisa dicentang hanya santri yg belum memiliki kelas." Aturan lama (17 Nov pagi) memang
+sengaja: hanya santri belum berkelas + anggota kelas ini, dan memindah dilakukan dari kelas
+ASALNYA supaya tak ada dua layar yang mengaku memilikinya. Benar untuk membetulkan satu-dua anak,
+menyiksa saat menata ulang banyak kelas — Kyai harus membuka kelas asal satu per satu hanya untuk
+melepas.
+
+Sekarang seluruh santri lembaga itu boleh dicentang. Yang sudah punya kelas diberi label
+**"dari: &lt;kelas asal&gt;"** dan dihitung di peringatan **"N santri akan dipindah dari kelas lain
+saat disimpan"**, jadi perpindahan tetap TERLIHAT, bukan diam-diam. Yang belum berkelas tetap
+diurutkan di atas. Pemiliknya tetap satu: mencentang di sini mencabutnya dari kelas asal.
+
+### Fixed — dropdown PJ PTPT memuat semua guru (Kyai, 17 Nov 2026)
+
+Kyai: "dropdown PJ kenapa muncul semua guru, harusnya kan hanya yg punya jabatan PJ PTPT."
+Pemilih PJ di layar Rombel memakai "semua guru aktif ber-lembaga PTPT" — puluhan nama padahal
+PJ-nya dua. Sumber kebenarannya sudah ada dan dipakai glondongan: peta `pj_guru` di
+`master/lembaga` PTPT (kunci = id guru PJ, diatur di Peran Glondongan). `useRombel` kini
+membacanya lewat `getPjGuru`, bukan membuat aturan kedua. Kalau petanya belum pernah diisi,
+pemilih jatuh ke perilaku lama supaya layar tak jadi buntu — bukan karena daftar panjang itu
+benar.
+
+### Changed — kartu "Tugas Saya" turun ke bawah Jam Hijri (Kyai, 17 Nov 2026)
+
+Jam & tanggal lebih sering dicari, jadi Jam Hijri tetap di puncak dan daftar tugas menyusul di
+bawahnya.
+
 ### Changed — jejak mesin: event hampa dilipat jadi denyut per jam (Kyai, 17 Nov 2026 — gelombang 3)
 
 Kyai meminta kueri denyut mesin (`docs/CEK-JAM-SCAN.sql` no. 5) dijalankan. Hasilnya menjawab
