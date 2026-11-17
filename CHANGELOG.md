@@ -719,6 +719,45 @@ tayang. Nomor baru, bukan gelombang v.1.4.9: Electron 1.4.9 sudah "Latest" di Gi
 2026. Diuji: vitest 125 berkas / 1.843 tes, eslint 0 error, vite build; PDF Data Santri berkelompok
 dirender di peramban (pdf.js) dengan data rekaan.
 
+### Changed — jejak mesin: event hampa dilipat jadi denyut per jam (Kyai, 17 Nov 2026 — gelombang 3)
+
+Kyai meminta kueri denyut mesin (`docs/CEK-JAM-SCAN.sql` no. 5) dijalankan. Hasilnya menjawab
+teka-teki lama "30.792 scan dalam 88 hari padahal 60 hari terakhir hanya ~5.400" — dan jawabannya
+bukan rentang yang mati: **22.317 dari 31.129 baris `hiview_scan_log` (72%) adalah event hampa**,
+`AccessControllerEvent` major=5 tanpa employeeNo, tanpa cardNo, tanpa minorEventType. Laju
+±227/hari sejak 6 Agu 2026, `tanggal`-nya kosong sehingga tak pernah tampil di panel Jejak Mesin
+mana pun — hanya menggelembungkan tabel (9,5 MB) dan mengaburkan hitungan scan sebenarnya.
+
+Denyut aslinya justru SEHAT, tak ada bulan yang mati: Agu 1.879 scan / 20 hari / 59 orang ·
+Sep 2.748 / 26 / 58 · Okt 2.802 / 28 / 59 · Nov (s.d. 17) 1.383 / 15 / 57; 97% jadi kehadiran,
+`luar_window` hanya 13/24/16/5 sebulan. Jadi dugaan yang melahirkan kueri itu — "jendela shift
+terlalu sempit" — TIDAK terbukti di tingkat volume. Kueri 2 `cek-guru-sekolah.sql` (nama guru di
+data santri yang tak cocok guru mana pun) juga **nol baris**: tak ada guru yang kehilangan
+santrinya karena ejaan/gelar.
+
+- **Event hampa kini satu baris per JAM mesin**, bukan satu baris per event: id `hv_denyut_<jam>`
+  + upsert yang sudah ada melipat sisanya. ±227 baris/hari susut jadi belasan.
+- **Sengaja TIDAK dibuang habis.** Spanduk "mesin HiView diam" (`utils/mesinDiam`, lahir dari
+  insiden 24 Sep 2026) membaca satu baris terbaru `hiview_scan_log` menurut `created_at` tanpa
+  menyaring hasil — event hampa itulah denyut yang membuktikan mesin masih hidup. Kalau disaring
+  habis, hari kerja yang belum ada guru menempel sampai jamMulai+2 jam akan berteriak "mesin
+  diam", dan mesin yang jaringannya hidup tapi pembacanya mati tak lagi terbedakan dari mesin
+  yang mati total.
+- **Yang BERISI tetap utuh satu baris per event**: ada `cardNo` (satu-satunya jalan tahu nomor
+  kartu versi mesin tanpa menebak urutan byte UID) atau ada `minorEventType` (kode sebab
+  Hikvision saat mendiagnosa "sudah menempel tapi tak terbaca"). Termasuk `minor = 0`.
+- Aturannya di `supabase/functions/hiview-absen/jejakHampa.ts` (edge-only — mesin yang
+  memutuskan, bukan layar, jadi TAK ada cermin di `utils/`). `catatJejak` menerima `idPaksa`.
+
+**22.317 baris lama TIDAK dihapus** — penghapusan data produksi urusan Kyai. Kalau mau dipangkas,
+`delete from public.hiview_scan_log where hasil = 'bukan_absen' and coalesce(tanggal,'') = ''`
+(hanya super_admin; sisakan satu baris terbaru kalau spanduk diam tak mau ikut terganggu).
+
+Diuji: vitest `jejakHampa` 9 tes (hampa vs berkartu vs berminor termasuk minor 0, pelipatan per
+jam, tak bertabrakan dengan id lama, cap waktu tak terbaca → id biasa, + pagar sumber index.ts &
+AbsensiGuruView), eslint 0 error, sintaks edge lewat esbuild. **Belum diuji dengan mesin
+sungguhan** — butuh deploy `hiview-absen`.
+
 ### Fixed (keluhan Kyai, 15 Nov 2026)
 
 - **Filter Kelas-Guru di Data Santri tak menyaring guru bergelar.** Pilihan disimpan di URL

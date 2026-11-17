@@ -24,6 +24,7 @@ import { deriveShift, statusFor, pilihShiftPulang, shiftsForGuru } from './shift
 // v.1.5.0: shift Pondok Laju yang aktif hari itu (jadwal piket Laju 1/2).
 import { idShiftLaju, shiftLajuAktif } from './shiftLaju.ts'
 import { pilihGuruDariId } from './idMesin.ts'
+import { hampaTanpaKeterangan, idDenyutJam } from './jejakHampa.ts'
 
 const SECRET = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
 
@@ -170,12 +171,14 @@ async function catatJejak(
     shift?: string
     status?: string
     catatan?: string
+    /** Id yang memaksa pelipatan (mis. denyut per jam); kosong = id per event. */
+    idPaksa?: string
   }
 ) {
   try {
     await db.from('hiview_scan_log').upsert(
       {
-        id: idJejak(j.empNo, j.dateTime),
+        id: j.idPaksa || idJejak(j.empNo, j.dateTime),
         tanggal: j.tanggal || '',
         employee_no: j.empNo || '',
         guru_id: j.guruId || null,
@@ -356,7 +359,20 @@ Deno.serve(async (req) => {
     // Event TANPA AccessControllerEvent (heartbeat mesin, keep-alive) sengaja tak
     // dicatat — jumlahnya jauh melebihi scan orang dan akan menenggelamkan jejaknya.
     if (ace) {
-      await catatJejak(db, { empNo, dateTime, hasil: 'bukan_absen', catatan: reason })
+      // v.1.5.0 (Kyai 17 Nov 2026): event hampa — tanpa kartu & tanpa kode minor — dilipat
+      //   jadi satu baris per JAM mesin. 72% tabel jejak dulu terisi baris seperti ini
+      //   (±227/hari), tapi membuangnya habis akan mematikan denyut yang dibaca spanduk
+      //   "mesin diam". Alasannya lihat jejakHampa.ts.
+      const denyut = hampaTanpaKeterangan(kartu, ace.minorEventType)
+        ? idDenyutJam(dateTime)
+        : ''
+      await catatJejak(db, {
+        empNo,
+        dateTime,
+        hasil: 'bukan_absen',
+        catatan: denyut ? `${reason} · denyut jam` : reason,
+        idPaksa: denyut
+      })
     }
     return isapiOk(req)
   }
