@@ -28,8 +28,14 @@ export function useTugasSaya({ horizonHari = 7, maksWidget = MUATAN_WIDGET } = {
   const galat = ref('')
 
   const myId = computed(() => String(auth.sesiAktif?.id ?? ''))
-  // Hanya guru yang punya "tugas" dalam arti ini. Wali santri & santri tak perlu kartunya.
-  const berlaku = computed(() => auth.sesiAktif?.role === 'guru' && !!myId.value)
+  // Guru DAN admin. Santri & wali santri tak punya "tugas" dalam arti ini, jadi tetap tidak.
+  //
+  // Kyai 17 Nov 2026: mulanya guru saja, lalu Kyai meminta dibuka — dengan akun sendiri ia tak
+  //   bisa melihat kartunya, padahal ia juga mengampu dan ingin memeriksa jadwalnya tanpa
+  //   meminjam akun guru. Pencocokannya tetap `guru_id == id sesi`, jadi akun admin yang bukan
+  //   pengampu (mis. admin bawaan ber-id 'admin') akan melihat kartu bertulis "belum ada tugas"
+  //   — benar, bukan gagal.
+  const berlaku = computed(() => ['guru', 'admin'].includes(auth.sesiAktif?.role) && !!myId.value)
 
   async function muat() {
     if (!berlaku.value) {

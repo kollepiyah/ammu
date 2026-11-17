@@ -406,9 +406,13 @@ hal kedua yang terlihat begitu beranda dibuka di HP.
   disimpan satu tempat di `LABEL_PERLU` dan ikut diuji agar tak kembali diam-diam.
 - Penugasan tanpa tanggal **diringkas satu baris per jenis** ("4 blok belum dinilai"), supaya kartu
   beranda tak tenggelam oleh puluhan baris tes.
-- Kartu hanya muncul untuk **role guru**; wali santri dan santri tidak melihatnya. Tidak punya
-  tugas adalah keadaan NORMAL dan paling sering, jadi tampilannya bukan seperti kegagalan
-  ("Tak ada tugas terjadwal").
+- Kartu muncul untuk **role guru dan admin**; wali santri dan santri tidak melihatnya. Tidak
+  punya tugas adalah keadaan NORMAL dan paling sering, jadi tampilannya bukan seperti kegagalan
+  ("Tak ada tugas terjadwal"). Mulanya guru SAJA — dibuka untuk admin atas permintaan Kyai
+  (17 Nov 2026) sesudah ia melaporkan kartunya "belum muncul": dengan akun sendiri ia memang tak
+  kebagian, padahal ia juga mengampu dan ingin memeriksa jadwalnya tanpa meminjam akun guru.
+  Pencocokannya tetap `guru_id == id sesi`, jadi akun admin yang bukan pengampu (mis. admin
+  bawaan ber-id `admin`) melihat kartu bertulis "belum ada tugas" — benar, bukan gagal.
 - Penarikan di `composables/useTugasSaya.js` sengaja **TANPA realtime**: beranda dibuka semua orang
   tiap hari, dan channel realtime di beranda pernah jadi biang lonjakan egress Supabase. Seremonial
   tak bisa disaring di server (penyimak ada di ekor jsonb) jadi ditarik yang akan datang saja lalu
