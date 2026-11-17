@@ -222,14 +222,86 @@ describe('rekapIzinPerOrang — hitungan shift', () => {
     expect(g.shift).toEqual({ izin: 1, sakit: 2, cuti: 0 })
     expect(g.hari).toEqual({ izin: 1, sakit: 1, cuti: 0 })
     expect(g.totalShift).toBe(3)
-    expect(g.totalHari).toBe(2)
+    // v.1.5.0 (Kyai 18 Nov 2026): dulu 2 — izin 1 hari + sakit 1 hari dijumlahkan, padahal
+    //   tanggalnya SAMA (10 Okt). Satu tanggal = satu hari tak masuk, walau izin pagi & sakit sore.
+    expect(g.totalHari).toBe(1)
   })
 
   it('shift kosong = pagi + sore, sama dengan yang ditulis ke absensi', () => {
     expect(shiftIzin({ shifts: [] })).toEqual(['pagi', 'sore'])
     expect(shiftIzin({})).toEqual(['pagi', 'sore'])
     expect(shiftIzin({ shifts: ['sekolah'] })).toEqual(['sekolah'])
+    // Sehari × 2 shift = 2. Dulu 6 karena `hitungHari` yang disuntik (3) dikalikan, padahal
+    // rentang tanggal pengajuannya cuma SEHARI — angka suntikan itu sekarang tak dipakai lagi.
     const [g] = rekapIzinPerOrang([izin('d', undefined)], { hitungHari: () => 3 })
-    expect(g.totalShift).toBe(6)
+    expect(g.totalShift).toBe(2)
+    expect(g.totalHari).toBe(1)
+  })
+})
+
+// Kyai 18 Nov 2026, melihat rekap "Sakit 13 (16 shift / 15 hari disetujui)": "perhitungan total
+// hari izin/alpa itu dihitung 1 hari meskipun dalam 1 hari itu bisa 1-3 shift, tapi tetap ada
+// rincian shiftnya."
+describe('rekapIzinPerOrang — satu tanggal tetap satu hari', () => {
+  const p = (id, shifts, tgl_mulai, tgl_selesai = tgl_mulai, jenis = 'izin') => ({
+    id,
+    guru_id: 'g7',
+    guru_nama: 'Libasut Taqwa, S.Ag',
+    jenis,
+    status: 'disetujui',
+    tgl_mulai,
+    tgl_selesai,
+    shifts
+  })
+
+  it('KASUS KYAI: tiga pengajuan shift berbeda di tanggal sama = 1 hari, 3 shift', () => {
+    const [g] = rekapIzinPerOrang([
+      p('a', ['pra_ptpt_ptpt_sore'], '2026-09-26'),
+      p('b', ['sdi_pkbm'], '2026-09-26'),
+      p('c', ['sore'], '2026-09-26')
+    ])
+    expect(g.hari.izin).toBe(1)
+    expect(g.shift.izin).toBe(3)
+    expect(g.totalHari).toBe(1)
+    expect(g.n.izin).toBe(3) // rincian per pengajuan tetap utuh
+  })
+
+  it('rentang 2 hari × 3 shift = 2 hari, 6 shift', () => {
+    const [g] = rekapIzinPerOrang([
+      p('a', ['sdi_pkbm'], '2026-09-18', '2026-09-19', 'sakit'),
+      p('b', ['pra_ptpt_ptpt_sore'], '2026-09-18', '2026-09-19', 'sakit'),
+      p('c', ['sore'], '2026-09-18', '2026-09-19', 'sakit')
+    ])
+    expect(g.hari.sakit).toBe(2)
+    expect(g.shift.sakit).toBe(6)
+  })
+
+  it('pengajuan kembar (shift & tanggal sama) tak dihitung dua kali', () => {
+    const [g] = rekapIzinPerOrang([p('a', ['sore'], '2026-09-21'), p('b', ['sore'], '2026-09-21')])
+    expect(g.hari.izin).toBe(1)
+    expect(g.shift.izin).toBe(1)
+    expect(g.n.izin).toBe(2) // dua baris pengajuan tetap terlihat di rincian
+  })
+
+  it('tanggal bersambung tetap dihitung utuh, yang bertindih hanya sekali', () => {
+    const [g] = rekapIzinPerOrang([
+      p('a', ['sore'], '2026-10-01', '2026-10-03'),
+      p('b', ['sore'], '2026-10-03', '2026-10-04')
+    ])
+    expect(g.hari.izin).toBe(4) // 1,2,3,4 — tgl 3 tak dihitung dua kali
+    expect(g.shift.izin).toBe(4)
+  })
+
+  it('yang belum/tak disetujui tak menambah hari maupun shift', () => {
+    const tolak = { ...p('x', ['sore'], '2026-09-30'), status: 'ditolak' }
+    const batal = { ...p('y', ['sore'], '2026-09-29'), status: 'dibatalkan' }
+    const [g] = rekapIzinPerOrang([tolak, batal])
+    expect(g.totalHari).toBe(0)
+    expect(g.totalShift).toBe(0)
+  })
+
+  it('tanggal rusak tak melempar & tak dihitung', () => {
+    const [g] = rekapIzinPerOrang([{ ...p('z', ['sore'], ''), tgl_mulai: 'xx' }])
+    expect(g.totalHari).toBe(0)
   })
 })

@@ -757,6 +757,38 @@ Diuji: vitest `skripBuildAndroid` 3 tes; lalu `npm run build:apk` UTUH sampai se
 `BUILD SUCCESSFUL`, `app-release.apk` **5,80 MB**, versionCode 150 / `v.1.5.0`, ber-signature
 `signingConfigs.release`. **Belum dipasang & dicoba di HP.**
 
+### Fixed — rekap izin menghitung satu hari berkali-kali (Kyai, 18 Nov 2026)
+
+Kyai melihat rekap "Libasut Taqwa, S.Ag — Izin 12 (10 shift / 10 hari disetujui) · Sakit 13
+(16 shift / 15 hari disetujui)" lalu menegaskan aturannya: "perhitungan total hari izin/alpa itu
+dihitung **1 hari** meskipun dalam 1 hari itu bisa 1-3 shift, tapi tetap ada rincian shiftnya."
+
+Memang salah. Izin sehari untuk tiga shift ditulis sebagai TIGA pengajuan (lihat 26 Sep 2026 di
+rekap itu: Pra PTPT Sore, SDI-PKBM, Sore), dan `rekapIzinPerOrang` menjumlahkan lama tiap
+pengajuan — jadi satu tanggal terhitung 3 hari. Rentang 18–19 Sep yang diajukan untuk 3 shift
+bahkan terhitung 6 hari.
+
+- **`hari` kini = banyaknya TANGGAL berbeda**, bukan jumlah lama pengajuan.
+- **`shift` kini = banyaknya pasangan tanggal × shift berbeda**, jadi pengajuan kembar (shift &
+  tanggal sama) tak lagi dihitung dua kali — angkanya tetap = jumlah baris absensi yang ditulis.
+- **`totalHari` memakai gabungan tanggal SEMUA jenis.** Tanggal yang izin pagi DAN sakit sore
+  tetap satu hari tak masuk, bukan dua.
+- **Rincian per pengajuan tidak diubah** — di layar dan di PDF tiap baris tetap menyebut lama &
+  shiftnya sendiri ("2 hr / 2 sh"), persis seperti yang Kyai minta.
+- `tanggalIzin()` baru di `utils/izinStatus` memakai `rentangTanggal` yang SAMA dengan penulis
+  baris absensi (batas 60 hari), jadi angka rekap tak bisa berpisah dari absensinya.
+
+`hitungHari` yang dulu disuntik pemanggil tak lagi dipakai untuk rekap (yang dihitung tanggal,
+bukan lamanya); parameternya tetap diterima supaya pemanggil lama tak perlu diubah.
+
+**Tidak diubah:** hitungan alpa di Rekap Absensi tetap PER SHIFT, sebab JP dan bonus kehadiran
+memang dibayar per shift — satu hari alpa 3 shift bukan kerugian yang sama dengan alpa 1 shift.
+Kalau Kyai ingin tampilan "hari" di sana juga, itu perubahan tersendiri.
+
+Diuji: vitest `izinStatus` 22 tes (+6 untuk kasus ini: tiga shift satu tanggal, rentang 2 hari ×
+3 shift, pengajuan kembar, tanggal bertindih, yang belum disetujui, tanggal rusak), eslint 0
+error, build vue. Dua tes lama diperbarui karena memang menjaga perilaku yang Kyai koreksi.
+
 ### Fixed — penyaring PJ PTPT menelan pilihan Kyai sendiri (Kyai, 17 Nov 2026)
 
 Kyai: "saya coba ekspor data santri PTPT yang PJ Hj. Nujumun Nada — yang jadi masalah, kelas yang

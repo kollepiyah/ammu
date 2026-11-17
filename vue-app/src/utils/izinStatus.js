@@ -9,6 +9,8 @@
 // 2. Label & warna status dulu tersebar sebagai fungsi lokal di PersonalView. Satu tempat
 //    supaya layar guru dan layar penyetuju tak pernah menyebut hal yang sama beda nama.
 
+import { rentangTanggal } from './format'
+
 const KANON = ['diajukan', 'disetujui', 'ditolak', 'dibatalkan']
 
 /**
@@ -72,6 +74,18 @@ export function shiftIzin(a) {
 }
 
 /**
+ * Deret TANGGAL yang dicakup satu pengajuan ('YYYY-MM-DD'), sama persis dengan deret yang
+ * dipakai penulis baris absensi (batas 60 hari) — supaya angka rekap = jumlah baris absensi.
+ * Tanggal tak terbaca → larik kosong; pengajuan sehari → satu tanggal.
+ */
+export function tanggalIzin(a) {
+  const r = rentangTanggal(a?.tgl_mulai, a?.tgl_selesai, 60)
+  if (r.length) return r
+  const s = String(a?.tgl_mulai || '').slice(0, 10)
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? [s] : []
+}
+
+/**
  * Kelompokkan pengajuan izin per ORANG untuk rekap riwayat.
  *
  * Kunci kelompok = `guru_id`; kalau kosong, jatuh ke nama (baris impor lama kadang
@@ -81,8 +95,19 @@ export function shiftIzin(a) {
  * v.1.4.9 (Kyai): izin sering hanya untuk satu shift, bukan seharian — jadi ukuran utamanya
  * SHIFT (hari × shift yang diajukan = jumlah baris absensi yang ditulis), hari pendamping.
  *
+ * v.1.5.0 (Kyai, 18 Nov 2026): **hari dihitung per TANGGAL, bukan per pengajaan.** Satu hari
+ * yang diizinkan untuk tiga shift dulu terhitung 3 hari — rekapnya jadi "Sakit 13 (16 shift /
+ * 15 hari)" padahal tanggalnya jauh lebih sedikit. Kyai: "perhitungan total hari izin/alpa itu
+ * dihitung 1 hari meskipun dalam 1 hari itu bisa 1-3 shift, tapi tetap ada rincian shiftnya."
+ * Maka: `hari` = banyaknya TANGGAL berbeda, `shift` = banyaknya pasangan tanggal×shift berbeda
+ * (jadi pengajuan kembar untuk shift yang sama di tanggal yang sama tak lagi dihitung dua kali).
+ * `totalHari` memakai gabungan tanggal SEMUA jenis — satu tanggal tetap satu hari walau izin
+ * pagi dan sakit sore. Rincian per pengajuan di layar & PDF tak berubah.
+ *
  * @param {Array} list pengajuan mentah dari `izin_guru`
  * @param {{cari?:string, tahun?:string|number, hitungHari?:(a:object)=>number}} opts
+ *   `hitungHari` tak lagi dipakai untuk rekap (tanggal yang dihitung, bukan lamanya) —
+ *   diterima supaya pemanggil lama tak perlu diubah.
  * @returns {Array<{id,nama,lembaga,items,n,hari,shift,total,totalHari,totalShift,menunggu,lampiran}>}
  */
 export function rekapIzinPerOrang(list, opts = {}) {
@@ -90,7 +115,6 @@ export function rekapIzinPerOrang(list, opts = {}) {
     .trim()
     .toLowerCase()
   const tahun = opts.tahun ? String(opts.tahun) : ''
-  const hitungHari = typeof opts.hitungHari === 'function' ? opts.hitungHari : () => 1
   const peta = new Map()
 
   for (const a of Array.isArray(list) ? list : []) {
@@ -110,7 +134,10 @@ export function rekapIzinPerOrang(list, opts = {}) {
         hari: { izin: 0, sakit: 0, cuti: 0 },
         shift: { izin: 0, sakit: 0, cuti: 0 },
         menunggu: 0,
-        lampiran: 0
+        lampiran: 0,
+        // Himpunan kerja — dibuang di akhir; hari/shift lahir dari ukurannya.
+        _tgl: { izin: new Set(), sakit: new Set(), cuti: new Set() },
+        _shift: { izin: new Set(), sakit: new Set(), cuti: new Set() }
       }
       peta.set(kunci, g)
     }
@@ -123,18 +150,30 @@ export function rekapIzinPerOrang(list, opts = {}) {
     if (st === 'diajukan') g.menunggu++
     if (a?.lampiran_url) g.lampiran++
     if (st === 'disetujui') {
-      const h = hitungHari(a)
-      g.hari[jenis] += h
-      g.shift[jenis] += h * shiftIzin(a).length
+      const shifts = shiftIzin(a)
+      for (const t of tanggalIzin(a)) {
+        g._tgl[jenis].add(t)
+        for (const sh of shifts) g._shift[jenis].add(t + '|' + String(sh).toLowerCase())
+      }
     }
   }
 
   const out = [...peta.values()]
   for (const g of out) {
+    const semuaTgl = new Set()
+    for (const j of JENIS) {
+      g.hari[j] = g._tgl[j].size
+      g.shift[j] = g._shift[j].size
+      for (const t of g._tgl[j]) semuaTgl.add(t)
+    }
+    delete g._tgl
+    delete g._shift
     // Terbaru di atas; tgl_mulai YYYY-MM-DD jadi urut string = urut tanggal.
     g.items.sort((x, y) => String(y?.tgl_mulai || '').localeCompare(String(x?.tgl_mulai || '')))
     g.total = g.items.length
-    g.totalHari = g.hari.izin + g.hari.sakit + g.hari.cuti
+    // Gabungan tanggal semua jenis — bukan penjumlahan per jenis. Satu tanggal yang izin pagi
+    // DAN sakit sore tetap satu hari tak masuk, bukan dua.
+    g.totalHari = semuaTgl.size
     g.totalShift = g.shift.izin + g.shift.sakit + g.shift.cuti
   }
   // Yang masih menunggu keputusan naik ke atas, lalu yang paling sering, lalu abjad.
