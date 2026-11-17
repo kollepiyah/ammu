@@ -732,9 +732,23 @@ dua skrip kembar yang berpisah, maka `build:aab` jalan sementara `build:apk` mat
 sepanjang itu. Pagar `tests/unit/skripBuildAndroid.test.js` (3 tes) kini menahan keduanya tetap
 sama, termasuk menolak bentuk polos tanpa awalan.
 
-Diuji: vitest `skripBuildAndroid` 3 tes; langkah 1–1c (`vite build` + `cap sync`) terbukti lewat
-saat galat ini direproduksi. **`assembleRelease` sendiri belum dijalankan sampai selesai** — APK
-jadinya belum terbukti.
+Sesudah ditambal, muncul rintangan KEDUA yang bukan bug kode: gradle gagal lima kali berturut
+dengan galat sebentuk `Unable to delete directory` / `AccessDeniedException`, pindah-pindah tempat
+(`compileReleaseArtProfile` → `:clean` → `compressReleaseAssets` → `optimizeReleaseResources` →
+`capacitor-android:mergeReleaseResources` di `node_modules`). Folder yang sama selalu bisa dihapus
+dari Bash dalam sekejap — jadi ada yang memegang berkas build sesaat sesudah ditulis (antivirus /
+pengindeks Windows), gejala yang sama dengan deploy gagal ENOENT. **Resepnya: hentikan daemon
+(`gradlew --stop`), hapus SEMUA folder `build` yang akan disentuh gradle — `app/build`,
+`android/build`, `capacitor-cordova-android-plugins/build`, dan 13 folder `build` di
+`node_modules/@capacitor*` — baru `assembleRelease`.** Jangan pakai `gradlew clean`: `:clean`
+sendiri ikut gagal oleh sebab yang sama. Sisa build lama juga memuat sarang
+`assets/public/vue/vue/vue/…` berlapis (warisan `android` legacy vc70) yang jalurnya melewati batas
+panjang Windows; SUMBERNYA bersih — `vue-app/dist` & `assets/public` hasil `cap sync` terbaru tak
+punya folder `vue`, jadi APK/AAB baru tidak membawanya.
+
+Diuji: vitest `skripBuildAndroid` 3 tes; lalu `npm run build:apk` UTUH sampai selesai —
+`BUILD SUCCESSFUL`, `app-release.apk` **5,80 MB**, versionCode 150 / `v.1.5.0`, ber-signature
+`signingConfigs.release`. **Belum dipasang & dicoba di HP.**
 
 ### Changed — jejak mesin: event hampa dilipat jadi denyut per jam (Kyai, 17 Nov 2026 — gelombang 3)
 
