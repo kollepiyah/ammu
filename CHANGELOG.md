@@ -34,6 +34,9 @@ menyuntikkan data pengguna).
 dirilis BERSAMA fitur Pondok Laju. Kelima tahap selesai di gelombang ini (16 Nov); tinggal tinjauan
 Kyai dan pembahasan absen guru yang Kyai minta di akhir.
 
+**Catatan rilis Play Store** (teks siap tempel, sudah dihitung muat 500 karakter) +
+pengumuman versi panjang untuk guru: `docs/RILIS-PLAY-v1.5.0.md`.
+
 **SIAP RILIS (setelah Pondok Laju lengkap)** — `versionCode` 150 / `versionName` `v.1.5.0`, gelombang 2.
 Penanda `is_pondok_laju` tinggal di ekor jsonb `data` (cron tagihan sudah meratakan `data`).
 **Dua migrasi**: `20261116120000_rapikan_nama_juz.sql` (perapian DATA nama berpetik & juz — lihat
