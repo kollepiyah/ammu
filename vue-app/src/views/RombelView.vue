@@ -83,16 +83,31 @@ function suntingKelas(r) {
   cariSantri.value = ''
 }
 
-// Santri yang boleh dicentang: yang belum berkelas + yang sudah jadi anggota kelas ini.
-// Santri milik kelas LAIN sengaja tak ditawarkan di sini — memindahkannya dilakukan dari
-// kelas asalnya, supaya tak ada dua layar yang mengaku memilikinya.
+/** Kelas asal tiap santri — untuk melabeli "dari: X" dan menghitung yang akan pindah. */
+const kelasAsalPeta = computed(() => {
+  const m = new Map()
+  for (const r of kelasList.value) for (const s of anggota(r.id)) m.set(String(s.id), r)
+  return m
+})
+/** Label kelas asal, '' kalau santri belum berkelas atau memang anggota kelas yang disunting. */
+function asalLain(s) {
+  const r = kelasAsalPeta.value.get(String(s.id))
+  if (!r || String(r.id) === String(form.value?.id || '')) return ''
+  return labelRombel(r)
+}
+
+// Kyai 17 Nov 2026: "saya ingin mengatur ulang banyak kelas, bisakah saya pindah santri ke guru
+//   lain dari sini." Semula daftar ini SENGAJA hanya memuat santri belum berkelas + anggota
+//   kelas ini, supaya tak ada dua layar yang mengaku memiliki santri yang sama; memindah harus
+//   dari kelas asalnya. Itu benar untuk perbaikan satu-dua anak, tapi menyiksa saat menata ulang
+//   banyak kelas sekaligus — Kyai harus membuka kelas asal satu per satu hanya untuk melepas.
+//   Sekarang seluruh santri lembaga ini boleh dicentang; yang sudah punya kelas diberi label
+//   kelas asalnya dan dihitung di peringatan "akan dipindah", jadi perpindahan tetap TERLIHAT,
+//   bukan diam-diam. Pemiliknya tetap satu: mencentang di sini mencabutnya dari kelas asal.
 const calonSantri = computed(() => {
   if (!form.value) return []
-  const anggotaKini = new Set(form.value.santriIds)
-  const bebas = new Set(belumBerkelas.value.map((s) => String(s.id)))
   const kw = cariSantri.value.trim().toLowerCase()
   return santriLembaga.value
-    .filter((s) => anggotaKini.has(String(s.id)) || bebas.has(String(s.id)))
     .filter(
       (s) =>
         !kw ||
@@ -100,6 +115,22 @@ const calonSantri = computed(() => {
           .toLowerCase()
           .includes(kw)
     )
+    .slice()
+    .sort((a, b) => {
+      // Yang belum berkelas di atas: itu yang paling sering dicari saat mengisi kelas baru.
+      const pa = asalLain(a) ? 1 : 0
+      const pb = asalLain(b) ? 1 : 0
+      return pa - pb || String(a.nama || '').localeCompare(String(b.nama || ''), 'id')
+    })
+})
+
+/** Berapa santri tercentang yang sedang diambil dari kelas lain. */
+const akanDipindah = computed(() => {
+  if (!form.value) return 0
+  return form.value.santriIds.filter((id) => {
+    const r = kelasAsalPeta.value.get(String(id))
+    return r && String(r.id) !== String(form.value.id || '')
+  }).length
 })
 
 function toggleSantri(id) {
@@ -442,8 +473,15 @@ async function terapkanUsul() {
             </button>
           </div>
           <p class="text-[10px] text-[var(--text-tertiary)] mb-1.5">
-            Yang tampil: santri yang belum berkelas, ditambah anggota kelas ini. Santri milik kelas
-            lain dipindahkan dari kelas asalnya.
+            Yang belum berkelas tampil di atas. Santri milik kelas lain ikut tampil dengan label
+            kelas asalnya — mencentangnya memindahkannya ke kelas ini.
+          </p>
+          <p
+            v-if="akanDipindah"
+            class="text-[10px] font-bold text-amber-700 dark:text-amber-300 mb-1.5"
+          >
+            <i class="fas fa-right-left mr-1"></i>{{ akanDipindah }} santri akan dipindah dari kelas
+            lain saat disimpan.
           </p>
           <div
             class="max-h-64 overflow-y-auto rounded-xl border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)]"
@@ -466,6 +504,12 @@ async function terapkanUsul() {
                 @change="toggleSantri(s.id)"
               />
               <span class="text-xs font-bold text-[var(--text-primary)]">{{ s.nama }}</span>
+              <!-- Label kelas asal: supaya mengambil santri orang lain tak pernah tak sengaja. -->
+              <span
+                v-if="asalLain(s)"
+                class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-300 dark:bg-amber-900/25 dark:text-amber-300 dark:border-amber-700 truncate max-w-[9rem]"
+                >dari: {{ asalLain(s) }}</span
+              >
               <span
                 v-if="form.kategori === 'ngaji'"
                 class="ml-auto text-[10px] text-[var(--text-tertiary)]"

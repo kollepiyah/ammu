@@ -12,10 +12,11 @@
 // Aturan murninya di utils/rombel.js; di sini hanya I/O dan urutan kerja. Tanpa realtime:
 // layar ini super_admin dan jarang dibuka, sedangkan santri tabel terbesar.
 import { ref, computed } from 'vue'
-import { getAll, mergeOne, updateOne, deleteOne } from '@/services/db'
+import { getAll, getOne, mergeOne, updateOne, deleteOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { guruAktifSaja, punyaGuruKategori } from '@/utils/guruScope'
 import { isPengajar } from '@/utils/jenisGuru'
+import { getPjGuru } from '@/utils/glondongan'
 import { shiftNgajiOf } from '@/utils/kelasHitung'
 import {
   idRombel,
@@ -35,6 +36,7 @@ export function useRombel() {
   const rombelList = ref([])
   const santriList = ref([])
   const guruList = ref([])
+  const lembagaMaster = ref([]) // master/lembaga .list — sumber jabatan PJ PTPT
   const memuat = ref(false)
   const sibuk = ref(false)
 
@@ -71,16 +73,25 @@ export function useRombel() {
   })
 
   /**
-   * Calon PJ PTPT — guru aktif ber-lembaga PTPT, sama seperti pilihan di form santri.
-   * Hanya bermakna untuk kelas PTPT.
+   * Calon PJ PTPT — hanya guru yang MEMANG berjabatan PJ.
+   *
+   * Kyai 17 Nov 2026: "dropdown PJ kenapa muncul semua guru, harusnya kan hanya yg punya
+   * jabatan PJ PTPT." Benar: daftar ini dulu memakai "semua guru aktif ber-lembaga PTPT",
+   * yang berarti puluhan nama padahal PJ-nya cuma dua. Sumber kebenarannya sudah ada dan
+   * dipakai glondongan: peta `pj_guru` di master/lembaga PTPT, yang kuncinya id guru PJ
+   * (diatur di Peran Glondongan). Dibaca lewat getPjGuru supaya tak lahir aturan kedua.
+   *
+   * Cadangan: kalau petanya belum pernah diisi, pemilih jatuh ke perilaku lama supaya
+   * layar ini tak jadi buntu — bukan karena daftar panjang itu benar.
    */
-  const pjOptions = computed(() =>
-    guruAktifSaja(guruList.value)
-      .filter((g) => _s(g.lembaga) === 'PTPT')
-      .map((g) => _s(g.nama))
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b, 'id'))
-  )
+  const pjOptions = computed(() => {
+    const aktif = guruAktifSaja(guruList.value)
+    const urut = (arr) => arr.filter(Boolean).sort((a, b) => a.localeCompare(b, 'id'))
+    const idPj = new Set(Object.keys(getPjGuru(lembagaMaster.value)))
+    const dariPeta = aktif.filter((g) => idPj.has(String(g.id))).map((g) => _s(g.nama))
+    if (dariPeta.length) return urut(dariPeta)
+    return urut(aktif.filter((g) => _s(g.lembaga) === 'PTPT').map((g) => _s(g.nama)))
+  })
 
   /** Guru calon pengampu: aktif, PENGAJAR (bukan pegawai), dan se-lembaga. */
   const guruOptions = computed(() => {
@@ -129,7 +140,13 @@ export function useRombel() {
   async function muat() {
     memuat.value = true
     try {
-      const [r, s, g] = await Promise.all([getAll('rombel'), getAll('santri'), getAll('guru')])
+      const [r, s, g, lem] = await Promise.all([
+        getAll('rombel'),
+        getAll('santri'),
+        getAll('guru'),
+        getOne('master', 'lembaga')
+      ])
+      lembagaMaster.value = Array.isArray(lem?.list) ? lem.list : []
       rombelList.value = Array.isArray(r) ? r : []
       santriList.value = Array.isArray(s) ? s : []
       guruList.value = Array.isArray(g) ? g : []
