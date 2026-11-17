@@ -70,6 +70,18 @@ export function useRombel() {
       .sort((a, b) => _s(a.nama).localeCompare(_s(b.nama), 'id'))
   })
 
+  /**
+   * Calon PJ PTPT — guru aktif ber-lembaga PTPT, sama seperti pilihan di form santri.
+   * Hanya bermakna untuk kelas PTPT.
+   */
+  const pjOptions = computed(() =>
+    guruAktifSaja(guruList.value)
+      .filter((g) => _s(g.lembaga) === 'PTPT')
+      .map((g) => _s(g.nama))
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, 'id'))
+  )
+
   /** Guru calon pengampu: aktif, PENGAJAR (bukan pegawai), dan se-lembaga. */
   const guruOptions = computed(() => {
     const lem = _l(lembaga.value)
@@ -185,7 +197,13 @@ export function useRombel() {
         guru_pagi: kat === 'ngaji' ? gp : '',
         guru_sore: kat === 'ngaji' ? gs : '',
         aktif: true,
-        guru_sekolah: kat === 'sekolah' ? gsek : []
+        guru_sekolah: kat === 'sekolah' ? gsek : [],
+        // Kyai 17 Nov 2026: PJ & penanda Pondok Laju disetel SEKELAS, bukan per anak.
+        //   Sifatnya memang sekelas; mengisinya satu-satu justru sumber data nyasar.
+        //   Nilainya tetap diturunkan ke kolom santri supaya rapor/tagihan/ekspor yang
+        //   sudah ada tak perlu diubah.
+        pj_ptpt: _s(form.pj_ptpt),
+        pondok_laju: form.pondok_laju === true
       })
 
       const dipilih = new Set((form.santriIds || []).map(String))
@@ -198,6 +216,12 @@ export function useRombel() {
         if (dipilih.has(sid)) {
           const patch = kat === 'ngaji' ? patchGuruNgaji(s, gp, gs) : { guru_sekolah: gsek }
           patch.rombel_id = id
+          if (kat === 'ngaji') {
+            // Turunkan setelan sekelas. `pj_ptpt` hanya bermakna untuk santri PTPT —
+            // di lembaga lain kolomnya memang selalu kosong (lihat useSantriForm).
+            if (_s(s.lembaga) === 'PTPT') patch.pj_ptpt = _s(form.pj_ptpt)
+            patch.is_pondok_laju = form.pondok_laju === true
+          }
           await updateOne('santri', sid, patch)
           nTulis++
         } else if (dulu.has(sid)) {
@@ -292,6 +316,7 @@ export function useRombel() {
     lembaga,
     rombelList,
     guruOptions,
+    pjOptions,
     lembagaOptions,
     santriLembaga,
     kelasList,

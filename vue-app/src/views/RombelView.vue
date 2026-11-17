@@ -17,6 +17,7 @@ const {
   kategori,
   lembaga,
   guruOptions,
+  pjOptions,
   lembagaOptions,
   santriLembaga,
   kelasList,
@@ -59,6 +60,8 @@ function kelasBaru() {
     guru_pagi: '',
     guru_sore: '',
     guru_sekolah: [],
+    pj_ptpt: '',
+    pondok_laju: false,
     santriIds: []
   }
   cariSantri.value = ''
@@ -73,6 +76,8 @@ function suntingKelas(r) {
     guru_pagi: r.guru_pagi || '',
     guru_sore: r.guru_sore || '',
     guru_sekolah: Array.isArray(r.guru_sekolah) ? [...r.guru_sekolah] : [],
+    pj_ptpt: r.pj_ptpt || '',
+    pondok_laju: r.pondok_laju === true,
     santriIds: anggota(r.id).map((s) => String(s.id))
   }
   cariSantri.value = ''
@@ -380,6 +385,30 @@ async function terapkanUsul() {
           >
             <option v-for="g in guruOptions" :key="'k' + g" :value="g">{{ g }}</option>
           </select>
+        </div>
+
+        <!-- Kyai 17 Nov 2026: PJ & penanda Pondok Laju disetel SEKELAS, bukan per anak —
+             sifatnya memang sekelas, dan mengisinya satu-satu itu sumber data nyasar.
+             Nilainya diturunkan ke kolom santri saat disimpan. -->
+        <div v-if="form.kategori === 'ngaji'" class="grid grid-cols-2 gap-2 items-end">
+          <div v-if="form.lembaga === 'PTPT'">
+            <label class="block text-[10px] font-black uppercase text-[var(--text-tertiary)] mb-1"
+              >PJ PTPT kelas ini</label
+            >
+            <select
+              v-model="form.pj_ptpt"
+              class="w-full px-2 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] cursor-pointer"
+            >
+              <option value="">— belum ditentukan —</option>
+              <option v-for="g in pjOptions" :key="'pj' + g" :value="g">{{ g }}</option>
+            </select>
+          </div>
+          <label
+            class="flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] cursor-pointer"
+          >
+            <input v-model="form.pondok_laju" type="checkbox" class="accent-teal-600" />
+            <span class="text-xs font-bold text-[var(--text-primary)]">Kelas Pondok Laju</span>
+          </label>
         </div>
 
         <div>

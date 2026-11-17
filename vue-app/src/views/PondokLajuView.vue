@@ -179,92 +179,13 @@
             </p>
           </div>
 
-          <!-- Per santri sengaja DILIPAT (Kyai 17 Nov): sekelas membaca sama, jadi daftar
-               nama tak perlu dipandangi tiap hari. Tetap disediakan untuk yang menyimpang —
-               membuangnya sama saja memaksa guru mencatat yang tidak benar. -->
-          <details class="rounded-xl border border-[var(--border-subtle)] p-2">
-            <summary class="text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer">
-              <i class="fas fa-user-pen mr-1"></i>Sesuaikan per santri ({{ cBaris.length }})
-              <span v-if="adaGalat" class="text-rose-600 font-black ml-1"
-                >· ada yang perlu dibetulkan</span
-              >
-            </summary>
-            <div class="space-y-2 mt-2">
-              <div
-                v-for="r in cBaris"
-                :key="r.santri_id"
-                :class="[
-                  'rounded-xl border p-2.5 space-y-1.5',
-                  galatBaris(r).length
-                    ? 'border-rose-300 dark:border-rose-700'
-                    : 'border-[var(--border-subtle)]'
-                ]"
-              >
-                <div class="flex items-center justify-between gap-2">
-                  <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                    {{ r.nama }}
-                    <span
-                      v-if="r.sudah"
-                      class="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 align-middle"
-                      >TERCATAT</span
-                    >
-                  </p>
-                  <p class="text-[10px] text-[var(--text-tertiary)] text-right truncate">
-                    {{
-                      r.sebelumnya ? 'Sebelumnya: ' + r.sebelumnya : 'Belum ada catatan sebelumnya'
-                    }}
-                  </p>
-                </div>
-                <div class="grid grid-cols-4 md:grid-cols-[5rem_4rem_1fr_4rem_1fr] gap-1.5">
-                  <input
-                    v-model="r.halaman"
-                    type="text"
-                    inputmode="numeric"
-                    placeholder="Hal."
-                    :aria-label="`Halaman ${r.nama}`"
-                    class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                    @input="r.juz = juzDariHalaman(Number(r.halaman)) || r.juz"
-                  />
-                  <input
-                    v-model="r.juz"
-                    type="text"
-                    inputmode="numeric"
-                    placeholder="Juz"
-                    :aria-label="`Juz ${r.nama}`"
-                    class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                  />
-                  <select
-                    v-model="r.surah"
-                    :aria-label="`Surah ${r.nama}`"
-                    class="col-span-2 md:col-span-1 rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-bold bg-[var(--bg-card)] text-[var(--text-primary)]"
-                  >
-                    <option value="">Surah —</option>
-                    <option v-for="(s, i) in SURAH" :key="i" :value="String(i + 1)">
-                      {{ i + 1 }}. {{ s[0] }}
-                    </option>
-                  </select>
-                  <input
-                    v-model="r.ayat"
-                    type="text"
-                    inputmode="numeric"
-                    :placeholder="r.surah ? `1–${jumlahAyat(r.surah)}` : 'Ayat'"
-                    :aria-label="`Ayat ${r.nama}`"
-                    class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                  />
-                  <input
-                    v-model="r.catatan"
-                    type="text"
-                    placeholder="Catatan (opsional)"
-                    :aria-label="`Catatan ${r.nama}`"
-                    class="col-span-3 md:col-span-1 rounded-lg border border-[var(--border-default)] p-1.5 text-xs bg-[var(--bg-card)] text-[var(--text-primary)]"
-                  />
-                </div>
-                <p v-if="galatBaris(r).length" class="text-[10px] text-rose-600 font-bold">
-                  {{ galatBaris(r).join(' · ') }}
-                </p>
-              </div>
-            </div>
-          </details>
+          <!-- Metodenya: satu kelas membaca BERSAMA, jatahnya jatah KELAS bukan per anak
+               (Kyai 17 Nov 2026). Karena itu tak ada daftar per santri di sini sama sekali —
+               isian di atas berlaku untuk semuanya. Baris per santri tetap dibentuk di skrip
+               (cBaris) sebab itulah yang disimpan, cuma tak perlu dipandangi. -->
+          <p v-if="adaGalat" class="text-[11px] font-bold text-rose-600">
+            <i class="fas fa-triangle-exclamation mr-1"></i>{{ galatSekelas.join(' · ') }}
+          </p>
 
           <div class="flex flex-wrap items-center justify-between gap-2">
             <p class="text-[11px] text-[var(--text-secondary)]">
@@ -1035,6 +956,13 @@ function galatBaris(r) {
 }
 const cTerisi = computed(() => cBaris.value.filter(_terisi).length)
 const adaGalat = computed(() => cBaris.value.some((r) => galatBaris(r).length))
+// Satu kelas = satu isian, jadi galatnya pun sama untuk semua. Ditampilkan SEKALI, bukan
+// per santri — tak ada lagi daftar per santri yang bisa menampungnya.
+const galatSekelas = computed(() => {
+  const set = new Set()
+  for (const r of cBaris.value) for (const g of galatBaris(r)) set.add(g)
+  return [...set]
+})
 
 async function simpanCapaian() {
   if (cMenyimpan.value || adaGalat.value) return

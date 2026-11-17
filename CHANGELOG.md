@@ -563,10 +563,11 @@ berpasangan dengan dua orang dilaporkan sebagai tak-bisa-ditebak, bukan ditebak.
 - Blok "Isi sekali untuk sekelas" jadi **"Pencapaian"** dengan isian BESAR (halaman, juz,
   surah, ayat, catatan) lalu satu tombol lebar **"Terapkan ke N santri"** → Simpan. Satu kelas
   membaca bersama, jadi isiannya memang satu.
-- **Daftar per santri dilipat** (`<details>` "Sesuaikan per santri"). Kyai: nama santri tak
-  perlu dipandangi tiap hari karena isinya sama. Tetap disediakan untuk yang menyimpang —
-  membuangnya sama saja memaksa guru mencatat yang tidak benar; ringkasan di summary menyebut
-  kalau ada yang perlu dibetulkan.
+- **Daftar per santri DIHAPUS seluruhnya.** Saya sempat melipatnya saja, dengan alasan "kalau
+  ada satu anak yang bacaannya menyimpang". Kyai meluruskan: **metodenya memang begitu** —
+  ngajinya baca bersama, jatahnya jatah KELAS, bukan jatah per anak. Jadi tak ada kasus
+  menyimpang yang perlu ditampung. Galat validasi kini ditampilkan SEKALI di tingkat kelas.
+  Baris per santri tetap dibentuk di skrip (`cBaris`) sebab itulah yang disimpan.
 - **Pemilih kelas hilang kalau cuma ada satu.** Guru yang pegang satu kelas pada sesi &
   tanggal itu — keadaan paling sering — langsung dipilihkan, dan yang tampil cuma keterangan
   "<guru> · N santri". Pemilih muncul hanya saat benar-benar ada lebih dari satu.
@@ -602,6 +603,12 @@ lagi santri yang nyasar, karena kelasnya ada sebelum santrinya diisi.
 - Jumlah kelas per lembaga tampil di kepala layar, berikut berapa santri yang belum berkelas.
 - "Susun dari data santri lama" **tetap ada** tapi turun jadi alat sekali-jalan (tersembunyi
   di bagian lipat), supaya Kyai tak perlu mencentang ratusan santri dari nol pertama kali.
+- **PJ PTPT & penanda "Kelas Pondok Laju" disetel DI KELAS** (Kyai 17 Nov: "supaya tidak
+  satu-satu saya anunya"). Keduanya memang sifatnya sekelas; mengisinya per anak justru
+  sumber santri nyasar — tiap ada anak baru masuk kelas, isiannya mudah terlupa. Nilainya
+  tetap **diturunkan ke kolom santri** (`pj_ptpt`, `is_pondok_laju`) saat disimpan, supaya
+  rapor, tagihan, dan ekspor yang sudah ada tak perlu diubah sama sekali. `pj_ptpt` hanya
+  ditulis untuk santri ber-lembaga PTPT, sama seperti aturan di form santri.
 
 **`KelasGuruView` DIHAPUS** (902 baris) beserta rute, tombol pita, dan sub-tab Master
 Data-nya. Kyai: "kelas dan guru itu hapus saja… impor Excel ini tidak terpakai, karena saya
