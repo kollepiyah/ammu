@@ -58,7 +58,14 @@ try {
   run('npx cap sync android', { cwd: VUE_APP })
 
   log('Step 2: Run gradle assembleRelease (generate signed APK)')
-  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew'
+  // Windows: gradlew.bat, Linux/Mac: ./gradlew
+  // v.1.5.0 (Kyai 17 Nov 2026): pakai '.\\gradlew.bat' — bukan 'gradlew.bat' polos. cmd.exe
+  //   tidak mencari direktori kerja saat NoDefaultCurrentDirectoryInExePath diset (mis.
+  //   dipanggil dari Git Bash atau sebagian terminal), sehingga skrip gagal 'is not
+  //   recognized'. build-aab.cjs sudah ditambal begini sejak v.1.4.3; berkas ini TERTINGGAL,
+  //   jadi build:aab jalan sementara build:apk mati — pagar tes di
+  //   tests/unit/skripBuildAndroid.test.js sekarang menahan keduanya tetap sama.
+  const gradlew = process.platform === 'win32' ? '.\\gradlew.bat' : './gradlew'
   run(`${gradlew} assembleRelease`, { cwd: ANDROID_DIR })
 
   if (fs.existsSync(APK_PATH)) {

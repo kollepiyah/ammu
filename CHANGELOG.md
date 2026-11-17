@@ -719,6 +719,23 @@ tayang. Nomor baru, bukan gelombang v.1.4.9: Electron 1.4.9 sudah "Latest" di Gi
 2026. Diuji: vitest 125 berkas / 1.843 tes, eslint 0 error, vite build; PDF Data Santri berkelompok
 dirender di peramban (pdf.js) dengan data rekaan.
 
+### Fixed — `npm run build:apk` mati di Windows sejak v.1.4.3 (Kyai, 17 Nov 2026)
+
+Kyai: "tadi saya coba build `npm run build:apk` gagal". Galatnya `'gradlew.bat' is not
+recognized as an internal or external command` — bukan JDK, bukan keystore, bukan Android SDK
+(ketiganya ada & benar). cmd.exe TIDAK mencari direktori kerja saat
+`NoDefaultCurrentDirectoryInExePath` diset (mis. dipanggil dari Git Bash atau sebagian
+terminal), jadi `gradlew.bat` polos tak ketemu walau berkasnya persis di folder itu.
+
+`build-aab.cjs` sudah ditambal `.\gradlew.bat` sejak v.1.4.3; **`build-apk.cjs` tertinggal** —
+dua skrip kembar yang berpisah, maka `build:aab` jalan sementara `build:apk` mati diam-diam
+sepanjang itu. Pagar `tests/unit/skripBuildAndroid.test.js` (3 tes) kini menahan keduanya tetap
+sama, termasuk menolak bentuk polos tanpa awalan.
+
+Diuji: vitest `skripBuildAndroid` 3 tes; langkah 1–1c (`vite build` + `cap sync`) terbukti lewat
+saat galat ini direproduksi. **`assembleRelease` sendiri belum dijalankan sampai selesai** — APK
+jadinya belum terbukti.
+
 ### Changed — jejak mesin: event hampa dilipat jadi denyut per jam (Kyai, 17 Nov 2026 — gelombang 3)
 
 Kyai meminta kueri denyut mesin (`docs/CEK-JAM-SCAN.sql` no. 5) dijalankan. Hasilnya menjawab
