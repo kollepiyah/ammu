@@ -42,11 +42,32 @@ RLS + `auth_is_admin_pondok_laju`). **Dua edge function berubah**: `auto-generat
 `matchStatusOnly`) dan `hiview-absen` (shift Pondok Laju harian + nomor kartu di Jejak Mesin) →
 deploy ulang keduanya. **Electron wajib dirilis ulang** (IPC "buka saat Windows menyala").
 Urutan: `supabase db push` → deploy web → deploy kedua fungsi → rebuild AAB → rilis Electron.
-**Sesudah rilis, Kyai mengatur:** (1) Master Shift — shift Laju 1 & Laju 2 dengan jamnya (Laju 1 =
-rentang jam PULANG-nya, mis. 11.00–11.45); pada Laju 2 isi "Hadir otomatis ikut shift" = shift-shift
-sore; centang "Hadir dihitung dari absen pulang" pada shift-shift sekolah (SDI - PKBM, TK, Kelas
-Baca); (2) menu Pondok Laju → Pengaturan — pilih
-shift Laju 1/Laju 2 & Admin Pondok Laju; (3) Pengaturan Keuangan → Jenis Bisyaroh — cara hitung
+**Shift Laju SUDAH diisikan langsung ke basis data (17 Nov 2026)** — poin (1) & sebagian (2)
+di bawah tak perlu lagi, tinggal DIPERIKSA jamnya. Keadaan sekarang di `settings.general`:
+
+| Shift | Jam | Terlambat | Hadir ikut |
+|---|---|---|---|
+| **Laju 1** | 11:00 – 13:25 | 13:25 | — |
+| **Laju 2** | 13:30 – 14:25 | 14:25 | — |
+| TPQ Sore | 14:30 – 18:00 | 15:15 | **+ Laju 2** |
+| Pra PTPT - PTPT - PPPH Sore | 14:30 – 18:00 | 15:15 | **+ Laju 2** |
+
+`pondokLajuShift` = `{laju1: 'laju1', laju2: 'laju2'}`. Alirannya mengikuti penjelasan Kyai
+17 Nov: guru sudah absen masuk pagi 06:30, jadi **tak perlu scan lagi sebelum Pondok Laju** —
+absen Laju 1 diambil dari scan SESUDAH Laju (guru non-sekolah, ±11.45) atau dari scan pulang
+sekolah (guru SDI/PKBM, ±13.00); karena itu jendelanya lebar 11:00–13:25 dan terlambat =
+selesai (jam scan bergantung kapan kelas bubar, tak adil dihukum terlambat). Guru yang dapat
+jadwal Laju 2 **tak perlu scan lagi untuk KBM sore**: scan Laju 2 (sebelum 14:30) sekaligus
+menghadirkan shift sore lewat `hadir_ikut` — arahnya dari Laju 2 KE shift sore, bukan
+sebaliknya. Absen pulang sore tetap ada sebagai penguat, **bukan syarat**: `wajib_pulang`
+sengaja TIDAK dinyalakan di shift mana pun, sebab menyalakannya berarti tanpa scan pulang
+guru jadi alpa dan bonusnya hangus.
+
+**Jamnya masih perlu Kyai periksa** — angka di atas saya turunkan dari penjelasan Kyai, bukan
+dari jadwal tertulis. Diubah di Pengaturan → Master Shift.
+
+**Sesudah rilis, Kyai mengatur:** (2) menu Pondok Laju → Pengaturan — pilih Admin Pondok Laju
+(shift Laju 1/Laju 2 sudah terpilih); (3) Pengaturan Keuangan → Jenis Bisyaroh — cara hitung
 "× sesi Pondok Laju", tarif per sesi; (4) di PC kantor (Ammu Desktop → Mesin Absensi): nyalakan
 "Buka saat Windows menyala" dan "Sinkron otomatis".
 
