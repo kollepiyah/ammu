@@ -351,8 +351,22 @@ export function isPjLembaga(orang, lembaga) {
 
 /**
  * Peta santriId -> NAMA PJ efektif.
- *   1. Turunkan dari guru pengajar santri (guru_pagi/sore/guru) via `pjGuruMap`.
- *   2. Tak ketemu -> label lama `santri.pj_ptpt` (cadangan, supaya data lama tetap jalan).
+ *   1. Label `santri.pj_ptpt` yang COCOK dengan salah satu PJ yang dikenal — MENANG.
+ *   2. Tak ada/tak dikenal -> turunkan dari guru pengajar (guru_pagi/sore/guru) via `pjGuruMap`.
+ *   3. Tak ketemu juga -> label apa adanya (cadangan lama, supaya data lama tetap jalan).
+ *
+ * **Urutan 1 & 2 DIBALIK pada 17 Nov 2026 (Kyai).** Keluhannya: "ekspor data santri PTPT yang
+ * PJ Hj. Nujumun Nada, kelas yang PJ-nya Syarifatun Nur Aini ikut terekspor." Di produksi ada
+ * 6 santri kelas Afra Baliyya yang Kyai setel PJ-nya Syarifatun lewat layar Rombel, sementara
+ * peta `pj_guru` masih mendaftarkan Afra di bawah Nujum. Dengan urutan lama peta menang, jadi
+ * pilihan tegas Kyai di layar tak berpengaruh apa-apa — perubahan yang diam-diam ditelan itu
+ * lebih buruk daripada data yang salah, sebab tak ada yang tahu.
+ *
+ * Membalik urutan aman sekarang justru karena label itu TIDAK lagi warisan lama: sejak layar
+ * Rombel (17 Nov) PJ disetel per KELAS dan diturunkan ke kolom santri tiap kali kelas disimpan.
+ * Syarat "cocok dengan PJ yang dikenal" menjaga label salah ketik / nama PJ yang sudah tak
+ * menjabat supaya tak membuat PJ hantu — label semacam itu jatuh ke peta guru seperti dulu.
+ *
  * Nama guru di santri dicocokkan ke id lewat `guruList` (nama dinormalisasi).
  * Catatan: bila satu guru terlanjur terdaftar di >1 PJ, yang terakhir menang — UI
  *   mencegah ini, tapi util tetap deterministik.
@@ -372,18 +386,30 @@ export function buatPetaPjSantri(santriList, guruList, pjGuruMap) {
     if (!pjNama) continue
     for (const gid of Array.isArray(gids) ? gids : []) guruKePj.set(String(gid), pjNama)
   }
+  // Nama PJ yang DIKENAL = pemilik kunci peta. Dipakai menilai apakah label pj_ptpt sebuah
+  // pilihan yang sah (bukan salah ketik / PJ yang sudah tak menjabat).
+  const pjKanonik = new Map() // nama ternormalisasi -> nama PJ apa adanya
+  for (const pjId of Object.keys(pjGuruMap || {})) {
+    const nm = idKeNama.get(String(pjId)) || ''
+    if (nm) pjKanonik.set(_normNama(nm), nm)
+  }
   const out = new Map()
   for (const s of santriList || []) {
     if (!s) continue
-    let pj = ''
-    for (const nm of [s.guru_pagi, s.guru_sore, s.guru]) {
-      const gid = namaKeId.get(_normNama(nm))
-      if (gid && guruKePj.has(gid)) {
-        pj = guruKePj.get(gid)
-        break
+    const label = String(s.pj_ptpt || '').trim()
+    // 1. Pilihan tegas yang disetel per kelas di layar Rombel.
+    let pj = pjKanonik.get(_normNama(label)) || ''
+    // 2. Belum ada / tak dikenal -> turunkan dari guru pengajarnya.
+    if (!pj) {
+      for (const nm of [s.guru_pagi, s.guru_sore, s.guru]) {
+        const gid = namaKeId.get(_normNama(nm))
+        if (gid && guruKePj.has(gid)) {
+          pj = guruKePj.get(gid)
+          break
+        }
       }
     }
-    if (!pj) pj = String(s.pj_ptpt || '').trim() // cadangan: label per-santri lama
+    if (!pj) pj = label // 3. cadangan: label per-santri lama, apa adanya
     out.set(String(s.id), pj)
   }
   return out

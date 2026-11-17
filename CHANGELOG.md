@@ -754,6 +754,38 @@ Diuji: vitest `skripBuildAndroid` 3 tes; lalu `npm run build:apk` UTUH sampai se
 `BUILD SUCCESSFUL`, `app-release.apk` **5,80 MB**, versionCode 150 / `v.1.5.0`, ber-signature
 `signingConfigs.release`. **Belum dipasang & dicoba di HP.**
 
+### Fixed — penyaring PJ PTPT menelan pilihan Kyai sendiri (Kyai, 17 Nov 2026)
+
+Kyai: "saya coba ekspor data santri PTPT yang PJ Hj. Nujumun Nada — yang jadi masalah, kelas yang
+PJ-nya Syarifatun Nur Aini ikut terekspor."
+
+Terbukti di data produksi: **6 santri kelas Afra Baliyya Amatulloh**. Kyai menyetel PJ kelas itu
+ke Syarifatun lewat layar Rombel (label tersimpan di tiap santri), sementara peta `pj_guru` masih
+mendaftarkan **Afra di bawah Nujum**. `buatPetaPjSantri` menurunkan PJ dari PETA GURU lebih dulu
+dan hanya memakai label sebagai cadangan — jadi pilihan tegas Kyai di layar tak berpengaruh
+apa-apa, dan keenamnya ikut terbawa ke ekspor Nujum. Selain enam itu, 291 santri PTPT lain cocok
+antara label dan peta, jadi ini satu-satunya titik yang berselisih.
+
+**Urutannya dibalik**: label `pj_ptpt` yang cocok dengan PJ yang DIKENAL menang; santri tanpa
+label tetap diturunkan dari guru lewat peta (supaya santri baru tak perlu disentuh satu-satu);
+label yang tak dikenal — salah ketik atau PJ yang sudah tak menjabat — jatuh ke peta guru supaya
+tak lahir "PJ hantu", dan kalau gurunya pun tak terpeta, label dipakai apa adanya seperti dulu.
+
+Aman dibalik sekarang justru karena label itu **tidak lagi warisan lama**: sejak layar Rombel
+(17 Nov) PJ disetel per KELAS dan ditulis ulang ke kolom santri tiap kali kelas disimpan. Ekspor
+Excel memakai daftar yang sudah tersaring di layar, jadi satu perbaikan ini membetulkan layar,
+penyaring, dan ekspor sekaligus.
+
+**Sapuan pemeriksaan lain di produksi (17 Nov, hanya membaca)** — bersih: santri PTPT tanpa PJ 0,
+`rombel_id` menunjuk kelas tak ada 0, rombel tanpa anggota 0, ID mesin ganda antar guru aktif 0,
+nama guru di data santri yang tak cocok guru mana pun 0. **Yang perlu tangan Kyai:** 10 santri
+aktif belum punya kelas (3 Pra PTPT, 6 TPQ Sore, 1 tanpa lembaga) dan **1 santri yang kolom
+lembaganya KOSONG** (Aurora Khairy Farzan Nasution) — ia akan hilang dari layar mana pun yang
+menyaring per lembaga. Catatan: 33 santri ber-`guru_pagi` kosong sementara rombelnya punya guru
+pagi BUKAN kesalahan — itu santri yang ikut sore saja, kasus yang melahirkan tabel rombel.
+
+Diuji: vitest `pjGuru` 29 tes (+5 untuk kasus ini), eslint 0 error, build vue.
+
 ### Changed — Jurnal Pondok Laju: dropdown dibuang, kartunya mengikuti jadwal (Kyai, 17 Nov 2026)
 
 Kyai menjadwalkan seorang guru di Laju 2, lalu membuka menu Pondok Laju dan melihat "Anda tidak

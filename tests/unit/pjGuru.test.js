@@ -237,3 +237,56 @@ describe('target prestasi per PJ (pj_target)', () => {
     expect(targetPj('', peta)).toBeNull()
   })
 })
+
+// Kyai 17 Nov 2026: "saya coba ekspor data santri PTPT yang PJ Hj. Nujumun Nada, yang jadi
+// masalah kelas yang PJ-nya Syarifatun Nur Aini ikut terekspor."
+//
+// Di produksi: 6 santri kelas Afra Baliyya yang PJ-nya Kyai setel "Syarifatun" lewat layar
+// Rombel, sementara peta pj_guru masih mendaftarkan Afra di bawah Nujum. Dengan urutan lama
+// (peta dulu, label cadangan) peta menang — pilihan Kyai di layar tak berpengaruh apa-apa.
+describe('buatPetaPjSantri — label kelas MENANG atas peta guru (Kyai 17 Nov 2026)', () => {
+  // Afra terdaftar di bawah PJ Anwar, tapi kelasnya disetel ke PJ Syarifatun.
+  const GURU2 = [...GURU, { id: 'g-afra', nama: 'Afra Baliyya, S.Pd.', lembaga: 'PTPT' }]
+  const PJ2 = { 'g-syar': ['g-evi'], 'g-anwar': ['g-risma', 'g-afra'] }
+
+  it('KASUS KYAI: santri kelas Afra ikut PJ yang disetel di Rombel, bukan peta lama', () => {
+    const p = buatPetaPjSantri(
+      [{ id: 'x', guru_pagi: 'Afra Baliyya, S.Pd.', pj_ptpt: 'Syarifatun Nur Aini' }],
+      GURU2,
+      PJ2
+    )
+    expect(p.get('x')).toBe('Syarifatun Nur Aini')
+  })
+
+  it('tanpa label, peta guru tetap yang menentukan — guru baru tak perlu disentuh satu-satu', () => {
+    const p = buatPetaPjSantri([{ id: 'y', guru_pagi: 'Afra Baliyya, S.Pd.' }], GURU2, PJ2)
+    expect(p.get('y')).toBe('Anwar')
+  })
+
+  it('label salah ketik / PJ tak dikenal tak membuat PJ hantu — jatuh ke peta guru', () => {
+    const p = buatPetaPjSantri(
+      [{ id: 'z', guru_pagi: 'Afra Baliyya, S.Pd.', pj_ptpt: 'Syarifatunn Nur Ainii' }],
+      GURU2,
+      PJ2
+    )
+    expect(p.get('z')).toBe('Anwar')
+  })
+
+  it('label dikenal walau beda huruf besar/kecil & spasi, hasilnya nama kanonik', () => {
+    const p = buatPetaPjSantri(
+      [{ id: 'w', guru_pagi: 'Afra Baliyya, S.Pd.', pj_ptpt: '  syarifatun   nur aini ' }],
+      GURU2,
+      PJ2
+    )
+    expect(p.get('w')).toBe('Syarifatun Nur Aini')
+  })
+
+  it('label PJ tak dikenal DAN guru tak terpeta → label apa adanya (data lama tetap terbaca)', () => {
+    const p = buatPetaPjSantri(
+      [{ id: 'v', guru_pagi: 'Orang Asing', pj_ptpt: 'PJ Lama Yang Hilang' }],
+      GURU2,
+      PJ2
+    )
+    expect(p.get('v')).toBe('PJ Lama Yang Hilang')
+  })
+})
