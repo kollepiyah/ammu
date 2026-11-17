@@ -59,6 +59,7 @@
           <option v-for="s in SESI_LAJU" :key="s.key" :value="s.key">{{ s.label }}</option>
         </select>
         <select
+          v-if="perluPilihKelas"
           v-model="cKelas"
           aria-label="Kelas"
           class="col-span-2 px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
@@ -69,6 +70,13 @@
             <template v-if="piketDari(k.key)"> · piket {{ piketDari(k.key) }}</template>
           </option>
         </select>
+        <p
+          v-else-if="cKelasObj"
+          class="col-span-2 px-3 py-2 text-sm rounded-xl bg-[var(--bg-muted)] text-[var(--text-secondary)] font-bold truncate"
+        >
+          <i class="fas fa-people-group mr-1 text-teal-600"></i
+          >{{ cKelasObj.guru || 'Kelas Anda' }} · {{ cKelasObj.santri.length }} santri
+        </p>
         <p
           v-if="!kelasBolehCatat.length"
           class="col-span-2 md:col-span-4 text-[11px] text-amber-700 dark:text-amber-300"
@@ -94,14 +102,15 @@
           <div
             class="rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50/60 dark:bg-teal-900/20 p-3 space-y-2"
           >
-            <p
-              class="text-[11px] font-black text-teal-800 dark:text-teal-200 uppercase tracking-wider"
-            >
-              <i class="fas fa-people-group mr-1"></i>Isi sekali untuk sekelas
+            <!-- Kyai 17 Nov 2026: satu kelas membaca BERSAMA, jadi isiannya satu saja dan
+                 besar — bukan satu baris kecil per santri. Nama santri sengaja tak dipajang
+                 di sini: yang dicatat sama untuk semuanya. -->
+            <p class="text-xs font-black text-teal-800 dark:text-teal-200 uppercase tracking-wider">
+              <i class="fas fa-book-open-reader mr-1"></i>Pencapaian
             </p>
-            <div class="flex flex-wrap items-end gap-2">
-              <label class="block w-20">
-                <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5"
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <label class="block">
+                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1"
                   >Halaman</span
                 >
                 <input
@@ -109,28 +118,26 @@
                   type="text"
                   inputmode="numeric"
                   aria-label="Halaman sekelas"
-                  class="w-full text-center rounded-lg border-2 border-teal-300 p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  class="w-full text-center rounded-xl border-2 border-teal-300 p-2.5 text-base font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
                   @input="kls.juz = juzDariHalaman(Number(kls.halaman)) || kls.juz"
                 />
               </label>
-              <label class="block w-16">
-                <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5">Juz</span>
+              <label class="block">
+                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1">Juz</span>
                 <input
                   v-model="kls.juz"
                   type="text"
                   inputmode="numeric"
                   aria-label="Juz sekelas"
-                  class="w-full text-center rounded-lg border-2 border-teal-300 p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  class="w-full text-center rounded-xl border-2 border-teal-300 p-2.5 text-base font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
                 />
               </label>
-              <label class="block flex-1 min-w-[9rem]">
-                <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5"
-                  >Surah</span
-                >
+              <label class="block col-span-2">
+                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1">Surah</span>
                 <select
                   v-model="kls.surah"
                   aria-label="Surah sekelas"
-                  class="w-full rounded-lg border-2 border-teal-300 p-1.5 text-xs font-bold bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  class="w-full rounded-xl border-2 border-teal-300 p-2.5 text-sm font-bold bg-[var(--bg-card)] text-[var(--text-primary)]"
                 >
                   <option value="">—</option>
                   <option v-for="(s, i) in SURAH" :key="i" :value="String(i + 1)">
@@ -138,100 +145,126 @@
                   </option>
                 </select>
               </label>
-              <label class="block w-16">
-                <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5">Ayat</span>
+              <label class="block">
+                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1">Ayat</span>
                 <input
                   v-model="kls.ayat"
                   type="text"
                   inputmode="numeric"
+                  :placeholder="kls.surah ? `1–${jumlahAyat(kls.surah)}` : ''"
                   aria-label="Ayat sekelas"
-                  class="w-full text-center rounded-lg border-2 border-teal-300 p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  class="w-full text-center rounded-xl border-2 border-teal-300 p-2.5 text-base font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
                 />
               </label>
-              <button
-                class="h-9 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold cursor-pointer"
-                @click="terapkanSekelas"
-              >
-                Terapkan ke {{ cBaris.length }} santri
-              </button>
+              <label class="block col-span-2 md:col-span-3">
+                <span class="block text-[10px] font-black uppercase text-teal-700 mb-1"
+                  >Catatan (opsional)</span
+                >
+                <input
+                  v-model="kls.catatan"
+                  type="text"
+                  aria-label="Catatan sekelas"
+                  class="w-full rounded-xl border-2 border-teal-300 p-2.5 text-sm bg-[var(--bg-card)] text-[var(--text-primary)]"
+                />
+              </label>
             </div>
+            <button
+              class="w-full h-11 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-black cursor-pointer"
+              @click="terapkanSekelas"
+            >
+              <i class="fas fa-arrow-down mr-1"></i>Terapkan ke {{ cBaris.length }} santri
+            </button>
+            <p v-if="cTerisi" class="text-[11px] font-bold text-teal-800 dark:text-teal-200">
+              <i class="fas fa-circle-check mr-1"></i>{{ cTerisi }} santri siap disimpan
+            </p>
           </div>
 
-          <div class="space-y-2">
-            <div
-              v-for="r in cBaris"
-              :key="r.santri_id"
-              :class="[
-                'rounded-xl border p-2.5 space-y-1.5',
-                galatBaris(r).length
-                  ? 'border-rose-300 dark:border-rose-700'
-                  : 'border-[var(--border-subtle)]'
-              ]"
-            >
-              <div class="flex items-center justify-between gap-2">
-                <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                  {{ r.nama }}
-                  <span
-                    v-if="r.sudah"
-                    class="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 align-middle"
-                    >TERCATAT</span
+          <!-- Per santri sengaja DILIPAT (Kyai 17 Nov): sekelas membaca sama, jadi daftar
+               nama tak perlu dipandangi tiap hari. Tetap disediakan untuk yang menyimpang —
+               membuangnya sama saja memaksa guru mencatat yang tidak benar. -->
+          <details class="rounded-xl border border-[var(--border-subtle)] p-2">
+            <summary class="text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer">
+              <i class="fas fa-user-pen mr-1"></i>Sesuaikan per santri ({{ cBaris.length }})
+              <span v-if="adaGalat" class="text-rose-600 font-black ml-1"
+                >· ada yang perlu dibetulkan</span
+              >
+            </summary>
+            <div class="space-y-2 mt-2">
+              <div
+                v-for="r in cBaris"
+                :key="r.santri_id"
+                :class="[
+                  'rounded-xl border p-2.5 space-y-1.5',
+                  galatBaris(r).length
+                    ? 'border-rose-300 dark:border-rose-700'
+                    : 'border-[var(--border-subtle)]'
+                ]"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+                    {{ r.nama }}
+                    <span
+                      v-if="r.sudah"
+                      class="ml-1 text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 align-middle"
+                      >TERCATAT</span
+                    >
+                  </p>
+                  <p class="text-[10px] text-[var(--text-tertiary)] text-right truncate">
+                    {{
+                      r.sebelumnya ? 'Sebelumnya: ' + r.sebelumnya : 'Belum ada catatan sebelumnya'
+                    }}
+                  </p>
+                </div>
+                <div class="grid grid-cols-4 md:grid-cols-[5rem_4rem_1fr_4rem_1fr] gap-1.5">
+                  <input
+                    v-model="r.halaman"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="Hal."
+                    :aria-label="`Halaman ${r.nama}`"
+                    class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
+                    @input="r.juz = juzDariHalaman(Number(r.halaman)) || r.juz"
+                  />
+                  <input
+                    v-model="r.juz"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="Juz"
+                    :aria-label="`Juz ${r.nama}`"
+                    class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  />
+                  <select
+                    v-model="r.surah"
+                    :aria-label="`Surah ${r.nama}`"
+                    class="col-span-2 md:col-span-1 rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-bold bg-[var(--bg-card)] text-[var(--text-primary)]"
                   >
-                </p>
-                <p class="text-[10px] text-[var(--text-tertiary)] text-right truncate">
-                  {{
-                    r.sebelumnya ? 'Sebelumnya: ' + r.sebelumnya : 'Belum ada catatan sebelumnya'
-                  }}
+                    <option value="">Surah —</option>
+                    <option v-for="(s, i) in SURAH" :key="i" :value="String(i + 1)">
+                      {{ i + 1 }}. {{ s[0] }}
+                    </option>
+                  </select>
+                  <input
+                    v-model="r.ayat"
+                    type="text"
+                    inputmode="numeric"
+                    :placeholder="r.surah ? `1–${jumlahAyat(r.surah)}` : 'Ayat'"
+                    :aria-label="`Ayat ${r.nama}`"
+                    class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  />
+                  <input
+                    v-model="r.catatan"
+                    type="text"
+                    placeholder="Catatan (opsional)"
+                    :aria-label="`Catatan ${r.nama}`"
+                    class="col-span-3 md:col-span-1 rounded-lg border border-[var(--border-default)] p-1.5 text-xs bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  />
+                </div>
+                <p v-if="galatBaris(r).length" class="text-[10px] text-rose-600 font-bold">
+                  {{ galatBaris(r).join(' · ') }}
                 </p>
               </div>
-              <div class="grid grid-cols-4 md:grid-cols-[5rem_4rem_1fr_4rem_1fr] gap-1.5">
-                <input
-                  v-model="r.halaman"
-                  type="text"
-                  inputmode="numeric"
-                  placeholder="Hal."
-                  :aria-label="`Halaman ${r.nama}`"
-                  class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                  @input="r.juz = juzDariHalaman(Number(r.halaman)) || r.juz"
-                />
-                <input
-                  v-model="r.juz"
-                  type="text"
-                  inputmode="numeric"
-                  placeholder="Juz"
-                  :aria-label="`Juz ${r.nama}`"
-                  class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                />
-                <select
-                  v-model="r.surah"
-                  :aria-label="`Surah ${r.nama}`"
-                  class="col-span-2 md:col-span-1 rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-bold bg-[var(--bg-card)] text-[var(--text-primary)]"
-                >
-                  <option value="">Surah —</option>
-                  <option v-for="(s, i) in SURAH" :key="i" :value="String(i + 1)">
-                    {{ i + 1 }}. {{ s[0] }}
-                  </option>
-                </select>
-                <input
-                  v-model="r.ayat"
-                  type="text"
-                  inputmode="numeric"
-                  :placeholder="r.surah ? `1–${jumlahAyat(r.surah)}` : 'Ayat'"
-                  :aria-label="`Ayat ${r.nama}`"
-                  class="text-center rounded-lg border border-[var(--border-default)] p-1.5 text-xs font-black bg-[var(--bg-card)] text-[var(--text-primary)]"
-                />
-                <input
-                  v-model="r.catatan"
-                  type="text"
-                  placeholder="Catatan (opsional)"
-                  :aria-label="`Catatan ${r.nama}`"
-                  class="col-span-3 md:col-span-1 rounded-lg border border-[var(--border-default)] p-1.5 text-xs bg-[var(--bg-card)] text-[var(--text-primary)]"
-                />
-              </div>
-              <p v-if="galatBaris(r).length" class="text-[10px] text-rose-600 font-bold">
-                {{ galatBaris(r).join(' · ') }}
-              </p>
             </div>
-          </div>
+          </details>
 
           <div class="flex flex-wrap items-center justify-between gap-2">
             <p class="text-[11px] text-[var(--text-secondary)]">
@@ -705,6 +738,26 @@
           <i class="fas fa-triangle-exclamation mr-1"></i>Satu shift dipakai dua sesi — pilih shift
           yang berbeda untuk tiap sesi.
         </p>
+        <!-- Kyai 17 Nov 2026: mencegah shift lembaga yang sudah ada dipakai sebagai shift Laju. -->
+        <div
+          v-if="shiftSesiSalahPilih.length"
+          class="text-[11px] rounded-lg border border-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-2 text-amber-900 dark:text-amber-200 space-y-1"
+        >
+          <p v-for="w in shiftSesiSalahPilih" :key="w.sesi" class="font-bold">
+            <i class="fas fa-triangle-exclamation mr-1"></i>
+            <b>{{ w.sesi }}</b> memakai shift <b>{{ w.label }}</b> yang khusus lembaga
+            {{ w.lembaga }} — itu shift mengajar, bukan shift Pondok Laju. Satu scan akan dihitung
+            dua-duanya dan rekap absen tak bisa membedakan hadir mengajar atau hadir piket.
+            <template v-if="w.parah">
+              Lebih jauh: aturan "guru ber-shift SD–PKBM tidak dibayar Laju 1" membaca shift yang
+              sama, jadi shift ini sekaligus menandai Laju 1-nya tak usah dibayar.
+            </template>
+          </p>
+          <p>
+            Buat shift tersendiri bernama Laju 1 / Laju 2 di Pengaturan → Master Shift (dengan
+            jamnya), lalu pilih yang itu di sini.
+          </p>
+        </div>
         <button
           :disabled="shiftSesiMenyimpan || shiftSesiGanda"
           class="h-10 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black cursor-pointer"
@@ -835,7 +888,9 @@ const bisaKeuangan = computed(() => adminPenuh.value || sesi.value.role_sistem =
 
 const tabs = computed(() => {
   const out = [
-    { id: 'capaian', label: 'Capaian', icon: 'fa-pen-to-square' },
+    // Kyai 17 Nov 2026: "bukan capaian tapi jurnal". Id 'capaian' sengaja TETAP — ia dipakai
+    //   di tautan & penyimpanan tab terakhir; yang berubah cuma kata yang dibaca mata.
+    { id: 'capaian', label: 'Jurnal', icon: 'fa-pen-to-square' },
     { id: 'jadwal', label: 'Jadwal', icon: 'fa-calendar-days' },
     { id: 'riwayat', label: 'Riwayat', icon: 'fa-clock-rotate-left' }
   ]
@@ -872,7 +927,7 @@ const cJadwalHari = ref([]) // jadwal piket tanggal terpilih
 const cMemuat = ref(false)
 const cMenyimpan = ref(false)
 const cBaris = ref([])
-const kls = reactive({ juz: '', halaman: '', surah: '', ayat: '' })
+const kls = reactive({ juz: '', halaman: '', surah: '', ayat: '', catatan: '' })
 
 async function muatJadwalHari() {
   try {
@@ -905,6 +960,19 @@ watch(kelasBolehCatat, (list) => {
   if (!cKelas.value && list.length === 1) cKelas.value = list[0].key
 })
 const cKelasObj = computed(() => kelasList.value.find((k) => k.key === cKelas.value) || null)
+
+// Kyai 17 Nov 2026: "tidak perlu pilih kelas". Kalau guru ini cuma pegang SATU kelas pada
+//   sesi & tanggal itu — keadaan yang paling sering — kelasnya dipilihkan sendiri dan
+//   pemilihnya disembunyikan. Pemilih hanya muncul kalau memang ada lebih dari satu.
+const perluPilihKelas = computed(() => kelasBolehCatat.value.length > 1)
+watch(
+  kelasBolehCatat,
+  (list) => {
+    if (list.length === 1) cKelas.value = list[0].key
+    else if (!list.some((k) => k.key === cKelas.value)) cKelas.value = ''
+  },
+  { immediate: true }
+)
 
 async function muatCapaian() {
   const k = cKelasObj.value
@@ -958,6 +1026,7 @@ function terapkanSekelas() {
     if (kls.juz !== '') r.juz = String(kls.juz)
     if (kls.surah !== '') r.surah = String(kls.surah)
     if (kls.ayat !== '') r.ayat = String(kls.ayat)
+    if (kls.catatan !== '') r.catatan = String(kls.catatan)
   }
 }
 const _terisi = (r) => String(r.juz).trim() !== '' || String(r.halaman).trim() !== ''
@@ -1333,6 +1402,39 @@ watch(
 const shiftGuruOptions = computed(() =>
   shiftList(settingsStore.settings || {}).filter((sh) => sh.untuk !== 'pegawai')
 )
+
+/**
+ * Shift sesi yang kemungkinan besar SALAH PILIH (Kyai bertanya 17 Nov 2026).
+ *
+ * Shift Laju 1/Laju 2 mestinya shift SENDIRI dengan jamnya sendiri. Memakai shift lembaga
+ * yang sudah ada (mis. "SDI - PKBM" atau "Pra PTPT - PTPT - PPPH Sore") membuat absen Pondok
+ * Laju dan absen sekolah/ngaji saling tertukar: satu scan dihitung dua-duanya, dan rekap
+ * absen tak bisa lagi membedakan guru itu hadir mengajar atau hadir piket.
+ *
+ * Untuk Laju 1 tabrakannya lebih parah: aturan "guru ber-shift SD–PKBM tidak dibayar Laju 1"
+ * membaca shift yang SAMA, jadi shift yang menandai kehadiran Laju 1 sekaligus menjadi
+ * penanda bahwa Laju 1-nya tak usah dibayar. Memilih sendiri sebab ia tak dibayar.
+ */
+const shiftSesiSalahPilih = computed(() => {
+  const daftar = shiftList(settingsStore.settings || {})
+  const out = []
+  for (const s of SESI_LAJU.filter((x) => x.piket)) {
+    const id = String(shiftSesiDraft[s.key] || '')
+    if (!id) continue
+    const sh = daftar.find((x) => String(x.id) === id)
+    if (!sh) continue
+    const lem = (Array.isArray(sh.lembaga) ? sh.lembaga : []).map((x) => String(x || '').trim())
+    if (!lem.length) continue
+    const sdPkbm = lem.some((l) => ['SDI', 'PKBM'].includes(l.toUpperCase()))
+    out.push({
+      sesi: s.label,
+      label: sh.label || id,
+      lembaga: lem.join(', '),
+      parah: s.key === 'laju1' && sdPkbm
+    })
+  }
+  return out
+})
 // Shift sumber "hadir ikut" milik shift Laju 2 (Master Shift) — ditampilkan sebagai konfirmasi.
 const laju2IkutSore = computed(() => {
   const id = shiftSesiDraft.laju2

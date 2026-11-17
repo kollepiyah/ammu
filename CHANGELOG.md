@@ -556,6 +556,30 @@ halaman login, sisipannya sudah dicabut, nol tulisan ke produksi): kasus Ahmad t
 pratinjau meleburnya ke "Siti + Indah" jadi 2 santri, sementara santri yang gurunya
 berpasangan dengan dua orang dilaporkan sebagai tak-bisa-ditebak, bukan ditebak.
 
+### Changed — Pondok Laju: "Capaian" jadi "Jurnal", isian sekelas dibesarkan (Kyai, 17 Nov 2026)
+
+- Tab **"Capaian" → "Jurnal"**. Id tabnya sengaja tetap `capaian` — ia dipakai tautan &
+  penyimpanan tab terakhir; yang berubah hanya kata yang dibaca mata.
+- Blok "Isi sekali untuk sekelas" jadi **"Pencapaian"** dengan isian BESAR (halaman, juz,
+  surah, ayat, catatan) lalu satu tombol lebar **"Terapkan ke N santri"** → Simpan. Satu kelas
+  membaca bersama, jadi isiannya memang satu.
+- **Daftar per santri dilipat** (`<details>` "Sesuaikan per santri"). Kyai: nama santri tak
+  perlu dipandangi tiap hari karena isinya sama. Tetap disediakan untuk yang menyimpang —
+  membuangnya sama saja memaksa guru mencatat yang tidak benar; ringkasan di summary menyebut
+  kalau ada yang perlu dibetulkan.
+- **Pemilih kelas hilang kalau cuma ada satu.** Guru yang pegang satu kelas pada sesi &
+  tanggal itu — keadaan paling sering — langsung dipilihkan, dan yang tampil cuma keterangan
+  "<guru> · N santri". Pemilih muncul hanya saat benar-benar ada lebih dari satu.
+
+**Penjaga baru di Pengaturan → Shift absen tiap sesi.** Kyai bertanya apakah memilih shift
+"SDI - PKBM" untuk Laju 1 dan "Pra PTPT - PTPT - PPPH Sore" untuk Laju 2 itu benar —
+jawabannya **tidak**, dan sekarang layarnya memperingatkan sendiri. Shift Laju mestinya shift
+TERSENDIRI dengan jamnya sendiri; memakai shift lembaga yang sudah ada membuat satu scan
+dihitung dua-duanya, dan rekap absen tak bisa lagi membedakan guru hadir MENGAJAR atau hadir
+PIKET. Untuk Laju 1 tabrakannya lebih parah: aturan "guru ber-shift SD–PKBM tidak dibayar
+Laju 1" membaca shift yang sama, jadi shift yang menandai kehadiran Laju 1 sekaligus menjadi
+penanda bahwa Laju 1-nya tak usah dibayar — memilih sendiri sebab ia tak dibayar.
+
 ### Changed — Rombel jadi MASTER DATA KELAS, "Kelas & Guru" dihapus (Kyai, 17 Nov 2026)
 
 Kyai meluruskan arahnya: layar Rombel yang pertama saya buat cuma ALAT PERAPIAN — membaca
