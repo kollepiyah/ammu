@@ -15,6 +15,7 @@ import * as authSupabase from '@/services/authSupabase'
 import { mergeOne, setAuditSesi } from '@/services/db'
 import { useCollectionsStore } from '@/stores/collections'
 import { useToast } from '@/composables/useToast'
+import { cabutTokenWidget } from '@/composables/useWidgetToken'
 
 const SESI_STORAGE_KEY = 'portalMu_sesiAdminBuiltIn'
 
@@ -268,6 +269,14 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (e) {
       console.warn('[auth.logout] clear fcm_token gagal:', e?.message || e)
+    }
+    // v.1.5.0: cabut token widget perangkat ini SEBELUM sign-out — sesudahnya RPC-nya tak
+    //   punya sesi lagi. Kalau tidak dicabut, widget di HP yang sama terus menarik tugas
+    //   guru yang sudah keluar.
+    try {
+      await cabutTokenWidget()
+    } catch (e) {
+      console.warn('[auth.logout] cabut token widget gagal:', e?.message || e)
     }
     try {
       await authSupabase.signOut()

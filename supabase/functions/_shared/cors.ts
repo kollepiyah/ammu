@@ -2,8 +2,11 @@
 // Origin '*' aman: tiap fungsi tetap memvalidasi JWT / input sendiri.
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  // x-ammu-widget-token: dipakai fungsi widget-tugas. Widget Android sendiri tak kena CORS
+  //   (bukan browser), tapi tanpa baris ini pemanggilan dari peramban gagal di preflight —
+  //   dan itu jalur yang dipakai saat menguji fungsinya.
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+    'authorization, x-client-info, apikey, content-type, x-ammu-widget-token',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
 }
 

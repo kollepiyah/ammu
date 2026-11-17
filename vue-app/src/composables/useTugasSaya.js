@@ -10,6 +10,7 @@ import { queryColl } from '@/services/db'
 import { todayJakarta } from '@/utils/format'
 import { susunTugasSaya, geserHari, ringkasUntukWidget } from '@/utils/tugasSaya'
 import { pushWidgetData } from '@/composables/useWidgetSync'
+import { pastikanTokenWidget } from '@/composables/useWidgetToken'
 
 const KOSONG = { terjadwal: [], perlu: [], total: 0 }
 
@@ -69,6 +70,10 @@ export function useTugasSaya({ horizonHari = 7, maksWidget = MUATAN_WIDGET } = {
       })
       // Widget home screen Android memakai daftar yang SAMA, bukan hitungan sendiri.
       pushWidgetData({ tugas: JSON.stringify(ringkasUntukWidget(hasil.value, maksWidget)) })
+      // v.1.5.0: sekalian pastikan perangkat ini punya token, supaya widget bisa menarik
+      //   sendiri di antara dua kali aplikasi dibuka. Gagal = widget tetap jalan seperti
+      //   sebelumnya, jadi sengaja tak ditunggu dan tak dilaporkan.
+      pastikanTokenWidget()
     } catch (e) {
       // Beranda tak boleh ikut mati gara-gara satu kartu; cukup tampilkan pesan.
       galat.value = 'Daftar tugas gagal dimuat.'

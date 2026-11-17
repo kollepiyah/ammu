@@ -14,6 +14,11 @@ import android.widget.RemoteViews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -146,8 +151,65 @@ public class TugasWidget extends AppWidgetProvider {
         manager.updateAppWidget(widgetId, views);
     }
 
+    /**
+     * Tarik daftar tugas langsung dari server (Kyai 17 Nov 2026).
+     *
+     * Dulu widget hanya segar saat aplikasi dibuka; jadwal yang berubah sesudah itu tak
+     * pernah sampai. Sekarang tiap kali Android menyegarkan widget (updatePeriodMillis 30
+     * menit), widget menukar TOKEN SEMPIT miliknya dengan daftar tugas lewat edge function
+     * `widget-tugas`. Tokennya hanya bisa membaca daftar tugas satu guru — bukan sesi penuh.
+     *
+     * Dijalankan di utas terpisah: onUpdate berjalan di utas utama dan Android membunuh
+     * BroadcastReceiver yang berlama-lama. Gagal menarik SENGAJA tak mengubah apa pun —
+     * widget tetap menggambar data terakhir yang tersimpan, dan saringan tanggal membuatnya
+     * kosong (bukan salah) kalau datanya sudah basi.
+     */
+    private static void tarikDariServer(final Context context) {
+        final SharedPreferences sp = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        final String token = sp.getString("tugasToken", "");
+        final String url = sp.getString("tugasUrl", "");
+        if (token == null || token.length() < 32 || url == null || !url.startsWith("https://")) return;
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                HttpURLConnection c = null;
+                try {
+                    c = (HttpURLConnection) new URL(url).openConnection();
+                    c.setRequestMethod("GET");
+                    c.setRequestProperty("x-ammu-widget-token", token);
+                    c.setConnectTimeout(10000);
+                    c.setReadTimeout(10000);
+                    if (c.getResponseCode() != 200) return;
+
+                    BufferedReader r = new BufferedReader(
+                        new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8));
+                    StringBuilder sb = new StringBuilder();
+                    String baris;
+                    while ((baris = r.readLine()) != null) sb.append(baris);
+                    r.close();
+
+                    JSONObject o = new JSONObject(sb.toString());
+                    JSONArray arr = o.optJSONArray("tugas");
+                    if (arr == null) return;
+                    sp.edit().putString("tugas", arr.toString()).apply();
+
+                    // Gambar ulang dengan data baru. updateAll aman dipanggil dari utas ini.
+                    updateAll(context);
+                } catch (Exception e) {
+                    /* jaringan mati / server sibuk → biarkan data lama, jangan kosongkan */
+                } finally {
+                    if (c != null) c.disconnect();
+                }
+            }
+        }).start();
+    }
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        // Gambar dulu dari data tersimpan supaya widget tak pernah kosong menunggu jaringan,
+        // baru tarik yang baru di latar.
         for (int id : appWidgetIds) updateWidget(context, appWidgetManager, id);
+        tarikDariServer(context);
     }
 }

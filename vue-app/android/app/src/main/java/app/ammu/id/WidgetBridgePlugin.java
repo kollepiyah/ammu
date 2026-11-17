@@ -38,6 +38,10 @@ public class WidgetBridgePlugin extends Plugin {
         // v.1.5.0 gelombang 3: daftar "Tugas Saya" — disusun utils/tugasSaya.js, widget cuma
         //   menggambar. Hanya ditimpa kalau JS memang mengirimnya.
         if (data.has("tugas")) ed.putString("tugas", call.getString("tugas", "[]"));
+        // v.1.5.0: token sempit + alamat fungsinya, supaya widget bisa MENARIK SENDIRI daftar
+        //   tugas di antara dua kali aplikasi dibuka. Token kosong = berhenti menarik (logout).
+        if (data.has("tugasToken")) ed.putString("tugasToken", call.getString("tugasToken", ""));
+        if (data.has("tugasUrl")) ed.putString("tugasUrl", call.getString("tugasUrl", ""));
         ed.apply();
 
         try { JamHijriWidget.updateAll(ctx); } catch (Exception e) { /* ignore */ }

@@ -556,6 +556,37 @@ halaman login, sisipannya sudah dicabut, nol tulisan ke produksi): kasus Ahmad t
 pratinjau meleburnya ke "Siti + Indah" jadi 2 santri, sementara santri yang gurunya
 berpasangan dengan dua orang dilaporkan sebagai tak-bisa-ditebak, bukan ditebak.
 
+### Added — widget Tugas menarik sendiri secara berkala (Kyai, 17 Nov 2026 — gelombang 3)
+
+Sampai sekarang widget hanya segar saat aplikasi dibuka; jadwal yang berubah sesudah itu tak
+pernah sampai. Kyai menyetujui penarikan berkala, dan ini bentuknya.
+
+- **Token SEMPIT per perangkat**, bukan sesi Supabase. Menaruh refresh token asli di sisi Java
+  berarti menaruh kunci SELURUH akun di HP. Yang disimpan cuma satu string acak yang hanya
+  bisa ditukar dengan **daftar tugas satu guru** — tak bisa membaca apa pun yang lain, tak
+  bisa menulis, dan bisa dicabut.
+- **Migrasi `20261117110000_widget_token.sql`** — tabel `widget_token` dengan **RLS menyala
+  TANPA satu pun kebijakan** = tertutup rapat untuk semua klien; yang menyentuhnya hanya edge
+  function lewat service role. Penerbitannya lewat RPC `terbitkan_widget_token` (security
+  definer) supaya guru hanya bisa menerbitkan untuk DIRINYA SENDIRI, dan `cabut_widget_token`
+  untuk logout. Diuji di PGlite: idempoten, 0 kebijakan, token pendek ditolak, non-guru
+  ditolak, wali tak bisa mencabut token guru, guru bisa mencabut miliknya sendiri.
+- **Edge function `widget-tugas`** (`--no-verify-jwt`; auth = token itu). Balasannya sama
+  untuk token tak dikenal dan token tanpa guru — jangan beri tahu penebak bahwa tokennya
+  "hampir benar". Tanggal dihitung Asia/Jakarta, bukan zona server (UTC).
+- **`tugasSaya.ts` = CERMIN** dari `utils/tugasSaya.js`, dijaga `tugasSayaMirrorEdge.test.js`
+  (16 tes: kasus yang sama dijalankan di kedua implementasi, plus sapuan tanggal 60 hari).
+  Kalau menyimpang, widget bisa menampilkan daftar berbeda dari kartu beranda pada menit yang
+  sama tanpa ada yang menyadarinya — pola pagar yang sama dengan `shiftDeriveMirrorEdge`.
+- **Sisi Java**: `TugasWidget.onUpdate` menggambar dulu dari data tersimpan (supaya tak pernah
+  kosong menunggu jaringan), baru menarik di utas terpisah — `onUpdate` jalan di utas utama
+  dan Android membunuh receiver yang berlama-lama. **Tanpa dependensi Gradle baru.** Gagal
+  menarik tak mengubah apa pun.
+- **Logout mencabut tokennya** sebelum sign-out (sesudahnya RPC tak punya sesi lagi), jadi
+  widget di HP yang sama berhenti menarik tugas guru yang sudah keluar.
+
+Deploy bertambah satu: `supabase functions deploy widget-tugas --no-verify-jwt`.
+
 ### Added — rombel tersambung ke layar-layar pemakainya (Kyai, 17 Nov 2026 — gelombang 3)
 
 Fondasi & layarnya sudah ada; gelombang ini yang membuat efeknya benar-benar terasa.
