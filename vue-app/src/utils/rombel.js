@@ -97,13 +97,18 @@ export function petaRombel(rombelList) {
  * punya rombel_id, dan layar tak boleh ikut kosong karenanya.
  */
 export function rombelSantri(s, peta, petaKunci) {
+  const { pagi, sore } = slotGuruSantri(s)
   const id = asli(s?.rombel_id)
   if (id && peta?.get) {
     const r = peta.get(id)
-    if (r) return r
+    // `rombel_id` dipercaya KECUALI kolom guru santri sendiri membantahnya. Begitu gurunya
+    // diganti di layar mana pun — Naik Kelas, form santri, impor — penunjuk lama jadi
+    // menunjuk kelas yang sudah bukan kelasnya; kalau tetap dipercaya, santri itu terus
+    // terhitung di kelas lama tanpa ada yang tahu. Santri yang memang belum berguru tetap
+    // memakai penunjuknya, sebab keanggotaannya diatur sengaja dari layar Rombel.
+    if (r && (!(pagi || sore) || rombelPunyaGuru(r, pagi) || rombelPunyaGuru(r, sore))) return r
   }
   if (petaKunci?.get) {
-    const { pagi, sore } = slotGuruSantri(s)
     const k = kunciPasangan(pagi, sore)
     if (k) return petaKunci.get(`${norm(s?.lembaga)}|${k}`) || null
   }

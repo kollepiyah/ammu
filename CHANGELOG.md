@@ -556,6 +556,51 @@ halaman login, sisipannya sudah dicabut, nol tulisan ke produksi): kasus Ahmad t
 pratinjau meleburnya ke "Siti + Indah" jadi 2 santri, sementara santri yang gurunya
 berpasangan dengan dua orang dilaporkan sebagai tak-bisa-ditebak, bukan ditebak.
 
+### Changed — Rombel jadi MASTER DATA KELAS, "Kelas & Guru" dihapus (Kyai, 17 Nov 2026)
+
+Kyai meluruskan arahnya: layar Rombel yang pertama saya buat cuma ALAT PERAPIAN — membaca
+data santri lama lalu menebak kelasnya. Yang dimaksud Kyai adalah **master data kelas**:
+kelas dibuat DULU, santrinya dicentang, barulah data santri mengikuti. Dengan begitu tak ada
+lagi santri yang nyasar, karena kelasnya ada sebelum santrinya diisi.
+
+- Alurnya persis seperti yang Kyai sebutkan: **Qiraati / Sekolah → lembaga → Tambah Kelas →
+  pilih guru → centang santri → Simpan**. Mengganti guru seorang santri dilakukan dari sini.
+- **Kelas Qiraati tanpa jenjang** — yang menentukan kelas adalah gurunya, bukan label 1A/1B.
+  Satu rombel boleh berisi santri campur jenjang; itu memang kenyataannya.
+- Yang ditawarkan untuk dicentang hanya **santri yang belum berkelas + anggota kelas ini**.
+  Santri milik kelas lain sengaja tak muncul — memindahkannya dari kelas asalnya, supaya tak
+  ada dua layar yang mengaku memilikinya.
+- Santri yang dicabut centangnya **dilepas** (rombel & kolom gurunya dikosongkan). Tanpa itu
+  santri yang dipindah akan tampak di dua kelas sekaligus.
+- Santri satu shift hanya diisi slot yang ia ikuti; mengisi slot sebelahnya mubazir dan dulu
+  justru memecah rombel. Shift tiap santri dipajang di daftar centang.
+- **Pegawai non-pengajar tak muncul** sebagai calon guru kelas (`isPengajar`).
+- Jumlah kelas per lembaga tampil di kepala layar, berikut berapa santri yang belum berkelas.
+- "Susun dari data santri lama" **tetap ada** tapi turun jadi alat sekali-jalan (tersembunyi
+  di bagian lipat), supaya Kyai tak perlu mencentang ratusan santri dari nol pertama kali.
+
+**`KelasGuruView` DIHAPUS** (902 baris) beserta rute, tombol pita, dan sub-tab Master
+Data-nya. Kyai: "kelas dan guru itu hapus saja… impor Excel ini tidak terpakai, karena saya
+nanti tinggal centang-centang aja." Layar itu dikunci ke jenjang (1A/1B) — persis yang Kyai
+sebut keliru untuk Qiraati.
+
+**Satu lubang ditutup di akarnya, bukan ditambal per layar.** `rombelSantri` tak lagi
+mempercayai `rombel_id` secara membabi buta: kalau kolom guru santri sendiri membantahnya
+(mis. gurunya baru diganti lewat Naik Kelas), penunjuk itu diabaikan dan rombelnya dicari
+ulang dari pasangan guru. Tanpa ini, santri yang dipindahkan lewat layar mana pun terus
+terhitung di kelas lama tanpa ada yang tahu. Santri yang memang belum berguru tetap memakai
+penunjuknya — keanggotaannya diatur sengaja dari layar Rombel. Memindahkan kelas saat
+meluluskan santri di Naik Kelas karena itu **tetap bekerja seperti biasa**, tanpa perubahan
+di layar itu.
+
+Diuji (17 Nov): vitest 139 berkas / 2.017 tes (rombel jadi 37 tes, baru: rombel_id basi
+diabaikan, santri belum berguru tetap memakai penunjuknya); eslint 0 error; build vue. Di
+peramban dengan data tiruan + penjaga tulis (layar dipasang sementara di halaman login,
+sisipannya sudah dicabut, nol tulisan ke produksi): ganti kategori & lembaga, "1 kelas di
+PTPT · 3 santri belum berkelas", form kelas baru hanya menawarkan Ahmad/Cahya/Dina (Budi yang
+sudah berkelas tak ditawarkan), label shift per santri benar, dan **pegawai "Staf Kantor"
+tidak muncul** di pilihan guru. Nol galat konsol. **Belum diuji** dengan data nyata.
+
 ### Added — widget Tugas menarik sendiri secara berkala (Kyai, 17 Nov 2026 — gelombang 3)
 
 Sampai sekarang widget hanya segar saat aplikasi dibuka; jadwal yang berubah sesudah itu tak

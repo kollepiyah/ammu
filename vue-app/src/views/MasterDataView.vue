@@ -8,8 +8,8 @@ import { queryColl, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import LembagaView from './LembagaView.vue'
-// v.21.85.0527: KelasView read-only diganti KelasGuruView (assign santri↔guru) + JabatanKelolaView (ACF)
-import KelasGuruView from './KelasGuruView.vue'
+// v.1.5.0 (Kyai 17 Nov): sub-tab "Kelas & Guru" DIHAPUS — digantikan tab Rombel, yang
+//   memakai guru sebagai kelas (bukan jenjang 1A/1B) dan sekaligus mengatur anggotanya.
 import JabatanKelolaView from './JabatanKelolaView.vue'
 import MateriTesKelolaView from './MateriTesKelolaView.vue'
 import FieldSchemaView from './FieldSchemaView.vue'
@@ -946,18 +946,6 @@ async function simpanPengaturanRekap() {
         >
           <i class="fas fa-building mr-1"></i>Daftar Lembaga
         </button>
-        <!-- v.21.85.0527: Kelas & Guru -->
-        <button
-          :class="[
-            'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
-            lembagaSubTab === 'kelas-guru'
-              ? 'bg-cyan-500 text-white border-cyan-600'
-              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
-          ]"
-          @click="lembagaSubTab = 'kelas-guru'"
-        >
-          <i class="fas fa-user-friends mr-1"></i>Kelas &amp; Guru
-        </button>
         <!-- v.21.85.0527: Jabatan ACF -->
         <button
           :class="[
@@ -988,13 +976,11 @@ async function simpanPengaturanRekap() {
       >
         <component
           :is="
-            lembagaSubTab === 'kelas-guru'
-              ? KelasGuruView
-              : lembagaSubTab === 'jabatan'
-                ? JabatanKelolaView
-                : lembagaSubTab === 'materi-tes'
-                  ? MateriTesKelolaView
-                  : LembagaView
+            lembagaSubTab === 'jabatan'
+              ? JabatanKelolaView
+              : lembagaSubTab === 'materi-tes'
+                ? MateriTesKelolaView
+                : LembagaView
           "
           :key="lembagaSubTab"
         />

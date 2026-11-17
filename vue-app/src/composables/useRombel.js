@@ -1,13 +1,22 @@
-// Rombel sebagai entitas — penarikan & penulisan (Kyai, 17 Nov 2026).
-// Aturannya ada di utils/rombel.js (pure + diuji); di sini hanya I/O dan urutan kerja.
+// Rombel = MASTER DATA KELAS (Kyai, 17 Nov 2026).
 //
-// SENGAJA tanpa realtime: layar ini admin-only dan jarang dibuka, sedangkan santri itu
-// tabel terbesar. Tarik sekali, muat ulang sesudah menulis (hemat egress — lihat insiden
-// kuota Sep 2026).
+// Arah yang Kyai tegaskan: kelas dibuat DULU, santrinya dicentang, barulah data santri
+// mengikuti. Bukan sebaliknya — bukan menebak kelas dari data santri yang sudah telanjur
+// berantakan. Dengan begitu tak ada lagi santri yang nyasar: setiap santri jelas di kelas
+// mana karena kelasnya ada lebih dulu.
+//
+// Kelas ngaji (Qiraati) SENGAJA tanpa jenjang: yang menentukan kelas adalah gurunya, bukan
+// label 1A/1B. Satu rombel boleh berisi santri campur jenjang — itu memang kenyataannya di
+// lapangan (lihat utils/kelasHitung).
+//
+// Aturan murninya di utils/rombel.js; di sini hanya I/O dan urutan kerja. Tanpa realtime:
+// layar ini super_admin dan jarang dibuka, sedangkan santri tabel terbesar.
 import { ref, computed } from 'vue'
 import { getAll, mergeOne, updateOne, deleteOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
-import { punyaGuruKategori } from '@/utils/guruScope'
+import { guruAktifSaja, punyaGuruKategori } from '@/utils/guruScope'
+import { isPengajar } from '@/utils/jenisGuru'
+import { shiftNgajiOf } from '@/utils/kelasHitung'
 import {
   idRombel,
   labelRombel,
@@ -15,8 +24,11 @@ import {
   konteksRombel,
   rombelSantri
 } from '@/utils/rombel'
+import { muatRombel } from '@/composables/useKonteksRombel'
 
 const aktifSaja = (s) => s?.aktif !== false
+const _s = (v) => String(v ?? '').trim()
+const _l = (v) => _s(v).toLowerCase()
 
 export function useRombel() {
   const toast = useToast()
@@ -26,28 +38,80 @@ export function useRombel() {
   const memuat = ref(false)
   const sibuk = ref(false)
 
-  // Hanya santri ngaji yang berguru — rombel sekolah memakai guru_sekolah[] dan belum
-  // disentuh di gelombang ini.
-  const santriNgaji = computed(() =>
-    santriList.value.filter((s) => aktifSaja(s) && punyaGuruKategori(s, 'ngaji'))
-  )
+  // Pilihan yang sedang dilihat.
+  const kategori = ref('ngaji') // 'ngaji' | 'sekolah'
+  const lembaga = ref('')
 
   const ctx = computed(() => konteksRombel(rombelList.value))
 
-  /** Berapa santri yang menunjuk / cocok ke tiap rombel. */
-  const jumlahSantri = computed(() => {
+  /** Lembaga yang NYATA punya santri pada kategori ini (bukan daftar master). */
+  const lembagaOptions = computed(() => {
+    const kunci = kategori.value === 'sekolah' ? 'lembaga_sekolah' : 'lembaga'
+    const set = new Set(
+      santriList.value
+        .filter(aktifSaja)
+        .map((s) => _s(s[kunci]))
+        .filter(Boolean)
+    )
+    for (const r of rombelList.value) {
+      if (_s(r.kategori || 'ngaji') === kategori.value && _s(r.lembaga)) set.add(_s(r.lembaga))
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'id'))
+  })
+
+  /** Santri lembaga terpilih — calon anggota kelas. */
+  const santriLembaga = computed(() => {
+    const kunci = kategori.value === 'sekolah' ? 'lembaga_sekolah' : 'lembaga'
+    const lem = _l(lembaga.value)
+    if (!lem) return []
+    return santriList.value
+      .filter(aktifSaja)
+      .filter((s) => _l(s[kunci]) === lem)
+      .sort((a, b) => _s(a.nama).localeCompare(_s(b.nama), 'id'))
+  })
+
+  /** Guru calon pengampu: aktif, PENGAJAR (bukan pegawai), dan se-lembaga. */
+  const guruOptions = computed(() => {
+    const lem = _l(lembaga.value)
+    const kunci = kategori.value === 'sekolah' ? 'lembaga_sekolah' : 'lembaga'
+    return guruAktifSaja(guruList.value)
+      .filter(isPengajar)
+      .filter((g) => !lem || _l(g[kunci]) === lem || _l(g.lembaga) === lem)
+      .map((g) => _s(g.nama))
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, 'id'))
+  })
+
+  /** Kelas pada kategori + lembaga terpilih. */
+  const kelasList = computed(() => {
+    const lem = _l(lembaga.value)
+    return rombelList.value
+      .filter((r) => _s(r.kategori || 'ngaji') === kategori.value)
+      .filter((r) => !lem || _l(r.lembaga) === lem)
+      .slice()
+      .sort((a, b) => labelRombel(a).localeCompare(labelRombel(b), 'id'))
+  })
+
+  /** Anggota tiap kelas, dihitung sekali untuk semua kelas yang tampil. */
+  const anggotaPeta = computed(() => {
     const m = new Map()
-    for (const s of santriNgaji.value) {
+    for (const s of santriList.value.filter(aktifSaja)) {
       const r = rombelSantri(s, ctx.value.peta, ctx.value.petaKunci)
       if (!r) continue
-      m.set(String(r.id), (m.get(String(r.id)) || 0) + 1)
+      const k = String(r.id)
+      if (!m.has(k)) m.set(k, [])
+      m.get(k).push(s)
     }
     return m
   })
 
-  /** Santri ngaji yang belum punya rombel sama sekali — tanda masih ada yang perlu disusun. */
-  const yatim = computed(() =>
-    santriNgaji.value.filter((s) => !rombelSantri(s, ctx.value.peta, ctx.value.petaKunci))
+  function anggota(rombelId) {
+    return anggotaPeta.value.get(String(rombelId)) || []
+  }
+
+  /** Santri lembaga ini yang belum masuk kelas mana pun — yang masih perlu diurus. */
+  const belumBerkelas = computed(() =>
+    santriLembaga.value.filter((s) => !rombelSantri(s, ctx.value.peta, ctx.value.petaKunci))
   )
 
   async function muat() {
@@ -57,23 +121,138 @@ export function useRombel() {
       rombelList.value = Array.isArray(r) ? r : []
       santriList.value = Array.isArray(s) ? s : []
       guruList.value = Array.isArray(g) ? g : []
+      if (!lembaga.value && lembagaOptions.value.length) lembaga.value = lembagaOptions.value[0]
     } catch (e) {
-      toast.error('Gagal memuat rombel: ' + (e.message || e))
+      toast.error('Gagal memuat: ' + (e.message || e))
     } finally {
       memuat.value = false
     }
   }
 
-  /** Pratinjau — TIDAK menulis apa pun. Inilah yang dilihat Kyai sebelum memutuskan. */
-  function pratinjau() {
-    return usulRombelDariSantri(santriNgaji.value)
+  /**
+   * Kolom guru yang pantas ditulis ke seorang santri ngaji.
+   * Santri satu shift hanya diisi slot yang ia ikuti — mengisi slot sebelahnya itu mubazir
+   * (dibuang saat menghitung kelas) dan dulu justru memecah rombel.
+   */
+  function patchGuruNgaji(s, gp, gs) {
+    const shift = shiftNgajiOf(s)
+    return {
+      guru_pagi: shift === 'sore' ? '' : gp,
+      guru_sore: shift === 'pagi' ? '' : gs,
+      // Field lama `guru` ikut dikosongkan supaya guru LAMA tak terus melihat santri ini.
+      guru: ''
+    }
   }
 
   /**
-   * Tulis usulan jadi baris rombel + tunjuk `rombel_id` tiap santrinya.
-   * Idempoten: id rombel diturunkan dari isinya, jadi menekan tombolnya dua kali tidak
-   * melahirkan kembaran.
+   * Simpan satu kelas beserta anggotanya.
+   *
+   * Santri yang DICENTANG ditulis guru & rombelnya; santri yang dulu anggota lalu dicabut
+   * centangnya dilepas — rombel_id dan kolom gurunya dikosongkan. Tanpa pelepasan itu,
+   * santri yang dipindah akan tampak di dua kelas sekaligus.
    */
+  async function simpanKelas(form) {
+    if (sibuk.value) return false
+    const lem = _s(form.lembaga || lembaga.value)
+    const kat = _s(form.kategori || kategori.value)
+    const gp = _s(form.guru_pagi)
+    const gs = _s(form.guru_sore)
+    const gsek = (form.guru_sekolah || []).map(_s).filter(Boolean)
+    if (kat === 'ngaji' && !gp && !gs) {
+      toast.warning('Pilih minimal satu guru (pagi atau sore).')
+      return false
+    }
+    if (kat === 'sekolah' && !gsek.length) {
+      toast.warning('Pilih minimal satu guru kelas.')
+      return false
+    }
+
+    sibuk.value = true
+    try {
+      const id =
+        _s(form.id) ||
+        (kat === 'ngaji' ? idRombel(lem, gp, gs) : idRombel(lem, gsek[0], gsek[1] || ''))
+      const nama =
+        _s(form.nama) ||
+        (kat === 'ngaji' ? labelRombel({ guru_pagi: gp, guru_sore: gs }) : gsek.join(' + '))
+
+      const sebelum = anggota(id).map((s) => String(s.id))
+      await mergeOne('rombel', id, {
+        id,
+        lembaga: lem,
+        kategori: kat,
+        nama,
+        guru_pagi: kat === 'ngaji' ? gp : '',
+        guru_sore: kat === 'ngaji' ? gs : '',
+        aktif: true,
+        guru_sekolah: kat === 'sekolah' ? gsek : []
+      })
+
+      const dipilih = new Set((form.santriIds || []).map(String))
+      const dulu = new Set(sebelum)
+      let nTulis = 0
+      let nLepas = 0
+
+      for (const s of santriLembaga.value) {
+        const sid = String(s.id)
+        if (dipilih.has(sid)) {
+          const patch = kat === 'ngaji' ? patchGuruNgaji(s, gp, gs) : { guru_sekolah: gsek }
+          patch.rombel_id = id
+          await updateOne('santri', sid, patch)
+          nTulis++
+        } else if (dulu.has(sid)) {
+          const patch =
+            kat === 'ngaji' ? { guru_pagi: '', guru_sore: '', guru: '' } : { guru_sekolah: [] }
+          patch.rombel_id = ''
+          await updateOne('santri', sid, patch)
+          nLepas++
+        }
+      }
+
+      toast.success(`Kelas disimpan — ${nTulis} santri` + (nLepas ? `, ${nLepas} dilepas` : ''))
+      await muat()
+      await muatRombel(true) // layar lain memakai daftar yang sama
+      return true
+    } catch (e) {
+      toast.error('Gagal menyimpan: ' + (e.message || e))
+      return false
+    } finally {
+      sibuk.value = false
+    }
+  }
+
+  /** Hapus kelas; santrinya dilepas supaya tak menunjuk kelas yang sudah tiada. */
+  async function hapusKelas(rombel) {
+    if (sibuk.value || !rombel?.id) return
+    sibuk.value = true
+    try {
+      const kat = _s(rombel.kategori || 'ngaji')
+      for (const s of anggota(rombel.id)) {
+        await updateOne('santri', String(s.id), {
+          rombel_id: '',
+          ...(kat === 'ngaji' ? { guru_pagi: '', guru_sore: '', guru: '' } : { guru_sekolah: [] })
+        })
+      }
+      await deleteOne('rombel', String(rombel.id))
+      toast.success('Kelas dihapus.')
+      await muat()
+      await muatRombel(true)
+    } catch (e) {
+      toast.error('Gagal menghapus: ' + (e.message || e))
+    } finally {
+      sibuk.value = false
+    }
+  }
+
+  // ── Perapian sekali-jalan: susun kelas dari data santri lama ────────────────
+  //   Masih berguna untuk PERTAMA KALI, supaya Kyai tak mencentang ratusan santri dari nol.
+  //   Sesudah itu kelas dibuat & diisi manual seperti di atas.
+  function pratinjau() {
+    return usulRombelDariSantri(
+      santriList.value.filter(aktifSaja).filter((s) => punyaGuruKategori(s, 'ngaji'))
+    )
+  }
+
   async function terapkan(usul) {
     if (sibuk.value) return { rombel: 0, santri: 0 }
     sibuk.value = true
@@ -97,94 +276,33 @@ export function useRombel() {
           nS++
         }
       }
-      toast.success(`${nR} rombel tersusun, ${nS} santri ditunjuk.`)
+      toast.success(`${nR} kelas tersusun, ${nS} santri ditunjuk.`)
       await muat()
+      await muatRombel(true)
     } catch (e) {
-      toast.error(`Berhenti setelah ${nR} rombel: ` + (e.message || e))
+      toast.error(`Berhenti setelah ${nR} kelas: ` + (e.message || e))
     } finally {
       sibuk.value = false
     }
     return { rombel: nR, santri: nS }
   }
 
-  /**
-   * Ganti guru satu rombel SEKALIGUS — ini yang diminta Kyai supaya tak lagi santri per santri.
-   *
-   * Baris rombel diperbarui, LALU kolom guru di tiap santrinya ikut ditulis ulang. Santrinya
-   * ikut diubah karena banyak layar & ekspor masih membaca `guru_pagi`/`guru_sore` langsung;
-   * kalau cuma rombelnya yang berubah, nama guru lama akan terus muncul di sana.
-   */
-  async function gantiGuru(rombel, { guru_pagi, guru_sore, nama }) {
-    if (sibuk.value || !rombel?.id) return 0
-    sibuk.value = true
-    let n = 0
-    try {
-      const gp = String(guru_pagi ?? rombel.guru_pagi ?? '').trim()
-      const gs = String(guru_sore ?? rombel.guru_sore ?? '').trim()
-      await mergeOne('rombel', String(rombel.id), {
-        id: String(rombel.id),
-        lembaga: rombel.lembaga || '',
-        kategori: rombel.kategori || 'ngaji',
-        nama:
-          String(nama ?? rombel.nama ?? '').trim() || labelRombel({ guru_pagi: gp, guru_sore: gs }),
-        guru_pagi: gp,
-        guru_sore: gs,
-        aktif: rombel.aktif !== false
-      })
-      const anggota = santriNgaji.value.filter((s) => {
-        const r = rombelSantri(s, ctx.value.peta, ctx.value.petaKunci)
-        return r && String(r.id) === String(rombel.id)
-      })
-      for (const s of anggota) {
-        // Santri satu shift tetap satu shift: slot yang memang kosong jangan diisi paksa,
-        // sebab itulah yang dulu membuat kelas pecah (lihat utils/rombel).
-        const patch = { rombel_id: String(rombel.id) }
-        if (String(s.guru_pagi || '').trim()) patch.guru_pagi = gp
-        if (String(s.guru_sore || '').trim()) patch.guru_sore = gs
-        await updateOne('santri', String(s.id), patch)
-        n++
-      }
-      toast.success(`Guru rombel diganti — ${n} santri ikut diperbarui.`)
-      await muat()
-    } catch (e) {
-      toast.error(`Berhenti setelah ${n} santri: ` + (e.message || e))
-    } finally {
-      sibuk.value = false
-    }
-    return n
-  }
-
-  /** Hapus rombel; penunjuk di santrinya ikut dilepas supaya tak menunjuk entah ke mana. */
-  async function hapus(rombel) {
-    if (sibuk.value || !rombel?.id) return
-    sibuk.value = true
-    try {
-      const anggota = santriList.value.filter(
-        (s) => String(s.rombel_id || '') === String(rombel.id)
-      )
-      for (const s of anggota) await updateOne('santri', String(s.id), { rombel_id: '' })
-      await deleteOne('rombel', String(rombel.id))
-      toast.success(`Rombel dihapus — ${anggota.length} santri dilepas penunjuknya.`)
-      await muat()
-    } catch (e) {
-      toast.error('Gagal menghapus: ' + (e.message || e))
-    } finally {
-      sibuk.value = false
-    }
-  }
-
   return {
+    kategori,
+    lembaga,
     rombelList,
-    guruList,
-    santriNgaji,
-    jumlahSantri,
-    yatim,
+    guruOptions,
+    lembagaOptions,
+    santriLembaga,
+    kelasList,
+    anggota,
+    belumBerkelas,
     memuat,
     sibuk,
     muat,
+    simpanKelas,
+    hapusKelas,
     pratinjau,
-    terapkan,
-    gantiGuru,
-    hapus
+    terapkan
   }
 }

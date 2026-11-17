@@ -101,7 +101,6 @@ const AppShell = () => import('@/components/layout/AppShell.vue')
 const BerandaDesktopView = () => import('@/views/BerandaDesktopView.vue')
 const KeuanganDesktopView = () => import('@/views/KeuanganDesktopView.vue')
 // v.98: Kelas & Guru — assign santri ke guru (sudah ada, kini dirutekan utk pita "Kelas")
-const KelasGuruView = () => import('@/views/KelasGuruView.vue')
 // v.1.5.0 (Kyai 17 Nov): rombel sebagai entitas — susun dari data santri, ganti guru sekelas.
 const RombelView = () => import('@/views/RombelView.vue')
 // v.98: halaman khusus Electron — Mapel lembaga formal + Pengaturan (hub full-CRUD/ACF)
@@ -196,7 +195,6 @@ const routes = [
       },
       { path: 'kelas', name: 'kelas', component: KelasView, meta: { admin: true } },
       // v.98: assign guru+santri (pita Pendidikan -> Kelas)
-      { path: 'kelas-guru', name: 'kelas-guru', component: KelasGuruView, meta: { admin: true } },
       // Rombel tinggal di Master Data (Kyai 17 Nov). Rute ini tetap ada untuk tautan
       //   langsung, dan dikunci SAMA ketatnya — layarnya menulis ulang ratusan baris santri.
       {

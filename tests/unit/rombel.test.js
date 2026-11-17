@@ -108,6 +108,24 @@ describe('rombelSantri', () => {
     expect(rombelSantri(s, peta, petaK)?.id).toBe('r1')
   })
 
+  it('rombel_id BASI diabaikan begitu guru santri dipindah (mis. lewat Naik Kelas)', () => {
+    // Santri dulu di r1 (Siti+Indah), lalu gurunya diganti jadi Umar di layar Naik Kelas.
+    // Tanpa aturan ini ia terus terhitung di kelas lama tanpa ada yang tahu.
+    const rombel2 = [
+      { id: 'r1', lembaga: 'TPQ Pagi', guru_pagi: 'Siti', guru_sore: 'Indah' },
+      { id: 'r2', lembaga: 'TPQ Pagi', guru_pagi: 'Umar', guru_sore: '' }
+    ]
+    const p2 = petaRombel(rombel2)
+    const k2 = petaKunciRombel(rombel2)
+    const s = S('pindah', { rombel_id: 'r1', guru_pagi: 'Umar' })
+    expect(rombelSantri(s, p2, k2)?.id).toBe('r2')
+  })
+
+  it('santri BELUM berguru tetap memakai penunjuknya — keanggotaan diatur dari layar Rombel', () => {
+    const s = S('baru', { rombel_id: 'r1' })
+    expect(rombelSantri(s, peta, petaK)?.id).toBe('r1')
+  })
+
   it('rombel_id yang menunjuk entah ke mana jatuh ke pencocokan nama', () => {
     const s = S('c', { rombel_id: 'hilang', guru_pagi: 'Siti', guru_sore: 'Indah' })
     expect(rombelSantri(s, peta, petaK)?.id).toBe('r1')
