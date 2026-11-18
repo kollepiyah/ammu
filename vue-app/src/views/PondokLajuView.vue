@@ -314,6 +314,14 @@
           <p class="text-[11px] text-[var(--text-secondary)]">
             Ketuk baris tanggal untuk mengubah. {{ jumlahDraft }} perubahan belum disimpan.
           </p>
+          <!-- Kyai 19 Nov 2026: pengingat WA otomatis sesudah jadwal disimpan. Bisa dimatikan
+               untuk simpanan kecil (mis. membetulkan salah pilih) supaya guru tak dihujani. -->
+          <label
+            class="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer"
+          >
+            <input v-model="jKirimWa" type="checkbox" class="accent-emerald-600" />
+            <i class="fab fa-whatsapp text-emerald-600"></i>Kirim pengingat WA ke guru
+          </label>
           <button
             :disabled="!adaDraft || jMenyimpan"
             class="h-10 px-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black cursor-pointer"
@@ -744,6 +752,7 @@ import { jenisBisyarohList } from '@/utils/bisyarohScope'
 import { rentangPeriodeBisyaroh, penyaringPeriodeBisyaroh } from '@/utils/periodeBisyaroh'
 import { rekapJurnalBulan } from '@/utils/jurnalRekap'
 import JurnalKartu from '@/components/pondoklaju/JurnalKartu.vue'
+import { kirimPengingatJadwal, ringkasPengingat } from '@/services/waJadwal'
 import {
   SESI_LAJU,
   SESI_PIKET,
@@ -980,10 +989,23 @@ function buatUsulan() {
   toast.info(`Usulan ${usulan.length} sel dibuat — periksa lalu SIMPAN JADWAL.`)
 }
 
+// Pengingat WA (Kyai 19 Nov 2026) — sengaja tak ditunggu: penyimpanan jadwal sudah selesai,
+//   pengiriman bisa makan semenit (berjeda antarguru) dan hasilnya cukup dilaporkan lewat toast.
+const jKirimWa = ref(true)
+async function kirimWaJadwal(ids) {
+  try {
+    const r = ringkasPengingat(await kirimPengingatJadwal(ids))
+    if (r) toast[r.jenis](r.teks, 9000)
+  } catch (e) {
+    toast.warning('Pengingat WA gagal dikirim: ' + (e?.message || e))
+  }
+}
+
 async function simpanJadwal() {
   if (!adaDraft.value || jMenyimpan.value) return
   jMenyimpan.value = true
   const entri = Object.entries(draft)
+  const terisi = [] // id sel yang kini ber-guru — bahan pengingat WA
   let i = 0
   try {
     for (const [key, guruId] of entri) {
@@ -1007,11 +1029,13 @@ async function simpanJadwal() {
           dibuat_oleh: myNama.value,
           tgl_buat: new Date().toISOString()
         })
+        terisi.push(id)
       }
       delete draft[key]
     }
     toast.success(`Jadwal tersimpan (${entri.length} perubahan).`)
     jEdit.value = ''
+    if (jKirimWa.value && terisi.length) kirimWaJadwal(terisi)
   } catch (e) {
     toast.error(`Gagal menyimpan jadwal (${i - 1} tersimpan): ` + (e?.message || e))
   } finally {

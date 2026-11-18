@@ -409,3 +409,39 @@ Induk supaya kas tak ikut bertambah.
 - Cicilan: wali mengubah nominal per tagihan di keranjang; tiap pembayaran kena biaya layanan.
 - Kode bayar yang dibatalkan wali juga dibatalkan di Midtrans; bila ternyata sudah terbayar,
   pembatalan ditolak dan notifikasinya tetap dicatat.
+
+---
+
+## 10. Pengingat WA jadwal piket Pondok Laju — Fonnte — v.1.5.1
+
+Fungsi `kirim-wa-jadwal` dipanggil app sesudah "Simpan Jadwal" (menu Pondok Laju → Jadwal) dan
+mengirim SATU pesan per guru yang mendapat piket baru. Nomor pengirim = perangkat Fonnte (nomor
+biasa, bukan WA resmi — bila diblokir, ganti nomor di Fonnte; token perangkat baru → pasang ulang
+secret di bawah).
+
+### a. Pasang (sekali)
+
+```bash
+supabase db push                                   # migrasi 20261119100000_wa_kirim_log.sql
+supabase secrets set FONNTE_TOKEN=<token perangkat dari dasbor Fonnte>
+supabase functions deploy kirim-wa-jadwal
+```
+
+Token diambil di dasbor Fonnte → Device → token perangkat yang tersambung. Jangan menaruhnya di
+kode atau berkas `.env` yang ikut commit.
+
+### b. Uji
+
+Susun satu sel jadwal untuk diri sendiri (tanggal hari ini/besok), centang "Kirim pengingat WA ke
+guru", Simpan. Toast "Pengingat WA terkirim ke 1 guru" + pesan masuk di WA. Log pengiriman:
+
+```sql
+select id, status, detail, updated_at from public.wa_kirim_log order by updated_at desc limit 20;
+```
+
+### c. Catatan / risiko
+
+- Tanpa secret: simpan jadwal tetap jalan; toast "Pengingat WA belum aktif".
+- Satu penugasan (sel × guru) hanya dikirim sekali; yang `gagal` dicoba lagi pada simpan berikutnya.
+- Jadwal yang tersimpan SEBELUM fitur ini tak dikirim otomatis.
+- Token salah / kuota habis → pengiriman berhenti (tak diulang ke semua guru); lihat kolom `detail`.

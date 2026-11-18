@@ -7,6 +7,11 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ## v.1.5.1 — November 2026
 
+**Baru**
+
+- **Pengingat WA jadwal piket Pondok Laju.** Begitu admin menyimpan jadwal, setiap guru yang
+  mendapat piket otomatis menerima pesan WhatsApp berisi tanggal, sesi, dan kelasnya.
+
 **Perubahan**
 
 - **Menu lebih ringkas untuk guru.** Menu Pondok Laju, Ceremonial PTPT, dan Glondongan PTPT kini

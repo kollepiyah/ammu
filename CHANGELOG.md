@@ -28,15 +28,51 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.1] — 2026-11-19 — Hemat egress: app yang kembali dari latar tak lagi mengunduh ulang seluruh tabel
+## [v.1.5.1] — 2026-11-19 — Pengingat WA jadwal piket Pondok Laju otomatis lewat Fonnte
 
 **BELUM DIRILIS.** v.1.5.0 sudah tayang (AAB vc150 di Play, 18 Nov dini hari), jadi nomor naik:
-`versionCode` 151 / `versionName` `v.1.5.1` (web, AAB, Electron, PSB), gelombang 3. Rilis ini juga
+`versionCode` 151 / `versionName` `v.1.5.1` (web, AAB, Electron, PSB), gelombang 4. Rilis ini juga
 membawa `52bd5cc` (hitungan hari izin per tanggal) yang belum ikut AAB vc150.
-**Tanpa migrasi.** Edge `widget-tugas/tugasSaya.ts` ikut diubah demi cermin (gelombang 1), tapi
-perilakunya pada baris mentah tak berubah — **tak perlu deploy ulang**. Cukup: deploy web →
-rebuild AAB → rilis Electron. Penghematan baru terasa penuh sesudah HP guru memakai AAB baru
+**SATU migrasi** `20261119100000_wa_kirim_log.sql` (tabel log + `auth_boleh_susun_jadwal_laju()`)
+dan **SATU edge function BARU** `kirim-wa-jadwal` + secret `FONNTE_TOKEN`. Edge
+`widget-tugas/tugasSaya.ts` ikut diubah demi cermin (gelombang 1), tapi perilakunya pada baris
+mentah tak berubah — tak perlu deploy ulang. Urutan: `supabase db push` → pasang secret →
+deploy `kirim-wa-jadwal` → deploy web → rebuild AAB → rilis Electron. Tanpa secret, simpan
+jadwal tetap jalan; toast memberi tahu "Pengingat WA belum aktif". Penghematan baru terasa penuh sesudah HP guru memakai AAB baru
 (Android membundel web).
+
+Diuji: vitest — baru `kirimWaJadwal` 9 tes (nomor WA, label sesi = app, tanggal Indonesia,
+per guru urut tanggal+sesi, tanggal lewat dibuang, tak dobel sesudah terkirim tapi guru pengganti
+tetap dikirimi, isi pesan) dan `waJadwalPemicu` 5 tes (panggil ulang selama `sisa` sambil membawa
+guru yang sudah diproses, berhenti saat token/kuota, token belum dipasang = info), seluruh vitest 147 berkas / 2.107 tes,
+eslint, build; sintaks edge (esbuild). Migrasi di PGlite: penyusun jadwal (admin/PJ PTPT/Admin
+Pondok Laju) boleh, guru biasa & anon tidak; klien `authenticated` ditolak membaca log; trigger
+`updated_at` jalan; idempoten. Data nyata (baca-saja): 87/87 guru aktif bernomor WA; 10 sel
+jadwal mendatang milik 7 guru. **Belum diuji:** pengiriman sungguhan ke Fonnte (butuh deploy +
+token) dan alur di layar dengan akun nyata.
+
+### Added (Kyai, 19 Nov 2026 — "fonnte, jam kirim setelah dijadwalkan oleh admin, cukup pengingat saja")
+
+- **Pengingat WA jadwal piket Pondok Laju.** Sesudah "Simpan Jadwal", tiap guru yang mendapat
+  piket baru (sel baru diisi / gurunya diganti) menerima SATU pesan WA berisi daftar tanggal,
+  sesi, dan kelasnya. Centang "Kirim pengingat WA ke guru" (bawaan menyala) bisa dimatikan untuk
+  simpanan kecil. Hasil dilaporkan lewat toast (terkirim / tanpa nomor / gagal).
+- Edge function `kirim-wa-jadwal`: membaca ulang baris jadwal dari DB (isi dari app tak
+  dipercaya), hanya penyusun jadwal yang boleh memicu (`auth_boleh_susun_jadwal_laju`, cermin
+  policy INSERT jadwal), tanggal yang sudah lewat (WIB) tak diingatkan, kirim satu per satu berjeda
+  1,5 dtk lewat `POST api.fonnte.com/send` (token mentah di `Authorization`, `countryCode: '0'` karena
+  nomor sudah 62…), maks 25 guru per panggilan (`sisa` → app memanggil lagi, `lewatiGuru` mencegah
+  berputar). Token salah / kuota habis → berhenti, tak diulang ke semua guru.
+- `wa_kirim_log`: satu baris per penugasan (`laju|<jadwal>|<guru>`), status `terkirim`/`gagal`;
+  hanya service role. Simpan ulang tak membuat pesan dobel; yang gagal dicoba lagi pada simpan
+  berikutnya; guru tanpa nomor tak dicatat (begitu nomornya diisi, simpan ulang mengirim).
+- Aturan isi & pemilihan satu sumber di `supabase/functions/kirim-wa-jadwal/pesan.ts`; pemicu &
+  ringkasan toast di `services/waJadwal.js`. Keuangan wali (syahriyah/tagihan) SENGAJA tak ikut —
+  tetap tombol WA manual sampai app dirilis ke wali (keputusan Kyai).
+
+---
+
+## [v.1.5.1 · gelombang 3] — 2026-11-19 — Hemat egress: app yang kembali dari latar tak lagi mengunduh ulang seluruh tabel
 
 Diuji: vitest — `dbRealtimeInkremental` 46 tes (9 baru untuk tarikan segar: tambah/ubah/hapus
 selagi putus tertangkap tanpa tarikan penuh, hasil identik dengan langganan baru termasuk baris
