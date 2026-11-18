@@ -8,7 +8,7 @@ import { useTugasSaya } from '@/composables/useTugasSaya'
 import { JENIS_TUGAS, LABEL_PERLU } from '@/utils/tugasSaya'
 
 const router = useRouter()
-const { hasil, memuat, galat, berlaku } = useTugasSaya()
+const { hasil, galat, berlaku } = useTugasSaya()
 
 // Kelas Tailwind HARUS utuh — `bg-${warna}-50` kena purge dan jadi tak berwarna.
 const WARNA = {
@@ -50,8 +50,10 @@ function buka(tugas) {
 </script>
 
 <template>
+  <!-- Kyai 18 Nov 2026: guru tanpa tugas apa pun tak perlu melihat kartu kosong — kartunya
+       baru muncul bila ada isinya (atau gagal dimuat, supaya kegagalan tak tersembunyi). -->
   <div
-    v-if="berlaku"
+    v-if="berlaku && (adaIsi || galat)"
     class="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-5 border border-slate-200 dark:border-slate-700 shadow-sm"
   >
     <div class="flex items-center justify-between mb-3">
@@ -65,29 +67,15 @@ function buka(tugas) {
       >
     </div>
 
-    <div v-if="memuat" class="py-6 text-center">
-      <i class="fas fa-spinner fa-spin text-emerald-500 text-2xl mb-2"></i>
-      <p class="text-xs text-slate-500 font-bold">Memuat tugas...</p>
-    </div>
-
     <p
-      v-else-if="galat"
+      v-if="galat && !adaIsi"
       class="py-4 text-center text-xs font-bold text-amber-600 dark:text-amber-400"
     >
       <i class="fas fa-triangle-exclamation mr-1"></i>{{ galat }}
     </p>
 
-    <!-- Tak punya tugas adalah keadaan NORMAL dan paling sering — jangan dibuat
-         seperti kegagalan. -->
-    <div
-      v-else-if="!adaIsi"
-      class="py-6 text-center bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-600"
-    >
-      <i class="fas fa-mug-hot text-slate-300 dark:text-slate-600 text-3xl mb-2"></i>
-      <p class="text-xs text-slate-500 dark:text-slate-400 font-bold">Tak ada tugas terjadwal</p>
-    </div>
-
-    <div v-else class="space-y-3">
+    <!-- Di desktop kartu ini selebar beranda, jadi kelompoknya disusun berdampingan. -->
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
       <div v-for="g in grupTerjadwal" :key="g.kunci">
         <p
           class="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5"

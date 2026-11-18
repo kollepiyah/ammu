@@ -138,6 +138,16 @@ const KASUS = {
     guruId: 'g1',
     hariIni: HARI_INI,
     jadwalLaju: [jadwal(HARI_INI, 'entah', 'g1')]
+  },
+
+  // 18 Nov 2026: app mengirim baris yang ekor jsonb-nya sudah diratakan (tanpa `data`).
+  'seremonial berbentuk rata': {
+    guruId: 'g1',
+    hariIni: HARI_INI,
+    seremonial: [
+      (({ data, ...r }) => ({ ...r, ...data }))(seremonial(HARI_INI, ['g1'])),
+      (({ data, ...r }) => ({ ...r, ...data }))(seremonial(HARI_INI, ['g9']))
+    ]
   }
 }
 

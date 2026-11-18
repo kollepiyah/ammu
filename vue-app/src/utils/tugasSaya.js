@@ -6,7 +6,8 @@
 //
 // Karena itu fungsi di sini PURE: tanggal hari ini DIKIRIM pemanggil, bukan dibaca dari
 // jam mesin, supaya hasilnya bisa diuji dan tak berubah sendiri saat lewat tengah malam.
-import { labelSesi } from '@/utils/pondokLajuSesi'
+import { labelSesi, bolehSusunJadwal, penandaGuruKelasLaju } from '@/utils/pondokLajuSesi'
+import { isPjLembaga, kategoriKoordinatori, PTPT_LEMBAGA } from '@/utils/glondongan'
 
 // Judul laci kedua. Kyai menolak kata "tunggakan" (terdengar seperti punya utang), jadi
 // kata ini disimpan SATU tempat — ganti di sini, ketiga tampilan ikut.
@@ -147,7 +148,9 @@ export function susunTugasSaya(opt = {}) {
 
   // --- 3. Seremonial PTPT tempat guru ini jadi penyimak ---
   for (const r of seremonial) {
-    const d = r?.data || {}
+    // `r.data` = baris mentah (edge); di app queryColl sudah meratakan ekor jsonb ke puncak.
+    //   Dulu hanya `r.data` yang dibaca, jadi di kartu beranda seremonial tak pernah muncul.
+    const d = r?.data || r || {}
     const ikut =
       Array.isArray(d.penyimak_guru) && d.penyimak_guru.some((g) => String(g?.id ?? '') === me)
     if (!ikut) continue
@@ -262,4 +265,82 @@ export function ringkasUntukWidget(hasil, maks = 3) {
     d: t.detail || '',
     n: t.jenis || ''
   }))
+}
+
+// ── Akses menu yang bergantung tugas (Kyai 18 Nov 2026) ──────────────────────────────────
+// "Menu Pondok Laju, Seremonial, dan Glondongan terlalu terbuka untuk guru — harusnya hanya
+// ketika punya jadwal." Pengelola tetap selalu melihat; guru biasa hanya saat punya tugas.
+
+/** Akun pengelola lintas lembaga: menu tugas tampil apa adanya, tanpa syarat jadwal. */
+export function aksesPenuhTugas(sesi) {
+  if (!sesi) return false
+  if (sesi.role === 'admin' || sesi.id === 'admin') return true
+  return ['super_admin', 'admin', 'admin_keuangan'].includes(String(sesi.role_sistem || ''))
+}
+
+const _normNama = (v) =>
+  String(v ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+
+/**
+ * Menu mana yang boleh tampil untuk akun ini. Baris boleh mentah (`data` jsonb) atau rata.
+ *
+ * - Pondok Laju: penyusun jadwal (PJ PTPT / Admin Pondok Laju), guru kelas santri Pondok Laju
+ *   (Tadarus Pagi tiap hari), atau punya piket sejak `horizonHari` lalu (jurnal boleh telat).
+ * - Seremonial: PJ PTPT / koordinator glondongan (penjadwal), atau penyimak sesi terjadwal
+ *   yang belum lewat.
+ * - Glondongan: PJ PTPT / koordinator, atau punya blok 'ditugaskan' (termasuk yang menunggu
+ *   giliran — supaya penyimak tahu tugasnya ada).
+ *
+ * @returns {{pondokLaju:boolean, seremonial:boolean, glondongan:boolean}}
+ */
+export function aksesMenuTugas(opt = {}) {
+  const {
+    sesi,
+    hariIni,
+    horizonHari = 7,
+    lembagaList = [],
+    santriList = [],
+    jadwalLaju = [],
+    seremonial = [],
+    glondongan = []
+  } = opt
+  if (aksesPenuhTugas(sesi)) return { pondokLaju: true, seremonial: true, glondongan: true }
+  const tutup = { pondokLaju: false, seremonial: false, glondongan: false }
+  const me = String(sesi?.id ?? '')
+  const h = String(hariIni || '')
+  if (!me || h.length !== 10) return tutup
+  const namaSaya = String(sesi?.guru || sesi?.nama || '').trim()
+  const nama = _normNama(namaSaya)
+
+  const pengelolaPtpt =
+    isPjLembaga(sesi, PTPT_LEMBAGA) || kategoriKoordinatori(me, lembagaList).length > 0
+
+  const mundur = geserHari(h, -horizonHari)
+  const piket = jadwalLaju.some(
+    (r) => String(r?.guru_id ?? '') === me && String(r?.tanggal || '') >= mundur
+  )
+  const guruKelasLaju = !!nama && penandaGuruKelasLaju(santriList)({ nama: namaSaya })
+
+  const penyimak = seremonial.some((r) => {
+    const d = r?.data || r || {}
+    if (r?.status && String(r.status) !== 'terjadwal') return false
+    if (String(r?.tanggal || '') < h) return false
+    return Array.isArray(d.penyimak_guru) && d.penyimak_guru.some((g) => String(g?.id ?? '') === me)
+  })
+
+  const menilai = glondongan.some((r) => {
+    const d = r?.data || r || {}
+    if (String(r?.status || d.status || '') !== 'ditugaskan') return false
+    const pid = String(r?.penguji_id ?? d.penguji_id ?? '')
+    return pid ? pid === me : !!nama && _normNama(r?.penguji_nama ?? d.penguji_nama) === nama
+  })
+
+  return {
+    pondokLaju: bolehSusunJadwal(sesi, lembagaList) || guruKelasLaju || piket,
+    seremonial: pengelolaPtpt || penyimak,
+    glondongan: pengelolaPtpt || menilai
+  }
 }

@@ -131,7 +131,8 @@ export function susunTugasSaya(opt: Baris = {}): {
   }
 
   for (const r of seremonial) {
-    const d = r?.data || {}
+    // Cermin app: baris mentah (`r.data`) maupun yang sudah diratakan.
+    const d = r?.data || r || {}
     const ikut =
       Array.isArray(d.penyimak_guru) &&
       d.penyimak_guru.some((g: Baris) => String(g?.id ?? '') === me)

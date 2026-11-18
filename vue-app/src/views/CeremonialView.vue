@@ -94,10 +94,23 @@ const santriAmpuanIds = computed(() => {
 //   super_admin & koordinator : SEMUA sesi.
 //   PJ PTPT                   : hanya sesi yang memuat santri AMPUANNYA (pj_ptpt =
 //                               namanya) — v.1.1.9, dulu ikut lihat semua.
-//   Guru biasa                : hanya sesi yang memuat santri kelas ampuannya.
+//   Guru biasa                : hanya sesi terjadwal yang ia simak (18 Nov 2026).
 //   Peran menumpuk → gabungan (mis. PJ yang juga pegang kelas).
 const sesiTerlihat = computed(() => {
   if (isSuper.value || isKoordinator.value) return sesiList.value
+  // Kyai 18 Nov 2026: guru biasa terlalu banyak melihat (kandidat semua santri, riwayat sesi
+  //   kelasnya). Kini hanya sesi TERJADWAL tempat ia sendiri jadi penyimak — jadwalnya, bukan
+  //   arsip. Menu Seremonial pun baru tampil untuknya bila sesi seperti ini ada.
+  if (!canKelola.value) {
+    const me = String(sesiAkun.value.id ?? '')
+    return sesiList.value.filter(
+      (s) =>
+        s.status === 'terjadwal' &&
+        (Array.isArray(s.penyimak_guru) ? s.penyimak_guru : []).some(
+          (g) => String(g?.id ?? '') === me
+        )
+    )
+  }
   const mine = santriAmpuanIds.value
   const punyaKelas = (s) =>
     (Array.isArray(s.peserta) ? s.peserta : []).some((p) => mine.has(String(p.santri_id)))
@@ -107,6 +120,8 @@ const sesiTerlihat = computed(() => {
 // ── v.1.2.0 (Kyai 21 Jul): daftar KANDIDAT otomatis + pisah sudah/belum dijadwalkan,
 //    supaya penjadwalan tak lagi manual satu per satu. ──────────────────────────
 const tab = ref('kandidat') // 'kandidat' | 'sesi' — mulai dari yang perlu ditindak
+// Kandidat urusan penjadwal; guru biasa hanya punya tab Sesi (Kyai 18 Nov 2026).
+const tabAktif = computed(() => (canKelola.value ? tab.value : 'sesi'))
 const kandidatTab = ref('belum') // 'belum' | 'sudah'
 // Kandidat penuh (tak terpengaruh isi dialog) — dasar kedua sub-tab & badge.
 const kandidatSemua = computed(() => {
@@ -383,10 +398,7 @@ function jamRange(s) {
           Jadwal sesi ceremonial santri yang sudah lulus tes PJ — atur waktu, penyimak guru, dan
           penyimak santri.
         </template>
-        <template v-else>
-          Jadwal &amp; riwayat ceremonial santri kelas ampuan. Sesi yang tak memuat santri kelas
-          ampuan tidak ditampilkan.
-        </template>
+        <template v-else> Sesi ceremonial terjadwal yang Anda simak. </template>
       </p>
       <button
         v-if="canKelola"
@@ -398,7 +410,7 @@ function jamRange(s) {
     </div>
 
     <!-- v.1.2.0: tab utama — Kandidat (perlu ditindak) vs Sesi (jadwal yang sudah ada) -->
-    <div class="flex gap-1.5">
+    <div v-if="canKelola" class="flex gap-1.5">
       <button
         v-for="t in [
           { v: 'kandidat', l: 'Kandidat', n: kandidatBelum.length },
@@ -407,7 +419,7 @@ function jamRange(s) {
         :key="t.v"
         :class="[
           'px-3.5 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
-          tab === t.v
+          tabAktif === t.v
             ? 'bg-teal-600 text-white border-teal-700'
             : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
         ]"
@@ -421,7 +433,7 @@ function jamRange(s) {
     </div>
 
     <!-- ══════════ TAB KANDIDAT ══════════ -->
-    <div v-if="tab === 'kandidat'" class="space-y-3">
+    <div v-if="tabAktif === 'kandidat'" class="space-y-3">
       <div class="flex gap-1.5">
         <button
           v-for="t in [
@@ -545,8 +557,8 @@ function jamRange(s) {
 
     <!-- ══════════ TAB SESI ══════════ -->
     <template v-else>
-      <!-- Filter status -->
-      <div class="flex gap-1.5 overflow-x-auto custom-scrollbar">
+      <!-- Filter status — guru biasa hanya melihat yang terjadwal, jadi tak perlu -->
+      <div v-if="canKelola" class="flex gap-1.5 overflow-x-auto custom-scrollbar">
         <button
           v-for="f in [
             { v: '', l: 'Semua' },
@@ -579,7 +591,7 @@ function jamRange(s) {
               ? 'Tidak ada sesi dengan status ini.'
               : canKelola
                 ? 'Belum ada sesi ceremonial.'
-                : 'Belum ada sesi ceremonial yang memuat santri kelas ampuan.'
+                : 'Tidak ada sesi ceremonial terjadwal untuk Anda simak.'
           }}
         </p>
       </div>

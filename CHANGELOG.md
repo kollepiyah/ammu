@@ -28,6 +28,58 @@ menyuntikkan data pengguna).
 
 ---
 
+## [v.1.5.1] — 2026-11-18 — Menu Pondok Laju, Seremonial & Glondongan hanya untuk guru yang punya tugas; kartu Tugas Saya tak tampil kosong; Beranda desktop rapi
+
+**BELUM DIRILIS.** v.1.5.0 sudah tayang (AAB vc150 di Play, 18 Nov dini hari), jadi nomor naik:
+`versionCode` 151 / `versionName` `v.1.5.1` (web, AAB, Electron, PSB). Rilis ini juga membawa
+`52bd5cc` (hitungan hari izin per tanggal) yang belum ikut AAB vc150.
+**Tanpa migrasi.** Edge `widget-tugas/tugasSaya.ts` ikut diubah demi cermin, tapi perilakunya pada
+baris mentah tak berubah — **tak perlu deploy ulang**. Cukup: deploy web → rebuild AAB → rilis Electron.
+
+Diuji: vitest 144 berkas / 2.076 tes (baru `aksesMenuTugas` 13 tes + kasus cermin "seremonial
+berbentuk rata"), eslint 0 temuan pada berkas yang disentuh, `npm run build --prefix vue-app`. Di
+peramban (dev server, akun guru REKAAN, penjaga tulis di klien supabase, data tugas disuntik di
+pembungkus fetch — 0 tulisan lolos): guru tanpa tugas → kartu Tugas Saya & ketiga menu
+tersembunyi, Tes Kenaikan tetap; dengan piket + penyimak seremonial + blok glondongan → kartu
+memuat 5 tugas (termasuk seremonial) dan ketiga menu muncul; desktop 1440 px: Salam+Jam | Kalender
+sejajar, Tugas Saya selebar penuh 3 kolom; HP 375 px: Jam → Tugas Saya → Kalender; Seremonial
+sebagai guru biasa: tanpa tab Kandidat & filter status, hanya sesi terjadwal miliknya (sesi orang
+lain & riwayat "selesai" tak tampil); sebagai PJ PTPT tab Kandidat kembali. **Belum** dicoba
+dengan akun & data nyata.
+
+### Changed (Kyai, 18 Nov 2026)
+
+- **Kartu Tugas Saya disembunyikan bila kosong** (juga saat memuat) — dulu tampil "Tak ada tugas
+  terjadwal". Bila gagal dimuat, kartu tetap muncul dengan pesannya.
+- **Menu Pondok Laju, Ceremonial PTPT, dan Glondongan PTPT hanya untuk guru yang punya tugas.**
+  Aturan satu sumber `utils/tugasSaya.aksesMenuTugas`; menu diberi `aksesTugas` di `useMenus`.
+  Selalu tampil untuk pengelola: role admin / `super_admin` / `admin` / `admin_keuangan`
+  (`aksesPenuhTugas`). Untuk guru:
+  - Pondok Laju: PJ PTPT / Admin Pondok Laju (`bolehSusunJadwal`), guru kelas santri Pondok Laju
+    aktif (Tadarus Pagi), atau punya piket sejak 7 hari lalu ke depan.
+  - Ceremonial: PJ PTPT / koordinator glondongan, atau penyimak sesi `terjadwal` yang belum lewat.
+  - Glondongan: PJ PTPT / koordinator, atau punya blok `ditugaskan` (termasuk yang menunggu giliran).
+  Gerbang ini MENGGANTIKAN `unitOnly: 'PTPT'` untuk guru: penyimak dari lembaga lain yang ditugaskan
+  kini melihat menunya; guru PTPT tanpa tugas tidak. Rute & datanya tetap tak dikunci (tautan
+  notifikasi tetap jalan). Gagal memuat data tugas → menu dibuka (lebih baik terbuka daripada
+  penyimak kehilangan pintu).
+- **Seremonial untuk guru biasa** (bukan PJ/koordinator/super): hanya sesi `terjadwal` tempat ia
+  sendiri penyimak. Tab Kandidat (dulu memuat kandidat SELURUH santri PTPT, tak disaring) dan
+  filter status/riwayat disembunyikan.
+- **Beranda desktop**: Salam + Jam | Kalender kembali sejajar, Tugas Saya selebar penuh di bawah
+  dengan kelompok berdampingan. Di HP urutan tetap Jam → Tugas Saya → Kalender (`order-*`).
+- Data Tugas Saya pindah ke `stores/tugasSaya.js` — satu tarikan dipakai kartu beranda DAN
+  sidebar; tarikan <30 dtk dipakai ulang. Kueri `tes_glondongan` & `tes_sekolah` kini menyaring
+  `status != 'selesai'` di server (yang selesai memang tak pernah dihitung).
+
+### Fixed
+
+- **Tugas seremonial tak pernah muncul di kartu Tugas Saya.** `susunTugasSaya` hanya membaca
+  `r.data.penyimak_guru`, padahal `queryColl` di app meratakan ekor jsonb (tanpa `data`). Kini
+  `r.data || r`; cermin edge disamakan dan dikunci kasus tes bentuk rata.
+
+---
+
 ## [v.1.5.0] — 2026-11-16 — Pondok Laju: status santri, tes/glondongan/seremonial satu kelas, prestasi per kelas, Top 10, peringkat guru, menu Pondok Laju (jadwal piket, capaian, bisyaroh), "Non-mukim", kartu Tugas Saya di beranda
 
 **DITAHAN (Kyai, 15 Nov 2026)** — jangan deploy / rebuild AAB / rilis Electron dulu: v.1.5.0

@@ -3,9 +3,11 @@
 // Removed (vs sebelumnya): Data Lembaga, Data Kelas, Kelola Field, Absensi Santri (admin),
 // Mading/Pengumuman, Audit Log → digabung ke "Master Data" entry atau dihapus dari sidebar.
 // Routes-nya tetap accessible via deep link.
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
+import { useTugasSayaStore } from '@/stores/tugasSaya'
+import { aksesPenuhTugas } from '@/utils/tugasSaya'
 
 const ALL_MENUS = [
   // GROUP: MENU UTAMA
@@ -130,7 +132,8 @@ const ALL_MENUS = [
     roles: ['admin', 'guru'],
     available: true,
     featureFlag: 'fiturGlondongan',
-    unitOnly: 'PTPT'
+    unitOnly: 'PTPT',
+    aksesTugas: 'glondongan'
   },
   // v.1.1.9: Ceremonial PTPT — jadwal sesi + penyimak. Gate kasar admin+guru;
   //   hak MENJADWAL (super_admin + PJ PTPT) dicek di dalam view (canKelola).
@@ -142,7 +145,8 @@ const ALL_MENUS = [
     roles: ['admin', 'guru'],
     available: true,
     featureFlag: 'fiturCeremonial',
-    unitOnly: 'PTPT'
+    unitOnly: 'PTPT',
+    aksesTugas: 'seremonial'
   },
   // v.1.5.0 (Kyai 15 Nov 2026): Pondok Laju — jadwal piket Laju 1/2, capaian Tadarus Pagi →
   //   Laju 1 → Laju 2, bisyaroh piket. TANPA unitOnly: guru lembaga mana pun bisa dapat piket.
@@ -153,7 +157,8 @@ const ALL_MENUS = [
     icon: 'fa-book-quran',
     roles: ['admin', 'guru'],
     available: true,
-    featureFlag: 'fiturPondokLaju'
+    featureFlag: 'fiturPondokLaju',
+    aksesTugas: 'pondokLaju'
   },
   {
     group: 'Pendidikan',
@@ -463,6 +468,17 @@ function cocokUnit(sesi, unit) {
 export function useMenus() {
   const auth = useAuthStore()
   const settings = useSettingsStore()
+  const tugas = useTugasSayaStore()
+  // Tarik data tugas begitu sesi Supabase siap (token menempel) — kalau lebih awal, RLS
+  //   mengembalikan kosong dan menu tugas tersembunyi sampai muat ulang.
+  watch(
+    () => [auth.sesiAktif?.id, auth.fbUser?.id],
+    ([id, uid]) => {
+      if (id && uid && auth.sesiAktif?.role === 'guru' && !aksesPenuhTugas(auth.sesiAktif))
+        tugas.muat()
+    },
+    { immediate: true }
+  )
 
   const menus = computed(() => {
     const role = auth.sesiAktif?.role
@@ -470,8 +486,12 @@ export function useMenus() {
     if (!role) return []
     const s = settings.settings || {}
     return ALL_MENUS.filter((m) => {
-      // v.1.1.9: gerbang unit (PTPT dst) — sebelum cabang peran mana pun.
-      if (m.unitOnly && !cocokUnit(auth.sesiAktif, m.unitOnly)) return false
+      // Kyai 18 Nov 2026: menu ber-`aksesTugas` hanya untuk guru yang PUNYA tugas di sana
+      //   (aturan di utils/tugasSaya.aksesMenuTugas). Gerbang ini MENGGANTIKAN gerbang unit:
+      //   penyimak dari unit lain yang ditugaskan justru harus melihat menunya.
+      if (m.aksesTugas && !aksesPenuhTugas(auth.sesiAktif)) {
+        if (!tugas.akses[m.aksesTugas]) return false
+      } else if (m.unitOnly && !cocokUnit(auth.sesiAktif, m.unitOnly)) return false
       // v.95.0626 (kyai req): admin_keuangan = akses DATA setara guru (Data Santri + kelas, Rekap,
       // Rapor, Absensi Santri, dll) + SEMUA menu Keuangan; sembunyikan menu admin-only non-keuangan
       // (Data Guru, Absensi Guru, Kegiatan Pesantren, PSB, Master Data).

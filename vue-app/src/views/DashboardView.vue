@@ -33,15 +33,17 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
   <!-- v.72.6.0526: Beranda 2-col layout match legacy (left: greeting+jam, right: kalender list) -->
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
     <!-- Row 1: Greeting (left col) + Kalender (right col) — desktop only, stacked di mobile -->
+    <!-- Kyai 18 Nov 2026: Tugas Saya di kolom kiri memanjangkan kolom itu, dan Kalender di
+         kanan ikut melar jadi kotak kosong tinggi. Kini di desktop: Salam + Jam | Kalender
+         seperti semula, Tugas Saya selebar penuh di bawah. Di HP urutannya diatur order-*:
+         Salam+Jam → Tugas → Kalender, jadi Tugas Saya tetap tepat di bawah Jam (17 Nov). -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="space-y-4">
+      <div class="space-y-4 order-1 lg:col-start-1 lg:row-start-1">
         <DashboardGreeting />
-        <!-- Kyai 17 Nov 2026: Tugas Saya DI BAWAH Jam Hijri — jam & tanggal yang dicari lebih
-             sering, jadi ia tetap di puncak; daftar tugas menyusul di bawahnya. -->
         <DashboardJamHijri />
-        <DashboardTugasSaya />
       </div>
-      <DashboardKalender @see-all="goKalenderFull" />
+      <DashboardKalender class="order-3 lg:col-start-2 lg:row-start-1" @see-all="goKalenderFull" />
+      <DashboardTugasSaya class="order-2 lg:col-span-2 lg:row-start-2" />
     </div>
 
     <!-- v.72.7: Buat Postingan kecilin (admin only) -->

@@ -5,6 +5,24 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.5.1 — November 2026
+
+**Perubahan**
+
+- **Menu lebih ringkas untuk guru.** Menu Pondok Laju, Ceremonial PTPT, dan Glondongan PTPT kini
+  hanya muncul bila guru punya tugas di sana — jadwal piket, sesi seremonial yang ia simak, atau
+  blok glondongan yang harus dinilai. PJ, koordinator, dan admin tetap melihat semuanya.
+- **Seremonial untuk guru** kini hanya menampilkan sesi terjadwal yang ia simak.
+- **Kartu Tugas Saya** di beranda tak lagi tampil saat kosong.
+- **Beranda di layar lebar lebih rapi**: jam dan kalender sejajar, daftar tugas di bawahnya.
+
+**Perbaikan**
+
+- Jadwal seremonial sebagai penyimak kini ikut muncul di kartu Tugas Saya.
+- Rekap izin tak lagi menghitung satu tanggal berkali-kali.
+
+---
+
 ## v.1.5.0 — November 2026
 
 **Baru — Pondok Laju**
