@@ -28,15 +28,50 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.1] — 2026-11-19 — Hemat egress: lonceng notifikasi tak lagi menarik seluruh tes kenaikan & glondongan, Pengaturan tak diunduh dua kali, berkas unggahan di-cache setahun
+## [v.1.5.1] — 2026-11-19 — Hemat egress: app yang kembali dari latar tak lagi mengunduh ulang seluruh tabel
 
 **BELUM DIRILIS.** v.1.5.0 sudah tayang (AAB vc150 di Play, 18 Nov dini hari), jadi nomor naik:
-`versionCode` 151 / `versionName` `v.1.5.1` (web, AAB, Electron, PSB), gelombang 2. Rilis ini juga
+`versionCode` 151 / `versionName` `v.1.5.1` (web, AAB, Electron, PSB), gelombang 3. Rilis ini juga
 membawa `52bd5cc` (hitungan hari izin per tanggal) yang belum ikut AAB vc150.
 **Tanpa migrasi.** Edge `widget-tugas/tugasSaya.ts` ikut diubah demi cermin (gelombang 1), tapi
 perilakunya pada baris mentah tak berubah — **tak perlu deploy ulang**. Cukup: deploy web →
 rebuild AAB → rilis Electron. Penghematan baru terasa penuh sesudah HP guru memakai AAB baru
 (Android membundel web).
+
+Diuji: vitest — `dbRealtimeInkremental` 46 tes (9 baru untuk tarikan segar: tambah/ubah/hapus
+selagi putus tertangkap tanpa tarikan penuh, hasil identik dengan langganan baru termasuk baris
+yang keluar/masuk penyaring, batas dari jam server, daftar id urut pk, baris baru-terlihat
+ditanyakan per id, >RT_TARIK_ID_MAKS → tarikan penuh, gagal → tarikan penuh, tabel tanpa trigger
+tetap penuh), `dbRealtimePulih` (regresi insiden Sep) tetap lulus, seluruh vitest 145 berkas / 2.093 tes, eslint 0 temuan, build.
+Di peramban terhadap server SUNGGUHAN (baca-saja, `kegiatan` 78 baris, peristiwa `online`): pemulihan
+= `select=id&order=id.asc` + `select=*&updated_at=gte.<batas>`, 78 baris utuh, tak ada callback
+karena tak ada yang berubah. Pemeriksaan basis data (baca-saja): semua tabel di `SEGAR_DELTA`
+punya trigger BEFORE UPDATE `set_updated_at` (`new.updated_at = now()`) + default `now()`.
+**Belum** diukur di dasbor Usage.
+
+### Changed (Kyai, 19 Nov 2026 — "Ya, kerjakan delta")
+
+- **Pemulihan langganan memakai tarikan SEGAR** (`services/db.js`, `subscribeColl.tarikSegar`).
+  Kembali dari latar ≥60 dtk, sambung ulang channel, atau `online` dulu = tarikan PENUH tiap
+  koleksi yang dilanggan (log 18 Nov: santri 274, guru 495 tarikan penuh sehari; santri 1,2 MB).
+  Kini dua kueri:
+  - daftar **id saja** (urut primary key — tanpa urutan, halaman 1000-an bisa bergeser dan id
+    yang terlewat akan dikira terhapus) → baris yang tak ada lagi dibuang;
+  - baris dengan `updated_at >= (updated_at terbaru yang dipegang − 10 menit)` → diganti di
+    tempatnya. Batas dari jam SERVER (isi salinan), bukan jam HP; margin menutup transaksi yang
+    mulai lebih dulu tapi commit belakangan.
+  - Id yang ada di server tapi belum dipegang tanpa `updated_at` berubah (RLS berubah, impor)
+    ditanyakan per id; lebih dari `RT_TARIK_ID_MAKS` → tarikan penuh. Kueri gagal → tarikan penuh.
+  - Hanya tabel di `SEGAR_DELTA` (diperiksa punya trigger); `rombel`, `keuangan_va_intent`,
+    `post_reactions` tetap tarikan penuh. **Tabel baru wajib diperiksa triggernya dulu.**
+  - Jaring pengaman lama (jawaban per id gagal, payload tak dikenal) tetap tarikan penuh. Tarikan
+    awal yang masih berjalan tetap disalip tarikan penuh seperti dulu (tes "jawaban tarikan penuh
+    yang LEBIH TUA").
+- Perkiraan: santri saat pulih ±1,2 MB → ±20 KB (550 id + baris yang berubah); guru 116 KB → ±3 KB.
+
+---
+
+## [v.1.5.1 · gelombang 2] — 2026-11-19 — Hemat egress: lonceng notifikasi tak lagi menarik seluruh tes kenaikan & glondongan, Pengaturan tak diunduh dua kali, berkas unggahan di-cache setahun
 
 **Ukuran yang mendasari (18 Nov, log gateway 24 jam, ±60 perangkat):** tiap app dibuka, guru/admin
 menarik penuh santri (1,2 MB JSON), tes_glondongan (950 KB — 887 dari 1.003 baris berstatus
@@ -74,9 +109,8 @@ beberapa hari sesudah rilis.
 - **Membuang `riwayat`/`riwayat_kenaikan`/`kartu_kenaikan` dari tarikan santri** (±31% ukurannya):
   `promosiKenaikan` MENULIS ulang ketiganya dari salinan di store — tanpa salinan itu riwayat
   kenaikan santri terhapus saat naik kelas. Terlalu berbahaya.
-- **Tarikan susulan (delta) saat app kembali dari latar** — kini setiap kembali sesudah ≥60 dtk
-  menarik ulang PENUH semua tabel yang dilanggan (santri 1,2 MB). Diusulkan ke Kyai sebagai langkah
-  berikutnya; menyentuh inti `subscribeColl` yang pernah memicu insiden egress Sep 2026.
+- **Tarikan susulan (delta) saat app kembali dari latar** — dikerjakan di gelombang 3 atas
+  persetujuan Kyai.
 
 ---
 

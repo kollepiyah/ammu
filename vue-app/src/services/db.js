@@ -801,6 +801,72 @@ const RT_TARIK_ID_PER_PERMINTAAN = 100
 /** Kelonggaran penambal celah awal: updated_at = awal TRANSAKSI, bukan saat commit. */
 const RT_SUSUL_AWAL_MARGIN_MS = 120000
 
+// ---- v.1.5.1 · tarikan SEGAR (delta) saat pemulihan --------------------------------
+// Kembali dari latar ≥60 dtk / sambung ulang / online dulu = tarikan PENUH tiap langganan
+// (santri 1,2 MB JSON; log 18 Nov: santri 274, guru 495 tarikan penuh sehari). Kini cukup
+// DAFTAR ID (untuk baris yang hilang) + baris yang updated_at-nya berubah. Syaratnya mutlak:
+// updated_at SELALU diperbarui server. Hanya tabel di bawah — diperiksa 19 Nov 2026 punya
+// trigger BEFORE UPDATE `set_updated_at` (`new.updated_at = now()`) dan default now().
+// TAMBAHKAN tabel hanya sesudah memeriksa triggernya; `rombel`, `keuangan_va_intent`,
+// `post_reactions` TIDAK punya — tanpa trigger, perubahannya terlewat diam-diam.
+const SEGAR_DELTA = new Set([
+  'beranda_post',
+  'posts',
+  'rekap_prestasi',
+  'riwayat_prestasi',
+  'notif_prestasi',
+  'riwayat_kenaikan',
+  'tes_kenaikan',
+  'tes_glondongan',
+  'tes_sekolah',
+  'ceremonial_ptpt',
+  'kritik_saran',
+  'pengaduan',
+  'supervisi_catatan',
+  'absensi_guru',
+  'keuangan_buku_induk',
+  'keuangan_tagihan',
+  'pembayaran_transfer_pending',
+  'absensi_shift_guru',
+  'santri',
+  'guru',
+  'izin_guru',
+  'rapor_semester',
+  'rekap_diniyah',
+  'keuangan_gaji',
+  'keuangan_hutang_piutang',
+  'keuangan_tabungan_santri',
+  'keuangan_uang_saku_santri',
+  'kegiatan',
+  'psb_pendaftaran',
+  'absensi_santri_ngaji_bulanan',
+  'absensi_santri_sekolah_bulanan'
+])
+/** Mundur dari updated_at terbaru yang dipegang: updated_at = awal TRANSAKSI, dan transaksi
+ *  yang mulai lebih dulu bisa commit sesudah baris lain terbaca. Jam perangkat tak dipakai. */
+const RT_SEGAR_MARGIN_MS = 10 * 60 * 1000
+
+/** Batas tarikan segar dari salinan: ISO (updated_at terbaru − margin), atau null. */
+function _batasSegar(rawList) {
+  let maks = NaN
+  for (const raw of rawList) {
+    const t = Date.parse(raw?.updated_at)
+    if (!Number.isNaN(t) && !(t <= maks)) maks = t
+  }
+  return Number.isNaN(maks) ? null : new Date(maks - RT_SEGAR_MARGIN_MS).toISOString()
+}
+
+/** Primary key saja, URUT pk: tanpa urutan, halaman 1000-an bisa bergeser dan id yang
+ *  terlewat akan dikira terhapus. */
+async function _tarikIdSaja(collectionName, filters) {
+  const { pk } = _cfg(collectionName)
+  return _pageAll(() =>
+    _applyFilters(supabase.from(collectionName).select(pk), collectionName, filters).order(pk, {
+      ascending: true
+    })
+  )
+}
+
 async function _tarikMentahById(collectionName, filters, ids) {
   const { pk } = _cfg(collectionName)
   const out = []
@@ -1026,7 +1092,8 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
   let lepas = false
   let timer = null
   let terakhirTarik = 0
-  let perluPenuh = false // flush berikutnya = tarikan penuh (jalur pemulihan)
+  let perluPenuh = false // flush berikutnya = tarikan penuh
+  let perluSegar = false // flush berikutnya = tarikan segar/delta (jalur pemulihan, v.1.5.1)
   let antre = [] // event yang menunggu diterapkan: { p, tiba }
   let sibuk = false // ada tarikan (penuh / per-id) yang sedang berjalan
   let generasi = 0 // naik tiap tarikan penuh; hasil tarikan yang lebih tua dibuang
@@ -1122,6 +1189,7 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
 
   const tarikPenuh = async (awal) => {
     terakhirTarik = Date.now()
+    perluSegar = false // tarikan penuh menutup celah apa pun
     const gen = ++generasi
     const mulai = Date.now()
     antre = [] // event yang tiba sebelum saat ini sudah tercakup tarikan ini
@@ -1180,11 +1248,69 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
       console.error(`[subscribeColl] ${collectionName} error:`, err)
       if (lepas || gen !== generasi) return
       if (berubah) kirim()
-      fetchGabung() // jaring pengaman: tarikan penuh sesudah jeda gabung
+      fetchGabungPenuh() // jaring pengaman: tarikan penuh sesudah jeda gabung
     } finally {
       if (gen === generasi) {
         sibuk = false
         if (!lepas) proses()
+      }
+    }
+  }
+
+  // v.1.5.1: pemulihan dengan delta. Hasilnya harus sama dengan tarikan penuh: baris yang tak
+  //   ada lagi di daftar id dibuang, yang berubah diganti, yang ada di server tapi belum
+  //   dipegang (mis. baru terlihat karena RLS) ditanyakan per id.
+  const tarikSegar = async () => {
+    if (
+      !salinan ||
+      !salinan.berkunci ||
+      !SEGAR_DELTA.has(collectionName) ||
+      !templat ||
+      !templat.includes('updated_at')
+    )
+      return tarikPenuh(false)
+    const batas = _batasSegar([...salinan.baris.values()].map((b) => b.raw))
+    if (!batas) return tarikPenuh(false)
+    terakhirTarik = Date.now()
+    const gen = ++generasi
+    antre = [] // event yang tiba sebelum saat ini tercakup tarikan ini (cermin tarikPenuh)
+    sibuk = true
+    try {
+      const [idRows, berubahRows] = await Promise.all([
+        _tarikIdSaja(collectionName, filters),
+        _tarikMentah(collectionName, [...filters, ['updated_at', '>=', batas]], orders)
+      ])
+      if (lepas || gen !== generasi) return
+      const diServer = new Set()
+      for (const r of idRows) if (_ada(r?.[pk])) diServer.add(String(r[pk]))
+      let berubah = false
+      for (const id of [...salinan.urutan]) if (!diServer.has(id) && hapusBaris(id)) berubah = true
+      for (const raw of berubahRows) {
+        if (!_ada(raw?.[pk])) continue
+        const id = String(raw[pk])
+        // Terhapus di antara kedua kueri: jangan dihidupkan lagi.
+        if (diServer.has(id) && pasangBaris(id, raw)) berubah = true
+      }
+      const belum = [...diServer].filter((id) => !salinan.baris.has(id))
+      if (belum.length > RT_TARIK_ID_MAKS) {
+        perluPenuh = true // terlalu banyak yang tak dikenal: tarikan penuh lebih murah
+      } else if (belum.length) {
+        const rows = await _tarikMentahById(collectionName, filters, belum)
+        if (lepas || gen !== generasi) return
+        for (const raw of rows) {
+          if (_ada(raw?.[pk]) && pasangBaris(String(raw[pk]), raw)) berubah = true
+        }
+      }
+      susulAwal = null // celah awal ikut tertutup tarikan ini
+      if (berubah) kirim()
+    } catch (err) {
+      console.error(`[subscribeColl] ${collectionName} error:`, err)
+      if (!lepas && gen === generasi) perluPenuh = true // jaring pengaman: tarikan penuh
+    } finally {
+      if (gen === generasi) {
+        sibuk = false
+        if (!lepas && perluPenuh) jadwal()
+        else if (!lepas) proses()
       }
     }
   }
@@ -1231,14 +1357,28 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
       if (lepas) return
       if (perluPenuh) {
         perluPenuh = false
+        perluSegar = false
         tarikPenuh(false)
+      } else if (perluSegar) {
+        // Tarikan lain masih berjalan: tunggu, jangan dibuang (tarikan per id tak menutup
+        //   celah putusnya channel). Belum punya salinan = tarikan AWAL yang lambat — jangan
+        //   ditunggu; tarikSegar jatuh ke tarikan penuh yang menyalipnya (generasi menjaga).
+        if (sibuk && salinan) return jadwal()
+        perluSegar = false
+        tarikSegar()
       } else proses()
     }, RT_DEBOUNCE_MS)
   }
-  // Tarikan penuh ber-debounce: jalur pemulihan (sambung ulang, online, jendela kembali).
-  const fetchGabung = () => {
+  // Tarikan penuh ber-debounce: jaring pengaman bila jawaban per id gagal.
+  const fetchGabungPenuh = () => {
     if (lepas) return
     perluPenuh = true
+    jadwal()
+  }
+  // v.1.5.1: jalur pemulihan (sambung ulang, online, jendela kembali) = tarikan SEGAR.
+  const fetchGabung = () => {
+    if (lepas) return
+    perluSegar = true
     jadwal()
   }
   const terimaEvent = (payload) => {
@@ -1365,6 +1505,9 @@ export const _internal = {
   RT_TARIK_ID_MAKS,
   RT_TARIK_ID_PER_PERMINTAAN,
   RT_SUSUL_AWAL_MARGIN_MS,
+  RT_SEGAR_MARGIN_MS,
+  SEGAR_DELTA,
+  batasSegar: _batasSegar,
   cocokFilter: _cocokFilter,
   bandingUrutan: _bandingUrutan,
   mikrodetik: _mikrodetik

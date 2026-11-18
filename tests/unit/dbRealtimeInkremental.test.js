@@ -93,9 +93,17 @@ function makeServer(barisAwal = [], { tunda = 0, gagalPerId = false, tabel = TAB
   const b = {}
   b.from = () => {
     const syarat = []
+    const urut = []
+    let kolom = '*'
     const q = {}
-    q.select = () => q
-    q.order = () => q
+    q.select = (k = '*') => {
+      kolom = k
+      return q
+    }
+    q.order = (k) => {
+      urut.push(k)
+      return q
+    }
     for (const op of ['eq', 'gte', 'lte', 'gt', 'lt']) {
       q[op] = (ref, val) => {
         syarat.push([ref, op, val])
@@ -106,7 +114,7 @@ function makeServer(barisAwal = [], { tunda = 0, gagalPerId = false, tabel = TAB
     const pilih = (tambahan = []) =>
       baris.filter((r) => [...syarat, ...tambahan].every((s) => cocokSyarat(r, s))).map(salin)
     q.range = (from, to) => {
-      spy.permintaan.push({ jenis: 'range', from, syarat: [...syarat] })
+      spy.permintaan.push({ jenis: 'range', from, kolom, urut: [...urut], syarat: [...syarat] })
       return jawab({ data: pilih().slice(from, to + 1), error: null })
     }
     q.in = (ref, ids) => {
@@ -174,8 +182,13 @@ function makeServer(barisAwal = [], { tunda = 0, gagalPerId = false, tabel = TAB
     },
     tarikPenuh: () =>
       spy.permintaan.filter(
-        (q) => q.jenis === 'range' && q.from === 0 && !q.syarat.some(([r]) => r === 'updated_at')
+        (q) =>
+          q.jenis === 'range' &&
+          q.from === 0 &&
+          q.kolom === '*' &&
+          !q.syarat.some(([r]) => r === 'updated_at')
       ),
+    idSaja: () => spy.permintaan.filter((q) => q.jenis === 'range' && q.kolom === 'id'),
     susulan: () =>
       spy.permintaan.filter(
         (q) => q.jenis === 'range' && q.syarat.some(([r]) => r === 'updated_at')
@@ -193,6 +206,7 @@ vi.mock('../../vue-app/src/services/supabase', () => ({
 
 const { subscribeColl, _internal } = await import('../../vue-app/src/services/db.js')
 const { RT_DEBOUNCE_MS, RT_ULANG_MS, RT_TARIK_ID_MAKS, RT_SUSUL_AWAL_MARGIN_MS } = _internal
+const { RT_SEGAR_MARGIN_MS, SEGAR_DELTA, batasSegar } = _internal
 const { cocokFilter, bandingUrutan, mikrodetik } = _internal
 
 const tunggu = (ms) => vi.advanceTimersByTimeAsync(ms)
@@ -663,23 +677,149 @@ describe('urutan kejadian: tarikan yang masih di jalan vs event yang tiba', () =
 })
 
 // =============================================================================
-describe('pemulihan tetap memakai tarikan penuh', () => {
-  it('sesudah tersambung ulang: satu tarikan penuh, lalu event kembali nol permintaan', async () => {
-    srv = makeServer([bi('a')])
+describe('pemulihan memakai tarikan SEGAR (delta), bukan tarikan penuh — v.1.5.1', () => {
+  /** Putuskan channel lalu tunggu sambung ulang + jeda gabung (HP tidur / WiFi berpindah). */
+  async function putusLaluSambung() {
+    srv.spy.kanal[srv.spy.kanal.length - 1].cb('CHANNEL_ERROR')
+    await tunggu(RT_ULANG_MS[0] + RTT + RT_DEBOUNCE_MS + 100)
+  }
+
+  it('perubahan selagi putus (tambah, ubah, hapus) tertangkap TANPA tarikan penuh', async () => {
+    srv = makeServer([bi('a'), bi('b'), bi('c')])
     const l = await langgananSiap()
     lepas.push(l.unsub)
 
-    srv.spy.kanal[0].cb('CHANNEL_ERROR') // HP tidur / WiFi berpindah
-    srv.baris.push(bi('selagi-putus')) // perubahan yang tak pernah menjadi event
-    await tunggu(RT_ULANG_MS[0] + RTT + RT_DEBOUNCE_MS + 100)
-    expect(srv.tarikPenuh()).toHaveLength(1)
-    expect(idDari(l.terakhir())).toEqual(['a', 'selagi-putus'])
+    await tunggu(60 * 60 * 1000) // sejam kemudian: perubahan di bawah tak pernah jadi event
+    srv.ubah('b', { nominal: 999 })
+    srv.hapus('c')
+    srv.tambah(bi('d'))
+    srv.spy.permintaan.length = 0
+    await putusLaluSambung()
+
+    expect(srv.tarikPenuh()).toHaveLength(0)
+    expect(srv.idSaja()).toHaveLength(1)
+    expect(srv.susulan()).toHaveLength(1)
+    expect(idDari(l.terakhir())).toEqual(['a', 'b', 'd'])
+    expect(l.terakhir().find((d) => d.id === 'b').nominal).toBe(999)
 
     srv.spy.permintaan.length = 0
-    srv.siarkan(srv.tambah(bi('b')))
+    srv.siarkan(srv.tambah(bi('e')))
     await lewatJedaGabung()
-    expect(srv.spy.permintaan).toHaveLength(0) // tarikan penuh tadi menutup celahnya sendiri
-    expect(idDari(l.terakhir())).toEqual(['a', 'selagi-putus', 'b'])
+    expect(srv.spy.permintaan).toHaveLength(0) // tarikan segar menutup celahnya sendiri
+    expect(idDari(l.terakhir())).toEqual(['a', 'b', 'd', 'e'])
+  })
+
+  it('hasilnya SAMA dengan tarikan penuh langganan baru', async () => {
+    srv = makeServer([bi('a'), bi('b', { nominal: 1 }), bi('c')])
+    const l = await langgananSiap({ filters: [['santri_id', '==', 's1']] })
+    lepas.push(l.unsub)
+    await tunggu(30 * 60 * 1000)
+    srv.ubah('a', { data: { santri_id: 's9' } }) // keluar dari penyaring
+    srv.ubah('b', { nominal: 2 })
+    srv.tambah(bi('x', { data: { santri_id: 's9' } })) // tak lolos penyaring
+    srv.tambah(bi('y'))
+    await putusLaluSambung()
+
+    const pembanding = await langganan({ filters: [['santri_id', '==', 's1']] })
+    lepas.push(pembanding.unsub)
+    expect(l.terakhir()).toEqual(pembanding.terakhir())
+    expect(srv.susulan()[0].syarat).toContainEqual(['data->>santri_id', 'eq', 's1'])
+    expect(srv.idSaja()[0].syarat).toContainEqual(['data->>santri_id', 'eq', 's1'])
+  })
+
+  it('batas = updated_at terbaru yang dipegang − margin (jam SERVER, bukan jam HP)', async () => {
+    srv = makeServer([
+      bi('a', { updated_at: '2026-09-18T01:00:00+00:00' }),
+      bi('b', { updated_at: '2026-09-18T02:30:00.123456+00:00' })
+    ])
+    const l = await langgananSiap()
+    lepas.push(l.unsub)
+    await putusLaluSambung()
+    const batas = new Date(
+      Date.parse('2026-09-18T02:30:00.123Z') - RT_SEGAR_MARGIN_MS
+    ).toISOString()
+    expect(srv.susulan()[0].syarat).toContainEqual(['updated_at', 'gte', batas])
+  })
+
+  it('daftar id diminta URUT primary key (halaman 1000-an tak boleh bergeser)', async () => {
+    srv = makeServer([bi('a')])
+    const l = await langgananSiap()
+    lepas.push(l.unsub)
+    await putusLaluSambung()
+    expect(srv.idSaja()[0].urut).toEqual(['id'])
+  })
+
+  it('baris yang baru terlihat tanpa updated_at berubah (RLS / impor) ditanyakan per id', async () => {
+    srv = makeServer([bi('a')])
+    const l = await langgananSiap()
+    lepas.push(l.unsub)
+    srv.baris.push(bi('lama', { updated_at: '2026-01-01T00:00:00+00:00' }))
+    await putusLaluSambung()
+    expect(srv.perId()).toHaveLength(1)
+    expect(srv.perId()[0].ids).toEqual(['lama'])
+    expect(srv.tarikPenuh()).toHaveLength(0)
+    expect(idDari(l.terakhir())).toEqual(['a', 'lama'])
+  })
+
+  it('lebih dari RT_TARIK_ID_MAKS baris tak dikenal -> satu tarikan penuh', async () => {
+    srv = makeServer([bi('a')])
+    const l = await langgananSiap()
+    lepas.push(l.unsub)
+    for (let i = 0; i <= RT_TARIK_ID_MAKS; i++)
+      srv.baris.push(bi('n' + i, { updated_at: '2026-01-01T00:00:00+00:00' }))
+    await putusLaluSambung()
+    await lewatJedaGabung()
+    expect(srv.perId()).toHaveLength(0)
+    expect(srv.tarikPenuh()).toHaveLength(1)
+    expect(l.terakhir()).toHaveLength(RT_TARIK_ID_MAKS + 2)
+  })
+
+  it('tarikan segar GAGAL -> satu tarikan penuh sebagai jaring pengaman', async () => {
+    srv = makeServer([bi('a')])
+    const l = await langgananSiap()
+    lepas.push(l.unsub)
+    const asliFrom = srv.b.from
+    let gagal = true
+    srv.b.from = (...a) => {
+      const q = asliFrom(...a)
+      const asliSelect = q.select
+      const asliRange = q.range
+      let idSaja = false
+      q.select = (k) => {
+        idSaja = k === 'id'
+        asliSelect(k)
+        return q
+      }
+      q.range = (...r) => {
+        if (gagal && idSaja) return Promise.resolve({ data: null, error: new Error('putus') })
+        return asliRange(...r)
+      }
+      return q
+    }
+    srv.baris.push(bi('baru'))
+    await putusLaluSambung()
+    gagal = false
+    await lewatJedaGabung()
+    srv.b.from = asliFrom
+    expect(srv.tarikPenuh()).toHaveLength(1)
+    expect(idDari(l.terakhir())).toEqual(['a', 'baru'])
+  })
+
+  it('tabel tanpa trigger updated_at yang terbukti tetap tarikan penuh', async () => {
+    expect(SEGAR_DELTA.has('rombel')).toBe(false)
+    expect(SEGAR_DELTA.has('keuangan_va_intent')).toBe(false)
+    expect(SEGAR_DELTA.has('post_reactions')).toBe(false)
+    srv = makeServer([bi('a')], { tabel: 'keuangan_va_intent' })
+    const l = await langgananSiap({ tabel: 'keuangan_va_intent' })
+    lepas.push(l.unsub)
+    await putusLaluSambung()
+    expect(srv.idSaja()).toHaveLength(0)
+    expect(srv.tarikPenuh()).toHaveLength(1)
+  })
+
+  it('batasSegar: null tanpa updated_at yang terbaca', () => {
+    expect(batasSegar([])).toBeNull()
+    expect(batasSegar([{ updated_at: null }, {}])).toBeNull()
   })
 })
 
@@ -733,16 +873,17 @@ describe('celah awal (tarikan awal vs aktifnya langganan) tertambal seperti dulu
     expect(srv.spy.permintaan).toHaveLength(1) // tarikan awal saja
   })
 
-  it('tak ada penambal sesudah tarikan penuh sambung-ulang — di situ celahnya sudah tertutup', async () => {
+  it('tak ada penambal sesudah tarikan segar sambung-ulang — di situ celahnya sudah tertutup', async () => {
     srv = makeServer([bi('a')])
     const l = await langganan()
     lepas.push(l.unsub)
     srv.spy.kanal[0].cb('CHANNEL_ERROR')
     await tunggu(RT_ULANG_MS[0] + RTT + RT_DEBOUNCE_MS + 100)
+    expect(srv.susulan()).toHaveLength(1) // tarikan segar itu sendiri
     srv.siarkan(srv.tambah(bi('b')))
     await lewatJedaGabung()
-    expect(srv.susulan()).toHaveLength(0)
-    expect(srv.tarikPenuh()).toHaveLength(2) // awal + sambung ulang
+    expect(srv.susulan()).toHaveLength(1) // tak ada penambal celah awal lagi
+    expect(srv.tarikPenuh()).toHaveLength(1) // tarikan awal saja
   })
 })
 
