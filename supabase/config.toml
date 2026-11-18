@@ -8,3 +8,6 @@ project_id = "rzwefjilxzsqlokkwiyt"
 [db]
 # Versi Postgres untuk `supabase start` lokal (opsional). Remote di-manage Supabase.
 major_version = 15
+
+[functions.pintu-bakafrawi]
+verify_jwt = false # dasbor Bakafrawi Studio (angka teknis saja); dijaga secret PINTU_BAKAFRAWI_RAHASIA, read only
