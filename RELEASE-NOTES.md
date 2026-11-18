@@ -16,6 +16,10 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Kartu Tugas Saya** di beranda tak lagi tampil saat kosong.
 - **Beranda di layar lebar lebih rapi**: jam dan kalender sejajar, daftar tugas di bawahnya.
 
+- **Lebih hemat kuota.** Aplikasi kini mengunduh jauh lebih sedikit data setiap kali dibuka —
+  notifikasi hanya mengambil data yang memang untuk Anda, dan pengaturan tak lagi diunduh dua kali.
+  Gambar yang diunggah juga disimpan di perangkat lebih lama.
+
 **Perbaikan**
 
 - Jadwal seremonial sebagai penyimak kini ikut muncul di kartu Tugas Saya.

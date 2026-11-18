@@ -28,13 +28,59 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.1] — 2026-11-18 — Menu Pondok Laju, Seremonial & Glondongan hanya untuk guru yang punya tugas; kartu Tugas Saya tak tampil kosong; Beranda desktop rapi
+## [v.1.5.1] — 2026-11-19 — Hemat egress: lonceng notifikasi tak lagi menarik seluruh tes kenaikan & glondongan, Pengaturan tak diunduh dua kali, berkas unggahan di-cache setahun
 
 **BELUM DIRILIS.** v.1.5.0 sudah tayang (AAB vc150 di Play, 18 Nov dini hari), jadi nomor naik:
-`versionCode` 151 / `versionName` `v.1.5.1` (web, AAB, Electron, PSB). Rilis ini juga membawa
-`52bd5cc` (hitungan hari izin per tanggal) yang belum ikut AAB vc150.
-**Tanpa migrasi.** Edge `widget-tugas/tugasSaya.ts` ikut diubah demi cermin, tapi perilakunya pada
-baris mentah tak berubah — **tak perlu deploy ulang**. Cukup: deploy web → rebuild AAB → rilis Electron.
+`versionCode` 151 / `versionName` `v.1.5.1` (web, AAB, Electron, PSB), gelombang 2. Rilis ini juga
+membawa `52bd5cc` (hitungan hari izin per tanggal) yang belum ikut AAB vc150.
+**Tanpa migrasi.** Edge `widget-tugas/tugasSaya.ts` ikut diubah demi cermin (gelombang 1), tapi
+perilakunya pada baris mentah tak berubah — **tak perlu deploy ulang**. Cukup: deploy web →
+rebuild AAB → rilis Electron. Penghematan baru terasa penuh sesudah HP guru memakai AAB baru
+(Android membundel web).
+
+**Ukuran yang mendasari (18 Nov, log gateway 24 jam, ±60 perangkat):** tiap app dibuka, guru/admin
+menarik penuh santri (1,2 MB JSON), tes_glondongan (950 KB — 887 dari 1.003 baris berstatus
+`selesai`), tes_kenaikan (361 KB), guru (116 KB); GET penuh sehari: glondongan 599, guru 495,
+tes_kenaikan 283, santri 274; settings 1.146 GET (6 per buka app).
+
+Diuji: vitest 145 berkas / 2.085 tes (baru `notifPenyaringTes` 6 tes, `tarikAwal` di `dbRealtimeDebounce` & 2 tes di
+`settingsKeuanganMerge`), eslint 0 temuan, build. Di peramban (dev server, akun guru REKAAN, penjaga tulis — 0
+tulisan): permintaan lonceng kini `tes_kenaikan?data->>guru_id=eq.<id>` dan
+`tes_glondongan?status=eq.ditugaskan`; muat ulang app = 3 GET settings (dulu 6) dan ketiga kanal
+realtime settings tetap terpasang. Data nyata (baca-saja): 564 ajuan semuanya ber-`guru_id`,
+maksimal 47 per guru. **Belum** diukur ulang di dasbor Usage — angka hematnya baru terlihat
+beberapa hari sesudah rilis.
+
+### Changed (Kyai, 18–19 Nov 2026 — "egress Supabase, apakah masih bisa dibuat lebih hemat?")
+
+- **Lonceng notifikasi menyaring di server** (`useNotifications.penyaringLanggananTes`, satu
+  sumber + tes). Dulu tes_kenaikan & tes_glondongan ditarik penuh untuk semua guru/admin padahal
+  `getTesKenaikan`/`getGlondongan` hanya membaca sebagian kecil:
+  - tes_kenaikan: ajuan saya (`guru_id`) + — bila super/Kepala/PJ — ajuan `diajukan`;
+    wali/santri: anaknya yang `lulus`. Beberapa set penyaring = beberapa langganan, digabung per id.
+  - tes_glondongan: `ditugaskan` saja (dicocokkan ke saya di klien — penguji lama hanya bernama);
+    super/PJ PTPT juga `menunggu` untuk notif "Perlu Penguji". ±950 KB → ±52–70 KB.
+- **Pengaturan tak diunduh dua kali saat app dibuka.** `subscribeDoc` mendapat opsi
+  `{ tarikAwal: false }`; `settings.subscribe()` memakainya bila `load()` sudah berhasil (3 GET per
+  buka app hilang). Gagal muat → tarikan awal tetap jalan sebagai cadangan. `_lastLegacyData` kini
+  diisi di `load()` supaya event dok `web` tetap mempertahankan nilai `general`.
+- **Berkas unggahan di-cache setahun** (`supabaseStorage.uploadFile`, dulu 1 jam). Semua jalur
+  unggah app berpath unik ber-cap waktu, jadi isinya tak pernah berubah. Berlaku untuk unggahan
+  BARU; gambar latar login yang sekarang (±440 KB, diunduh ulang tiap jam) baru ikut bila Kyai
+  mengunggahnya ulang di Pengaturan.
+
+### Dipertimbangkan, TIDAK dikerjakan
+
+- **Membuang `riwayat`/`riwayat_kenaikan`/`kartu_kenaikan` dari tarikan santri** (±31% ukurannya):
+  `promosiKenaikan` MENULIS ulang ketiganya dari salinan di store — tanpa salinan itu riwayat
+  kenaikan santri terhapus saat naik kelas. Terlalu berbahaya.
+- **Tarikan susulan (delta) saat app kembali dari latar** — kini setiap kembali sesudah ≥60 dtk
+  menarik ulang PENUH semua tabel yang dilanggan (santri 1,2 MB). Diusulkan ke Kyai sebagai langkah
+  berikutnya; menyentuh inti `subscribeColl` yang pernah memicu insiden egress Sep 2026.
+
+---
+
+## [v.1.5.1 · gelombang 1] — 2026-11-18 — Menu Pondok Laju, Seremonial & Glondongan hanya untuk guru yang punya tugas; kartu Tugas Saya tak tampil kosong; Beranda desktop rapi
 
 Diuji: vitest 144 berkas / 2.076 tes (baru `aksesMenuTugas` 13 tes + kasus cermin "seremonial
 berbentuk rata"), eslint 0 temuan pada berkas yang disentuh, `npm run build --prefix vue-app`. Di

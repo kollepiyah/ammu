@@ -1276,7 +1276,10 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
 }
 
 /** Subscribe satu dokumen. Whitelist -> channel filter id; else fetch sekali. */
-export function subscribeDoc(collectionName, id, callback) {
+// `tarikAwal: false` (v.1.5.1, hemat egress): pemanggil BARU SAJA membaca dokumen yang sama
+//   (mis. settings: load() lalu subscribe()) — tarikan awal kedua cuma menggandakan unduhan.
+//   Hanya berlaku untuk tabel realtime; tabel lain tak punya jalur lain untuk mendapat data.
+export function subscribeDoc(collectionName, id, callback, { tarikAwal = true } = {}) {
   _ensure()
   const { pk } = _cfg(collectionName)
   let terakhirTarik = 0
@@ -1291,7 +1294,8 @@ export function subscribeDoc(collectionName, id, callback) {
     fetchOne()
     return () => {}
   }
-  fetchOne()
+  if (tarikAwal) fetchOne()
+  else terakhirTarik = Date.now()
   // Digabung sama seperti subscribeColl — 1 baris memang murah, tapi settings/master
   // disimpan per-field sehingga satu klik "Simpan" bisa memicu beberapa event.
   let timer = null

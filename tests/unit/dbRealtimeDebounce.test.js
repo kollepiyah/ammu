@@ -125,4 +125,13 @@ describe('subscribeDoc — event realtime digabung', () => {
     vi.advanceTimersByTime(400)
     expect(current.spy.tarikan).toBe(2)
   })
+
+  // v.1.5.1 (hemat egress): settings baru saja dibaca load() — jangan diunduh ulang.
+  it('tarikAwal:false melewati tarikan awal, tapi event tetap memicu tarikan', () => {
+    subscribeDoc('settings', 'general', () => {}, { tarikAwal: false })
+    expect(current.spy.tarikan).toBe(0)
+    current.spy.handlers[0]()
+    vi.advanceTimersByTime(400)
+    expect(current.spy.tarikan).toBe(1)
+  })
 })

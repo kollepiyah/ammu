@@ -85,6 +85,40 @@ function _lepasSemua() {
   _kunci = ''
 }
 
+/**
+ * Penyaring server untuk langganan tes_kenaikan & tes_glondongan — HARUS mencakup semua baris
+ * yang dibaca getTesKenaikan / getGlondongan, tak lebih. `kenaikan` = daftar set penyaring
+ * (digabung OR, satu langganan per set); `glondongan` null = tak berlangganan.
+ */
+export function penyaringLanggananTes(sesi) {
+  const role = sesi?.role
+  const me = String(sesi?.id ?? '')
+  if (!me) return { kenaikan: [], glondongan: null }
+  // Wali/santri: hanya kabar LULUS anaknya.
+  if (role === 'santri')
+    return {
+      kenaikan: [
+        [
+          ['santri_id', '==', me],
+          ['status', '==', 'lulus']
+        ]
+      ],
+      glondongan: null
+    }
+  if (role !== 'guru' && role !== 'admin') return { kenaikan: [], glondongan: null }
+  // Pengaju: hasil ajuan saya. Penguji (super/Kepala-PJ): ajuan baru yang menunggu.
+  const kenaikan = [[['guru_id', '==', me]]]
+  if (isSuperAdmin(sesi) || isKepalaLembaga(sesi)) kenaikan.push([['status', '==', 'diajukan']])
+  // Glondongan: tugas 'ditugaskan' (dicocokkan ke saya di klien — penguji lama hanya bernama);
+  //   super/PJ PTPT juga perlu blok 'menunggu' untuk notif "Perlu Penguji".
+  const pengelola =
+    isSuperAdmin(sesi) || (isKepalaLembaga(sesi) && lembagaScopeMatches(sesi.lembaga, 'PTPT'))
+  const glondongan = pengelola
+    ? [['status', 'in', ['ditugaskan', 'menunggu']]]
+    : [['status', '==', 'ditugaskan']]
+  return { kenaikan, glondongan }
+}
+
 export function useNotifications() {
   const auth = useAuthStore()
 
@@ -665,19 +699,34 @@ export function useNotifications() {
         liburRaw.value = docs || []
       })
     )
-    // v.100: tes kenaikan — semua role (filter per-role di getTesKenaikan).
-    //   TANPA batas tanggal: ajuan/tugas menggantung boleh lebih tua dari 30 hari.
-    _unsubs.push(
-      subscribeColl('tes_kenaikan', (docs) => {
-        tesRaw.value = docs || []
-      })
-    )
-    // v.1.1.9: tugas menyimak glondongan — HANYA guru/admin (santri/wali tak berkepentingan)
-    if (role.value === 'guru' || role.value === 'admin') {
+    // v.100: tes kenaikan & v.1.1.9 glondongan. v.1.5.1 (hemat egress): dulu KEDUA tabel
+    //   ditarik penuh tiap app dibuka (±1,3 MB, 89% glondongan berstatus 'selesai' yang tak
+    //   pernah jadi notif). Kini hanya baris yang memang dibaca getTesKenaikan/getGlondongan.
+    const saring = penyaringLanggananTes(auth.sesiAktif)
+    const bagianTes = saring.kenaikan.map(() => [])
+    saring.kenaikan.forEach((f, i) => {
       _unsubs.push(
-        subscribeColl('tes_glondongan', (docs) => {
-          glondRaw.value = docs || []
-        })
+        subscribeColl(
+          'tes_kenaikan',
+          (docs) => {
+            bagianTes[i] = docs || []
+            const peta = new Map()
+            for (const d of bagianTes.flat()) peta.set(String(d.id), d)
+            tesRaw.value = [...peta.values()]
+          },
+          f
+        )
+      )
+    })
+    if (saring.glondongan) {
+      _unsubs.push(
+        subscribeColl(
+          'tes_glondongan',
+          (docs) => {
+            glondRaw.value = docs || []
+          },
+          saring.glondongan
+        )
       )
     }
     if (userId.value) {

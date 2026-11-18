@@ -14,12 +14,17 @@ function _ensure() {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi (.env.local).')
 }
 
+// v.1.5.1 (hemat egress): semua unggahan app berpath unik (cap waktu di nama), jadi isinya tak
+//   pernah berubah — boleh di-cache setahun. Dulu 1 jam: gambar latar login ±440 KB diunduh ulang
+//   tiap jam. Path TETAP yang ditimpa wajib mengirim cacheControl pendek lewat `opts`.
+const CACHE_BERKAS_UNIK = '31536000'
+
 /** Upload File/Blob ke bucket/path (upsert). Return public URL. */
 export async function uploadFile(bucket, path, file, opts = {}) {
   _ensure()
   const { error } = await supabase.storage
     .from(bucket)
-    .upload(path, file, { upsert: true, cacheControl: '3600', ...opts })
+    .upload(path, file, { upsert: true, cacheControl: CACHE_BERKAS_UNIK, ...opts })
   if (error) throw error
   return getPublicUrl(bucket, path)
 }

@@ -12,12 +12,14 @@ import { setActivePinia, createPinia } from 'pinia'
 
 const rows = { general: null, web: null, keuangan: null }
 const subs = {} // key -> callback terakhir
+const opsiSub = {} // key -> opsi subscribeDoc terakhir
 
 vi.mock('@/services/db', () => ({
   getOne: vi.fn((_coll, id) => Promise.resolve(rows[id])),
   mergeOne: vi.fn(() => Promise.resolve()),
-  subscribeDoc: vi.fn((_coll, id, cb) => {
+  subscribeDoc: vi.fn((_coll, id, cb, opsi) => {
     subs[id] = cb
+    opsiSub[id] = opsi
     return () => {}
   })
 }))
@@ -159,5 +161,33 @@ describe('settings store — save() tak menulis ulang config keuangan', () => {
       if (key === 'keuangan') expect(data.keuTagihanJenis).toEqual([{ id: 'baru' }])
     }
     expect(mergeOne.mock.calls.map((c) => c[1])).toContain('keuangan')
+  })
+
+  // v.1.5.1 (hemat egress): subscribe() sesudah load() tak mengunduh ulang ketiga dokumen.
+  it('subscribe sesudah load berhasil melewati tarikan awal; tanpa load tetap menarik', async () => {
+    rows.general = GENERAL_TERPOLUSI
+    const s = useSettingsStore()
+    await s.load()
+    s.subscribe()
+    expect(opsiSub.general).toEqual({ tarikAwal: false })
+    expect(opsiSub.web).toEqual({ tarikAwal: false })
+    expect(opsiSub.keuangan).toEqual({ tarikAwal: false })
+    s.unsubscribeNow?.()
+
+    setActivePinia(createPinia())
+    const s2 = useSettingsStore()
+    s2.subscribe()
+    expect(opsiSub.general).toEqual({ tarikAwal: true })
+  })
+
+  it('event dok web sesudah load tetap mempertahankan nilai general dari load', async () => {
+    rows.general = { kopLine1: 'DARI GENERAL' }
+    rows.web = { kopLine1: 'DARI WEB', temaWarna: 'teal' }
+    const s = useSettingsStore()
+    await s.load()
+    s.subscribe()
+    subs.web({ kopLine1: 'WEB BARU', temaWarna: 'hijau' })
+    expect(s.settings.kopLine1).toBe('DARI GENERAL')
+    expect(s.settings.temaWarna).toBe('hijau')
   })
 })

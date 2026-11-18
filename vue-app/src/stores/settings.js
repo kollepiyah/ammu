@@ -166,6 +166,9 @@ export const useSettingsStore = defineStore('settings', () => {
         ...(keuData || {})
       }
       _lastKeuData = keuData || null
+      // Dipakai callback dok VUE di subscribe(); kini diisi di sini karena subscribe() tak lagi
+      //   menarik ulang ketiga dokumen sesudah load() (lihat `tarikAwal`).
+      _lastLegacyData = tanpaKunciKeuangan(legacyData) || null
       keuanganTerbaca.value = !!keuData
       isLoaded.value = true
     } catch (e) {
@@ -190,38 +193,57 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   function subscribe() {
+    // v.1.5.1 (hemat egress): main.js memanggil subscribe() TEPAT sesudah load() menarik ketiga
+    //   dokumen ini — tarikan awal subscribeDoc cuma mengunduh yang sama dua kali (3 GET tiap
+    //   app dibuka). Bila load() belum berhasil, tarikan awal tetap jalan sebagai cadangan.
+    const opsi = { tarikAwal: !isLoaded.value }
     // v.61.0526: subscribe ke kedua doc — general (legacy) + web (Vue PoC)
     if (!unsubscribe) {
-      unsubscribe = subscribeDoc('settings', SETTINGS_DOC_ID_VUE, (data) => {
-        if (data)
-          settings.value = {
-            ...settings.value,
-            ...tanpaKunciKeuangan(data),
-            ...(_lastLegacyData || {})
-          }
-      })
+      unsubscribe = subscribeDoc(
+        'settings',
+        SETTINGS_DOC_ID_VUE,
+        (data) => {
+          if (data)
+            settings.value = {
+              ...settings.value,
+              ...tanpaKunciKeuangan(data),
+              ...(_lastLegacyData || {})
+            }
+        },
+        opsi
+      )
     }
     if (!unsubscribeGeneral) {
-      unsubscribeGeneral = subscribeDoc('settings', SETTINGS_DOC_ID_LEGACY, (data) => {
-        if (data) {
-          // Kunci keuangan dibuang di sini, bukan ditimpa balik oleh _lastKeuData:
-          //   kalau row `keuangan` belum/tak terbaca (_lastKeuData null), menimpa balik
-          //   tak terjadi dan salinan basi general-lah yang menang. Itu jalur nyata —
-          //   lihat catatan di `tanpaKunciKeuangan`.
-          _lastLegacyData = tanpaKunciKeuangan(data)
-          settings.value = { ...settings.value, ..._lastLegacyData, ...(_lastKeuData || {}) }
-        }
-      })
+      unsubscribeGeneral = subscribeDoc(
+        'settings',
+        SETTINGS_DOC_ID_LEGACY,
+        (data) => {
+          if (data) {
+            // Kunci keuangan dibuang di sini, bukan ditimpa balik oleh _lastKeuData:
+            //   kalau row `keuangan` belum/tak terbaca (_lastKeuData null), menimpa balik
+            //   tak terjadi dan salinan basi general-lah yang menang. Itu jalur nyata —
+            //   lihat catatan di `tanpaKunciKeuangan`.
+            _lastLegacyData = tanpaKunciKeuangan(data)
+            settings.value = { ...settings.value, ..._lastLegacyData, ...(_lastKeuData || {}) }
+          }
+        },
+        opsi
+      )
     }
     // A1: settings/keuangan (finance-only) — key sensitif; null utk peran lain.
     if (!unsubscribeKeuangan) {
-      unsubscribeKeuangan = subscribeDoc('settings', SETTINGS_DOC_ID_KEUANGAN, (data) => {
-        if (data) {
-          _lastKeuData = data
-          keuanganTerbaca.value = true
-          settings.value = { ...settings.value, ...data }
-        }
-      })
+      unsubscribeKeuangan = subscribeDoc(
+        'settings',
+        SETTINGS_DOC_ID_KEUANGAN,
+        (data) => {
+          if (data) {
+            _lastKeuData = data
+            keuanganTerbaca.value = true
+            settings.value = { ...settings.value, ...data }
+          }
+        },
+        opsi
+      )
     }
   }
 
