@@ -557,6 +557,21 @@ function bukaWaAdmin() {
       <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
         v.{{ APP_VERSION }}
       </p>
+      <!-- Syarat verifikasi merek Google (nama + logo di layar izin login Google): beranda
+           wajib menyebut nama app & menautkan Kebijakan Privasi. URL penuh supaya sama persis
+           dengan yang didaftarkan di Google Cloud, juga dari Android/Electron. -->
+      <p class="text-[10px] text-white/75 mt-2 max-w-xs mx-auto leading-relaxed drop-shadow">
+        Ammu Online — sistem informasi Pondok Pesantren Mambaul Ulum untuk santri, wali, guru, dan
+        pengurus.
+      </p>
+      <a
+        href="https://ammuonline.web.app/privacy.html"
+        target="_blank"
+        rel="noopener"
+        class="inline-block mt-1 text-[11px] text-white font-bold underline underline-offset-2 hover:no-underline drop-shadow"
+      >
+        Kebijakan Privasi
+      </a>
     </div>
   </div>
 </template>

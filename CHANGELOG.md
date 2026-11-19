@@ -28,6 +28,33 @@ menyuntikkan data pengguna).
 
 ---
 
+## [v.1.5.1 · gelombang 5] — 2026-11-19 — Halaman depan memenuhi syarat verifikasi merek Google
+
+**BELUM DIRILIS** (ikut v.1.5.1). Cukup deploy web; tanpa migrasi, tanpa edge function. AAB baru
+membawanya saat rebuild v.1.5.1 berikutnya.
+
+### Changed (Kyai, 19 Nov 2026 — "login Google … bukan tampil link Supabase, tapi tampil tulisan Ammu Online dan ada logonya")
+
+- **Layar login kini menyebut "Ammu Online" dan menautkan Kebijakan Privasi.** Layar izin Google
+  menampilkan `rzwefjilxzsqlokkwiyt.supabase.co` selama merek aplikasi (nama + logo) di Google
+  Auth Platform → Branding belum diverifikasi. Pengajuan Kyai belum lolos; kepemilikan
+  `ammuonline.web.app` di Search Console sudah beres, tetapi halaman beranda tak memuat satu pun
+  tautan ke `privacy.html` — syarat yang paling sering membuat Google menolak. Di bawah hak
+  cipta kini ada keterangan singkat Ammu Online + tautan "Kebijakan Privasi" (URL penuh, sama
+  dengan yang didaftarkan; jalan juga di Android/Electron).
+- `index.html`: isi statis di dalam `#app` (judul, keterangan, tautan privasi) untuk pemeriksa
+  yang membaca HTML mentah tanpa menjalankan JS. Tertutup splash, lalu diganti Vue saat mount.
+- Berkas verifikasi Search Console `public/googledf7aec108aee479f.html` (sudah tayang) kini
+  masuk repo, supaya tak hilang bila folder hosting dibangun ulang.
+
+Diuji: dev server — tautan tampil di bawah hak cipta, `href` benar; HTML mentah memuat
+`privacy.html`; eslint, build. **Belum:** deploy, lalu ajukan ulang verifikasi di Google Cloud
+Console. Nama & logo baru tampil di layar Google sesudah Google menyetujui (beberapa hari kerja).
+Alamat `supabase.co` baru benar-benar hilang dengan custom domain Supabase (add-on berbayar,
+butuh paket berbayar) — tidak dikerjakan.
+
+---
+
 ## [v.1.5.1] — 2026-11-19 — Pengingat WA jadwal piket Pondok Laju otomatis lewat Fonnte
 
 **BELUM DIRILIS.** v.1.5.0 sudah tayang (AAB vc150 di Play, 18 Nov dini hari), jadi nomor naik:
