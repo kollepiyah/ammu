@@ -55,6 +55,8 @@
       <div class="grid md:grid-cols-2 gap-3">
         <UiInput v-model="form.txtAppName" label="Nama Aplikasi" required />
         <UiInput v-model="form.txtAppDesc" label="Deskripsi / Sub-Title" />
+        <UiInput v-model="form.txtLoginTitle" label="Judul Halaman Login" />
+        <UiInput v-model="form.txtLoginSubtitle" label="Sub-judul Halaman Login" />
         <UiInput v-model="form.txtSidebarTitle" label="Nama Sidebar / Lembaga" />
         <UiInput v-model="form.txtHeaderBar" label="Teks Header Bar" />
         <UiInput v-model="form.txtPeriode" label="Periode Aktif" />
@@ -1167,6 +1169,84 @@
             />
           </div>
         </div>
+
+        <!-- Integrasi Instagram Graph API (disimpan di settings/instagram, khusus admin) -->
+        <div
+          class="mt-4 pt-4 border-t border-[var(--border-subtle)] space-y-3"
+        >
+          <div>
+            <p class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
+              <i class="fab fa-instagram text-pink-600 mr-1.5"></i>Instagram Graph API (Al Manshur
+              Channel)
+            </p>
+            <p class="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-relaxed">
+              Tempel <b>Instagram User ID</b> (opsional) dan <b>Access Token</b> akun IG Business /
+              Creator pondok agar link Instagram di Al Manshur Channel otomatis menarik foto
+              carousel, cover Reels, dan caption. Token disimpan aman khusus Admin.
+            </p>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Instagram User ID (Opsional, kosongkan jika pakai token IG Login)</label
+            >
+            <input
+              v-model.trim="igForm.igUserId"
+              type="text"
+              autocomplete="off"
+              class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] font-mono"
+            />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Instagram Access Token</label
+            >
+            <div class="flex gap-2">
+              <input
+                v-model.trim="igForm.igAccessToken"
+                :type="showIgToken ? 'text' : 'password'"
+                autocomplete="new-password"
+                class="flex-1 min-w-0 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] font-mono"
+              />
+              <button
+                type="button"
+                class="px-3 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                :title="showIgToken ? 'Sembunyikan token' : 'Lihat token'"
+                @click="showIgToken = !showIgToken"
+              >
+                <i :class="['fas', showIgToken ? 'fa-eye-slash' : 'fa-eye']"></i>
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              :disabled="igSaving"
+              class="px-4 py-2 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white cursor-pointer"
+              @click="simpanIgConfig"
+            >
+              <i :class="['fas mr-1', igSaving ? 'fa-spinner fa-spin' : 'fa-save']"></i
+              >{{ igSaving ? 'Menyimpan…' : 'Simpan Token IG' }}
+            </button>
+            <button
+              type="button"
+              :disabled="igTesting || !igForm.igAccessToken"
+              class="px-4 py-2 text-xs font-bold rounded-xl bg-pink-600 hover:bg-pink-700 disabled:opacity-50 text-white cursor-pointer"
+              @click="tesIgConfig"
+            >
+              <i :class="['fas mr-1', igTesting ? 'fa-spinner fa-spin' : 'fa-vial']"></i
+              >{{ igTesting ? 'Menguji…' : 'Tes Koneksi IG' }}
+            </button>
+            <span
+              v-if="igStatusText"
+              :class="[
+                'text-[11px] font-bold',
+                igStatusOk ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+              ]"
+            >
+              {{ igStatusText }}
+            </span>
+          </div>
+        </div>
       </div>
     </UiCard>
 
@@ -1593,7 +1673,8 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useLembaga } from '@/composables/useLembaga'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { uploadBase64 } from '@/services/storage'
-import { setOne } from '@/services/db'
+import { getOne, setOne } from '@/services/db'
+import { testInstagramConnection } from '@/services/linkPreview'
 // v.1.1.9: master shift (dulu 15 setting-key hardcoded shiftPagiMulai dst)
 import {
   shiftList,
@@ -1634,6 +1715,8 @@ function defaultForm() {
   return {
     txtAppName: '',
     txtAppDesc: '',
+    txtLoginTitle: 'Ammu Online',
+    txtLoginSubtitle: 'Generasi Qurani Pewaris Negeri',
     txtSidebarTitle: '',
     txtHeaderBar: 'Ammu Online',
     txtPeriode: '',
@@ -1814,6 +1897,7 @@ onMounted(async () => {
   await settingsStore.load()
   settingsStore.subscribe()
   hydrateForm()
+  loadIgConfig()
   // Restore active section dari query string
   const qSec = route.query.section
   if (qSec && typeof qSec === 'string') section.value = qSec
@@ -2520,6 +2604,77 @@ async function tesGsheet() {
     toast.error('Tes gagal: ' + (e?.message || e))
   } finally {
     gsheetTesting.value = false
+  }
+}
+
+// Integrasi Instagram Graph API untuk Al Manshur Channel (disimpan terpisah di settings/instagram)
+const igForm = reactive({
+  igUserId: '',
+  igAccessToken: ''
+})
+const showIgToken = ref(false)
+const igSaving = ref(false)
+const igTesting = ref(false)
+const igStatusText = ref('')
+const igStatusOk = ref(false)
+
+async function loadIgConfig() {
+  try {
+    const doc = await getOne('settings', 'instagram')
+    if (doc) {
+      igForm.igUserId = String(doc.igUserId || '')
+      igForm.igAccessToken = String(doc.igAccessToken || '')
+    }
+  } catch {
+    /* non-admin atau belum ada */
+  }
+}
+
+async function simpanIgConfig() {
+  if (igSaving.value) return
+  igSaving.value = true
+  try {
+    await setOne('settings', 'instagram', {
+      igUserId: igForm.igUserId.trim(),
+      igAccessToken: igForm.igAccessToken.trim()
+    })
+    toast.success('Token Instagram tersimpan.')
+  } catch (e) {
+    toast.error('Gagal simpan token IG: ' + (e?.message || e))
+  } finally {
+    igSaving.value = false
+  }
+}
+
+async function tesIgConfig() {
+  if (igTesting.value) return
+  if (!igForm.igAccessToken.trim()) {
+    toast.warning('Tempel Access Token Instagram dulu.')
+    return
+  }
+  igTesting.value = true
+  igStatusText.value = ''
+  try {
+    const res = await testInstagramConnection({
+      igUserId: igForm.igUserId.trim(),
+      igAccessToken: igForm.igAccessToken.trim()
+    })
+    if (res?.ok) {
+      igStatusOk.value = true
+      const akun = res.username ? `@${res.username}` : res.name || res.id || 'Terhubung'
+      igStatusText.value = `Terhubung: ${akun}${res.media_count != null ? ` (${res.media_count} kiriman)` : ''}`
+      toast.success(`Koneksi IG berhasil (${akun})`)
+    } else {
+      igStatusOk.value = false
+      igStatusText.value = res?.error || 'Token tidak valid'
+      toast.error('Tes IG gagal: ' + igStatusText.value)
+    }
+  } catch (e) {
+    igStatusOk.value = false
+    igStatusText.value = e?.message || 'Gagal menghubungi fungsi preview'
+    toast.error('Tes IG gagal: ' + igStatusText.value)
+  } finally {
+    igTesting.value = false
   }
 }
 </script>

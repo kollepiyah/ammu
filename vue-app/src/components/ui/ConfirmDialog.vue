@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed } from 'vue'
 import { useUiStore } from '@/stores/ui'
-import { AlertTriangle } from 'lucide-vue-next'
+import { AlertTriangle, HelpCircle } from 'lucide-vue-next'
 import UiButton from './UiButton.vue'
+import UiSheetModal from './UiSheetModal.vue'
 
 const ui = useUiStore()
 const state = computed(() => ui.confirmState)
@@ -10,74 +11,53 @@ const state = computed(() => ui.confirmState)
 function close(result) {
   ui.confirmResolve(result)
 }
-
-function onBackdrop(e) {
-  if (e.target === e.currentTarget) close(false)
-}
-
-// v.93.0626: tombol/gesture back Android -> tutup dialog (batal), bukan navigasi halaman
-function onAndroidBack(e) {
-  if (state.value?.open) { e.preventDefault(); close(false) }
-}
-onMounted(() => window.addEventListener('android-back', onAndroidBack))
-onBeforeUnmount(() => window.removeEventListener('android-back', onAndroidBack))
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="fade">
-      <div
-        v-if="state.open"
-        class="fixed inset-0 z-[9998] bg-[var(--bg-overlay)] backdrop-blur-sm flex items-center justify-center p-4"
-        @click="onBackdrop"
-      >
+  <UiSheetModal
+    :open="state.open"
+    max-width="md"
+    @close="close(false)"
+  >
+    <div class="p-5 sm:p-6">
+      <div class="flex items-center gap-3 mb-3">
         <div
-          class="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)] max-w-md w-full p-6"
+          class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+          :class="
+            state.danger
+              ? 'bg-[var(--color-danger-soft)] text-[var(--color-danger-text)]'
+              : 'bg-[var(--color-primary-soft)] text-[var(--color-primary)]'
+          "
         >
-          <div class="flex items-center gap-3 mb-3">
-            <div
-              v-if="state.danger"
-              class="w-10 h-10 rounded-[var(--radius-full)] bg-[var(--color-danger-soft)] flex items-center justify-center text-[var(--color-danger-text)] shrink-0"
-            >
-              <AlertTriangle class="w-5 h-5" />
-            </div>
-            <h3 class="text-lg font-bold text-[var(--text-primary)] leading-tight">
-              {{ state.title }}
-            </h3>
-          </div>
-          <div
-            class="text-sm text-[var(--text-secondary)] mb-5 leading-relaxed"
-            v-html="state.message"
-          ></div>
-          <div class="flex justify-end gap-2">
-            <UiButton
-              variant="ghost"
-              size="md"
-              @click="close(false)"
-            >
-              {{ state.cancelText }}
-            </UiButton>
-            <UiButton
-              :variant="state.danger ? 'danger' : 'primary'"
-              size="md"
-              @click="close(true)"
-            >
-              {{ state.confirmText }}
-            </UiButton>
-          </div>
+          <AlertTriangle v-if="state.danger" class="w-5 h-5" />
+          <HelpCircle v-else class="w-5 h-5" />
         </div>
+        <h3 class="text-base sm:text-lg font-bold text-[var(--text-primary)] leading-tight">
+          {{ state.title }}
+        </h3>
       </div>
-    </Transition>
-  </Teleport>
+      <div
+        class="text-sm text-[var(--text-secondary)] mb-5 leading-relaxed"
+        v-html="state.message"
+      ></div>
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+        <UiButton
+          variant="ghost"
+          size="md"
+          class="w-full sm:w-auto"
+          @click="close(false)"
+        >
+          {{ state.cancelText }}
+        </UiButton>
+        <UiButton
+          :variant="state.danger ? 'danger' : 'primary'"
+          size="md"
+          class="w-full sm:w-auto"
+          @click="close(true)"
+        >
+          {{ state.confirmText }}
+        </UiButton>
+      </div>
+    </div>
+  </UiSheetModal>
 </template>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 200ms;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>

@@ -18,7 +18,7 @@ const toast = useToast()
 // v.86.0526: BG login dari settings (Pengaturan Web → Background Layar).
 // Force load settings di mount supaya BG image tersedia sebelum render (App.vue load async)
 onMounted(() => {
-  if (!settings.settings?.bgImage) {
+  if (!settings.loaded || !settings.settings?.bgImage) {
     settings.load().catch(() => {})
   }
   bacaSebabGoogleGagal()
@@ -67,6 +67,14 @@ const bgStyle = computed(() => {
   const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl || loginBg
   return `background: url('${bg}') center/cover no-repeat;`
 })
+
+const loginTitle = computed(
+  () => String(settings.settings?.txtLoginTitle || '').trim() || 'Ammu Online'
+)
+const loginSubtitle = computed(
+  () =>
+    String(settings.settings?.txtLoginSubtitle || '').trim() || 'Generasi Qurani Pewaris Negeri'
+)
 
 // v.21.115.0528: URL download app native (Android/Desktop)
 // Bisa di-override dari Pengaturan Web (settings.downloadAndroid, downloadDesktop)
@@ -207,10 +215,12 @@ function bukaWaAdmin() {
           class="w-20 h-20 mx-auto mb-2 object-contain drop-shadow-xl"
         />
         <h2 class="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
-          Portal Mambaul Ulum
+          {{ loginTitle }}
         </h2>
-        <p class="text-[10px] text-teal-700 mt-0.5 font-bold uppercase tracking-widest">
-          Generasi Qurani Pewaris Negeri
+        <p
+          class="text-[10px] text-teal-700 dark:text-teal-300 mt-0.5 font-bold uppercase tracking-widest"
+        >
+          {{ loginSubtitle }}
         </p>
       </div>
 

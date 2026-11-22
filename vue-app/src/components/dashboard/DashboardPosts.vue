@@ -57,6 +57,23 @@
           >
             <i class="fas fa-images text-[8px]"></i>{{ imageCount(p) }}
           </span>
+          <!-- Indicator platform link (YouTube / Instagram / TikTok) -->
+          <span
+            v-if="p.link_platform"
+            class="absolute bottom-1 left-1 bg-slate-900/75 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center"
+          >
+            <i
+              :class="
+                p.link_platform === 'youtube'
+                  ? 'fab fa-youtube text-red-400'
+                  : p.link_platform === 'instagram'
+                    ? 'fab fa-instagram text-pink-400'
+                    : p.link_platform === 'tiktok'
+                      ? 'fab fa-tiktok text-teal-300'
+                      : 'fas fa-link text-sky-300'
+              "
+            ></i>
+          </span>
         </div>
         <!-- Caption + meta -->
         <div class="flex-1 min-w-0">

@@ -598,7 +598,7 @@
       <div
         v-if="santriAktif"
         id="rapor-print-area"
-        class="bg-[var(--bg-card)] text-slate-900 rounded-2xl border border-[var(--border-subtle)] shadow-sm p-8 print:shadow-none print:border-0 print:rounded-none print:p-6 relative overflow-hidden"
+        class="bg-white text-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md p-8 print:shadow-none print:border-0 print:rounded-none print:p-6 relative overflow-hidden"
         style="font-family: 'Times New Roman', Times, serif"
       >
         <!-- Background watermark (per lembaga) -->

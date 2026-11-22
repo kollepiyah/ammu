@@ -27,23 +27,23 @@ html {
 }
 
 :root {
-  /* === LIGHT MODE — Teal + Ivory === */
-  --bg-page: #ffffff;
+  /* === LIGHT MODE — Teal + Ivory (Tetap identitas asli, diberi kedalaman realistis) === */
+  --bg-page: #f4f7f8;
   --bg-card: #ffffff;
   --bg-card-elevated: #f8fafc;
-  --bg-overlay: rgba(15, 23, 42, 0.5);
+  --bg-overlay: rgba(15, 23, 42, 0.52);
   --bg-sidebar: #f0fdfa;
   --bg-input: #ffffff;
   --bg-hover: #f0fdfa;
   --bg-muted: #f1f5f9;
 
-  --border-subtle: #e2e8f0;
-  --border-default: #cbd5dc;
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-default: #cbd5e1;
   --border-strong: #94a3b8;
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
+  --text-tertiary: #64748b;
   --text-inverse: #ffffff;
   --text-on-primary: #ffffff;
   --text-on-accent: #ffffff;
@@ -74,9 +74,9 @@ html {
   --color-info-soft: #dbeafe;
   --color-info-text: #1e3a8a;
 
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 2px 4px rgba(15, 23, 42, 0.05), 0 10px 24px -6px rgba(15, 23, 42, 0.09);
+  --shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.06), 0 18px 38px -8px rgba(15, 23, 42, 0.14);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -85,56 +85,56 @@ html {
 }
 
 .dark {
-  /* === DARK MODE — Slate familiar === */
-  --bg-page: #0f172a;
-  --bg-card: #1e293b;
-  --bg-card-elevated: #334155;
-  --bg-overlay: rgba(0, 0, 0, 0.7);
-  --bg-sidebar: #1e293b;
-  --bg-input: #1e293b;
-  --bg-hover: #334155;
-  --bg-muted: #334155;
+  /* === DARK MODE — Slate & Teal (Kontras AA+ + kedalaman realistis) === */
+  --bg-page: #0b1120;
+  --bg-card: #162032;
+  --bg-card-elevated: #1e293b;
+  --bg-overlay: rgba(2, 6, 23, 0.74);
+  --bg-sidebar: #111827;
+  --bg-input: #0f172a;
+  --bg-hover: rgba(148, 163, 184, 0.12);
+  --bg-muted: #1e293b;
 
-  --border-subtle: #334155;
-  --border-default: #475569;
-  --border-strong: #64748b;
+  --border-subtle: rgba(148, 163, 184, 0.15);
+  --border-default: rgba(148, 163, 184, 0.26);
+  --border-strong: rgba(148, 163, 184, 0.42);
 
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
   --text-inverse: #0f172a;
   --text-on-primary: #ffffff;
-  --text-on-accent: #0f172a;
+  --text-on-accent: #ffffff;
 
-  --color-primary: #115e59;
-  --color-primary-hover: #134e4a;
-  --color-primary-soft: #134e4a;
-  --color-primary-soft-hover: #115e59;
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-primary-soft: rgba(20, 184, 166, 0.16);
+  --color-primary-soft-hover: rgba(20, 184, 166, 0.24);
 
-  --color-accent: #155e75;
-  --color-accent-hover: #164e63;
-  --color-accent-soft: #134e4a;
-  --color-accent-soft-hover: #115e59;
+  --color-accent: #14b8a6;
+  --color-accent-hover: #0d9488;
+  --color-accent-soft: rgba(20, 184, 166, 0.16);
+  --color-accent-soft-hover: rgba(20, 184, 166, 0.24);
 
   --color-success: #34d399;
-  --color-success-soft: #064e3b;
+  --color-success-soft: rgba(16, 185, 129, 0.18);
   --color-success-text: #6ee7b7;
 
   --color-warning: #fbbf24;
-  --color-warning-soft: #78350f;
-  --color-warning-text: #fcd34d;
+  --color-warning-soft: rgba(245, 158, 11, 0.18);
+  --color-warning-text: #fde68a;
 
   --color-danger: #f87171;
-  --color-danger-soft: #7f1d1d;
+  --color-danger-soft: rgba(239, 68, 68, 0.18);
   --color-danger-text: #fca5a5;
 
   --color-info: #60a5fa;
-  --color-info-soft: #1e3a8a;
-  --color-info-text: #93c5fd;
+  --color-info-soft: rgba(59, 130, 246, 0.18);
+  --color-info-text: #bfdbfe;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 26px -6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 40px -8px rgba(0, 0, 0, 0.62);
 }
 
 body,
@@ -142,7 +142,9 @@ html,
 #app {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   background: var(--bg-page);
-  color: inherit;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
@@ -236,6 +238,18 @@ button,
   min-height: 36px;
 }
 
+/* Fix tombol close (×) & aksi di dalam vue-sonner agar tidak melar jadi lonjong oleh min-height:36px */
+[data-sonner-toast] button {
+  min-height: unset;
+}
+[data-sonner-toast] [data-close-button] {
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  border-radius: 9999px;
+}
+
 /* Hide scrollbar di mobile (cleaner native feel) */
 @media (max-width: 768px) {
   ::-webkit-scrollbar {
@@ -294,4 +308,152 @@ button,
     ) {
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   }
+}
+
+/* ====================================================================
+   UI POLISH ELEGAN & REALISTIS + GLOBAL DARK MODE CONTRAST GUARD
+   - Mempertahankan palet identitas Ammu (Teal + Slate/Ivory)
+   - Memberi kedalaman kartu (soft shadow + subtle top edge di dark)
+   - Menjamin semua teks & kotak terang yang belum punya `dark:` tetap
+     terbaca jelas di mode gelap (kertas cetak .print-area / #rapor-print-area
+     dikecualikan agar pratinjau cetak tetap putih bersih).
+   ==================================================================== */
+table td,
+table th {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Elevasi kartu lebih realistis secara global */
+main .rounded-2xl[class*='bg-[var(--bg-card)]'],
+main .rounded-xl[class*='bg-[var(--bg-card)]'] {
+  box-shadow: var(--shadow-sm);
+}
+
+/* Interaksi tombol lebih taktil */
+button:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+/* === DARK MODE CONTRAST GUARD === */
+/* 1. Teks primary/accent di mode gelap harus terang (tombol bg-primary tetap teal-600) */
+.dark .text-\[var\(--color-primary\)\],
+.dark .text-\[var\(--color-accent\)\] {
+  color: #2dd4bf;
+}
+.dark .hover\:text-\[var\(--color-primary-hover\)\]:hover {
+  color: #5eead4;
+}
+
+/* 2. Kotak pastel terang (bg-*-50 / bg-*-100 / bg-white) tanpa dark:bg- -> translucent gelap elegan */
+.dark .bg-white:not([class*='dark:bg-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *) {
+  background-color: var(--bg-card);
+}
+.dark .bg-slate-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-gray-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(30, 41, 59, 0.72);
+}
+.dark .bg-slate-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-gray-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(51, 65, 85, 0.65);
+}
+.dark .bg-slate-200:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-slate-300:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(71, 85, 105, 0.72);
+}
+.dark .bg-teal-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-teal-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(20, 184, 166, 0.14);
+}
+.dark .bg-emerald-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-emerald-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(16, 185, 129, 0.14);
+}
+.dark .bg-amber-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-yellow-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-amber-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(245, 158, 11, 0.15);
+}
+.dark .bg-rose-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-red-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-rose-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(244, 63, 94, 0.15);
+}
+.dark .bg-blue-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-sky-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-cyan-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-blue-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(56, 189, 248, 0.14);
+}
+.dark .bg-indigo-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-purple-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(129, 140, 248, 0.15);
+}
+.dark .bg-orange-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
+  background-color: rgba(251, 146, 60, 0.15);
+}
+
+/* 3. Border terang tanpa dark:border- -> halus di mode gelap */
+.dark .border-slate-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
+.dark .border-slate-300:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
+.dark .border-gray-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *) {
+  border-color: rgba(148, 163, 184, 0.2);
+}
+.dark .border-teal-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
+.dark .border-emerald-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *) {
+  border-color: rgba(45, 212, 191, 0.28);
+}
+.dark .border-amber-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
+.dark .border-rose-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
+.dark .border-blue-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *) {
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+/* 4. Teks gelap yang lupa dark:text- -> terang & tajam di atas kartu gelap */
+.dark .text-slate-900:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *),
+.dark .text-slate-800:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *),
+.dark .text-gray-900:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *),
+.dark .text-gray-800:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *) {
+  color: #f1f5f9;
+}
+.dark .text-slate-700:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *),
+.dark .text-gray-700:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *) {
+  color: #e2e8f0;
+}
+.dark .text-slate-600:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *) {
+  color: #cbd5e1;
+}
+.dark .text-teal-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-teal-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-teal-900:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+  color: #5eead4;
+}
+.dark .text-emerald-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-emerald-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+  color: #6ee7b7;
+}
+.dark .text-amber-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-amber-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+  color: #fcd34d;
+}
+.dark .text-rose-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-rose-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-red-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+  color: #fda4af;
+}
+.dark .text-blue-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-blue-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-sky-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-cyan-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+  color: #7dd3fc;
+}
+
+/* 5. Form controls di mode gelap selalu nyaman dibaca */
+.dark input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.print-area *):not(#rapor-print-area *),
+.dark select:not(.print-area *):not(#rapor-print-area *),
+.dark textarea:not(.print-area *):not(#rapor-print-area *) {
+  color: #f1f5f9;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
 }

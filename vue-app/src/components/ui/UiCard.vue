@@ -9,10 +9,12 @@ defineProps({
 
 <template>
   <div
-    class="rounded-[var(--radius-lg)] bg-[var(--bg-card)] border border-[var(--border-subtle)] transition-shadow duration-150"
+    class="rounded-[var(--radius-lg)] bg-[var(--bg-card)] border border-[var(--border-subtle)] transition-all duration-200"
     :class="[
-      padded ? 'p-4' : '',
-      elevated ? 'shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]' : 'shadow-[var(--shadow-sm)]'
+      padded ? 'p-4 md:p-5' : '',
+      elevated
+        ? 'shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]'
+        : 'shadow-[var(--shadow-sm)]'
     ]"
   >
     <div

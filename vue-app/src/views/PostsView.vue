@@ -44,7 +44,7 @@
     </div>
 
     <!-- Feed: PostCard widget + ReactionBar (likes only) -->
-    <div v-for="p in posts" :key="p.id" class="space-y-0">
+    <div v-for="p in posts" :id="`post-${p.id}`" :key="p.id" class="space-y-0">
       <PostCard
         :judul="p.judul || ''"
         :isi="p.isi || ''"
@@ -52,6 +52,8 @@
         :author="p.pengirim_nama || channelName"
         :gambar_urls="imgsTampil(p)"
         :post-id="isAdmin ? p.id : ''"
+        :link-url="p.link_url || ''"
+        :link-platform="p.link_platform || ''"
         @edit="editPost(p)"
         @delete="deletePost(p)"
       />
@@ -63,16 +65,62 @@
       </div>
     </div>
 
-    <!-- Modal: Create / Edit Post (style: legacy ammu) -->
-    <div
-      v-if="modalOpen"
-      class="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 backdrop-blur-sm"
-      @click.self="closeModal()"
+    <!-- Modal: Create / Edit Post (Bottom Sheet di HP + Dialog Modern di Desktop) -->
+    <UiSheetModal
+      :open="modalOpen"
+      :title="editing ? 'Edit Postingan' : 'Post Baru'"
+      :description="channelName"
+      max-width="lg"
+      :dismissible="!saving"
+      accent-top
+      show-close
+      content-class="!bg-teal-50/95 dark:!bg-slate-900"
+      @close="closeModal()"
     >
-      <div
-        class="bg-teal-50 dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border-t-4 border-teal-500"
-      >
-        <div class="p-6 space-y-4">
+      <div class="p-5 sm:p-6 pt-3 space-y-4">
+          <!-- LINK POSTINGAN (OPSIONAL: Instagram / YouTube / TikTok / Web) -->
+          <div>
+            <label
+              class="block text-[11px] font-black text-[var(--text-primary)] uppercase tracking-wider mb-2"
+            >
+              Link Postingan (Opsional — Instagram / YouTube / Lainnya)
+            </label>
+            <div class="flex gap-2">
+              <input
+                v-model.trim="modalLinkUrl"
+                type="url"
+                class="flex-1 min-w-0 px-3.5 py-2.5 text-sm rounded-xl border border-teal-200 dark:border-teal-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none placeholder:text-slate-400"
+                @blur="onLinkBlur"
+              />
+              <button
+                type="button"
+                :disabled="fetchingPreview || !modalLinkUrl"
+                class="shrink-0 px-3.5 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5"
+                @click="ambilPreview(true)"
+              >
+                <i :class="['fas', fetchingPreview ? 'fa-spinner fa-spin' : 'fa-magic']"></i>
+                <span>{{ fetchingPreview ? 'Ambil…' : 'Ambil Preview' }}</span>
+              </button>
+            </div>
+            <p
+              v-if="previewNote"
+              class="text-[11px] text-teal-800 dark:text-teal-300 mt-1.5 flex items-start gap-1.5"
+            >
+              <i class="fas fa-circle-info text-teal-600 mt-0.5"></i>
+              <span>{{ previewNote }}</span>
+            </p>
+            <p
+              v-else
+              class="text-[11px] text-[var(--text-secondary)] italic mt-1.5 flex items-start gap-1.5"
+            >
+              <i class="fas fa-link text-cyan-500 mt-0.5"></i>
+              <span
+                >Kosongkan untuk postingan manual biasa. Jika diisi link, klik gambar pada
+                postingan akan langsung menuju ke Instagram / YouTube / situs tujuan.</span
+              >
+            </p>
+          </div>
+
           <!-- JUDUL POST -->
           <div>
             <label
@@ -178,7 +226,9 @@
               Batal
             </button>
             <button
-              :disabled="saving || (!modalIsi && !modalJudul && modalImages.length === 0)"
+              :disabled="
+                saving || (!modalIsi && !modalJudul && !modalLinkUrl && modalImages.length === 0)
+              "
               class="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
               @click="simpan"
             >
@@ -187,16 +237,17 @@
               {{ saving ? 'Memposting...' : 'Publikasikan' }}
             </button>
           </div>
-        </div>
       </div>
-    </div>
+    </UiSheetModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/db'
 import { uploadFile } from '@/services/storage'
+import { detectPlatform, fetchLinkPreview, mirrorExternalImages } from '@/services/linkPreview'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -206,7 +257,9 @@ import { definePageActions } from '@/composables/useRibbonContext'
 import PostCard from '@/components/posts/PostCard.vue'
 import { urlBerkas } from '@/utils/urlBerkas'
 import ReactionBar from '@/components/posts/ReactionBar.vue'
+import UiSheetModal from '@/components/ui/UiSheetModal.vue'
 
+const route = useRoute()
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
@@ -262,15 +315,24 @@ const editing = ref(null) // null = create, else post object
 const modalJudul = ref('')
 const modalKategori = ref('Umum')
 const modalIsi = ref('')
-const modalImages = ref([]) // [{ file?, preview?, url? }]
+const modalLinkUrl = ref('')
+const modalLinkPlatform = ref('')
+const modalImages = ref([]) // [{ file?, preview?, url?, external?, needsMirror? }]
 const saving = ref(false)
+const fetchingPreview = ref(false)
+const previewNote = ref('')
+let lastPreviewedUrl = ''
 
 function openModal() {
   editing.value = null
   modalJudul.value = ''
   modalKategori.value = 'Umum'
   modalIsi.value = ''
+  modalLinkUrl.value = ''
+  modalLinkPlatform.value = ''
   modalImages.value = []
+  previewNote.value = ''
+  lastPreviewedUrl = ''
   modalOpen.value = true
 }
 
@@ -279,13 +341,79 @@ function editPost(p) {
   modalJudul.value = p.judul || ''
   modalKategori.value = p.kategori || 'Umum'
   modalIsi.value = p.isi || ''
+  modalLinkUrl.value = p.link_url || ''
+  modalLinkPlatform.value = p.link_platform || (p.link_url ? detectPlatform(p.link_url) : '')
   modalImages.value = imgsOf(p).map((url) => ({ url, preview: url }))
+  previewNote.value = ''
+  lastPreviewedUrl = p.link_url || ''
   modalOpen.value = true
 }
 
 function closeModal() {
   if (saving.value) return
   modalOpen.value = false
+}
+
+function onLinkBlur() {
+  const url = modalLinkUrl.value.trim()
+  if (!url) {
+    modalLinkPlatform.value = ''
+    previewNote.value = ''
+    lastPreviewedUrl = ''
+    return
+  }
+  if (url === lastPreviewedUrl) return
+  if (/^https?:\/\/.+/i.test(url)) {
+    ambilPreview(false)
+  }
+}
+
+async function ambilPreview(force = false) {
+  const url = modalLinkUrl.value.trim()
+  if (!url) return
+  if (fetchingPreview.value) return
+  if (!force && url === lastPreviewedUrl) return
+  fetchingPreview.value = true
+  previewNote.value = ''
+  try {
+    const res = await fetchLinkPreview(url)
+    lastPreviewedUrl = url
+    modalLinkPlatform.value = res.platform || detectPlatform(url)
+    if (!modalJudul.value && res.title) modalJudul.value = res.title
+    if (!modalIsi.value && res.description) modalIsi.value = res.description
+    if (res.images && res.images.length > 0) {
+      // Pertahankan foto manual yang diupload user, ganti gambar hasil preview sebelumnya
+      const manualImgs = modalImages.value.filter((it) => !it.external)
+      const extImgs = res.images.slice(0, MAX_IMAGES.value).map((u) => ({
+        url: u,
+        preview: u,
+        external: true,
+        needsMirror: Boolean(res.needsMirror)
+      }))
+      modalImages.value = [...extImgs, ...manualImgs].slice(0, MAX_IMAGES.value)
+    }
+    const labelPlatform =
+      res.platform === 'youtube'
+        ? 'YouTube'
+        : res.platform === 'instagram'
+          ? 'Instagram'
+          : res.platform === 'tiktok'
+            ? 'TikTok'
+            : res.siteName || 'Web'
+    if (res.note) {
+      previewNote.value = res.note
+    } else if (res.images?.length > 1) {
+      previewNote.value = `Terdeteksi ${labelPlatform} — ${res.images.length} foto carousel siap di-slide.`
+    } else if (res.images?.length === 1) {
+      previewNote.value = `Terdeteksi ${labelPlatform} — thumbnail & info berhasil diambil.`
+    } else {
+      previewNote.value = `Terdeteksi ${labelPlatform}. Anda bisa upload gambar thumbnail manual jika diperlukan.`
+    }
+  } catch (e) {
+    toast.warning(e?.message || 'Gagal mengambil preview link.')
+  } finally {
+    fetchingPreview.value = false
+  }
 }
 
 // v.21.106.0527: wire Pengaturan Web > Postingan settings.
@@ -385,20 +513,34 @@ function removeImage(idx) {
 
 async function simpan() {
   if (saving.value) return
-  if (!modalIsi.value && !modalJudul.value && modalImages.value.length === 0) {
-    toast.warning('Caption, judul, atau gambar harus diisi.')
+  const linkUrl = modalLinkUrl.value.trim()
+  if (!modalIsi.value && !modalJudul.value && !linkUrl && modalImages.value.length === 0) {
+    toast.warning('Caption, judul, link, atau gambar harus diisi.')
     return
   }
   saving.value = true
   try {
     const id = editing.value?.id || `post_${Date.now()}`
-    // Upload new images (yang baru — yang punya .file)
+
+    // Jika ada gambar eksternal (CDN Instagram/TikTok) yang perlu di-mirror agar tidak expired
+    const mirrorTargets = modalImages.value.filter((it) => it.url && !it.file && it.needsMirror)
+    const mirroredMap = new Map()
+    if (mirrorTargets.length > 0) {
+      const mirrored = await mirrorExternalImages(
+        id,
+        mirrorTargets.map((it) => it.url)
+      )
+      mirrorTargets.forEach((it, idx) => {
+        if (mirrored[idx]) mirroredMap.set(it.url, mirrored[idx])
+      })
+    }
+
+    // Upload new images (yang baru — yang punya .file) & kumpulkan semua URL
     const gambar_urls = []
     for (let i = 0; i < modalImages.value.length; i++) {
       const item = modalImages.value[i]
       if (item.url && !item.file) {
-        // Existing image — keep URL
-        gambar_urls.push(item.url)
+        gambar_urls.push(mirroredMap.get(item.url) || item.url)
       } else if (item.file) {
         const path = `beranda_post/${id}/${Date.now()}_${i}_${item.file.name}`
         const url = await uploadFile(path, item.file)
@@ -412,6 +554,8 @@ async function simpan() {
       kategori: modalKategori.value || 'Umum',
       isi: modalIsi.value || '',
       gambar_urls,
+      link_url: linkUrl || '',
+      link_platform: linkUrl ? modalLinkPlatform.value || detectPlatform(linkUrl) : '',
       pengirim_id: editing.value?.pengirim_id || String(sesi?.id || ''),
       pengirim_nama: editing.value?.pengirim_nama || sesi?.nama || 'Administrator',
       foto_pengirim: editing.value?.foto_pengirim || sesi?.foto || '',
@@ -452,10 +596,19 @@ async function deletePost(p) {
   }
 }
 
+let scrolledToTarget = false
 onMounted(() => {
   unsub = subscribeColl('beranda_post', (docs) => {
     postsRaw.value = docs
     loading.value = false
+    const targetId = route.query?.id
+    if (targetId && !scrolledToTarget) {
+      scrolledToTarget = true
+      nextTick(() => {
+        const el = document.getElementById(`post-${targetId}`)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+    }
   })
 })
 

@@ -5,6 +5,22 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.5.2 — November 2026
+
+**Baru**
+
+- **Al Manshur Channel mendukung postingan link (Instagram, YouTube, TikTok, dan lainnya).** Admin cukup menempel link untuk menarik thumbnail, foto carousel (bisa di-slide), dan caption secara otomatis; klik gambar langsung menuju postingan aslinya. Mode postingan manual tetap tersedia seperti biasa.
+- **Pengaturan Token Instagram Graph API** di menu Pengaturan Postingan (lengkap dengan tombol Tes Koneksi IG).
+- **Judul & sub-judul halaman Login** kini default **Ammu Online** dan bisa diubah langsung dari Pengaturan → Identitas Aplikasi.
+
+**Perubahan & Perbaikan**
+
+- **Tampilan lebih hidup & Mode Gelap (Dark Mode) lebih rapi.** Kontras teks, kartu, header, dan pratinjau rapor di mode gelap diperbaiki agar semua tulisan terbaca jelas dengan tetap mempertahankan warna identitas Ammu Online.
+- **Notifikasi & dialog lebih halus.** Toast notifikasi kini bisa di-swipe buang di HP, dan dialog konfirmasi / modal post tampil sebagai Bottom Sheet yang bisa ditarik turun di HP.
+- **Perbaikan layar muat (splash screen).** Teks statis di belakang layar muat tak lagi sempat berkedip saat halaman dimuat ulang.
+
+---
+
 ## v.1.5.1 — November 2026
 
 **Baru**

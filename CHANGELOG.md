@@ -28,6 +28,32 @@ menyuntikkan data pengguna).
 
 ---
 
+## [v.1.5.2] — 2026-11-22 — Al Manshur Channel Link Thumbnail + Poles UI/UX & Dark Mode
+
+`versionCode` 152 / `versionName` `v.1.5.2` (web, AAB, Electron, PSB).
+
+### Added
+- **Al Manshur Channel — Postingan Link Thumbnail** (`PostsView.vue`, `PostCard.vue`, `DashboardPosts.vue`, `services/linkPreview.js`, `supabase/functions/get-link-preview`):
+  - Admin dapat menempel link Instagram (Post/Reels/Carousel multi-foto via Instagram Graph API), YouTube (video & Shorts via oEmbed gratis), TikTok, atau web umum untuk menarik thumbnail + caption otomatis, sambil tetap mempertahankan mode postingan manual lama.
+  - Gambar carousel Instagram tetap bisa di-slide di kartu postingan, dan klik pada gambar langsung membuka postingan aslinya; gambar CDN Instagram/TikTok disalin otomatis ke Supabase Storage (`photo/beranda_post/`) agar permanen.
+- **Pengaturan Token Instagram Graph API** (`PengaturanView.vue`, migrasi `20261122120000_settings_instagram_key.sql`):
+  - Panel input `Instagram User ID` + `Instagram Access Token` + tombol **Tes Koneksi IG** di Pengaturan → Pengaturan Postingan, disimpan terpisah di `settings/instagram` dengan RLS khusus admin (`auth_can_manage()`).
+- **Judul & Sub-judul Halaman Login bisa diubah di Pengaturan** (`LoginView.vue`, `PengaturanView.vue`):
+  - Default diganti dari "Portal Mambaul Ulum" menjadi **"Ammu Online"** (`txtLoginTitle` & `txtLoginSubtitle` di Pengaturan → Identitas Aplikasi).
+- **Komponen UI/UX Ringan** (`vue-sonner`, `vaul-vue`, `reka-ui`, `UiSheetModal.vue`):
+  - Notifikasi toast global di-upgrade ke `vue-sonner` (stackable, swipe-to-dismiss di HP, sinkron Light/Dark).
+  - Modal responsif `UiSheetModal` (Bottom Sheet swipe-down di HP, Dialog halus di Desktop) diterapkan pada `ConfirmDialog.vue` dan modal `PostsView.vue`.
+
+### Changed & Fixed
+- **Poles Kedalaman Visual & Perbaikan Kontras Dark Mode** (`main.css`, `AppHeader.vue`, `AppSidebar.vue`, `BottomNav.vue`, `UiCard.vue`, `PostCard.vue`, `RaporView.vue`):
+  - Mempertahankan palet identitas Ammu (Teal + Putih/Slate) dengan bayangan kartu lebih realistis, header/bottom-nav blur halus, dan Global Dark Mode Contrast Guard agar kotak pastel & teks gelap tanpa `dark:` tetap terbaca terang (area cetak `.print-area` & `#rapor-print-area` dikecualikan).
+  - Fix judul `PostCard` dan kertas pratinjau `#rapor-print-area` yang sebelumnya hitam di atas gelap pada Dark Mode.
+  - Fix tombol close (`×`) pada toast `vue-sonner` yang sebelumnya lonjong akibat rule global `button { min-height: 36px }`.
+- **Fix kedipan teks statis saat hard refresh** (`vue-app/index.html`):
+  - Hapus animasi `splashFadeIn` pada tirai luar `#splash-screen` agar langsung solid `opacity: 1` sejak milidetik ke-0 (teks statis Kebijakan Privasi untuk crawler Google OAuth tetap utuh di HTML mentah tanpa pernah berkedip di layar pengguna).
+
+---
+
 ## [v.1.5.1 · gelombang 5] — 2026-11-19 — Halaman depan memenuhi syarat verifikasi merek Google
 
 **BELUM DIRILIS** (ikut v.1.5.1). Cukup deploy web; tanpa migrasi, tanpa edge function. AAB baru

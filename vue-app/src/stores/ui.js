@@ -1,6 +1,7 @@
-// UI store — dark mode, toast notifications, confirm dialog
+// UI store — dark mode, toast notifications (vue-sonner), confirm dialog
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { toast as sonnerToast } from 'vue-sonner'
 
 let _toastSeq = 0
 
@@ -61,16 +62,17 @@ export const useUiStore = defineStore('ui', () => {
     setDark(false)
   }
 
-  // Toast queue
-  const toasts = ref([]) // [{ id, type, msg, ttl }]
+  // Toast queue (didukung vue-sonner untuk animasi stackable & swipe-to-dismiss di HP)
+  const toasts = ref([]) // tetap dipertahankan untuk kompatibilitas pembaca legacy
 
   function pushToast(type, msg, ttl = 3000) {
     const id = ++_toastSeq
-    toasts.value.push({ id, type, msg, ttl })
-    setTimeout(() => {
-      const idx = toasts.value.findIndex((t) => t.id === id)
-      if (idx >= 0) toasts.value.splice(idx, 1)
-    }, ttl)
+    const text = String(msg ?? '')
+    const opts = { duration: ttl }
+    if (type === 'success') sonnerToast.success(text, opts)
+    else if (type === 'error') sonnerToast.error(text, opts)
+    else if (type === 'warning') sonnerToast.warning(text, opts)
+    else sonnerToast.info(text, opts)
     return id
   }
 

@@ -1,7 +1,7 @@
 <template>
   <!-- v.48.0526: header cream warm match legacy + border teal accent -->
   <header
-    class="bg-white/95 dark:bg-slate-800 backdrop-blur-sm shadow-sm border-b-2 border-teal-600/30 dark:border-slate-700 px-4 md:px-8 py-3 flex justify-between items-center gap-2 md:gap-0 z-30 sticky top-0"
+    class="bg-white/85 dark:bg-slate-900/80 backdrop-blur-xl shadow-[0_1px_12px_rgba(15,23,42,0.06)] dark:shadow-[0_1px_16px_rgba(0,0,0,0.45)] border-b border-teal-600/15 dark:border-white/10 px-4 md:px-8 py-3 flex justify-between items-center gap-2 md:gap-0 z-30 sticky top-0 transition-colors"
   >
     <!-- v.72.2.0526: Header match legacy — hamburger (always) + leaf logo + "Ammu Online" branding -->
     <div class="flex items-center gap-3">
@@ -113,7 +113,7 @@
           {{ namaUser }}
         </p>
         <p
-          class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5"
+          class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5"
         >
           {{ roleLabel }}
         </p>

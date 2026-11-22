@@ -61,14 +61,14 @@
           v-for="m in items"
           :key="m.path"
           :class="[
-            'menu-item w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-center gap-3 font-semibold text-[14px] border-l-[3px]',
+            'menu-item w-full text-left px-3 py-2.5 rounded-xl transition-all duration-150 flex items-center gap-3 font-semibold text-[14px] border-l-[3px]',
             isActive(m.path)
               ? group === 'Keuangan'
-                ? 'border-cyan-600 text-cyan-800 bg-cyan-50 dark:border-cyan-400 dark:text-cyan-100 dark:bg-cyan-700/20'
-                : 'border-teal-600 text-teal-800 bg-teal-50 dark:border-teal-400 dark:text-white dark:bg-teal-700/30'
+                ? 'border-cyan-600 text-cyan-800 bg-cyan-50/90 shadow-sm dark:border-cyan-400 dark:text-cyan-100 dark:bg-cyan-500/15'
+                : 'border-teal-600 text-teal-800 bg-teal-50/90 shadow-sm dark:border-teal-400 dark:text-white dark:bg-teal-500/20'
               : group === 'Keuangan'
-                ? 'border-transparent text-cyan-800 hover:bg-cyan-50 dark:text-cyan-100 dark:hover:bg-cyan-900/20'
-                : 'border-transparent text-slate-700 hover:bg-emerald-100/50 dark:text-slate-300 dark:hover:bg-white/5',
+                ? 'border-transparent text-cyan-800 hover:bg-cyan-50/70 dark:text-cyan-200 dark:hover:bg-cyan-500/10'
+                : 'border-transparent text-slate-700 hover:bg-emerald-50/80 dark:text-slate-200 dark:hover:bg-white/5',
             !m.available ? 'opacity-55' : ''
           ]"
           :title="m.available ? '' : 'Halaman ini masih di versi lama, akan dimigrasi'"

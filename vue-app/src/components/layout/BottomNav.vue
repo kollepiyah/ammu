@@ -1,7 +1,7 @@
 <template>
   <!-- v.91.0626: bottom nav mobile (Android/PWA). 5 tab role-adaptif; Notifikasi = halaman penuh -->
   <nav
-    class="app-bottom-nav shrink-0 flex items-stretch border-t border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]"
+    class="app-bottom-nav shrink-0 flex items-stretch border-t border-[var(--border-subtle)] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-[0_-4px_18px_rgba(15,23,42,0.07)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.45)]"
     style="padding-bottom: env(safe-area-inset-bottom)"
     aria-label="Navigasi bawah"
   >
@@ -9,8 +9,12 @@
       v-for="tab in tabs"
       :key="tab.path"
       :to="tab.path"
-      class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition cursor-pointer"
-      :class="isActive(tab) ? 'text-teal-600 dark:text-teal-300' : 'text-[var(--text-tertiary)]'"
+      class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-all duration-150 cursor-pointer"
+      :class="
+        isActive(tab)
+          ? 'text-teal-600 dark:text-teal-300'
+          : 'text-slate-500 dark:text-slate-400'
+      "
       :aria-label="tab.name"
     >
       <span class="relative">
