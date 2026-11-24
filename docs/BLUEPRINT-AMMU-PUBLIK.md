@@ -25,7 +25,8 @@ Aturan yang sudah diputuskan Kyai:
 | Gaya UI | Ikuti `DESIGN-SYSTEM-RULES.md` + gaya yang ada (teal `#0F766E`, Plus Jakarta Sans, Scheherazade New untuk Arab, kartu `rounded-2xl` border slate, Font Awesome). Layar setelah login **tidak berubah** |
 | Menu bawah publik | **Beranda · Channel · Kalender · Portal · Pengaturan** |
 | Menu cepat Beranda | **Kiblat · Al-Qur'an · Agenda · Wirid** |
-| Jam & Hijriah | Kartu jam teal **dipindah** dari dashboard setelah login ke Beranda publik, dibuat **ringkas satu baris** |
+| Jam & Hijriah | Kartu jam teal **dipindah** dari dashboard setelah login ke Beranda publik, dibuat **ringkas satu baris**. Di dashboard setelah login kartu itu **dihapus** (K4) |
+| Dashboard setelah login | Di bawah kartu sapaan "Ahlan …" ditambah **baris 4 ikon: Al-Qur'an · Kitab/Wirid · Kiblat · Jadwal Sholat** (Agenda tidak, sudah ada Kalender di menu bawah). Untuk **semua peran**, hanya di **Android & PWA** — web biasa dan Electron tidak. Orang yang sudah login **tidak perlu pindah** ke wilayah publik (K3) |
 | Kalender | Kalender yang sekarang **dibiarkan, tidak diubah**. Acuan Hijriah = **NU** |
 | Penyimpanan berkas besar | **Cloudflare R2** (Kyai sudah punya akun). Bukan Firebase Storage (mati: tunggakan tagihan, 402), bukan Supabase Storage (egress sempit) |
 | Login | Tetap **username (= nomor, bisa diubah manual) + Google**. Tidak ada email. Ditambah **buka dengan sidik jari / Face ID** setelah login pertama |
@@ -82,8 +83,12 @@ Urutan dari atas:
 ### 3.2 Tab lain
 - **Channel**: daftar `beranda_post` (YouTube/Instagram/manual), baca saja.
 - **Kalender**: kalender yang sekarang, apa adanya.
-- **Portal**: belum login → layar masuk; sudah login → **aplikasi lama persis** (dashboard +
-  BottomNav internal). Perlu jalan pulang ke wilayah publik (lihat keputusan K3).
+- **Portal**: belum login → layar masuk; sudah login → **aplikasi lama** (dashboard +
+  BottomNav internal), dengan dua perubahan saja: kartu jam dihapus, dan baris ikon ibadah
+  ditambahkan (lihat 3.7). **Tidak ada tombol pulang ke wilayah publik** — fitur ibadah sudah
+  bisa dibuka dari dashboard. Tombol kembali Android di dashboard tetap seperti sekarang.
+  Sesi tetap tersimpan (tidak keluar otomatis); Keluar tetap di tempatnya sekarang + di
+  Pengaturan publik → Akun.
 - **Pengaturan publik** (rute baru, bukan `PengaturanView` admin):
   - *Ibadah*: Metode perhitungan (Falakiyah NU · Kemenag RI · Umm al-Qura), Lokasi otomatis
     (sakelar + "diperbarui 08.15" + tombol perbarui / pilih kota manual), Adzan (suara:
@@ -119,6 +124,22 @@ Kegiatan (sky). **Hanya agenda yang ditandai admin "tampil di publik".**
   (safe-area/cutout). Mode tegak saja di tahap awal.
 - Dibuat **sekali** sebagai composable bersama (mis. `composables/useModeBaca.js`), dipakai
   keempat layar — jangan disalin per layar.
+
+### 3.7 Baris ikon ibadah di dashboard setelah login (keputusan 25 Nov 2026)
+- Letak: tepat di bawah kartu sapaan "Ahlan …", menggantikan kartu jam yang dihapus.
+- Isi: **Al-Qur'an · Kitab/Wirid · Kiblat · Jadwal Sholat** (4 ikon). Agenda sengaja tidak
+  ada: orang yang login sudah punya Kalender di menu bawah.
+- Berlaku untuk **semua peran**. Tampil hanya bila berjalan di **Android (Capacitor native)
+  atau PWA terpasang** (`display-mode: standalone`); web biasa dan Electron tidak.
+  Penentu platform dibuat **satu fungsi** (mis. `utils/platform.js`), jangan ditulis ulang
+  per komponen.
+- Ikon membuka **layar yang sama** dengan wilayah publik (satu komponen per layar). Baris ikon
+  sendiri juga satu komponen bersama dengan menu cepat Beranda publik, isinya lewat prop/daftar.
+- Layar Jadwal Sholat punya ikon roda gigi ke **pengaturan ibadah** (metode, lokasi, adzan)
+  supaya yang sudah login tidak perlu ke Pengaturan publik.
+- Jam & Hijriah tetap terlihat di `RibbonStatusBar` bagi yang login.
+- **Wajib:** sinkron widget (`pushWidgetData`) dipindah ke tempat yang selalu jalan
+  (mis. `App.vue`/composable global), bukan di kartu jam mana pun.
 
 ---
 
@@ -226,8 +247,8 @@ Kegiatan (sky). **Hanya agenda yang ditandai admin "tampil di publik".**
 |---|---|---|---|
 | K1 | Wirid/maulid/doa: **teks** (Word/ketik) atau **gambar** seperti mushaf? | Teks bila tersedia (A−/A+, Latin, Arti berfungsi) — wajib diperiksa harakatnya | F7 |
 | K2 | Ukuran & jumlah halaman PDF mushaf; sudah bertashih LPMQ? | Ukur dulu; konversi WebP | F6 |
-| K3 | Dari Portal kembali ke wilayah publik lewat mana, tanpa mengubah UI internal? | Tombol kecil "Beranda umum" di header Portal, atau tab Beranda internal tetap ke dashboard + tombol kembali Android ke publik | F1 |
-| K4 | Kartu jam benar-benar **dihapus** dari dashboard setelah login, atau tampil di keduanya? | Kyai bilang "dipindah" → hapus dari dashboard, sinkron widget ikut pindah | F1 |
+| K3 | ~~Dari Portal kembali ke wilayah publik lewat mana?~~ **Dijawab 25 Nov:** tidak perlu jalan pulang; fitur ibadah dibuka dari baris ikon di dashboard (3.7). Sesi tetap tersimpan | — | F1 |
+| K4 | ~~Kartu jam dihapus dari dashboard atau tampil di keduanya?~~ **Dijawab 25 Nov:** dihapus dari dashboard, diganti baris ikon; sinkron widget pindah ke tempat global | — | F1 |
 | K5 | Rekaman suara bedug, kentongan, adzan — dari mana? | Kyai sediakan berkas sendiri | F3 |
 | K6 | Domain untuk R2 (subdomain apa)? | Subdomain milik lembaga | F6 |
 
@@ -243,12 +264,13 @@ lalu dipakai F7). F10 butuh F2.
 | Fase | Isi | Butuh | Yang dijalankan Kyai |
 |---|---|---|---|
 | **F0** | Persiapan: jawab K1–K6, serahkan PDF & berkas suara, buat bucket R2 | — | Buat bucket + domain R2 |
-| **F1** | Kerangka publik: rute `/umum/*` (`meta.public`), shell + bottom nav 5 tab, `/` → beranda publik di Android, Electron tetap ke Portal, tab Portal → login/dashboard, pindah kartu jam ringkas + sinkron widget, Pengaturan publik (tema Terang/Gelap/Otomatis di `stores/ui.js`) | — | AAB |
+| **F1** | Kerangka publik: rute `/umum/*` (`meta.public`), shell + bottom nav 5 tab, `/` → beranda publik di Android, Electron tetap ke Portal, tab Portal → login/dashboard, pindah kartu jam ringkas + sinkron widget global, hapus kartu jam dari dashboard + baris ikon ibadah (3.7; ikon yang layarnya belum jadi tampil "segera hadir" atau disembunyikan), Pengaturan publik (tema Terang/Gelap/Otomatis di `stores/ui.js`) | — | AAB |
 | **F2** | `utils/waktuSholat.js` + tes pembanding resmi, geolocation + perbarui otomatis, kartu jadwal, pengaturan metode & lokasi, kompas kiblat (sensor arah) | F1 | AAB |
 | **F3** | Adzan (kanal suara, penjadwalan, jadwal ulang) + uji HP asli; plugin native bila perlu | F2 | AAB |
 | **F4** | Agenda publik: migrasi `publik`, akses anon aman, centang di form admin, layar Agenda | F1 | `supabase db push`, deploy web, AAB |
 | **F5** | Tab Channel publik (+ penanda publik bila perlu) | F1 | (db push bila ada migrasi), AAB |
 | **F6** | Al-Qur'an: skrip PDF→WebP, R2 + CSP, indeks surah/juz, pembaca + cache offline + zoom + geser + terakhir dibaca, **mode layar penuh (F8) dibuat di sini** | F1, K2, K6 | Unggah ke R2, AAB |
+| **F8** | Mode layar penuh `useModeBaca` (3.6, 4.10) — **dikerjakan di dalam F6**, dipakai ulang F7 | F1 | (ikut AAB F6) |
 | **F7** | Kitab & Wirid: tabel + RLS, CRUD Master Data, daftar + layar baca + Tasbih, pakai `useModeBaca` | F1, F8, K1 | `supabase db push`, deploy web, AAB |
 | **F9** | Login ringkas + biometrik | F1 | AAB |
 | **F10** | Widget jadwal sholat | F2 | AAB |
@@ -285,8 +307,8 @@ npm run build:aab
 ## 8. Hal yang sengaja TIDAK dikerjakan
 
 - Menulis ulang ke Kotlin / native penuh.
-- Mengubah layar internal setelah login (selain memindah kartu jam & centang "tampil di
-  publik" di form agenda).
+- Mengubah layar internal setelah login (selain menghapus kartu jam + menambah baris ikon
+  ibadah di dashboard, dan centang "tampil di publik" di form agenda).
 - Fitur NU Online yang butuh redaksi besar: artikel, NUpedia, video, donasi, terjemah/tafsir
   Al-Qur'an.
 - Lokasi latar belakang, Firebase Storage berbayar.
