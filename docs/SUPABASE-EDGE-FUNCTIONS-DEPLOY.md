@@ -414,6 +414,12 @@ Induk supaya kas tak ikut bertambah.
 
 ## 10. Pengingat WA jadwal piket Pondok Laju — Fonnte — v.1.5.1
 
+> **DICABUT v.1.5.3 (24 Nov 2026).** Nomor Fonnte Kyai keblokir; jadwal kini dikabarkan lewat
+> tautan wa.me dari tab Jadwal (tombol per guru). Kode fungsi `kirim-wa-jadwal` sudah dihapus dari
+> repo. Fungsi yang masih ter-deploy tak dipanggil lagi; boleh dibersihkan dengan
+> `supabase functions delete kirim-wa-jadwal` dan `supabase secrets unset FONNTE_TOKEN`. Tabel
+> `wa_kirim_log` dibiarkan (hanya riwayat). Catatan di bawah tinggal sejarah.
+
 Fungsi `kirim-wa-jadwal` dipanggil app sesudah "Simpan Jadwal" (menu Pondok Laju → Jadwal) dan
 mengirim SATU pesan per guru yang mendapat piket baru. Nomor pengirim = perangkat Fonnte (nomor
 biasa, bukan WA resmi — bila diblokir, ganti nomor di Fonnte; token perangkat baru → pasang ulang

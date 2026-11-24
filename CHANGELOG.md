@@ -28,12 +28,36 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.3] — 2026-11-24 — Jadwal piket Pondok Laju per tanggal + Tugas Saya bertanggal
+## [v.1.5.3] — 2026-11-24 — Pondok Laju: guru biasa hanya melihat miliknya, kabar WA lewat wa.me
 
-**SIAP RILIS** — `versionCode` 153 / `versionName` `v.1.5.3` (web, AAB, Electron, PSB). Nomor naik
-karena v.1.5.2 sudah tayang di ketiga jalur (web app-version 152, Electron "Latest", AAB 23 Nov).
-Tanpa migrasi. Deploy web cukup; `widget-tugas` boleh di-deploy ulang supaya widget Android yang
-menarik sendiri ikut menulis "Kelas …" (tanpa itu widget tetap benar, hanya kata lama).
+**SIAP RILIS** — `versionCode` 153 / `versionName` `v.1.5.3` (web, AAB, Electron, PSB), 2 gelombang.
+Web gelombang 1 sudah di-deploy Kyai 24 Nov; AAB & Electron belum → gelombang ini tetap 1.5.3.
+Tanpa migrasi. Deploy web. Opsional: `supabase functions delete kirim-wa-jadwal` &
+`supabase secrets unset FONNTE_TOKEN` (fungsi tak dipanggil lagi); `widget-tugas` boleh di-deploy
+ulang supaya widget Android yang menarik sendiri menulis "Kelas …".
+
+### Changed
+- **Guru biasa hanya melihat jurnal & jadwalnya sendiri** (Kyai 24 Nov 2026). Tab Riwayat kini
+  khusus penyusun (`bolehSusunJadwal`: admin/super admin, PJ PTPT, Admin Pondok Laju); tab Jadwal
+  untuk guru biasa hanya kartu "Jadwal Saya" sebulan (yang lewat diredupkan), dan tarikannya
+  disaring `guru_id` = dirinya — jadwal guru lain tak lagi diunduh. RLS `pondok_laju_jadwal`
+  (select = staf) sengaja tak diubah: pembatasan ini soal tampilan & egress, bukan rahasia.
+  Tarikan diulang saat peran Admin Pondok Laju terbaca belakangan dari master/lembaga.
+- **Pengingat WA jadwal: Fonnte dicabut, diganti tautan wa.me.** Nomor Fonnte Kyai keblokir.
+  Panel "Kabari guru lewat WA" di tab Jadwal memuat tiap guru yang punya piket tersimpan mulai
+  hari ini s/d akhir bulan, dengan tombol Kirim (`format.waLink` dari `guru.wa`) berisi pesan
+  siap kirim; tanpa nomor → "tanpa nomor WA". Isi pesan pindah ke `utils/waJadwalLaju.js`
+  (`piketPerGuru`, `susunPesanJadwal`, isi sama dengan versi Fonnte). Centang "Kirim pengingat
+  WA" dibuang.
+
+### Removed
+- Edge function `kirim-wa-jadwal`, `services/waJadwal.js`, dan `tests/unit/waJadwalPemicu.test.js`.
+  Tabel `wa_kirim_log` dibiarkan sebagai riwayat.
+
+---
+
+## [v.1.5.3 · gelombang 1] — 2026-11-24 — Jadwal piket Pondok Laju per tanggal + Tugas Saya bertanggal
+
 
 ### Changed
 - **Tab Jadwal Pondok Laju dirombak jadi satu tanggal sekali tampil** (`PondokLajuView.vue`).

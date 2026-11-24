@@ -18,6 +18,10 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Kartu "Tugas Saya" di beranda menyebut hari dan tanggalnya**, misalnya "Besok · Rabu,
   25 November", dan menulis "Kelas …" supaya jelas itu kelas yang dijaga.
 - Rencana bergilir otomatis dan templat Excel jadwal dihapus karena lebih merepotkan.
+- **Guru hanya melihat jadwal dan jurnalnya sendiri.** Riwayat dan jadwal guru lain kini khusus
+  admin dan pengelola Pondok Laju.
+- **Kabar jadwal lewat WhatsApp kini dikirim sendiri lewat tombol WA** per guru (pesan sudah
+  tersusun otomatis), menggantikan pengiriman otomatis sebelumnya.
 
 ---
 

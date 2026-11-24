@@ -118,7 +118,10 @@
          sekali tampil, satu baris per kelas; pita tanggal di atas menunjukkan mana yang sudah
          terisi. Rencana bergilir (kotak kuning) & templat Excel dihapus atas permintaan Kyai. -->
     <template v-else-if="tab === 'jadwal'">
+      <!-- Kyai 24 Nov 2026: penyusunan & jadwal guru lain hanya untuk pengelola; guru biasa
+           cukup kartu "Jadwal Saya" di bawah. -->
       <div
+        v-if="bisaSusun"
         class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-3"
       >
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -130,9 +133,6 @@
           />
           <p class="text-[11px] text-[var(--text-secondary)]">
             Tadarus Pagi = guru kelas masing-masing (tanpa jadwal).
-            <template v-if="!bisaSusun">
-              Hanya Admin Pondok Laju, PJ, dan admin yang menyusun.</template
-            >
           </p>
         </div>
 
@@ -270,14 +270,6 @@
               batalkan
             </button>
           </p>
-          <!-- Kyai 19 Nov 2026: pengingat WA otomatis sesudah jadwal disimpan. Bisa dimatikan
-               untuk simpanan kecil (mis. membetulkan salah pilih) supaya guru tak dihujani. -->
-          <label
-            class="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer"
-          >
-            <input v-model="jKirimWa" type="checkbox" class="accent-emerald-600" />
-            <i class="fab fa-whatsapp text-emerald-600"></i>Kirim pengingat WA ke guru
-          </label>
           <button
             :disabled="!adaDraft || jMenyimpan"
             class="h-10 px-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black cursor-pointer"
@@ -287,6 +279,54 @@
             {{ jMenyimpan ? `Menyimpan ${jProgres}…` : 'SIMPAN JADWAL' }}
           </button>
         </div>
+      </div>
+
+      <!-- Kabar WA lewat wa.me (Kyai 24 Nov 2026) — pengganti pengiriman otomatis Fonnte. -->
+      <div
+        v-if="bisaSusun"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
+      >
+        <button
+          class="w-full flex items-center justify-between text-xs font-black text-[var(--text-primary)] uppercase cursor-pointer"
+          @click="kabarBuka = !kabarBuka"
+        >
+          <span
+            ><i class="fab fa-whatsapp text-emerald-600 mr-1"></i>Kabari guru lewat WA ({{
+              kabarWa.length
+            }}
+            guru)</span
+          >
+          <i :class="['fas', kabarBuka ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+        </button>
+        <template v-if="kabarBuka">
+          <p class="text-[11px] text-[var(--text-secondary)]">
+            Berisi piket yang sudah tersimpan mulai hari ini sampai akhir bulan. Tombol membuka
+            WhatsApp dengan pesan siap kirim.
+          </p>
+          <p v-if="!kabarWa.length" class="text-[11px] text-[var(--text-secondary)]">
+            Belum ada piket tersimpan yang akan datang di bulan ini.
+          </p>
+          <ul class="divide-y divide-[var(--border-subtle)]">
+            <li v-for="g in kabarWa" :key="g.id" class="py-1.5 flex items-center gap-2">
+              <span class="grow min-w-0 truncate text-xs font-bold text-[var(--text-primary)]"
+                >{{ g.nama }}
+                <span class="font-normal text-[var(--text-secondary)]"
+                  >· {{ g.jumlah }} piket</span
+                ></span
+              >
+              <a
+                v-if="g.url"
+                :href="g.url"
+                target="_blank"
+                rel="noopener"
+                class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black"
+              >
+                <i class="fab fa-whatsapp"></i>Kirim
+              </a>
+              <span v-else class="text-[11px] text-rose-600">tanpa nomor WA</span>
+            </li>
+          </ul>
+        </template>
       </div>
 
       <!-- Daftar tetap Guru Piket Laju (Kyai 24 Nov 2026). Disimpan di master/lembaga yang hanya
@@ -349,17 +389,35 @@
       </div>
 
       <div
-        v-if="jadwalSaya.length"
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm"
+        v-if="jadwalSaya.length || !bisaSusun"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
       >
-        <p class="text-xs font-black text-[var(--text-primary)] uppercase mb-2">
-          <i class="fas fa-user-clock text-teal-600 mr-1"></i>Jadwal Pondok Laju
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs font-black text-[var(--text-primary)] uppercase">
+            <i class="fas fa-user-clock text-teal-600 mr-1"></i>Jadwal Saya
+          </p>
+          <input
+            v-if="!bisaSusun"
+            v-model="bulanModel"
+            type="month"
+            aria-label="Bulan jadwal"
+            class="px-3 py-1.5 text-xs rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </div>
+        <p v-if="jMemuat" class="text-xs text-[var(--text-secondary)]">
+          <i class="fas fa-spinner fa-spin mr-1"></i>Memuat jadwal…
+        </p>
+        <p v-else-if="!jadwalSaya.length" class="text-xs text-[var(--text-secondary)]">
+          Tidak ada jadwal piket Anda di bulan ini.
         </p>
         <ul class="space-y-1">
           <li
             v-for="r in jadwalSaya"
             :key="r.id"
-            class="text-xs text-[var(--text-secondary)] flex justify-between gap-2"
+            :class="[
+              'text-xs text-[var(--text-secondary)] flex justify-between gap-2',
+              r.tanggal < hariIniJ ? 'opacity-50' : ''
+            ]"
           >
             <span
               ><b class="text-[var(--text-primary)]">{{ fmtTgl(r.tanggal) }}</b> ·
@@ -755,7 +813,7 @@ import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 import { queryColl, mergeOne, deleteOne, subscribeDoc, getOne } from '@/services/db'
-import { todayJakarta, fmtRp } from '@/utils/format'
+import { todayJakarta, fmtRp, waLink } from '@/utils/format'
 import { guruAktifSaja } from '@/utils/guruScope'
 import { isPengajar } from '@/utils/jenisGuru'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -766,7 +824,7 @@ import { jenisBisyarohList } from '@/utils/bisyarohScope'
 import { rentangPeriodeBisyaroh, penyaringPeriodeBisyaroh } from '@/utils/periodeBisyaroh'
 import { rekapJurnalBulan } from '@/utils/jurnalRekap'
 import JurnalKartu from '@/components/pondoklaju/JurnalKartu.vue'
-import { kirimPengingatJadwal, ringkasPengingat } from '@/services/waJadwal'
+import { piketPerGuru, susunPesanJadwal } from '@/utils/waJadwalLaju'
 import {
   SESI_LAJU,
   SESI_PIKET,
@@ -822,9 +880,10 @@ const tabs = computed(() => {
     // Kyai 17 Nov 2026: "bukan capaian tapi jurnal". Id 'capaian' sengaja TETAP — ia dipakai
     //   di tautan & penyimpanan tab terakhir; yang berubah cuma kata yang dibaca mata.
     { id: 'capaian', label: 'Jurnal', icon: 'fa-pen-to-square' },
-    { id: 'jadwal', label: 'Jadwal', icon: 'fa-calendar-days' },
-    { id: 'riwayat', label: 'Riwayat', icon: 'fa-clock-rotate-left' }
+    { id: 'jadwal', label: 'Jadwal', icon: 'fa-calendar-days' }
   ]
+  // Kyai 24 Nov 2026: guru biasa cukup jurnal & jadwalnya sendiri — riwayat untuk pengelola.
+  if (bisaSusun.value) out.push({ id: 'riwayat', label: 'Riwayat', icon: 'fa-clock-rotate-left' })
   if (bisaKeuangan.value) out.push({ id: 'bisyaroh', label: 'Bisyaroh', icon: 'fa-coins' })
   if (isSuperAdmin(sesi.value))
     out.push({ id: 'pengaturan', label: 'Pengaturan', icon: 'fa-sliders' })
@@ -924,7 +983,11 @@ const _kunci = (t, s, k) => `${t}|${s}|${k}`
 async function muatJadwal() {
   jMemuat.value = true
   try {
-    jRows.value = await queryColl('pondok_laju_jadwal', [['periode', '==', jBulan.value]])
+    // Guru biasa hanya menarik barisnya sendiri (Kyai 24 Nov 2026: tak perlu melihat jadwal
+    //   orang lain) — sekaligus hemat egress.
+    const saring = [['periode', '==', jBulan.value]]
+    if (!bisaSusun.value) saring.push(['guru_id', '==', myId.value])
+    jRows.value = await queryColl('pondok_laju_jadwal', saring)
   } catch (e) {
     jRows.value = []
     toast.error('Gagal memuat jadwal: ' + (e?.message || e))
@@ -951,6 +1014,10 @@ const bulanModel = computed({
 })
 watch(tab, (t) => {
   if (t === 'jadwal' && !jRows.value.length) muatJadwal()
+})
+// Peran Admin Pondok Laju terbaca belakangan (master/lembaga) — saringan tarikan ikut berubah.
+watch(bisaSusun, () => {
+  if (tab.value === 'jadwal') muatJadwal()
 })
 
 const petaJadwal = computed(
@@ -1080,27 +1147,34 @@ async function simpanDaftarPiket() {
 }
 const jadwalSaya = computed(() =>
   jRows.value
-    .filter((r) => String(r.guru_id) === myId.value && r.tanggal >= todayJakarta())
+    .filter((r) => String(r.guru_id) === myId.value)
     .sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.sesi.localeCompare(b.sesi))
 )
+const hariIniJ = todayJakarta()
 
-// Pengingat WA (Kyai 19 Nov 2026) — sengaja tak ditunggu: penyimpanan jadwal sudah selesai,
-//   pengiriman bisa makan semenit (berjeda antarguru) dan hasilnya cukup dilaporkan lewat toast.
-const jKirimWa = ref(true)
-async function kirimWaJadwal(ids) {
-  try {
-    const r = ringkasPengingat(await kirimPengingatJadwal(ids))
-    if (r) toast[r.jenis](r.teks, 9000)
-  } catch (e) {
-    toast.warning('Pengingat WA gagal dikirim: ' + (e?.message || e))
-  }
-}
+// Kabar WA lewat wa.me (Kyai 24 Nov 2026): nomor Fonnte keblokir, jadi pengiriman otomatis
+//   dicabut. Penyusun menekan tombol per guru; pesannya dari jadwal yang SUDAH tersimpan.
+const kabarWa = computed(() => {
+  const pondok = String(settingsStore.settings?.kopLine2 || 'Pondok Pesantren Mambaul Ulum')
+  return [...piketPerGuru(jRows.value, { hariIni: todayJakarta() }).entries()]
+    .map(([id, baris]) => {
+      const g = petaGuru.value.get(String(id))
+      const nama = g?.nama || namaGuru(id)
+      return {
+        id,
+        nama,
+        jumlah: baris.length,
+        url: waLink(g?.wa, susunPesanJadwal({ nama, baris, pondok }))
+      }
+    })
+    .sort((a, b) => a.nama.localeCompare(b.nama, 'id'))
+})
+const kabarBuka = ref(false)
 
 async function simpanJadwal() {
   if (!adaDraft.value || jMenyimpan.value) return
   jMenyimpan.value = true
   const entri = Object.entries(draft)
-  const terisi = [] // id sel yang kini ber-guru — bahan pengingat WA
   let i = 0
   try {
     for (const [key, guruId] of entri) {
@@ -1124,12 +1198,10 @@ async function simpanJadwal() {
           dibuat_oleh: myNama.value,
           tgl_buat: new Date().toISOString()
         })
-        terisi.push(id)
       }
       delete draft[key]
     }
-    toast.success(`Jadwal tersimpan (${entri.length} perubahan).`)
-    if (jKirimWa.value && terisi.length) kirimWaJadwal(terisi)
+    toast.success(`Jadwal tersimpan (${entri.length} perubahan). Kabari guru lewat tombol WA.`)
   } catch (e) {
     toast.error(`Gagal menyimpan jadwal (${i - 1} tersimpan): ` + (e?.message || e))
   } finally {
