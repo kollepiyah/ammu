@@ -55,6 +55,42 @@ export function kelompokTanggal(tanggal, hariIni, horizonHari = 7) {
   return batas && t <= batas ? 'minggu_ini' : 'nanti'
 }
 
+function kelasLabel(guruKelas) {
+  const n = String(guruKelas || '').trim()
+  return n ? `Kelas ${n}` : ''
+}
+
+const _HARI_PANJANG = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu']
+const _BULAN_PANJANG = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
+
+/**
+ * Judul kelompok tanggal di kartu Tugas Saya: "Besok · Rabu, 25 November".
+ * Kyai 24 Nov 2026: "Besok" / "Minggu ini" saja tak jelas — hari & tanggal harus tertulis.
+ */
+export function labelTanggalTugas(tanggal, hariIni) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(tanggal || ''))
+  if (!m) return ''
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+  const teks = `${_HARI_PANJANG[d.getUTCDay()]}, ${+m[3]} ${_BULAN_PANJANG[+m[2] - 1]}`
+  const k = kelompokTanggal(tanggal, hariIni)
+  if (k === 'hari_ini') return `Hari ini · ${teks}`
+  if (k === 'besok') return `Besok · ${teks}`
+  return teks
+}
+
 function tambahPerlu(keranjang, item) {
   if (!keranjang.some((x) => x.id === item.id)) keranjang.push(item)
 }
@@ -111,7 +147,8 @@ export function susunTugasSaya(opt = {}) {
       id: `piket|${tgl}|${r?.sesi || ''}|${d.kelas_key || ''}`,
       jenis: 'piket_laju',
       judul: `Piket ${labelSesi(r?.sesi)}`,
-      detail: String(d.kelas_guru || d.kelas_key || ''),
+      // Kyai 24 Nov 2026: nama polos di bawah "Piket Laju 1" terbaca sebagai nama guru piket.
+      detail: kelasLabel(d.kelas_guru || d.kelas_key),
       tanggal: tgl,
       jam: '',
       kelompok: k,

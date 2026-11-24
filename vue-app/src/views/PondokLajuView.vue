@@ -53,6 +53,12 @@
         />
         <p class="text-[11px] text-[var(--text-secondary)] grow min-w-[8rem]">
           {{ kartuJurnal.length }} kartu, mengikuti jadwal piket tanggal ini
+          <!-- Kyai 24 Nov 2026 bertanya kenapa akunnya memuat kartu guru lain: memang begitu untuk
+               admin/penyusun (menambal jurnal terlupa); akun guru hanya melihat kartunya sendiri. -->
+          <span v-if="bisaSemuaKelas" class="block">
+            Anda admin/penyusun: semua kartu piket tanggal ini tampil. Akun guru hanya melihat
+            kartunya sendiri.
+          </span>
         </p>
         <!-- Admin/PJ: menambal kelas lain. Guru biasa tak melihat pemilih apa pun. -->
         <template v-if="bisaSemuaKelas">
@@ -108,125 +114,139 @@
       />
     </template>
     <!-- ===================== JADWAL ===================== -->
+    <!-- Kyai 24 Nov 2026: tabel sebulan (tanggal × kelas × sesi) terlalu rumit. Kini SATU tanggal
+         sekali tampil, satu baris per kelas; pita tanggal di atas menunjukkan mana yang sudah
+         terisi. Rencana bergilir (kotak kuning) & templat Excel dihapus atas permintaan Kyai. -->
     <template v-else-if="tab === 'jadwal'">
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-3"
       >
         <div class="flex flex-wrap items-center justify-between gap-2">
           <input
-            v-model="jBulan"
+            v-model="bulanModel"
             type="month"
             aria-label="Bulan jadwal"
             class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
           />
           <p class="text-[11px] text-[var(--text-secondary)]">
-            Tadarus Pagi = guru kelas masing-masing (tanpa jadwal, tanpa bisyaroh).
+            Tadarus Pagi = guru kelas masing-masing (tanpa jadwal).
             <template v-if="!bisaSusun">
               Hanya Admin Pondok Laju, PJ, dan admin yang menyusun.</template
             >
           </p>
         </div>
 
-        <!-- rencana bergilir sebulan -->
-        <div
-          v-if="bisaSusun"
-          class="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-900/20 p-3 space-y-2"
-        >
-          <p
-            class="text-[11px] font-black text-amber-800 dark:text-amber-200 uppercase tracking-wider"
+        <!-- pita tanggal: titik hijau = semua terisi, kuning = sebagian, abu = kosong -->
+        <div class="flex gap-1 overflow-x-auto pb-1">
+          <button
+            v-for="t in tanggalJadwal"
+            :key="t"
+            :title="fmtTgl(t)"
+            :class="[
+              'shrink-0 w-9 h-11 rounded-lg border flex flex-col items-center justify-center cursor-pointer',
+              t === jTanggal
+                ? 'bg-teal-600 border-teal-600 text-white'
+                : 'bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-primary)]'
+            ]"
+            @click="jTanggal = t"
           >
-            <i class="fas fa-shuffle mr-1"></i>Rencanakan sebulan (bergilir)
-          </p>
-          <p class="text-[10px] text-amber-800 dark:text-amber-300">
-            Pilih guru piket, lalu "Buat usulan". Guru diputar bergiliran per tanggal → sesi →
-            kelas, mulai tanggal yang dipilih, tanpa hari Ahad. Usulan bisa diubah per sel sebelum
-            disimpan.
-          </p>
-          <input
-            v-model="poolCari"
-            type="text"
-            placeholder="Cari guru…"
-            class="w-full md:w-64 px-3 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-          />
-          <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-            <button
-              v-for="g in guruPoolTampil"
-              :key="g.id"
+            <span class="text-[9px] font-bold opacity-75">{{ fmtTgl(t).slice(0, 3) }}</span>
+            <span class="text-[12px] font-black leading-none">{{ Number(t.slice(8)) }}</span>
+            <span
               :class="[
-                'px-2 py-1 rounded-lg text-[11px] font-bold border cursor-pointer',
-                pool.includes(String(g.id))
-                  ? 'bg-amber-500 border-amber-500 text-white'
-                  : 'bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-secondary)]'
+                'w-1.5 h-1.5 rounded-full mt-0.5',
+                warnaIsiTanggal(t),
+                draftTanggal(t) ? 'ring-2 ring-amber-400' : ''
               ]"
-              @click="togglePool(g.id)"
-            >
-              {{ g.nama }}
-            </button>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <label class="text-[11px] text-[var(--text-secondary)]"
-              >Mulai
-              <input
-                v-model="poolMulai"
-                type="date"
-                class="ml-1 px-2 py-1 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-              />
-            </label>
-            <button
-              :disabled="!pool.length"
-              class="h-8 px-3 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
-              @click="buatUsulan"
-            >
-              Buat usulan ({{ pool.length }} guru)
-            </button>
-            <button
-              v-if="adaDraft"
-              class="h-8 px-3 rounded-lg border border-[var(--border-default)] text-xs font-bold text-[var(--text-secondary)] cursor-pointer"
-              @click="batalDraft"
-            >
-              Batalkan perubahan
-            </button>
-          </div>
+            ></span>
+          </button>
         </div>
 
-        <!-- v.1.5.0 (Kyai 16 Nov 2026): templat Excel — isi di Excel lalu impor -->
-        <div
-          v-if="bisaSusun"
-          class="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50/60 dark:bg-emerald-900/20 p-3 space-y-2"
-        >
-          <p
-            class="text-[11px] font-black text-emerald-800 dark:text-emerald-200 uppercase tracking-wider"
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            class="w-9 h-9 rounded-xl bg-[var(--bg-muted)] hover:bg-[var(--border-subtle)] cursor-pointer"
+            aria-label="Tanggal sebelumnya"
+            @click="geserTanggal(-1)"
           >
-            <i class="fas fa-file-excel mr-1"></i>Templat Excel
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <p class="text-sm font-black text-[var(--text-primary)] min-w-[11rem] text-center">
+            {{ fmtTglPanjang(jTanggal) }}
           </p>
-          <p class="text-[10px] text-emerald-800 dark:text-emerald-300">
-            Unduh templat bulan ini (sudah berisi jadwal yang ada), isi nama guru di tiap sel, lalu
-            impor. Hasil impor masuk sebagai perubahan — periksa tabel, lalu SIMPAN JADWAL. Sel
-            kosong = sel itu dikosongkan.
-          </p>
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              class="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
-              @click="unduhTemplat"
-            >
-              <i class="fas fa-file-arrow-down mr-1"></i>Unduh templat
-            </button>
-            <label
-              class="h-8 px-3 inline-flex items-center rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold cursor-pointer"
-              :class="impMemuat ? 'opacity-50 pointer-events-none' : ''"
-            >
-              <i class="fas fa-file-arrow-up mr-1"></i>{{ impMemuat ? 'Membaca…' : 'Impor Excel' }}
-              <input type="file" accept=".xlsx" class="hidden" @change="imporTemplat" />
-            </label>
-          </div>
-          <ul
-            v-if="impGalat.length"
-            class="text-[10px] text-rose-700 dark:text-rose-300 space-y-0.5"
+          <button
+            class="w-9 h-9 rounded-xl bg-[var(--bg-muted)] hover:bg-[var(--border-subtle)] cursor-pointer"
+            aria-label="Tanggal berikutnya"
+            @click="geserTanggal(1)"
           >
-            <li v-for="(g, i) in impGalat.slice(0, 12)" :key="i">• {{ g }}</li>
-            <li v-if="impGalat.length > 12">…dan {{ impGalat.length - 12 }} lainnya</li>
-          </ul>
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <button
+            v-if="bisaSusun && tanggalSebelum"
+            class="ml-auto h-9 px-3 rounded-xl border border-[var(--border-default)] text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+            @click="salinSebelum"
+          >
+            <i class="fas fa-copy mr-1"></i>Salin dari {{ fmtTgl(tanggalSebelum) }}
+          </button>
         </div>
+
+        <div v-if="jMemuat" class="text-center text-sm text-[var(--text-secondary)] py-6">
+          <i class="fas fa-spinner fa-spin mr-1"></i>Memuat jadwal…
+        </div>
+        <ul v-else-if="jTanggal" class="divide-y divide-[var(--border-subtle)]">
+          <li
+            v-for="k in kelasList"
+            :key="k.key"
+            class="py-2 grid grid-cols-1 md:grid-cols-[minmax(10rem,1fr)_2fr] gap-2 items-center"
+          >
+            <p class="text-xs font-black text-[var(--text-primary)] truncate">
+              Kelas {{ k.guru || '— tanpa guru —' }}
+              <span class="font-normal text-[var(--text-secondary)]"
+                >· {{ k.santri.length }} santri</span
+              >
+            </p>
+            <div class="grid grid-cols-2 gap-2">
+              <label v-for="s in SESI_PIKET" :key="s" class="block min-w-0">
+                <span class="block text-[10px] font-black text-teal-700 mb-0.5">{{
+                  labelSesi(s)
+                }}</span>
+                <select
+                  v-if="bisaSusun"
+                  :value="nilaiSel(jTanggal, s, k.key)"
+                  :aria-label="`Piket ${labelSesi(s)} kelas ${k.guru} ${jTanggal}`"
+                  :class="[
+                    'w-full rounded-lg border p-1.5 text-xs bg-[var(--bg-card)] text-[var(--text-primary)]',
+                    draftAda(jTanggal, s, k.key)
+                      ? 'border-amber-400 ring-1 ring-amber-300'
+                      : 'border-[var(--border-default)]'
+                  ]"
+                  @change="ubahSel(jTanggal, s, k.key, $event.target.value)"
+                >
+                  <option value="">— kosong —</option>
+                  <optgroup :label="pilihanGuru.lain.length ? 'Guru piket' : 'Guru'">
+                    <option v-for="g in pilihanGuru.piket" :key="g.id" :value="String(g.id)">
+                      {{ g.nama }}
+                    </option>
+                  </optgroup>
+                  <optgroup v-if="pilihanGuru.lain.length" label="Guru lain">
+                    <option v-for="g in pilihanGuru.lain" :key="g.id" :value="String(g.id)">
+                      {{ g.nama }}
+                    </option>
+                  </optgroup>
+                </select>
+                <span
+                  v-else
+                  :class="[
+                    'block truncate text-xs',
+                    nilaiSel(jTanggal, s, k.key) === myId
+                      ? 'text-teal-700 font-black'
+                      : 'text-[var(--text-primary)]'
+                  ]"
+                  >{{ namaGuru(nilaiSel(jTanggal, s, k.key)) || '—' }}</span
+                >
+              </label>
+            </div>
+          </li>
+        </ul>
 
         <p v-if="bentrok.length" class="text-[11px] font-bold text-rose-600 dark:text-rose-400">
           <i class="fas fa-triangle-exclamation mr-1"></i>{{ bentrok.length }} bentrok: guru
@@ -239,80 +259,16 @@
           }}{{ bentrok.length > 3 ? '…' : '' }}
         </p>
 
-        <div v-if="jMemuat" class="text-center text-sm text-[var(--text-secondary)] py-6">
-          <i class="fas fa-spinner fa-spin mr-1"></i>Memuat jadwal…
-        </div>
-        <div v-else class="overflow-x-auto">
-          <table class="min-w-full text-xs border-collapse">
-            <thead>
-              <tr class="bg-[var(--bg-muted)]">
-                <th
-                  class="p-2 text-left text-[10px] uppercase text-[var(--text-secondary)] sticky left-0 bg-[var(--bg-muted)]"
-                >
-                  Tanggal
-                </th>
-                <th
-                  v-for="k in kelasList"
-                  :key="k.key"
-                  class="p-2 text-left text-[10px] uppercase text-[var(--text-secondary)] min-w-[10rem]"
-                >
-                  {{ k.guru || '— tanpa guru —' }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="t in tanggalJadwal"
-                :key="t"
-                :class="[
-                  'border-t border-[var(--border-subtle)]',
-                  bisaSusun ? 'cursor-pointer' : '',
-                  jEdit === t ? 'bg-teal-50/60 dark:bg-teal-900/20' : ''
-                ]"
-                @click="bisaSusun && (jEdit = t)"
-              >
-                <td
-                  class="p-2 font-bold whitespace-nowrap text-[var(--text-primary)] sticky left-0 bg-[var(--bg-card)]"
-                >
-                  {{ fmtTgl(t) }}
-                </td>
-                <td v-for="k in kelasList" :key="k.key" class="p-1.5 align-top">
-                  <div v-for="s in SESI_PIKET" :key="s" class="flex items-center gap-1 mb-0.5">
-                    <!-- Kyai 17 Nov: tulis "Laju 1"/"Laju 2", jangan disingkat L1/L2. -->
-                    <span class="text-[9px] font-black text-teal-700 w-10 shrink-0">{{
-                      labelSesi(s)
-                    }}</span>
-                    <select
-                      v-if="jEdit === t"
-                      :value="nilaiSel(t, s, k.key)"
-                      :aria-label="`Piket ${labelSesi(s)} ${k.guru} ${t}`"
-                      class="flex-1 min-w-0 rounded border border-[var(--border-default)] p-1 text-[11px] bg-[var(--bg-card)] text-[var(--text-primary)]"
-                      @click.stop
-                      @change="ubahSel(t, s, k.key, $event.target.value)"
-                    >
-                      <option value="">—</option>
-                      <option v-for="g in guruOptions" :key="g.id" :value="String(g.id)">
-                        {{ g.nama }}
-                      </option>
-                    </select>
-                    <span
-                      v-else
-                      :class="[
-                        'truncate',
-                        draftAda(t, s, k.key) ? 'text-amber-700 font-bold' : '',
-                        nilaiSel(t, s, k.key) === myId ? 'text-teal-700 font-black' : ''
-                      ]"
-                      >{{ namaGuru(nilaiSel(t, s, k.key)) || '—' }}</span
-                    >
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
         <div v-if="bisaSusun" class="flex flex-wrap items-center justify-between gap-2">
           <p class="text-[11px] text-[var(--text-secondary)]">
-            Ketuk baris tanggal untuk mengubah. {{ jumlahDraft }} perubahan belum disimpan.
+            {{ jumlahDraft }} perubahan belum disimpan
+            <button
+              v-if="adaDraft"
+              class="ml-1 underline font-bold cursor-pointer"
+              @click="batalDraft"
+            >
+              batalkan
+            </button>
           </p>
           <!-- Kyai 19 Nov 2026: pengingat WA otomatis sesudah jadwal disimpan. Bisa dimatikan
                untuk simpanan kecil (mis. membetulkan salah pilih) supaya guru tak dihujani. -->
@@ -331,6 +287,65 @@
             {{ jMenyimpan ? `Menyimpan ${jProgres}…` : 'SIMPAN JADWAL' }}
           </button>
         </div>
+      </div>
+
+      <!-- Daftar tetap Guru Piket Laju (Kyai 24 Nov 2026). Disimpan di master/lembaga yang hanya
+           boleh ditulis admin (RLS), jadi penyuntingnya admin; penyusun lain cukup memakainya. -->
+      <div
+        v-if="bisaSusun"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
+      >
+        <button
+          class="w-full flex items-center justify-between text-xs font-black text-[var(--text-primary)] uppercase cursor-pointer"
+          @click="piketBuka = !piketBuka"
+        >
+          <span
+            ><i class="fas fa-users text-teal-600 mr-1"></i>Daftar guru piket ({{
+              daftarPiket.length ? `${daftarPiket.length} guru` : 'belum disetel'
+            }})</span
+          >
+          <i :class="['fas', piketBuka ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+        </button>
+        <template v-if="piketBuka">
+          <p class="text-[11px] text-[var(--text-secondary)]">
+            Guru yang dicentang tampil paling atas di pilihan jadwal; pengajar lain tetap bisa
+            dipilih di bagian "Guru lain".
+            <template v-if="!adminPenuh"> Yang mengubah daftar ini admin.</template>
+          </p>
+          <template v-if="adminPenuh">
+            <input
+              v-model="piketCari"
+              type="text"
+              placeholder="Cari guru…"
+              class="w-full md:w-64 px-3 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+            />
+            <div class="flex flex-wrap gap-1 max-h-48 overflow-y-auto">
+              <button
+                v-for="g in guruPiketTampil"
+                :key="g.id"
+                :class="[
+                  'px-2 py-1 rounded-lg text-[11px] font-bold border cursor-pointer',
+                  piketDraft.includes(String(g.id))
+                    ? 'bg-teal-600 border-teal-600 text-white'
+                    : 'bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-secondary)]'
+                ]"
+                @click="togglePiket(g.id)"
+              >
+                {{ g.nama }}
+              </button>
+            </div>
+            <button
+              :disabled="piketMenyimpan"
+              class="h-10 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black cursor-pointer"
+              @click="simpanDaftarPiket"
+            >
+              Simpan daftar ({{ piketDraft.length }} guru)
+            </button>
+          </template>
+          <p v-else class="text-[11px] text-[var(--text-primary)]">
+            {{ daftarPiket.map(namaGuru).join(', ') || '—' }}
+          </p>
+        </template>
       </div>
 
       <div
@@ -739,7 +754,6 @@ import { useSettingsStore } from '@/stores/settings'
 import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
-import { useExcel } from '@/composables/useExcel'
 import { queryColl, mergeOne, deleteOne, subscribeDoc, getOne } from '@/services/db'
 import { todayJakarta, fmtRp } from '@/utils/format'
 import { guruAktifSaja } from '@/utils/guruScope'
@@ -762,14 +776,14 @@ import {
   teksPosisi,
   idJadwal,
   tanggalBulan,
-  rencanaBergilir,
   bentrokJadwal,
   adminPondokLaju,
   bolehSusunJadwal,
   sesiLajuTerbayar,
   sesiTakDibayarGuru,
-  kolomTemplatJadwal,
-  bacaImporJadwal,
+  guruPiketLaju,
+  kelompokPilihanGuru,
+  tanggalAwalJadwal,
   fmtTanggalPendek
 } from '@/utils/pondokLajuSesi'
 
@@ -904,7 +918,6 @@ const jRows = ref([])
 const jMemuat = ref(false)
 const jMenyimpan = ref(false)
 const jProgres = ref('')
-const jEdit = ref('')
 const draft = reactive({}) // { 'tanggal|sesi|kelas': guruId | '' }
 const _kunci = (t, s, k) => `${t}|${s}|${k}`
 
@@ -922,6 +935,19 @@ async function muatJadwal() {
 watch(jBulan, () => {
   batalDraft()
   muatJadwal()
+})
+
+// Ganti bulan membuang perubahan yang belum disimpan — jadi ditahan dulu, bukan diam-diam hilang.
+const bulanModel = computed({
+  get: () => jBulan.value,
+  set: (v) => {
+    if (!v || v === jBulan.value) return
+    if (adaDraft.value) {
+      toast.warning('Simpan atau batalkan dulu perubahan bulan ini.')
+      return
+    }
+    jBulan.value = v
+  }
 })
 watch(tab, (t) => {
   if (t === 'jadwal' && !jRows.value.length) muatJadwal()
@@ -960,34 +986,103 @@ const gabunganJadwal = computed(() => {
   return out
 })
 const bentrok = computed(() => bentrokJadwal(gabunganJadwal.value))
+
+// ── Satu tanggal sekali tampil (Kyai 24 Nov 2026) ──
+const jTanggal = ref('')
+watch(
+  tanggalJadwal,
+  (daftar) => {
+    if (!daftar.includes(jTanggal.value)) jTanggal.value = tanggalAwalJadwal(daftar, todayJakarta())
+  },
+  { immediate: true }
+)
+const tanggalSebelum = computed(() => {
+  const i = tanggalJadwal.value.indexOf(jTanggal.value)
+  return i > 0 ? tanggalJadwal.value[i - 1] : ''
+})
+function geserTanggal(n) {
+  const d = tanggalJadwal.value
+  const i = d.indexOf(jTanggal.value) + n
+  if (i >= 0 && i < d.length) {
+    jTanggal.value = d[i]
+    return
+  }
+  // Lewat ujung bulan → pindah bulan; tanggalnya dipilih watch(tanggalJadwal) di atas.
+  const [y, m] = jBulan.value.split('-').map(Number)
+  const t = new Date(Date.UTC(y, m - 1 + n, 1))
+  const bulanBaru = t.toISOString().slice(0, 7)
+  if (adaDraft.value) {
+    toast.warning('Simpan atau batalkan dulu perubahan bulan ini.')
+    return
+  }
+  jBulan.value = bulanBaru
+  const daftar = tanggalBulan(bulanBaru)
+  jTanggal.value = n < 0 ? daftar[daftar.length - 1] || '' : daftar[0] || ''
+}
+function salinSebelum() {
+  const asal = tanggalSebelum.value
+  if (!asal) return
+  for (const k of kelasList.value)
+    for (const s of SESI_PIKET) ubahSel(jTanggal.value, s, k.key, nilaiSel(asal, s, k.key))
+  toast.info(`Jadwal ${fmtTgl(asal)} disalin — periksa lalu SIMPAN JADWAL.`)
+}
+function isiTanggal(t) {
+  let n = 0
+  for (const k of kelasList.value) for (const s of SESI_PIKET) if (nilaiSel(t, s, k.key)) n++
+  return n
+}
+function warnaIsiTanggal(t) {
+  const n = isiTanggal(t)
+  if (!n) return 'bg-slate-300 dark:bg-slate-600'
+  return n >= kelasList.value.length * SESI_PIKET.length ? 'bg-emerald-500' : 'bg-amber-400'
+}
+function draftTanggal(t) {
+  return Object.keys(draft).some((k) => k.startsWith(t + '|'))
+}
+const _HARI = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu']
+function fmtTglPanjang(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''))
+  if (!m) return '-'
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+  const bulan = d.toLocaleDateString('id-ID', { month: 'long', timeZone: 'UTC' })
+  return `${_HARI[d.getUTCDay()]}, ${+m[3]} ${bulan} ${m[1]}`
+}
+
+// ── Daftar tetap guru piket ──
+const daftarPiket = computed(() => guruPiketLaju(lembagaList.value))
+const pilihanGuru = computed(() => kelompokPilihanGuru(guruOptions.value, daftarPiket.value))
+const piketBuka = ref(false)
+const piketDraft = ref([])
+const piketCari = ref('')
+const piketMenyimpan = ref(false)
+watch(daftarPiket, (d) => (piketDraft.value = [...d]), { immediate: true })
+const guruPiketTampil = computed(() => {
+  const q = _norm(piketCari.value)
+  return guruOptions.value.filter((g) => !q || _norm(g.nama).includes(q))
+})
+function togglePiket(id) {
+  const k = String(id)
+  piketDraft.value = piketDraft.value.includes(k)
+    ? piketDraft.value.filter((x) => x !== k)
+    : [...piketDraft.value, k]
+}
+async function simpanDaftarPiket() {
+  if (piketMenyimpan.value) return
+  piketMenyimpan.value = true
+  try {
+    await simpanItemPtpt({ guru_piket_laju: [...new Set(piketDraft.value.map(String))] })
+    toast.success('Daftar guru piket tersimpan.')
+  } catch (e) {
+    toast.error('Gagal menyimpan daftar piket: ' + (e?.message || e))
+  } finally {
+    piketMenyimpan.value = false
+  }
+}
 const jadwalSaya = computed(() =>
   jRows.value
     .filter((r) => String(r.guru_id) === myId.value && r.tanggal >= todayJakarta())
     .sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.sesi.localeCompare(b.sesi))
 )
-
-// rencana bergilir
-const pool = ref([])
-const poolCari = ref('')
-const poolMulai = ref('')
-const guruPoolTampil = computed(() => {
-  const q = _norm(poolCari.value)
-  return guruOptions.value.filter((g) => !q || _norm(g.nama).includes(q))
-})
-function togglePool(id) {
-  const k = String(id)
-  pool.value = pool.value.includes(k) ? pool.value.filter((x) => x !== k) : [...pool.value, k]
-}
-function buatUsulan() {
-  const mulai = poolMulai.value || `${jBulan.value}-01`
-  const usulan = rencanaBergilir({
-    tanggal: tanggalJadwal.value.filter((t) => t >= mulai),
-    kelas: kelasList.value.map((k) => k.key),
-    guru: pool.value
-  })
-  for (const u of usulan) ubahSel(u.tanggal, u.sesi, u.kelas_key, u.guru_id)
-  toast.info(`Usulan ${usulan.length} sel dibuat — periksa lalu SIMPAN JADWAL.`)
-}
 
 // Pengingat WA (Kyai 19 Nov 2026) — sengaja tak ditunggu: penyimpanan jadwal sudah selesai,
 //   pengiriman bisa makan semenit (berjeda antarguru) dan hasilnya cukup dilaporkan lewat toast.
@@ -1034,7 +1129,6 @@ async function simpanJadwal() {
       delete draft[key]
     }
     toast.success(`Jadwal tersimpan (${entri.length} perubahan).`)
-    jEdit.value = ''
     if (jKirimWa.value && terisi.length) kirimWaJadwal(terisi)
   } catch (e) {
     toast.error(`Gagal menyimpan jadwal (${i - 1} tersimpan): ` + (e?.message || e))
@@ -1223,58 +1317,6 @@ const rekapBisyaroh = computed(() => {
     .sort((a, b) => a.nama.localeCompare(b.nama, 'id'))
 })
 
-// ─────────────────────── TEMPLAT EXCEL JADWAL ───────────────────────
-const { exportStyled, importFile } = useExcel()
-const impMemuat = ref(false)
-const impGalat = ref([])
-async function unduhTemplat() {
-  try {
-    const kolom = kolomTemplatJadwal(kelasList.value)
-    const rows = tanggalJadwal.value.map((t) => {
-      const r = { Tanggal: t }
-      for (const k of kolom) r[k.header] = namaGuru(nilaiSel(t, k.sesi, k.kelas_key)) || ''
-      return r
-    })
-    await exportStyled(rows, {
-      filename: `jadwal_pondok_laju_${jBulan.value}.xlsx`,
-      sheetName: 'Jadwal',
-      columns: [
-        { key: 'Tanggal', header: 'Tanggal', width: 12 },
-        ...kolom.map((k) => ({ key: k.header, header: k.header, width: 24 }))
-      ]
-    })
-    toast.success('Templat terunduh. Isi nama guru (sesuai Data Guru), lalu impor.')
-  } catch (e) {
-    toast.error('Gagal membuat templat: ' + (e?.message || e))
-  }
-}
-async function imporTemplat(ev) {
-  const file = ev?.target?.files?.[0]
-  if (ev?.target) ev.target.value = ''
-  if (!file) return
-  impMemuat.value = true
-  impGalat.value = []
-  try {
-    const rows = await importFile(file)
-    const { perubahan, galat } = bacaImporJadwal({
-      rows,
-      kelasList: kelasList.value,
-      guruList: guruOptions.value,
-      bulan: jBulan.value
-    })
-    for (const u of perubahan) ubahSel(u.tanggal, u.sesi, u.kelas_key, u.guru_id)
-    impGalat.value = galat
-    toast[galat.length ? 'warning' : 'success'](
-      `Impor: ${jumlahDraft.value} perubahan siap disimpan` +
-        (galat.length ? ` · ${galat.length} catatan perlu dicek` : '')
-    )
-  } catch (e) {
-    toast.error('Gagal membaca berkas: ' + (e?.message || e))
-  } finally {
-    impMemuat.value = false
-  }
-}
-
 // ─────────────────────── SHIFT TIAP SESI ───────────────────────
 // Disimpan di settings.pondokLajuShift (umum) — dibaca app, sinkron Desktop, & fungsi HiView.
 const shiftSesiDraft = reactive({ laju1: '', laju2: '' })
@@ -1369,18 +1411,21 @@ function togglePeran(id) {
     ? peranDraft.value.filter((x) => x !== k)
     : [...peranDraft.value, k]
 }
-// Pola savePeran glondongan: baca master/lembaga terbaru, ubah item PTPT saja.
+// Pola savePeran glondongan: baca master/lembaga terbaru, ubah item PTPT saja. Dipakai
+// bersama peran Admin Pondok Laju & daftar guru piket.
+async function simpanItemPtpt(patch) {
+  const m = await getOne('master', 'lembaga')
+  const list = Array.isArray(m?.list) ? m.list.slice() : []
+  const idx = list.findIndex((l) => (l.lembaga || l.nama) === 'PTPT')
+  if (idx >= 0) list[idx] = { ...list[idx], ...patch }
+  else list.push({ lembaga: 'PTPT', ...patch })
+  await mergeOne('master', 'lembaga', { list })
+}
 async function simpanPeran() {
   if (peranMenyimpan.value) return
   peranMenyimpan.value = true
   try {
-    const m = await getOne('master', 'lembaga')
-    const list = Array.isArray(m?.list) ? m.list.slice() : []
-    const idx = list.findIndex((l) => (l.lembaga || l.nama) === 'PTPT')
-    const patch = { admin_pondok_laju: [...new Set(peranDraft.value.map(String))] }
-    if (idx >= 0) list[idx] = { ...list[idx], ...patch }
-    else list.push({ lembaga: 'PTPT', ...patch })
-    await mergeOne('master', 'lembaga', { list })
+    await simpanItemPtpt({ admin_pondok_laju: [...new Set(peranDraft.value.map(String))] })
     toast.success('Admin Pondok Laju tersimpan.')
   } catch (e) {
     toast.error('Gagal menyimpan peran: ' + (e?.message || e))

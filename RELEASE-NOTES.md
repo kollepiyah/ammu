@@ -5,6 +5,22 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.5.3 — November 2026
+
+**Perubahan**
+
+- **Menyusun jadwal piket Pondok Laju jauh lebih ringkas.** Jadwal kini diisi satu tanggal sekali
+  tampil: tiap kelas cukup dipilih guru Laju 1 dan Laju 2. Deretan tanggal di atas menunjukkan
+  hari mana yang sudah lengkap (hijau), baru sebagian (kuning), atau masih kosong. Ada tombol
+  "Salin dari tanggal sebelumnya" supaya hari yang mirip tak perlu diisi ulang.
+- **Daftar guru piket tetap.** Admin cukup sekali mencentang guru-guru piket; merekalah yang tampil
+  paling atas saat memilih, bukan seluruh guru.
+- **Kartu "Tugas Saya" di beranda menyebut hari dan tanggalnya**, misalnya "Besok · Rabu,
+  25 November", dan menulis "Kelas …" supaya jelas itu kelas yang dijaga.
+- Rencana bergilir otomatis dan templat Excel jadwal dihapus karena lebih merepotkan.
+
+---
+
 ## v.1.5.2 — November 2026
 
 **Baru**

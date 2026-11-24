@@ -7,7 +7,8 @@ import {
   geserHari,
   kelompokTanggal,
   susunTugasSaya,
-  ringkasUntukWidget
+  ringkasUntukWidget,
+  labelTanggalTugas
 } from '@/utils/tugasSaya'
 
 const HARI_INI = '2026-11-16'
@@ -258,7 +259,7 @@ describe('ringkasUntukWidget', () => {
       t: HARI_INI,
       j: '',
       h: 'Piket Laju 1',
-      d: 'A',
+      d: 'Kelas A',
       n: 'piket_laju'
     })
   })
@@ -287,5 +288,23 @@ describe('kata yang dipakai di tampilan', () => {
   it('laci kedua TIDAK memakai kata "tunggakan" (permintaan Kyai)', () => {
     expect(LABEL_PERLU.toLowerCase()).not.toContain('tunggak')
     expect(LABEL_PERLU).toBe('Perlu Dikerjakan')
+  })
+})
+
+describe('hari & tanggal di kartu Tugas Saya (Kyai 24 Nov 2026)', () => {
+  it('judul kelompok menyebut hari dan tanggal, bukan sekadar "Besok"', () => {
+    expect(labelTanggalTugas('2026-11-24', '2026-11-24')).toBe('Hari ini · Selasa, 24 November')
+    expect(labelTanggalTugas('2026-11-25', '2026-11-24')).toBe('Besok · Rabu, 25 November')
+    expect(labelTanggalTugas('2026-11-27', '2026-11-24')).toBe("Jum'at, 27 November")
+    expect(labelTanggalTugas('', '2026-11-24')).toBe('')
+  })
+
+  it('detail piket menyebut "Kelas …" supaya tak terbaca sebagai nama guru piket', () => {
+    const h = susunTugasSaya({
+      guruId: 'g1',
+      hariIni: '2026-11-24',
+      jadwalLaju: [jadwal('2026-11-25', 'laju1', 'g1', 'Siti Nor Aisah')]
+    })
+    expect(h.terjadwal[0].detail).toBe('Kelas Siti Nor Aisah')
   })
 })

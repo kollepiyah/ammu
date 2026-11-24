@@ -60,6 +60,11 @@ export function kelompokTanggal(tanggal: string, hariIni: string, horizonHari = 
 // deno-lint-ignore no-explicit-any
 type Baris = any
 
+function kelasLabel(guruKelas: unknown): string {
+  const n = String(guruKelas || '').trim()
+  return n ? `Kelas ${n}` : ''
+}
+
 function tambahPerlu(keranjang: Baris[], item: Baris) {
   if (!keranjang.some((x) => x.id === item.id)) keranjang.push(item)
 }
@@ -98,7 +103,8 @@ export function susunTugasSaya(opt: Baris = {}): {
       id: `piket|${tgl}|${r?.sesi || ''}|${d.kelas_key || ''}`,
       jenis: 'piket_laju',
       judul: `Piket ${labelSesi(r?.sesi)}`,
-      detail: String(d.kelas_guru || d.kelas_key || ''),
+      // Kyai 24 Nov 2026: nama polos di bawah "Piket Laju 1" terbaca sebagai nama guru piket.
+      detail: kelasLabel(d.kelas_guru || d.kelas_key),
       tanggal: tgl,
       jam: '',
       kelompok: k,

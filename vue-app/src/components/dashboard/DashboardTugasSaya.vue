@@ -5,10 +5,10 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTugasSaya } from '@/composables/useTugasSaya'
-import { JENIS_TUGAS, LABEL_PERLU } from '@/utils/tugasSaya'
+import { JENIS_TUGAS, LABEL_PERLU, labelTanggalTugas } from '@/utils/tugasSaya'
 
 const router = useRouter()
-const { hasil, galat, berlaku } = useTugasSaya()
+const { hasil, galat, berlaku, hariIni } = useTugasSaya()
 
 // Kelas Tailwind HARUS utuh — `bg-${warna}-50` kena purge dan jadi tak berwarna.
 const WARNA = {
@@ -24,22 +24,17 @@ function warna(jenis) {
   return WARNA[JENIS_TUGAS[jenis]?.warna] || WARNA.sky
 }
 
-const LABEL_KELOMPOK = {
-  hari_ini: 'Hari ini',
-  besok: 'Besok',
-  minggu_ini: 'Minggu ini'
-}
-
-// Terjadwal dikelompokkan supaya "Hari ini" selalu di puncak — bagian yang paling dicari.
+// Kyai 24 Nov 2026: judul "Besok" / "Minggu ini" tak menyebut harinya — kini dikelompokkan
+// PER TANGGAL dengan hari & tanggal tertulis ("Besok · Rabu, 25 November").
 const grupTerjadwal = computed(() => {
-  const urut = ['hari_ini', 'besok', 'minggu_ini']
-  return urut
-    .map((k) => ({
-      kunci: k,
-      label: LABEL_KELOMPOK[k],
-      isi: hasil.value.terjadwal.filter((t) => t.kelompok === k)
-    }))
-    .filter((g) => g.isi.length)
+  const peta = new Map()
+  for (const t of hasil.value.terjadwal) {
+    if (!peta.has(t.tanggal)) peta.set(t.tanggal, [])
+    peta.get(t.tanggal).push(t)
+  }
+  return [...peta.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([tgl, isi]) => ({ kunci: tgl, label: labelTanggalTugas(tgl, hariIni.value), isi }))
 })
 
 const adaIsi = computed(() => hasil.value.total > 0)

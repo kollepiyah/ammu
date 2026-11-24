@@ -16,9 +16,11 @@ import {
   posisiTerakhirPerSantri,
   idJadwal,
   tanggalBulan,
-  rencanaBergilir,
   bentrokJadwal,
   adminPondokLaju,
+  guruPiketLaju,
+  kelompokPilihanGuru,
+  tanggalAwalJadwal,
   bolehSusunJadwal,
   sesiLajuTerbayar
 } from '@/utils/pondokLajuSesi'
@@ -117,19 +119,6 @@ describe('jadwal piket bergilir', () => {
     expect(t).toHaveLength(25) // 30 hari − 5 Ahad
     expect(t).not.toContain('2026-11-01') // Ahad
     expect(t[0]).toBe('2026-11-02')
-  })
-  it('bergilir: tak ada guru dobel dalam satu sesi bila guru ≥ kelas, giliran merata', () => {
-    const r = rencanaBergilir({
-      tanggal: ['2026-11-02', '2026-11-03'],
-      kelas: ['k1', 'k2'],
-      guru: ['g1', 'g2', 'g3']
-    })
-    expect(r).toHaveLength(2 * SESI_PIKET.length * 2)
-    expect(bentrokJadwal(r)).toEqual([])
-    const hitung = {}
-    for (const x of r) hitung[x.guru_id] = (hitung[x.guru_id] || 0) + 1
-    expect(Object.values(hitung).sort()).toEqual([2, 3, 3])
-    expect(r[0]).toEqual({ tanggal: '2026-11-02', sesi: 'laju1', kelas_key: 'k1', guru_id: 'g1' })
   })
   it('bentrok terdeteksi; id jadwal aman', () => {
     expect(
@@ -264,57 +253,33 @@ describe('Kyai 16 Nov: guru shift sekolah SD–PKBM tak dibayar Laju 1', () => {
   })
 })
 
-describe('templat Excel jadwal Pondok Laju', () => {
-  const kelas = [
-    { key: 'ust. laju', guru: 'Ust. Laju' },
-    { key: 'ust. kedua', guru: 'Ust. Kedua' }
-  ]
+describe('penyusunan jadwal ringkas (Kyai 24 Nov 2026)', () => {
   const guru = [
-    { id: 'g1', nama: 'Siti Ma’rifatin, S.Pd.' },
-    { id: 'g2', nama: 'Ahmad Fauzi' },
-    { id: 'g3', nama: 'Ahmad Faruq' }
+    { id: 'g1', nama: 'A' },
+    { id: 'g2', nama: 'B' },
+    { id: 'g3', nama: 'C' }
   ]
-  it('kolom templat & tanggal sel Excel', async () => {
-    const { kolomTemplatJadwal, tanggalSelExcel } = await import('@/utils/pondokLajuSesi')
-    expect(kolomTemplatJadwal(kelas).map((k) => k.header)).toEqual([
-      'Ust. Laju | Laju 1',
-      'Ust. Laju | Laju 2',
-      'Ust. Kedua | Laju 1',
-      'Ust. Kedua | Laju 2'
+  it('daftar guru piket dibaca dari item PTPT master/lembaga', () => {
+    expect(guruPiketLaju([{ lembaga: 'PTPT', guru_piket_laju: ['g2', 3, 'g2', ''] }])).toEqual([
+      'g2',
+      '3'
     ])
-    expect(tanggalSelExcel(new Date(Date.UTC(2026, 10, 17)))).toBe('2026-11-17')
-    expect(tanggalSelExcel('17/11/2026')).toBe('2026-11-17')
-    expect(tanggalSelExcel('2026-11-7')).toBe('2026-11-07')
-    expect(tanggalSelExcel('besok')).toBe('')
+    expect(guruPiketLaju([{ lembaga: 'SDI', guru_piket_laju: ['g1'] }])).toEqual([])
   })
-  it('impor: nama persis / memuat (unik), sel kosong = kosongkan, galat dilaporkan', async () => {
-    const { bacaImporJadwal } = await import('@/utils/pondokLajuSesi')
-    const r = bacaImporJadwal({
-      bulan: '2026-11',
-      kelasList: kelas,
-      guruList: guru,
-      rows: [
-        {
-          Tanggal: '17/11/2026',
-          'Ust. Laju | Laju 1': 'siti ma’rifatin, s.pd.',
-          'Ust. Laju | Laju 2': 'Fauzi',
-          'Ust. Kedua | Laju 1': 'Ahmad',
-          'Ust. Kedua | Laju 2': '',
-          'Kelas Hantu | Laju 1': 'Ahmad Fauzi'
-        },
-        { Tanggal: '2026-12-01', 'Ust. Laju | Laju 1': 'Ahmad Fauzi' }
-      ]
+  it('pilihan guru: piket di atas, sisanya "lain"; daftar kosong = semua jadi piket', () => {
+    expect(kelompokPilihanGuru(guru, ['g3'])).toEqual({
+      piket: [guru[2]],
+      lain: [guru[0], guru[1]]
     })
-    expect(r.perubahan).toEqual([
-      { tanggal: '2026-11-17', kelas_key: 'ust. laju', sesi: 'laju1', guru_id: 'g1' },
-      { tanggal: '2026-11-17', kelas_key: 'ust. laju', sesi: 'laju2', guru_id: 'g2' },
-      { tanggal: '2026-11-17', kelas_key: 'ust. kedua', sesi: 'laju2', guru_id: '' }
-    ])
-    expect(r.galat).toEqual([
-      'Kolom "Kelas Hantu | Laju 1" tak dikenali (kelas atau sesi tak cocok)',
-      '2026-11-17 Ust. Kedua | Laju 1: guru "Ahmad" tak dikenali',
-      '2026-12-01 di luar bulan 2026-11 — dilewati'
-    ])
+    expect(kelompokPilihanGuru(guru, [])).toEqual({ piket: guru, lain: [] })
+  })
+  it('tanggal awal: hari ini bila ada di bulan itu, kalau tidak tanggal kerja berikutnya', () => {
+    const t = tanggalBulan('2026-11')
+    expect(tanggalAwalJadwal(t, '2026-11-24')).toBe('2026-11-24')
+    expect(tanggalAwalJadwal(t, '2026-11-01')).toBe('2026-11-02') // Ahad → Senin
+    expect(tanggalAwalJadwal(t, '2026-10-15')).toBe('2026-11-02') // bulan depan dibuka
+    expect(tanggalAwalJadwal(t, '2026-12-15')).toBe('2026-11-30') // bulan lalu dibuka
+    expect(tanggalAwalJadwal([], '2026-11-24')).toBe('')
   })
 })
 

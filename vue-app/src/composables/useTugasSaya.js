@@ -7,7 +7,7 @@ import { useTugasSayaStore } from '@/stores/tugasSaya'
 
 export function useTugasSaya() {
   const store = useTugasSayaStore()
-  const { hasil, memuat, galat, berlaku } = storeToRefs(store)
+  const { hasil, hariIni, memuat, galat, berlaku } = storeToRefs(store)
   onMounted(() => store.muat())
-  return { hasil, memuat, galat, berlaku, muat: store.muat }
+  return { hasil, hariIni, memuat, galat, berlaku, muat: store.muat }
 }

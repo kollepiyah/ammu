@@ -171,5 +171,5 @@ export const useTugasSayaStore = defineStore('tugasSaya', () => {
     _waktu = 0
   }
 
-  return { hasil, akses, memuat, galat, berlaku, muat, kosongkan }
+  return { hasil, hariIni, akses, memuat, galat, berlaku, muat, kosongkan }
 })

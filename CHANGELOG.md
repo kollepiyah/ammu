@@ -28,6 +28,46 @@ menyuntikkan data pengguna).
 
 ---
 
+## [v.1.5.3] — 2026-11-24 — Jadwal piket Pondok Laju per tanggal + Tugas Saya bertanggal
+
+**SIAP RILIS** — `versionCode` 153 / `versionName` `v.1.5.3` (web, AAB, Electron, PSB). Nomor naik
+karena v.1.5.2 sudah tayang di ketiga jalur (web app-version 152, Electron "Latest", AAB 23 Nov).
+Tanpa migrasi. Deploy web cukup; `widget-tugas` boleh di-deploy ulang supaya widget Android yang
+menarik sendiri ikut menulis "Kelas …" (tanpa itu widget tetap benar, hanya kata lama).
+
+### Changed
+- **Tab Jadwal Pondok Laju dirombak jadi satu tanggal sekali tampil** (`PondokLajuView.vue`).
+  Keluhan Kyai: tabel sebulan (tanggal × kelas × Laju 1/Laju 2, ±360 pemilih berisi 60 nama)
+  terlalu rumit. Kini: pita tanggal sebulan (titik hijau = semua kelas terisi, kuning = sebagian,
+  abu = kosong, cincin = ada perubahan belum disimpan), navigasi ◀ ▶ yang menyeberang bulan, satu
+  baris per kelas berlabel "Kelas <guru kelas>", dan tombol **Salin dari <tanggal sebelumnya>**.
+  Draft & SIMPAN JADWAL tetap mencakup banyak tanggal sekaligus; ganti bulan ditahan selama ada
+  perubahan belum disimpan (dulu draft terbuang diam-diam).
+- **Daftar tetap Guru Piket Laju** — master/lembaga item PTPT `guru_piket_laju` (pola sama dengan
+  `admin_pondok_laju`; `utils/pondokLajuSesi.guruPiketLaju` + `kelompokPilihanGuru`). Pemilih
+  jadwal memuat guru piket di atas dan "Guru lain" di bawah; daftar kosong = semua pengajar.
+  Penyuntingnya admin saja karena RLS `master` = `auth_can_manage`; Admin Pondok Laju cukup
+  memakainya. `simpanPeran` & daftar piket kini berbagi `simpanItemPtpt`.
+- **Kartu Tugas Saya dikelompokkan per tanggal** dengan hari & tanggal tertulis ("Besok · Rabu,
+  25 November") — dulu hanya "Besok" / "Minggu ini" (`utils/tugasSaya.labelTanggalTugas`).
+  Detail piket kini "Kelas Siti Nor Aisah": nama polos di bawah "Piket Laju 1" terbaca sebagai
+  nama guru piket. Cermin Deno `widget-tugas/tugasSaya.ts` ikut (dijaga tes cermin).
+- **Tab Jurnal untuk admin/penyusun** menjelaskan kenapa kartu piket guru lain ikut tampil — itu
+  disengaja (`kartuJurnalHari` `semuaKelas`, untuk menambal jurnal terlupa); akun guru hanya
+  melihat kartunya sendiri.
+
+### Removed
+- Kotak kuning **Rencanakan sebulan (bergilir)** dan **Templat Excel** jadwal — permintaan Kyai
+  (mengetik nama guru di Excel justru lebih sulit). Ikut dibuang: `rencanaBergilir`,
+  `kolomTemplatJadwal`, `tanggalSelExcel`, `bacaImporJadwal` beserta tesnya.
+
+### Catatan
+- Komit 9783d49 (v.1.5.2, dikerjakan lewat Antigravity) tak memakai trailer `Authorized-By` —
+  dibiarkan, commit lama tak diubah surut. Kenaikan `baseline-browser-mapping`/`caniuse-lite` di
+  `package.json` akar yang tertinggal belum di-commit ikut masuk komit ini.
+
+---
+
 ## [v.1.5.2] — 2026-11-22 — Al Manshur Channel Link Thumbnail + Poles UI/UX & Dark Mode
 
 `versionCode` 152 / `versionName` `v.1.5.2` (web, AAB, Electron, PSB).

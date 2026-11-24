@@ -1,6 +1,6 @@
 {
   "name": "portal-mambaul-ulum",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "description": "Portal Mambaul Ulum - legacy HTML5 + Vue 3 widgets + Capacitor wrap",
   "scripts": {
@@ -59,7 +59,7 @@
     "@capacitor/share": "^6.0.3",
     "@capacitor/splash-screen": "^6.0.3",
     "@capacitor/status-bar": "^6.0.2",
-    "baseline-browser-mapping": "^2.10.35",
-    "caniuse-lite": "^1.0.30001797"
+    "baseline-browser-mapping": "^2.11.39",
+    "caniuse-lite": "^1.0.30001827"
   }
 }
