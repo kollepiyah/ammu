@@ -210,6 +210,7 @@ import AppNotifBell from '@/components/layout/AppNotifBell.vue'
 import { useWaliChildren } from '@/composables/useWaliChildren'
 // v.91.0626: sembunyikan bell saat bottom nav aktif (notif pindah ke bottom nav)
 import { useMobileShell } from '@/composables/useMobileShell'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 const { showBottomNav } = useMobileShell()
 // v.91.0626: Global search (admin/guru saja)
 import GlobalSearch from '@/components/layout/GlobalSearch.vue'
@@ -323,7 +324,8 @@ async function onLogout() {
   if (!ok) return
   await auth.logout()
   toast.success('Berhasil keluar')
-  router.push('/login')
+  // Android/PWA: sesudah keluar kembali ke Beranda publik, bukan layar masuk.
+  router.push(pakaiWilayahPublik() ? '/umum' : '/login')
 }
 
 // Close dropdown on outside click

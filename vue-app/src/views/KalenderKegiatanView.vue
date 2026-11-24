@@ -364,7 +364,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -379,9 +379,12 @@ const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
 const confirmDlg = useConfirm()
-const { kegiatanRelevan, simpanKegiatan, hapusKegiatan } = useKegiatan()
+// F1: rute /umum/kalender memakai layar yang sama dalam mode baca untuk tamu.
+const modePublik = !!useRoute().meta?.kalenderPublik
+const { kegiatanRelevan, simpanKegiatan, hapusKegiatan } = useKegiatan({ publik: modePublik })
 
 const bisaEdit = computed(() => {
+  if (modePublik) return false
   return auth.isAdmin || auth.cekHakAkses?.call(auth, 'post_profil_pesantren')
 })
 

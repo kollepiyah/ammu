@@ -62,7 +62,11 @@ Aturan yang sudah diputuskan Kyai:
 - Tema gelap: `stores/ui.js` (`toggleDark`, `localStorage 'portalMu_darkMode'`) — baru dua
   keadaan.
 - `settings` (kecuali admin/keuangan) dan `master` terbaca anon (lihat memori
-  firebase-storage-mati). **RLS `kegiatan` dan `beranda_post` untuk anon belum dicek.**
+  firebase-storage-mati). **Dicek 25 Nov (F1):** `kegiatan` dan `beranda_post` sudah
+  `select using (true)` sejak migrasi `20260622090500_profiles_rls.sql` — **seluruh isi kedua
+  tabel terbaca siapa pun yang memegang kunci anon**, termasuk agenda khusus guru/santri.
+  Penyaringan tamu di F1 (`kegiatanUntukTamu`) hanya soal tampilan; bila agenda internal
+  dianggap rahasia, F4 perlu memperketat RLS + VIEW publik.
 
 ---
 
@@ -137,7 +141,9 @@ Kegiatan (sky). **Hanya agenda yang ditandai admin "tampil di publik".**
   sendiri juga satu komponen bersama dengan menu cepat Beranda publik, isinya lewat prop/daftar.
 - Layar Jadwal Sholat punya ikon roda gigi ke **pengaturan ibadah** (metode, lokasi, adzan)
   supaya yang sudah login tidak perlu ke Pengaturan publik.
-- Jam & Hijriah tetap terlihat di `RibbonStatusBar` bagi yang login.
+- **Koreksi (F1):** `RibbonStatusBar` hanya ada di Electron. Di Android/PWA yang sudah login,
+  jam & Hijriah tidak lagi tampil di dashboard (jam ada di bilah status HP, Hijriah di widget
+  dan Beranda publik). Web & Electron tetap memakai kartu jam karena tak punya baris ikon.
 - **Wajib:** sinkron widget (`pushWidgetData`) dipindah ke tempat yang selalu jalan
   (mis. `App.vue`/composable global), bukan di kartu jam mana pun.
 
@@ -264,7 +270,7 @@ lalu dipakai F7). F10 butuh F2.
 | Fase | Isi | Butuh | Yang dijalankan Kyai |
 |---|---|---|---|
 | **F0** | Persiapan: jawab K1–K6, serahkan PDF & berkas suara, buat bucket R2 | — | Buat bucket + domain R2 |
-| **F1** | Kerangka publik: rute `/umum/*` (`meta.public`), shell + bottom nav 5 tab, `/` → beranda publik di Android, Electron tetap ke Portal, tab Portal → login/dashboard, pindah kartu jam ringkas + sinkron widget global, hapus kartu jam dari dashboard + baris ikon ibadah (3.7; ikon yang layarnya belum jadi tampil "segera hadir" atau disembunyikan), Pengaturan publik (tema Terang/Gelap/Otomatis di `stores/ui.js`) | — | AAB |
+| **F1** ✅ 25 Nov (v.1.5.3 gel. 3) | Kerangka publik: rute `/umum/*` (`meta.public`), shell + bottom nav 5 tab, `/` → beranda publik di Android, Electron tetap ke Portal, tab Portal → login/dashboard, pindah kartu jam ringkas + sinkron widget global, hapus kartu jam dari dashboard + baris ikon ibadah (3.7; ikon yang layarnya belum jadi tampil "segera hadir" atau disembunyikan), Pengaturan publik (tema Terang/Gelap/Otomatis di `stores/ui.js`) | — | AAB |
 | **F2** | `utils/waktuSholat.js` + tes pembanding resmi, geolocation + perbarui otomatis, kartu jadwal, pengaturan metode & lokasi, kompas kiblat (sensor arah) | F1 | AAB |
 | **F3** | Adzan (kanal suara, penjadwalan, jadwal ulang) + uji HP asli; plugin native bila perlu | F2 | AAB |
 | **F4** | Agenda publik: migrasi `publik`, akses anon aman, centang di form admin, layar Agenda | F1 | `supabase db push`, deploy web, AAB |

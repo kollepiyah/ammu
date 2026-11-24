@@ -3,6 +3,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useDesktopShell } from '@/composables/useDesktopShell'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 
 // Lazy-load views supaya initial bundle kecil
 const LoginView = () => import('@/views/LoginView.vue')
@@ -113,8 +114,42 @@ const ImporKalenderView = () => import('@/views/ImporKalenderView.vue')
 const BantuanView = () => import('@/views/BantuanView.vue')
 const RibbonPlaceholderView = () => import('@/views/RibbonPlaceholderView.vue')
 
+// F1 (blueprint Ammu publik): wilayah tanpa login untuk Android & PWA. Awalan /umum karena
+// nama 'beranda' sudah dipakai BerandaDesktopView.
+const PublikLayout = () => import('@/components/publik/PublikLayout.vue')
+const BerandaPublikView = () => import('@/views/publik/BerandaPublikView.vue')
+const ChannelPublikView = () => import('@/views/publik/ChannelPublikView.vue')
+const PengaturanPublikView = () => import('@/views/publik/PengaturanPublikView.vue')
+
 const routes = [
   { path: '/', redirect: '/dashboard' },
+  {
+    path: '/umum',
+    component: PublikLayout,
+    meta: { public: true },
+    children: [
+      { path: '', name: 'umum-beranda', component: BerandaPublikView, meta: { public: true } },
+      {
+        path: 'channel',
+        name: 'umum-channel',
+        component: ChannelPublikView,
+        meta: { public: true }
+      },
+      // Kalender yang sama dengan Portal, mode baca untuk tamu (lihat useKegiatan opsi publik).
+      {
+        path: 'kalender',
+        name: 'umum-kalender',
+        component: KalenderKegiatanView,
+        meta: { public: true, kalenderPublik: true }
+      },
+      {
+        path: 'pengaturan',
+        name: 'umum-pengaturan',
+        component: PengaturanPublikView,
+        meta: { public: true }
+      }
+    ]
+  },
   // Route tanpa layout (full-screen)
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
   // PSB Public form — no auth, no layout (standalone)
@@ -535,7 +570,11 @@ router.beforeEach(async (to, from, next) => {
       /* ignore */
     }
   }
-  if (!auth.isLoggedIn) return next({ name: 'login', query: { redirect: to.fullPath } })
+  if (!auth.isLoggedIn) {
+    // F1: di Android/PWA, tamu yang membuka aplikasi (→ /dashboard) mendarat di Beranda publik.
+    if (to.name === 'dashboard' && pakaiWilayahPublik()) return next({ name: 'umum-beranda' })
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
   if (to.meta?.admin && !auth.isAdmin) return next({ name: 'dashboard' })
   // electronOnly gate — modul yg butuh bridge desktop (Mesin Absensi) tak tampil di web/HP.
   if (to.meta?.electronOnly && !useDesktopShell().isElectron.value)

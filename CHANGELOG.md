@@ -28,9 +28,43 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.3] — 2026-11-24 — Pondok Laju: guru biasa hanya melihat miliknya, kabar WA lewat wa.me
+## [v.1.5.3] — 2026-11-25 — Ammu publik F1: Beranda tanpa login + baris ikon ibadah
 
-**SIAP RILIS** — `versionCode` 153 / `versionName` `v.1.5.3` (web, AAB, Electron, PSB), 2 gelombang.
+**SIAP RILIS** — `versionCode` 153 / `versionName` `v.1.5.3`, gelombang 3 (AAB belum dirilis, jadi
+nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK) dan deploy web
+(untuk PWA). Rancangan: `docs/BLUEPRINT-AMMU-PUBLIK.md` fase F1.
+
+### Added
+- **Wilayah publik tanpa login di Android & PWA** (rute `/umum/*`, `PublikLayout`): tamu yang membuka
+  aplikasi kini mendarat di Beranda publik, bukan layar masuk. Lima tab bawah: Beranda · Channel ·
+  Kalender · Portal · Pengaturan. Web biasa & Electron tidak berubah (penentu tunggal
+  `utils/wilayahPublik.js` → `pakaiWilayahPublik()`).
+  - Beranda: kartu jam & Hijriah ringkas satu baris, menu cepat Kiblat · Al-Qur'an · Agenda · Wirid,
+    deret kartu Al Manshur Channel. Agenda sementara membuka Kalender; Kiblat, Al-Qur'an, Wirid
+    "segera hadir" (F2/F6/F7).
+  - Channel: daftar `beranda_post` baca-saja (PostCard tanpa tombol ubah/reaksi).
+  - Kalender: layar `KalenderKegiatanView` yang sama dalam mode baca; tamu hanya melihat agenda
+    untuk "semua" tanpa batasan lembaga, libur tetap tampil (`kegiatanUntukTamu`).
+  - Pengaturan publik: tema, petunjuk widget, Masuk ke Portal / Keluar.
+  - Layar publik **tanpa realtime**: tarik sekali + salinan di HP (`useDataTamu`; post 30 menit,
+    kalender per kunjungan) demi egress & kuota koneksi Supabase Free.
+- **Tema Otomatis** (ikut sistem HP) di samping Terang/Gelap (`utils/tema.js`, `ui.setTemaMode`);
+  sakelar lama di header tetap bekerja.
+
+### Changed
+- **Dashboard Android/PWA: kartu jam diganti baris ikon** Al-Qur'an · Wirid · Kiblat · Jadwal
+  Sholat di bawah kartu sapaan (Kyai 25 Nov 2026), untuk semua peran. Ikon masih "segera hadir"
+  sampai layarnya dibangun. Web & Electron tetap memakai kartu jam.
+- **Sinkron widget Hijriah pindah ke `App.vue`** (`useSinkronWidgetHijri`) — dulu menempel di kartu
+  jam dashboard, jadi widget berhenti diperbarui begitu kartu itu dihapus atau pengguna belum login.
+- Tombol kembali Android di layar masuk → Beranda publik; layar masuk punya tombol "Beranda";
+  keluar dari header Portal di Android/PWA kembali ke Beranda publik, bukan layar masuk.
+
+---
+
+## [v.1.5.3 · gelombang 2] — 2026-11-24 — Pondok Laju: guru biasa hanya melihat miliknya, kabar WA lewat wa.me
+
+`versionCode` 153 / `versionName` `v.1.5.3` (web, AAB, Electron, PSB), gelombang 2.
 Web gelombang 1 sudah di-deploy Kyai 24 Nov; AAB & Electron belum → gelombang ini tetap 1.5.3.
 Tanpa migrasi. Deploy web. Opsional: `supabase functions delete kirim-wa-jadwal` &
 `supabase secrets unset FONNTE_TOKEN` (fungsi tak dipanggil lagi); `widget-tugas` boleh di-deploy

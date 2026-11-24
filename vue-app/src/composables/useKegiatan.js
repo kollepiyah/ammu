@@ -1,7 +1,8 @@
 // useKegiatan — subscribe kegiatan collection real-time + CRUD
 // Port dari legacy db_kegiatan + simpanKegiatan/hapusKegiatan/editKegiatan
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, setOne, deleteOne } from '@/services/db'
+import { subscribeColl, getAll, setOne, deleteOne } from '@/services/db'
+import { kegiatanUntukTamu } from '@/utils/wilayahPublik'
 import { useAuthStore } from '@/stores/auth'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 
@@ -24,7 +25,7 @@ export function kegiatanKenaLembaga(k, sesi) {
   return scope.some((t) => mine.some((ul) => lembagaScopeMatches(ul, t)))
 }
 
-export function useKegiatan() {
+export function useKegiatan({ publik = false } = {}) {
   const auth = useAuthStore()
   const kegiatanRaw = ref([])
   const loading = ref(true)
@@ -32,6 +33,14 @@ export function useKegiatan() {
   let unsub = null
 
   function start() {
+    // Tamu: tarik sekali tanpa realtime — hemat egress & kuota koneksi Supabase Free.
+    if (publik) {
+      getAll('kegiatan')
+        .then((docs) => (kegiatanRaw.value = docs))
+        .catch((err) => (error.value = err))
+        .finally(() => (loading.value = false))
+      return
+    }
     try {
       unsub = subscribeColl('kegiatan', (docs) => {
         kegiatanRaw.value = docs
@@ -52,6 +61,7 @@ export function useKegiatan() {
 
   // Filter kegiatan berdasarkan audience + role + (v.1.2.4) scope lembaga agenda
   const kegiatanRelevan = computed(() => {
+    if (publik) return kegiatanRaw.value.filter(kegiatanUntukTamu)
     const role = auth.sesiAktif?.role
     if (!role) return []
     return kegiatanRaw.value.filter((k) => {

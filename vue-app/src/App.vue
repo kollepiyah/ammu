@@ -24,6 +24,8 @@ import ToastStack from '@/components/ui/ToastStack.vue'
 import { useAuthStore } from '@/stores/auth'
 import { usePushNotifications } from '@/composables/usePushNotifications'
 // v.1.2.8: tawaran unduh pembaruan APK (aplikasi Android saja)
+import { useSinkronWidgetHijri } from '@/composables/useSinkronWidgetHijri'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 
 // v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.
@@ -31,6 +33,9 @@ const settings = useSettingsStore()
 const ui = useUiStore()
 const router = useRouter()
 const toast = useToast()
+
+// F1 publik: widget Hijriah diperbarui dari sini, bukan dari kartu jam dashboard.
+useSinkronWidgetHijri()
 
 // v.95.0626: daftarkan FCM push begitu ada sesi login (native saja; no-op di web/desktop)
 const auth = useAuthStore()
@@ -107,7 +112,7 @@ async function setupNativeIntegration() {
     // v.103b (kyai 18 Jun): back pola NATIVE back-stack — mundur ke layar SEBELUMNYA di mana pun
     //   selama ada history; keluar app HANYA di Beranda/root tanpa history (tekan 2x). Sub-state
     //   halaman (mis. alur Rekap, modal) ditangani komponen via event 'android-back' + preventDefault.
-    const HOME_ROUTES = ['/dashboard', '/login']
+    const HOME_ROUTES = ['/dashboard', '/login', '/umum']
     let lastBack = 0
     App.addListener('backButton', () => {
       // a. sidebar terbuka -> tutup
@@ -127,6 +132,11 @@ async function setupNativeIntegration() {
         router.back()
         return
       }
+      // F1 publik: layar masuk dibuka dari tab Portal -> kembali ke Beranda publik, bukan keluar.
+      if (path === '/login' && pakaiWilayahPublik() && !auth.isLoggedIn) {
+        router.replace('/umum')
+        return
+      }
       // d. di Beranda/root -> tekan back 2x dalam 2 detik utk keluar app
       if (HOME_ROUTES.includes(path)) {
         const now = Date.now()
@@ -143,7 +153,7 @@ async function setupNativeIntegration() {
         return
       }
       // e. halaman non-home tanpa history (mis. deep-link) -> ke Beranda (jangan keluar dari halaman acak)
-      router.replace('/dashboard')
+      router.replace(auth.isLoggedIn ? '/dashboard' : '/umum')
     })
   } catch (e) {
     console.warn('[BackButton] plugin tidak tersedia:', e?.message || e)

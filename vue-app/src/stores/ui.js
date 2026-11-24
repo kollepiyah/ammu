@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { toast as sonnerToast } from 'vue-sonner'
+import { bacaModeTema, temaGelapAktif } from '@/utils/tema'
 
 let _toastSeq = 0
 
@@ -10,17 +11,55 @@ export const useUiStore = defineStore('ui', () => {
   // Kyai req: jangan auto-hide. Drop localStorage — refresh selalu reset ke default per viewport.
   // User toggle via hamburger tetap work in-session.
   function _initialSidebar() {
-    return (typeof window !== 'undefined' && window.innerWidth >= 768)
+    return typeof window !== 'undefined' && window.innerWidth >= 768
   }
   const sidebarOpen = ref(_initialSidebar())
-  function openSidebar() { sidebarOpen.value = true }
-  function closeSidebar() { sidebarOpen.value = false }
-  function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
+  function openSidebar() {
+    sidebarOpen.value = true
+  }
+  function closeSidebar() {
+    sidebarOpen.value = false
+  }
+  function toggleSidebar() {
+    sidebarOpen.value = !sidebarOpen.value
+  }
 
-  // Dark mode
+  // Dark mode. F1: ditambah mode 'otomatis' (ikut sistem HP); portalMu_darkMode tetap
+  // menyimpan hasil akhirnya supaya skrip awal index.html tak berkedip.
   const isDark = ref(false)
+  const temaMode = ref('terang')
+  let _mq = null
+  function _sistemGelap() {
+    try {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+    } catch {
+      return false
+    }
+  }
+  function _pasangPendengarSistem() {
+    if (_mq || typeof window === 'undefined' || !window.matchMedia) return
+    _mq = window.matchMedia('(prefers-color-scheme: dark)')
+    _mq.addEventListener?.('change', () => {
+      if (temaMode.value === 'otomatis') _terapkan(temaGelapAktif('otomatis', _sistemGelap()))
+    })
+  }
+  function setTemaMode(mode) {
+    temaMode.value = bacaModeTema(mode, null)
+    try {
+      localStorage.setItem('portalMu_temaMode', temaMode.value)
+    } catch (e) {
+      // ignore
+    }
+    if (temaMode.value === 'otomatis') _pasangPendengarSistem()
+    _terapkan(temaGelapAktif(temaMode.value, _sistemGelap()))
+  }
 
+  // Sakelar lama (header/pita) = pilihan eksplisit terang/gelap.
   function setDark(val) {
+    setTemaMode(val ? 'gelap' : 'terang')
+  }
+
+  function _terapkan(val) {
     isDark.value = !!val
     if (typeof document !== 'undefined') {
       document.documentElement.classList.toggle('dark', isDark.value)
@@ -49,10 +88,11 @@ export const useUiStore = defineStore('ui', () => {
         setDark(false)
         return
       }
-      // Setelah migration: respect user toggle
+      // Setelah migration: respect pilihan user (mode baru, atau darkMode lama)
+      const m = localStorage.getItem('portalMu_temaMode')
       const v = localStorage.getItem('portalMu_darkMode')
-      if (v != null) {
-        setDark(v === '1')
+      if (m != null || v != null) {
+        setTemaMode(bacaModeTema(m, v))
         return
       }
     } catch (e) {
@@ -94,7 +134,13 @@ export const useUiStore = defineStore('ui', () => {
     _resolve: null
   })
 
-  function confirm({ title = 'Konfirmasi', message = '', confirmText = 'Hapus', cancelText = 'Batal', danger = true } = {}) {
+  function confirm({
+    title = 'Konfirmasi',
+    message = '',
+    confirmText = 'Hapus',
+    cancelText = 'Batal',
+    danger = true
+  } = {}) {
     return new Promise((resolve) => {
       confirmState.value = {
         open: true,
@@ -123,6 +169,8 @@ export const useUiStore = defineStore('ui', () => {
     toggleSidebar,
     // dark
     isDark,
+    temaMode,
+    setTemaMode,
     setDark,
     toggleDark,
     initDarkFromStorage,

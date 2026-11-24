@@ -105,7 +105,11 @@
       // v.84.0526: Apply dark mode EARLY supaya splash gradient ikut tema user
       ;(function () {
         try {
-          if (localStorage.getItem('portalMu_darkMode') === '1') {
+          var otomatis = localStorage.getItem('portalMu_temaMode') === 'otomatis'
+          var gelap = otomatis
+            ? window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+            : localStorage.getItem('portalMu_darkMode') === '1'
+          if (gelap) {
             document.documentElement.classList.add('dark')
             document.addEventListener('DOMContentLoaded', function () {
               document.body && document.body.classList.add('dark-mode')

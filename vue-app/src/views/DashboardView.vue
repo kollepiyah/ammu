@@ -11,6 +11,10 @@ import DashboardTugasSaya from '@/components/dashboard/DashboardTugasSaya.vue'
 import DashboardJamHijri from '@/components/dashboard/DashboardJamHijri.vue'
 import DashboardKalender from '@/components/dashboard/DashboardKalender.vue'
 import DashboardPosts from '@/components/dashboard/DashboardPosts.vue'
+import MenuIbadah from '@/components/publik/MenuIbadah.vue'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
+
+const wilayahPublik = pakaiWilayahPublik()
 
 // Label versi di kaki layar — dulu diketik tangan di sini dan ikut membeku.
 const versiApp = APP_VERSION
@@ -40,7 +44,10 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="space-y-4 order-1 lg:col-start-1 lg:row-start-1">
         <DashboardGreeting />
-        <DashboardJamHijri />
+        <!-- Kyai 25 Nov 2026: di Android/PWA kartu jam pindah ke Beranda publik, gantinya
+             baris ikon ibadah. Web & Electron tak punya wilayah publik -> jam tetap. -->
+        <MenuIbadah v-if="wilayahPublik" jenis="portal" />
+        <DashboardJamHijri v-else />
       </div>
       <DashboardKalender class="order-3 lg:col-start-2 lg:row-start-1" @see-all="goKalenderFull" />
       <DashboardTugasSaya class="order-2 lg:col-span-2 lg:row-start-2" />

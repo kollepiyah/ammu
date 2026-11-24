@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import { useAuthStore, ambilSebabGoogleGagal } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -11,6 +12,8 @@ import { HALAMAN_RILIS, urlApk, urlInstallerDesktop, urlInstallerWin7 } from '@/
 // v.86.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
 const router = useRouter()
 const route = useRoute()
+// F1: di Android/PWA layar masuk dibuka dari tab Portal -> sediakan jalan kembali.
+const wilayahPublik = pakaiWilayahPublik()
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
@@ -72,8 +75,7 @@ const loginTitle = computed(
   () => String(settings.settings?.txtLoginTitle || '').trim() || 'Ammu Online'
 )
 const loginSubtitle = computed(
-  () =>
-    String(settings.settings?.txtLoginSubtitle || '').trim() || 'Generasi Qurani Pewaris Negeri'
+  () => String(settings.settings?.txtLoginSubtitle || '').trim() || 'Generasi Qurani Pewaris Negeri'
 )
 
 // v.21.115.0528: URL download app native (Android/Desktop)
@@ -202,6 +204,15 @@ function bukaWaAdmin() {
       class="absolute inset-0 backdrop-blur-sm bg-teal-900/30 dark:bg-slate-900/60 pointer-events-none z-0"
       aria-hidden="true"
     ></div>
+
+    <button
+      v-if="wilayahPublik"
+      type="button"
+      class="absolute top-3 left-3 z-20 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-white/85 dark:bg-slate-800/85 text-teal-700 dark:text-teal-300 shadow cursor-pointer"
+      @click="router.replace('/umum')"
+    >
+      <i class="fas fa-arrow-left"></i>Beranda
+    </button>
 
     <!-- CARD LOGIN — v.86.0526: dark mode card slate-800 + border teal-400 -->
     <div
