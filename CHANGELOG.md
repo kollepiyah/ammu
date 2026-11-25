@@ -28,12 +28,41 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.5] — 2026-11-25 — Top bar hijau, kartu Hijriah + sholat berikutnya, Jadwal Sholat ala NU Online
+## [v.1.5.5] — 2026-11-25 — Kunci sidik jari, Agenda publik, Kitab & Wirid
 
-**SIAP RILIS** — `versionCode` 155 / `versionName` `v.1.5.5` (web, AAB, Electron, PSB), **3
-gelombang** (lihat kepala rilis di gelombang 2 untuk urutan deploy; tetap berlaku). Gelombang ini
-dari mock-up yang disetujui Kyai 25 Nov 2026; semua perubahan tampilan hanya Android & PWA
-(`pakaiWilayahPublik`) kecuali disebut lain.
+**SIAP RILIS** — `versionCode` 155 / `versionName` `v.1.5.5` (web, AAB, Electron, PSB), **4
+gelombang**. Web v.1.5.5 sudah ter-deploy sampai gelombang 3; Electron & AAB belum dibangun,
+jadi nomor tetap. **Gelombang ini butuh DUA migrasi** (`20261125150000_kegiatan_publik`,
+`20261125160000_amalan`) — jalankan `npx supabase db push` SEBELUM deploy web: kode baru menulis
+kolom `kegiatan.publik`, dan menyimpan agenda akan galat bila kolomnya belum ada. Lalu deploy web,
+rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biometric`).
+
+### Added
+- **Kunci Portal dengan sidik jari / Face ID** (Android & PWA, blueprint F9): sakelar di tab
+  Pengaturan (Keamanan) dan Pengaturan publik (Akun). Terkunci saat aplikasi dibuka & sesudah di
+  latar ≥ 3 menit; wilayah publik tetap terbuka; layar kunci punya jalan ke Beranda umum & masuk
+  akun lain. Android: plugin native 8.9.3; PWA: WebAuthn platform authenticator
+  (`userVerification: 'required'`), tanpa rahasia ke server. `utils/kunciAplikasi` (+ tes),
+  `services/biometrik`, `stores/kunciAplikasi`, `components/KunciAplikasi.vue`.
+- **Agenda publik** (F4): layar `/umum/agenda` (Akan datang / Bulan ini / Semua, per bulan, blok
+  tanggal, lencana Libur/Ujian/Kegiatan — `utils/agenda` + tes) dari ikon Agenda Beranda; form
+  kegiatan admin mendapat centang **"Tampilkan di Agenda publik"**. Migrasi `kegiatan_publik`:
+  kolom `publik` (isi awal = aturan tamu F1 → 67 dari 78 agenda), kebijakan baca dipecah —
+  authenticated semua, **anon hanya publik** (dulu `using (true)`: agenda internal terbaca siapa
+  pun). Diuji di PGlite. `publikBawaan` di utils/wilayahPublik = cermin isi awal migrasi.
+- **Kitab & Wirid** (F7, isi TEKS): tabel `amalan` (migrasi `amalan`, RLS: tamu hanya yang aktif,
+  tulis pengelola; diuji di PGlite). Layar daftar per kategori & layar baca (Arab Scheherazade,
+  A−/A+, sakelar Latin/Arti, tanda "33×"), `/umum/wirid` & `/ibadah/wirid`; daftar ringkas tanpa
+  isi disimpan di HP 6 jam, isi bacaan 24 jam. Admin: **Master Data → Kitab & Wirid** (+ tombol
+  pita Electron) — tambah/ubah/hapus, draf, urutan, bagian bisa digeser, dan **tempel teks panjang
+  sekaligus** (dipecah di baris kosong; Arab/Latin/arti dipilah otomatis). `utils/amalan` + tes.
+
+---
+
+## [v.1.5.5 · gelombang 3] — 2026-11-25 — Top bar hijau, kartu Hijriah + sholat berikutnya, Jadwal Sholat ala NU Online
+
+Dari mock-up yang disetujui Kyai 25 Nov 2026; semua perubahan tampilan hanya Android & PWA
+(`pakaiWilayahPublik`) kecuali disebut lain. Sudah ter-deploy ke web 25 Nov.
 
 ### Changed
 - **Top bar hijau** `#0f766e` di wilayah publik (`PublikLayout`) dan di Portal (`AppHeader`

@@ -16,6 +16,8 @@ import FieldSchemaView from './FieldSchemaView.vue'
 import GuruView from './GuruView.vue'
 import SantriView from './SantriView.vue'
 import RombelView from './RombelView.vue'
+// v.1.5.5 (Kyai 25 Nov 2026): isi Kitab & Wirid diatur di Master Data (aturan Kyai: data induk di sini)
+import AmalanKelolaView from './AmalanKelolaView.vue'
 import { useLembaga } from '@/composables/useLembaga'
 import { useSantri } from '@/composables/useSantri'
 import { useConfirm } from '@/composables/useConfirm'
@@ -539,6 +541,7 @@ const TABS = [
   { id: 'santri', label: 'Data Santri', icon: 'fa-user-graduate', color: 'teal' },
   // Kyai 17 Nov 2026: rombel tempatnya DI SINI, bukan menu tersendiri.
   { id: 'rombel', label: 'Rombel', icon: 'fa-people-group', color: 'emerald' },
+  { id: 'amalan', label: 'Kitab & Wirid', icon: 'fa-book-open', color: 'teal' },
   { id: 'audit', label: 'Audit Data', icon: 'fa-stethoscope', color: 'rose' }
 ]
 
@@ -1008,6 +1011,10 @@ async function simpanPengaturanRekap() {
     <!-- TAB: ROMBEL (Kyai 17 Nov 2026) — pasangan guru pagi+sore sebagai satu barang. -->
     <div v-else-if="activeTab === 'rombel'" class="-mx-3 md:-mx-5">
       <RombelView />
+    </div>
+
+    <div v-else-if="activeTab === 'amalan'">
+      <AmalanKelolaView />
     </div>
 
     <!-- TAB 5: RAPOR -->

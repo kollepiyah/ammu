@@ -73,7 +73,7 @@ const toast = useToast()
 const daftar = computed(() => (URUTAN[props.jenis] || URUTAN.beranda).map((k) => MENU[k]))
 
 // F2: layar ibadah yang sudah jadi. Tamu ke /umum/…, Portal ke /ibadah/… (tetap di shell login).
-const LAYAR_IBADAH = { kiblat: 'kiblat', sholat: 'sholat' }
+const LAYAR_IBADAH = { kiblat: 'kiblat', sholat: 'sholat', wirid: 'wirid' }
 
 function buka(m) {
   const layar = LAYAR_IBADAH[m.kunci]

@@ -150,6 +150,14 @@ const TABS = [
             label: 'Audit Data',
             to: '/master-data?tab=audit',
             gate: 'superadmin'
+          },
+          // v.1.5.5: isi menu Wirid aplikasi HP (tab bar Master Data disembunyikan di Electron)
+          {
+            type: 'small',
+            icon: 'book',
+            label: 'Kitab & Wirid',
+            to: '/master-data?tab=amalan',
+            gate: 'admin'
           }
         ]
       },

@@ -149,6 +149,8 @@ const COLS = {
   // -- konten & sistem --
   posts: ['judul', 'isi'],
   beranda_post: ['judul', 'isi'],
+  // Kitab & Wirid (v.1.5.5, migrasi 20261125160000). Isi bacaan di data.bagian.
+  amalan: ['judul', 'kategori', 'urutan', 'aktif'],
   // publik (v.1.5.5, migrasi 20261125150000): agenda yang boleh dibaca tamu (RLS anon).
   kegiatan: ['judul', 'tgl_mulai', 'publik'],
   kegiatan_pesantren: ['judul'],

@@ -279,12 +279,12 @@ lalu dipakai F7). F10 butuh F2.
 | **F1** ✅ 25 Nov (v.1.5.3 gel. 3) | Kerangka publik: rute `/umum/*` (`meta.public`), shell + bottom nav 5 tab, `/` → beranda publik di Android, Electron tetap ke Portal, tab Portal → login/dashboard, pindah kartu jam ringkas + sinkron widget global, hapus kartu jam dari dashboard + baris ikon ibadah (3.7; ikon yang layarnya belum jadi tampil "segera hadir" atau disembunyikan), Pengaturan publik (tema Terang/Gelap/Otomatis di `stores/ui.js`) | — | AAB |
 | **F2** ✅ 25 Nov (v.1.5.5; NU belum) | `utils/waktuSholat.js` + tes pembanding resmi, geolocation + perbarui otomatis, kartu jadwal, pengaturan metode & lokasi, kompas kiblat (sensor arah) | F1 | AAB |
 | **F3** | Adzan (kanal suara, penjadwalan, jadwal ulang) + uji HP asli; plugin native bila perlu | F2 | AAB |
-| **F4** | Agenda publik: migrasi `publik`, akses anon aman, centang di form admin, layar Agenda | F1 | `supabase db push`, deploy web, AAB |
+| **F4** ✅ 25 Nov (v.1.5.5) | Agenda publik: migrasi `publik`, akses anon aman, centang di form admin, layar Agenda | F1 | `supabase db push`, deploy web, AAB |
 | **F5** | Tab Channel publik (+ penanda publik bila perlu) | F1 | (db push bila ada migrasi), AAB |
 | **F6** | Al-Qur'an: skrip PDF→WebP, R2 + CSP, indeks surah/juz, pembaca + cache offline + zoom + geser + terakhir dibaca, **mode layar penuh (F8) dibuat di sini** | F1, K2, K6 | Unggah ke R2, AAB |
 | **F8** | Mode layar penuh `useModeBaca` (3.6, 4.10) — **dikerjakan di dalam F6**, dipakai ulang F7 | F1 | (ikut AAB F6) |
-| **F7** | Kitab & Wirid: tabel + RLS, CRUD Master Data, daftar + layar baca + Tasbih, pakai `useModeBaca` | F1, F8, K1 | `supabase db push`, deploy web, AAB |
-| **F9** | Login ringkas + biometrik | F1 | AAB |
+| **F7** ✅ 25 Nov (v.1.5.5; Tasbih belum) | Kitab & Wirid: tabel + RLS, CRUD Master Data, daftar + layar baca + Tasbih, pakai `useModeBaca` | F1, F8, K1 | `supabase db push`, deploy web, AAB |
+| **F9** ✅ 25 Nov (v.1.5.5, kunci aplikasi) | Login ringkas + biometrik | F1 | AAB |
 | **F10** | Widget jadwal sholat | F2 | AAB |
 | **F11** | Rilis: naik versi sesuai konvensi, CHANGELOG, catatan rilis, **Data safety Play** (lokasi perkiraan, notifikasi), cek izin alarm, akun uji peninjau | semua | AAB + unggah Play, deploy web |
 

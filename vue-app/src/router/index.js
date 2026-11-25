@@ -126,6 +126,9 @@ const JadwalSholatView = () => import('@/views/publik/JadwalSholatView.vue')
 const KiblatView = () => import('@/views/publik/KiblatView.vue')
 // F4: Agenda publik (daftar, tanpa kalender)
 const AgendaPublikView = () => import('@/views/publik/AgendaPublikView.vue')
+// F7: Kitab & Wirid (daftar + layar baca) — sama untuk /umum & /ibadah
+const KitabWiridView = () => import('@/views/publik/KitabWiridView.vue')
+const BacaAmalanView = () => import('@/views/publik/BacaAmalanView.vue')
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -167,6 +170,13 @@ const routes = [
         name: 'umum-agenda',
         component: AgendaPublikView,
         meta: { public: true }
+      },
+      { path: 'wirid', name: 'umum-wirid', component: KitabWiridView, meta: { public: true } },
+      {
+        path: 'wirid/:id',
+        name: 'umum-baca-wirid',
+        component: BacaAmalanView,
+        meta: { public: true }
       }
     ]
   },
@@ -182,6 +192,8 @@ const routes = [
       { path: 'dashboard', name: 'dashboard', component: DashboardView },
       { path: 'ibadah/sholat', name: 'ibadah-sholat', component: JadwalSholatView },
       { path: 'ibadah/kiblat', name: 'ibadah-kiblat', component: KiblatView },
+      { path: 'ibadah/wirid', name: 'ibadah-wirid', component: KitabWiridView },
+      { path: 'ibadah/wirid/:id', name: 'ibadah-baca-wirid', component: BacaAmalanView },
       // v.98: ribbon-native — Home desktop (dua dasbor) + Bantuan + placeholder modul
       { path: 'beranda', name: 'beranda', component: BerandaDesktopView, meta: { noSantri: true } },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },

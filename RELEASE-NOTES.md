@@ -15,7 +15,12 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   pilih kota. Kartu jadwal juga tampil di Beranda.
 - **Arah Kiblat** dengan kompas HP: piringan berputar mengikuti HP dan memberi tahu "putar ke
   kanan/kiri" sampai menghadap kiblat.
-- Ikon Kiblat dan Jadwal Sholat di dashboard kini terbuka (Al-Qur'an dan Wirid masih menyusul).
+- Ikon Kiblat dan Jadwal Sholat di dashboard kini terbuka (Al-Qur'an masih menyusul).
+- **Kunci dengan sidik jari / Face ID:** aktifkan di Pengaturan, Portal terkunci saat aplikasi
+  dibuka atau ditinggal lebih dari 3 menit. Jadwal sholat & kiblat tetap bisa dibuka.
+- **Agenda pondok** di Beranda tanpa masuk: daftar kegiatan, ujian, dan libur yang dipilih admin.
+- **Kitab & Wirid:** bacaan wirid, doa, tahlil, dan maulid dengan teks Arab, bacaan Latin, dan
+  arti; ukuran huruf bisa diatur. Isinya ditambah admin kapan saja tanpa memperbarui aplikasi.
 
 **Perubahan**
 
