@@ -120,6 +120,7 @@ const PublikLayout = () => import('@/components/publik/PublikLayout.vue')
 const BerandaPublikView = () => import('@/views/publik/BerandaPublikView.vue')
 const ChannelPublikView = () => import('@/views/publik/ChannelPublikView.vue')
 const PengaturanPublikView = () => import('@/views/publik/PengaturanPublikView.vue')
+const TentangView = () => import('@/views/publik/TentangView.vue')
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -147,7 +148,8 @@ const routes = [
         name: 'umum-pengaturan',
         component: PengaturanPublikView,
         meta: { public: true }
-      }
+      },
+      { path: 'tentang', name: 'umum-tentang', component: TentangView, meta: { public: true } }
     ]
   },
   // Route tanpa layout (full-screen)

@@ -547,7 +547,7 @@
                 <!-- v.21.22c.0526: Edit/Toggle Aktif/Delete (Master mode only) -->
                 <div
                   v-if="isMasterMode"
-                  class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-end gap-x-4 gap-y-1"
+                  class="aksi-kartu mt-2 pt-2 border-t border-[var(--border-subtle)]"
                 >
                   <!-- v.21.24.0526: Reset Sandi tombol -->
                   <button

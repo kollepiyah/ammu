@@ -75,6 +75,19 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
 - **Penyaring jenis kelamin** di Data Santri & Data Guru (`utils/jenisKelamin.js` + tes; ikut
   tersimpan di URL `?jk=` seperti penyaring lain).
 - Pengaturan publik: kartu Akun di paling atas.
+- Pengaturan publik di aplikasi Android: kartu Unduh disembunyikan; "Tentang" kini membuka halaman
+  Tentang Aplikasi (`/umum/tentang`: versi, Kebijakan Privasi, nilai di Play Store).
+- **Mode gelap: penjaga warna dilengkapi** — `bg-cyan/green/sky/red/yellow/orange/indigo/violet-100`
+  dan teks `*-800/900` yang lolos kini ikut digelapkan/diterangkan (sel TOTAL Rekap Prestasi,
+  chip legenda Absensi Guru). Teks di atas latar putih transparan (`bg-white/…`) tak lagi
+  diterangkan (tombol "Jadwalkan Sesi" Ceremonial dulu putih di atas putih). Kertas pratinjau
+  rapor (`#rapor-print-area`) selalu terang seperti hasil cetak.
+- Tombol aksi di HP: kepala halaman & toolbar Absensi Guru = ikon saja satu baris sama lebar
+  (`.ph-aksi`, kini di main.css); aksi kartu Santri/Guru (Reset Sandi · Non-aktifkan · Edit · Hapus)
+  = satu deret kotak (`.aksi-kartu`), tak ada lagi "Hapus" yatim di baris bawah.
+- Keterangan yang memenuhi layar dipangkas: kepala Ceremonial PTPT, catatan kandidat, kepala
+  Rekap Prestasi (jadwal isi & petunjuk abu-abu), petunjuk isian kelas Laju, "(atur di …)" target
+  PDF. Isian kelas Laju ditata ulang (nama selebar baris, Awal · Akhir · Total sejajar).
 
 - **Dashboard Android/PWA: kartu jam diganti baris ikon** Al-Qur'an · Wirid · Kiblat · Jadwal
   Sholat di bawah kartu sapaan (Kyai 25 Nov 2026), untuk semua peran. Ikon masih "segera hadir"

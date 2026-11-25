@@ -339,22 +339,11 @@
               <i class="fas fa-trophy text-cyan-500 mr-1"></i>Rekap Prestasi Qiraati
             </h1>
             <p class="text-[11px] text-slate-500 dark:text-slate-400">
-              Rekap bulanan prestasi santri Qiraati. Total: {{ filteredSantri.length }} santri ·
-              Rekap: <b class="text-cyan-700">{{ bulan }} {{ tahun }}</b> · berisi capaian
-              <b class="text-cyan-700">{{ bulanDataLabel }}</b>
+              {{ filteredSantri.length }} santri · Rekap
+              <b class="text-cyan-700">{{ bulan }} {{ tahun }}</b> (capaian {{ bulanDataLabel }})
             </p>
-            <!-- v.1.3.7 (Kyai 31 Agu 2026): tiap bulan mulai kosong. Keterangan ini perlu
-                 karena perubahannya justru terlihat sebagai "data hilang" bagi yang terbiasa
-                 melihat angka bulan lalu sudah terisi di sana. -->
-            <p
-              v-if="mode === 'bulanan'"
-              class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5"
-            >
-              <i class="fas fa-circle-info mr-1"></i><b>Rekap {{ bulan }}</b> diisi tgl 29
-              {{ bulanDataLabel }} s/d 5 {{ bulan }}, isinya capaian <b>{{ bulanDataLabel }}</b
-              >. Tiap rekap mulai <b>kosong</b>; angka abu-abu di kotak isian hanya
-              <b>petunjuk rekap sebelumnya</b>, tidak ikut tersimpan.
-            </p>
+            <!-- Kyai 25 Nov 2026: keterangan panjang (jadwal isi tgl 29–5, angka abu-abu =
+                 petunjuk) dibuang — membuat halaman penuh. -->
           </div>
           <!-- View mode toggle -->
           <div class="flex gap-1 bg-slate-100 p-1 rounded-xl">
@@ -413,7 +402,7 @@
           v-model="filterPj"
           class="px-3 py-2 text-sm rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 outline-none"
         >
-          <option value="">Semua PJ (PDF dipisah per PJ)</option>
+          <option value="">Semua PJ</option>
           <option v-for="p in pjOptions" :key="p" :value="p">PJ {{ p }}</option>
         </select>
         <!-- v.1.5.0 (Kyai): penyaring Pondok Laju di samping penyaring PJ -->
@@ -446,7 +435,6 @@
             <b v-if="t.teks" class="text-slate-700 dark:text-slate-200">{{ t.teks }}</b>
             <i v-else class="text-amber-600 dark:text-amber-400">belum diatur</i>
           </span>
-          <span class="italic">(atur di Glondongan → Peran → Pembagian Santri per PJ)</span>
         </div>
       </div>
 
@@ -776,20 +764,16 @@
           >
             <i class="fas fa-people-group mr-1"></i>Pondok Laju — isi sekali per kelas
           </p>
-          <p class="text-[10px] text-teal-700 dark:text-teal-300">
-            Angka di sini berlaku untuk semua santri kelas itu. Santri yang berbeda tetap bisa
-            diubah di tabel bawah. Lalu tekan <b>SIMPAN</b> seperti biasa.
-          </p>
           <div
             v-for="k in kelasLajuIsian"
             :key="k.key"
-            class="flex flex-wrap items-end gap-2 border-t border-teal-200 dark:border-teal-800 pt-2"
+            class="grid grid-cols-3 gap-2 items-end border-t border-teal-200 dark:border-teal-800 pt-2"
           >
-            <p class="flex-1 min-w-[10rem] text-xs font-bold text-slate-800 dark:text-white">
+            <p class="col-span-3 text-xs font-bold text-slate-800 dark:text-white">
               {{ k.guru || '— belum ada guru —' }} · Juz {{ k.juz || '-' }}
               <span class="font-normal text-slate-500">· {{ k.santri.length }} santri</span>
             </p>
-            <label class="block w-20">
+            <label class="block">
               <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5">Awal</span>
               <input
                 type="text"
@@ -801,7 +785,7 @@
                 @input="isiKelasLaju(k, 'awal', $event.target.value)"
               />
             </label>
-            <label class="block w-20">
+            <label class="block">
               <span class="block text-[9px] font-black uppercase text-teal-700 mb-0.5">Akhir</span>
               <input
                 type="text"
@@ -813,7 +797,7 @@
                 @input="isiKelasLaju(k, 'akhir', $event.target.value)"
               />
             </label>
-            <div class="w-20 text-center">
+            <div class="text-center">
               <span class="block text-[9px] font-black uppercase text-cyan-700 mb-0.5">Total</span>
               <span class="block text-[11px] font-black text-cyan-800 dark:text-cyan-300 py-1.5">{{
                 totalKelasLaju(k)

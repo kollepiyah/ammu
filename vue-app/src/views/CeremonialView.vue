@@ -393,16 +393,9 @@ function jamRange(s) {
         <i class="fas fa-award mr-1"></i>PTPT
       </p>
       <h2 class="text-xl md:text-2xl font-black mt-1">Ceremonial PTPT</h2>
-      <p class="text-[11px] opacity-90 mt-1">
-        <template v-if="canKelola">
-          Jadwal sesi ceremonial santri yang sudah lulus tes PJ — atur waktu, penyimak guru, dan
-          penyimak santri.
-        </template>
-        <template v-else> Sesi ceremonial terjadwal yang Anda simak. </template>
-      </p>
       <button
         v-if="canKelola"
-        class="mt-3 inline-flex items-center gap-1.5 bg-white/90 hover:bg-white text-teal-700 text-[11px] font-black px-3 py-1.5 rounded-lg shadow-sm transition"
+        class="mt-3 inline-flex items-center gap-1.5 bg-white/90 hover:bg-white text-teal-700 dark:text-teal-800 text-[11px] font-black px-3 py-1.5 rounded-lg shadow-sm transition"
         @click="bukaBaru"
       >
         <i class="fas fa-plus"></i>Jadwalkan Sesi
@@ -452,11 +445,6 @@ function jamRange(s) {
           {{ t.l }} ({{ t.n }})
         </button>
       </div>
-
-      <p class="text-[11px] text-[var(--text-secondary)] px-1">
-        Santri yang <b>lulus tes juz terakhir kelasnya</b> di PJ otomatis masuk daftar ini —
-        merekalah yang akan naik kelas sesudah ceremonial.
-      </p>
 
       <div
         v-if="kandidatAktif.length === 0"

@@ -77,8 +77,10 @@
       </p>
     </section>
 
-    <!-- Kyai 25 Nov 2026: tombol unduh pindah dari layar masuk PWA ke sini. -->
+    <!-- Kyai 25 Nov 2026: tombol unduh pindah dari layar masuk PWA ke sini; di aplikasi
+         Android sendiri tak perlu sama sekali. -->
     <section
+      v-if="!isAndroid"
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
     >
       <h3 class="text-sm font-black text-[var(--text-primary)] mb-3 flex items-center gap-2">
@@ -103,40 +105,27 @@
       </div>
     </section>
 
-    <section
-      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+    <!-- Tentang: diketuk membuka halaman Tentang Aplikasi (Kebijakan Privasi ada di sana). -->
+    <RouterLink
+      to="/umum/tentang"
+      class="flex items-center gap-3 bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
     >
-      <h3 class="text-sm font-black text-[var(--text-primary)] mb-2 flex items-center gap-2">
-        <i class="fas fa-circle-info text-teal-600"></i>Tentang
-      </h3>
-      <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-        Ammu Online — sistem informasi Pondok Pesantren Mambaul Ulum untuk santri, wali, guru, dan
-        pengurus.
-      </p>
-      <a
-        :href="URL_PRIVASI"
-        target="_blank"
-        rel="noopener"
-        class="inline-flex items-center gap-1.5 mt-2 text-xs font-bold text-teal-700 dark:text-teal-300"
-      >
-        <i class="fas fa-shield-halved"></i>Kebijakan Privasi
-      </a>
-    </section>
-
-    <p class="text-center text-[10px] text-[var(--text-secondary)]">{{ versiApp }}</p>
+      <i class="fas fa-circle-info text-teal-600"></i>
+      <span class="flex-1 text-sm font-black text-[var(--text-primary)]">Tentang Aplikasi</span>
+      <i class="fas fa-chevron-right text-xs text-[var(--text-tertiary)]"></i>
+    </RouterLink>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUnduhan, URL_PRIVASI } from '@/composables/useUnduhan'
+import { RouterLink, useRouter } from 'vue-router'
+import { useUnduhan } from '@/composables/useUnduhan'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { isNativeAndroid } from '@/composables/useWidgetSync'
-import { APP_VERSION } from '@/utils/appVersion'
 
 const PILIHAN_TEMA = [
   { mode: 'terang', label: 'Terang', ikon: 'fa-sun' },
@@ -150,7 +139,6 @@ const auth = useAuthStore()
 const confirm = useConfirm()
 const toast = useToast()
 const isAndroid = isNativeAndroid()
-const versiApp = 'Ammu Online ' + (APP_VERSION || '')
 
 const { androidUrl, desktopUrl, desktopWin7Url } = useUnduhan()
 // Di aplikasi Android sendiri tautan Play Store tak berguna -> hanya installer Windows.

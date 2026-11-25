@@ -562,10 +562,9 @@
               >&#9679; Belum Pulang</span
             >
           </div>
-          <!-- v.103b: mobile = toolbar 1-baris scroll-samping; desktop wrap normal -->
-          <div
-            class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0"
-          >
+          <!-- Kyai 25 Nov 2026: di HP tombol = ikon saja satu baris sama lebar (.ph-aksi), bukan
+               deretan geser yang terpotong; desktop tetap bertulisan. -->
+          <div class="ph-aksi w-full md:w-auto flex flex-wrap items-center gap-2">
             <!-- v.21.114.0528: Kelola libur pindah ke Kalender Kegiatan (kyai req) — tombol link sekedarnya -->
             <!-- v.103b: samakan ke pola tombol standar (h-11 md:h-9 rounded-xl), warna rose dipertahankan -->
             <router-link

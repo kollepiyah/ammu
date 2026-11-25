@@ -254,6 +254,75 @@ button,
   min-height: 36px;
 }
 
+/* Kyai 25 Nov 2026: di HP angka statistik = kotak sejajar (.ph-stat) dan deretan tombol aksi =
+   ikon saja satu baris sama lebar (.ph-aksi). Dipakai PageHeader dan toolbar halaman lain. */
+@media (max-width: 767px) {
+  .ph-stat > * {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    border-radius: 0.75rem !important;
+    padding: 0.45rem 0.25rem !important;
+  }
+  .ph-stat > * > span:first-child {
+    font-size: 1.05rem;
+    line-height: 1.35rem;
+  }
+  .ph-stat > * > span:not(:first-child) {
+    margin-left: 0 !important;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  /* Tombol berikon -> kotak ikon saja, satu baris sama lebar (tak ada tombol yatim di baris
+     kedua); teksnya disembunyikan (label tetap di aria-label/title). */
+  .ph-aksi {
+    display: grid !important;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+  .ph-aksi > :is(button, a, label):has(> i) {
+    width: 100%;
+    height: 2.75rem;
+    padding: 0 !important;
+    justify-content: center;
+    gap: 0 !important;
+    font-size: 0 !important;
+  }
+  .ph-aksi > :is(button, a, label) > i {
+    font-size: 1rem;
+    margin: 0 !important;
+  }
+}
+
+/* Kyai 25 Nov 2026: aksi di kaki kartu (Reset Sandi / Non-aktifkan / Edit / Hapus) dulu
+   berjejer lalu "Hapus" jatuh sendirian ke baris bawah dengan celah besar. Kini satu deret
+   kotak sama lebar, ikon di atas label. Dipakai Data Santri & Data Guru. */
+.aksi-kartu {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0.375rem;
+}
+.aksi-kartu > :is(button, a) {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.4rem 0.25rem;
+  border-radius: 0.6rem;
+  background: var(--bg-muted);
+  text-align: center;
+  line-height: 1.1;
+  text-decoration: none !important;
+}
+.aksi-kartu > :is(button, a) > i {
+  margin: 0 !important;
+  font-size: 0.8rem;
+}
+
 /* Fix tombol close (×) & aksi di dalam vue-sonner agar tidak melar jadi lonjong oleh min-height:36px */
 [data-sonner-toast] button {
   min-height: unset;
@@ -350,6 +419,28 @@ button:not(:disabled):active {
   transform: scale(0.985);
 }
 
+/* Kertas (pratinjau rapor/cetak) selalu terang walau mode gelap — ia gambaran hasil cetak.
+   Token & slate dikembalikan ke nilai terang di dalamnya (Kyai 25 Nov 2026: rapor pudar). */
+.dark #rapor-print-area,
+.dark .print-area {
+  color-scheme: light;
+  --bg-card: #ffffff;
+  --bg-card-elevated: #f8fafc;
+  --bg-muted: #f1f5f9;
+  --bg-input: #ffffff;
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-default: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-tertiary: #64748b;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+  --slate-950: 2 6 23;
+  color: #0f172a;
+}
+
 /* === DARK MODE CONTRAST GUARD === */
 /* 1. Teks primary/accent di mode gelap harus terang (tombol bg-primary tetap teal-600) */
 .dark .text-\[var\(--color-primary\)\],
@@ -383,26 +474,40 @@ button:not(:disabled):active {
 .dark .bg-teal-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
   background-color: rgba(20, 184, 166, 0.14);
 }
+.dark .bg-green-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-green-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-lime-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-emerald-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-emerald-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
   background-color: rgba(16, 185, 129, 0.14);
 }
+.dark .bg-yellow-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-orange-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-amber-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-yellow-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-amber-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
   background-color: rgba(245, 158, 11, 0.15);
 }
+.dark .bg-red-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-pink-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-pink-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-rose-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-red-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-rose-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
   background-color: rgba(244, 63, 94, 0.15);
 }
+.dark .bg-cyan-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-sky-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-blue-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-sky-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-cyan-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-blue-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
   background-color: rgba(56, 189, 248, 0.14);
 }
+.dark .bg-indigo-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-purple-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-violet-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
+.dark .bg-violet-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-indigo-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-purple-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
   background-color: rgba(129, 140, 248, 0.15);
@@ -462,30 +567,142 @@ button:not(:disabled):active {
   ):not(#rapor-print-area *) {
   color: #c3c7cf;
 }
-.dark .text-teal-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-teal-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-teal-900:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+.dark
+  .text-teal-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-teal-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-teal-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ) {
   color: #5eead4;
 }
-.dark .text-emerald-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-emerald-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+.dark
+  .text-emerald-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-green-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-green-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-green-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-emerald-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-emerald-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ) {
   color: #6ee7b7;
 }
-.dark .text-amber-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-amber-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+.dark
+  .text-amber-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-yellow-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-orange-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-orange-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-amber-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-amber-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ) {
   color: #fcd34d;
 }
-.dark .text-rose-600:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-red-600:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-rose-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-rose-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-red-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+.dark
+  .text-rose-600:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-red-600:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-rose-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-red-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-red-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-rose-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-rose-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-red-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ) {
   color: #fda4af;
 }
-.dark .text-blue-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-blue-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-sky-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
-.dark .text-cyan-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
+.dark
+  .text-blue-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-sky-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-sky-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-cyan-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-cyan-900:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-blue-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-blue-800:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-sky-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
+.dark
+  .text-cyan-700:not([class*='dark:text-']):not([class*='bg-white/']):not(.print-area *):not(
+    #rapor-print-area *
+  ) {
   color: #7dd3fc;
 }
 

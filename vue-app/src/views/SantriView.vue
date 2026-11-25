@@ -556,7 +556,7 @@
               <!-- v.86.0526: pisah dari baris data (border-top + pt) biar tombol tidak menempel/overlap dg no WA -->
               <div
                 v-if="isFullAccess && isMasterMode"
-                class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex justify-end items-center gap-3 flex-wrap"
+                class="aksi-kartu mt-2 pt-2 border-t border-[var(--border-subtle)]"
               >
                 <button
                   class="text-[10px] text-cyan-700 dark:text-cyan-300 hover:underline font-bold"
