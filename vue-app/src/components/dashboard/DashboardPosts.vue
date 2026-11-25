@@ -33,7 +33,7 @@
     <!-- Post list — preview only, click utk ke detail Ammu Channel -->
     <ul v-else class="space-y-2.5">
       <li
-        v-for="p in posts.slice(0, 5)"
+        v-for="p in posts.slice(0, publik ? 3 : 5)"
         :key="p.id"
         class="p-3 bg-[var(--bg-card-elevated)] rounded-[var(--radius-md)] border border-[var(--border-subtle)] cursor-pointer hover:border-[var(--color-accent)] hover:shadow-[var(--shadow-md)] transition flex gap-3 items-start"
         @click="goToPosts(p.id)"
@@ -119,6 +119,7 @@ import { usePostTamu } from '@/composables/usePostTamu'
 
 // Kyai 25 Nov 2026: Beranda publik memakai kartu yang sama dengan dashboard. Mode publik
 // menarik sekali tanpa realtime (usePostTamu) dan membuka tab Channel publik.
+// Publik cukup 3 terbaru (Kyai 25 Nov 2026); selengkapnya di halaman Channel.
 const props = defineProps({ publik: { type: Boolean, default: false } })
 
 const settings = useSettingsStore()
