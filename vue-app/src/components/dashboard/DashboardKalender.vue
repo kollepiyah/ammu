@@ -65,7 +65,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { subscribeColl } from '@/services/db'
 import { BULAN_ID_SHORT } from '@/utils/format'
-import { pushWidgetData } from '@/composables/useWidgetSync'
 
 defineEmits(['see-all'])
 
@@ -117,17 +116,8 @@ onMounted(() => {
   unsubscribe = subscribeColl('kegiatan', (docs) => {
     agenda.value = docs.filter(isUpcoming).sort(sortByDate)
     loading.value = false
-    // v.94.0626: dorong agenda terdekat (max 5) ke widget Kalender Android
-    try {
-      const ev = agenda.value.slice(0, 8).map((it) => ({
-        judul: it.judul || '',
-        tgl_mulai: it.tgl_mulai || '',
-        tgl_selesai: it.tgl_selesai || ''
-      }))
-      pushWidgetData({ events: JSON.stringify(ev) })
-    } catch (e) {
-      /* ignore */
-    }
+    // v.1.5.5: widget Kalender Android dihapus — agenda kini di widget Jadwal Sholat, dikirim
+    //   composables/useSinkronIbadah (agenda publik), bukan dari kartu ini.
   })
 })
 

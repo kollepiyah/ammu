@@ -81,6 +81,8 @@
         </select>
       </label>
     </div>
+
+    <PengaturanAdzan />
   </div>
 </template>
 
@@ -88,6 +90,7 @@
 import { computed } from 'vue'
 import { useIbadah, DAFTAR_KOTA } from '@/composables/useIbadah'
 import { METODE, namaTempatPanjang } from '@/utils/waktuSholat'
+import PengaturanAdzan from '@/components/publik/PengaturanAdzan.vue'
 
 const {
   metode,

@@ -80,17 +80,18 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_jam_hijri_info" />
         </receiver>
-        <!-- v.94.0626: Widget Kalender Pendidikan home screen -->
+        <!-- v.1.5.5: widget Jadwal Sholat (+ agenda) menggantikan widget Kalender Pendidikan -->
         <receiver
-            android:name=".widgets.KalenderWidget"
+            android:name=".widgets.JadwalSholatWidget"
             android:exported="true"
-            android:label="@string/widget_kalender_label">
+            android:label="@string/widget_jadwal_sholat_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.ammu.id.widgets.JADWAL_SHOLAT_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_kalender_info" />
+                android:resource="@xml/widget_jadwal_sholat_info" />
         </receiver>
         <!-- v.1.5.0 gelombang 3: Widget "Tugas Saya" home screen -->
         <receiver
@@ -119,6 +120,12 @@
          widget_jam_hijri_info.xml sebagai jaring. Praktisnya tak terasa: alarm inexact
          baru molor saat perangkat Doze — dan saat itu layar mati, widgetnya tak dilihat.
          JANGAN tambah kembali. -->
+    <!-- v.1.5.5 (Kyai 25 Nov 2026): SCHEDULE_EXACT_ALARM KEMBALI, alasannya kini sah — notifikasi
+         waktu sholat/adzan yang dinyalakan pengguna sendiri (tanpanya bisa molor beberapa menit saat
+         HP Doze). Di Android 14+ izin ini MATI bawaan dan diberikan pengguna lewat setelan
+         "Alarm & pengingat" (layar Pengaturan ibadah menuntunnya). USE_EXACT_ALARM (izin terbatas
+         Play) TETAP tidak dipakai. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- v.85.0526: storage permissions untuk PDF export (Capacitor Filesystem + Share) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />

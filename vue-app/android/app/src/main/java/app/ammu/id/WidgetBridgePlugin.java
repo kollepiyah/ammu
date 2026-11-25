@@ -10,7 +10,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import app.ammu.id.widgets.JamHijriWidget;
-import app.ammu.id.widgets.KalenderWidget;
+import app.ammu.id.widgets.JadwalSholatWidget;
 import app.ammu.id.widgets.TugasWidget;
 
 /**
@@ -34,7 +34,9 @@ public class WidgetBridgePlugin extends Plugin {
         if (data.has("hijri")) ed.putString("hijri", call.getString("hijri", ""));
         if (data.has("hijriKey")) ed.putString("hijriKey", call.getString("hijriKey", ""));
         if (data.has("kalibrasi")) ed.putString("kalibrasi", call.getString("kalibrasi", "0"));
-        if (data.has("events")) ed.putString("events", call.getString("events", "[]"));
+        // v.1.5.5: jadwal sholat 7 hari + agenda terdekat (utils/widgetSholat.js) untuk
+        //   JadwalSholatWidget — menggantikan `events` milik widget Kalender yang dihapus.
+        if (data.has("sholat")) ed.putString("sholat", call.getString("sholat", "{}"));
         // v.1.5.0 gelombang 3: daftar "Tugas Saya" — disusun utils/tugasSaya.js, widget cuma
         //   menggambar. Hanya ditimpa kalau JS memang mengirimnya.
         if (data.has("tugas")) ed.putString("tugas", call.getString("tugas", "[]"));
@@ -45,7 +47,7 @@ public class WidgetBridgePlugin extends Plugin {
         ed.apply();
 
         try { JamHijriWidget.updateAll(ctx); } catch (Exception e) { /* ignore */ }
-        try { KalenderWidget.updateAll(ctx); } catch (Exception e) { /* ignore */ }
+        try { JadwalSholatWidget.updateAll(ctx); } catch (Exception e) { /* ignore */ }
         try { TugasWidget.updateAll(ctx); } catch (Exception e) { /* ignore */ }
 
         JSObject ret = new JSObject();

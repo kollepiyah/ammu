@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v.94.0626: widget Kalender Pendidikan (4x2). updatePeriodMillis 30 menit; app juga
-     push refresh via WidgetBridge saat data agenda berubah. -->
+<!-- v.1.5.5: widget Jadwal Sholat (4x2, menggantikan widget Kalender). Data didorong aplikasi lewat
+     WidgetBridge; widget juga bangun sendiri di setiap waktu sholat & tengah malam. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
-    android:minHeight="110dp"
+    android:minHeight="140dp"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_kalender"
+    android:initialLayout="@layout/widget_jadwal_sholat"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:previewImage="@mipmap/ic_launcher"
-    android:description="@string/widget_kalender_description" />
+    android:description="@string/widget_jadwal_sholat_description" />

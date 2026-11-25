@@ -27,6 +27,7 @@ import { useAuthStore } from '@/stores/auth'
 import { usePushNotifications } from '@/composables/usePushNotifications'
 // v.1.2.8: tawaran unduh pembaruan APK (aplikasi Android saja)
 import { useSinkronWidgetHijri } from '@/composables/useSinkronWidgetHijri'
+import { useSinkronIbadah } from '@/composables/useSinkronIbadah'
 import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import KunciAplikasi from '@/components/KunciAplikasi.vue'
 import { useKunciAplikasiStore } from '@/stores/kunciAplikasi'
@@ -50,6 +51,8 @@ const toast = useToast()
 
 // F1 publik: widget Hijriah diperbarui dari sini, bukan dari kartu jam dashboard.
 useSinkronWidgetHijri()
+// v.1.5.5: widget Jadwal Sholat (+agenda) & notifikasi waktu sholat — Android saja.
+useSinkronIbadah()
 
 // Kyai 25 Nov 2026: gaya native (tanpa kartu) khusus Android & PWA — lihat .native-shell di
 // main.css; lebar layar HP dibatasi di CSS-nya, jadi tablet/desktop tak berubah.

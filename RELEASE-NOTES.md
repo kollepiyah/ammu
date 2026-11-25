@@ -18,6 +18,11 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - Ikon Kiblat dan Jadwal Sholat di dashboard kini terbuka (Al-Qur'an masih menyusul).
 - **Kunci dengan sidik jari / Face ID:** aktifkan di Pengaturan, Portal terkunci saat aplikasi
   dibuka atau ditinggal lebih dari 3 menit. Jadwal sholat & kiblat tetap bisa dibuka.
+- **Widget Jadwal Sholat** di layar utama HP Android: waktu sholat berikutnya dengan hitung mundur,
+  jadwal hari ini, dan agenda pondok terdekat. Menggantikan widget Kalender — bila dulu memasang
+  widget Kalender, tambahkan widget "Jadwal Sholat Ammu".
+- **Pengingat waktu sholat** (Android): nyalakan di Pengaturan → Ibadah, pilih waktu mana saja,
+  bisa juga diingatkan 5–15 menit sebelumnya.
 - **Agenda pondok** di Beranda tanpa masuk: daftar kegiatan, ujian, dan libur yang dipilih admin.
 - **Kitab & Wirid:** bacaan wirid, doa, tahlil, dan maulid dengan teks Arab, bacaan Latin, dan
   arti; ukuran huruf bisa diatur. Isinya ditambah admin kapan saja tanpa memperbarui aplikasi.

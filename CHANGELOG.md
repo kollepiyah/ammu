@@ -38,6 +38,24 @@ kolom `kegiatan.publik`, dan menyimpan agenda akan galat bila kolomnya belum ada
 rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biometric`).
 
 ### Added
+- **Widget Android "Jadwal Sholat"** (mock-up disetujui Kyai 25 Nov) **menggantikan widget
+  Kalender**: latar teal + motif berlian (widget_bg), desa · tanggal Masehi & Hijriah, waktu
+  berikutnya + hitung mundur (Chronometer, berdetak sendiri), lima waktu dengan yang berikutnya
+  disorot, dan 2 agenda publik terdekat di bawah. Jadwal 7 hari dihitung di aplikasi
+  (`utils/widgetSholat` + tes) dan didorong lewat WidgetBridge key `sholat`; widget bangun sendiri
+  di tiap waktu sholat & tengah malam (alarm tak-presisi). `JadwalSholatWidget.java`,
+  `widget_jadwal_sholat.xml`. KalenderWidget + layout/info/drawable khususnya DIHAPUS — pengguna
+  yang memasangnya perlu menambah widget baru.
+- **Notifikasi waktu sholat** (Android saja; iPhone/PWA tak bisa menjadwalkan secara andal):
+  Pengaturan ibadah → sakelar utama (mati bawaan; menyalakan = minta izin notifikasi), per waktu
+  (Imsak mati bawaan), pengingat 0/5/10/15 menit sebelum. 7 hari dijadwalkan ulang tiap aplikasi
+  dibuka/kembali dari latar & tiap lokasi/metode/setelan berubah (`useSinkronIbadah` di App.vue,
+  `useAdzan`, rencana di `utils/adzan` + tes). Bunyi = notifikasi HP; rekaman adzan menyusul
+  (kanal baru — suara kanal Android tak bisa diubah). **Manifest: SCHEDULE_EXACT_ALARM kembali**
+  (alasan sah: pengingat yang dinyalakan pengguna; Android 14+ diberikan lewat "Alarm &
+  pengingat", layar menuntunnya). USE_EXACT_ALARM tetap tidak.
+- **P3 hemat egress**: settings `web` (cermin persis `general`, 192 kunci) tak lagi ditarik &
+  dilanggan; Glondongan cukup `ambilIdSaja('tes_kenaikan')`.
 - **Metode Falakiyah NU — kini BAWAAN** (`METODE.nu`, utils/waktuSholat): dicocokkan dengan
   jadwalsholat.nu.or.id/kab-sidoarjo (Kyai 25 Nov; 17 tanggal Nov 2026–Sep 2027, 116/119 waktu
   persis, sisanya ±1 menit — `waktuSholat.test.js`). Subuh 20°, Isya 18°, kerendahan ufuk 5 m,
