@@ -396,7 +396,57 @@
 
       <!-- v.21.17b.0526: List view-only -->
       <template v-else>
-        <div class="space-y-2">
+        <!-- Kyai 25 Nov 2026: di HP Android/PWA satu guru = satu baris ringkas (gaya native);
+             rincian & tombol kelola ada di halaman profil guru. -->
+        <div v-if="barisRingkas" class="daftar-baris bg-[var(--bg-card)]">
+          <div
+            v-for="g in guruShown"
+            :key="'r' + g.id"
+            class="flex items-center gap-3 px-4 py-2.5 cursor-pointer active:bg-[var(--bg-hover)]"
+            @click="goProfil(g, $event)"
+          >
+            <input
+              v-if="isMasterMode"
+              type="checkbox"
+              :checked="selected.has(String(g.id))"
+              class="flex-shrink-0 w-4 h-4 rounded border-[var(--border-default)] text-teal-600"
+              @change="toggleSelect(g.id)"
+            />
+            <div
+              class="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--bg-muted)] flex items-center justify-center overflow-hidden text-xs font-black text-teal-700 dark:text-teal-300"
+            >
+              <img
+                v-if="urlBerkas(g.foto)"
+                :src="urlBerkas(g.foto)"
+                alt=""
+                class="w-full h-full object-cover"
+              />
+              <span v-else>{{ inisial(g.nama) }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[15px] font-bold text-[var(--text-primary)] truncate">
+                {{ getNamaGuruGelar(g.nama, g.jk) }}
+              </p>
+              <p class="text-xs text-[var(--text-secondary)] truncate">
+                {{
+                  [g.jabatan, g.lembaga, g.jk ? (g.jk === 'L' ? 'L' : 'P') : '']
+                    .filter(Boolean)
+                    .join(' · ')
+                }}
+              </p>
+            </div>
+            <span
+              :class="[
+                'text-[10px] px-2 py-0.5 rounded-full border font-bold flex-shrink-0',
+                isGuruAktif(g)
+                  ? 'border-emerald-300 text-emerald-600 dark:text-emerald-300'
+                  : 'border-rose-300 text-rose-600 dark:text-rose-300'
+              ]"
+              >{{ isGuruAktif(g) ? 'Aktif' : 'Nonaktif' }}</span
+            >
+          </div>
+        </div>
+        <div v-else class="space-y-2">
           <div
             v-for="g in guruShown"
             :key="g.id"
@@ -604,6 +654,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import PanelFilter from '@/components/ui/PanelFilter.vue'
+import { useMobileShell } from '@/composables/useMobileShell'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import { OPSI_JK, saringJk } from '@/utils/jenisKelamin'
 import { definePageActions } from '@/composables/useRibbonContext'
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (Master Data, full CRUD)
@@ -823,6 +875,17 @@ function pemegangLainId(g) {
     .join(', ')
 }
 // v.91.0626: klik card -> halaman profil (abaikan klik tombol/link/checkbox)
+// Kyai 25 Nov 2026: baris ringkas gaya native hanya di HP Android/PWA.
+const { isMobile: _hpGuru } = useMobileShell()
+const barisRingkas = computed(() => pakaiWilayahPublik() && _hpGuru.value)
+function inisial(nama) {
+  return String(nama || '?')
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((k) => k[0].toUpperCase())
+    .join('')
+}
 function goProfil(g, e) {
   if (e && e.target && e.target.closest('button, a, input, label')) return
   router.push('/profil/guru/' + g.id)

@@ -1,6 +1,6 @@
 <template>
   <!-- Baris ikon ibadah — satu komponen untuk Beranda publik & dashboard Portal (blueprint 3.7) -->
-  <div class="grid grid-cols-4 gap-2">
+  <div class="menu-ibadah grid grid-cols-4 gap-2">
     <button
       v-for="m in daftar"
       :key="m.kunci"

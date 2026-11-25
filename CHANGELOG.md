@@ -123,6 +123,15 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   semua halaman (dulu 11 gaya berbeda); kepala gradasi Ceremonial PTPT, Kegiatan Pesantren, dan
   Guru Belum Isi Rekap jadi kartu polos seperti halaman lain; tombol kepala Kalender Kegiatan
   `.ph-aksi`.
+- **Gaya native tanpa kartu di Android & PWA** (Kyai 25 Nov 2026, mengacu NU Online; mock-up
+  disetujui): `html.native-shell` (dipasang App.vue) + `.akar-halaman` di AppLayout/PublikLayout.
+  Di layar HP, kartu tingkat atas tiap halaman jadi bagian selebar layar tanpa sudut/bingkai/
+  bayangan, dipisah pita 8px; dialog melayang, kartu bersarang, dan kertas cetak tak disentuh.
+  `.daftar-baris` = daftar bergaris tipis (Channel, Agenda, Tugas Saya di Beranda). Data Santri &
+  Data Guru: satu orang = satu baris ringkas (inisial, nama, lembaga · kelas · L/P · usia, label
+  status) — tombol kelola pindah ke halaman profil yang dibuka dengan mengetuk baris; guru tetap
+  punya tombol Edit Kelas di baris. Ikon ibadah jadi lingkaran tanpa kotak; angka jumlah tanpa
+  kotak bersekat tipis. Tablet, desktop, dan Electron tak berubah.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.

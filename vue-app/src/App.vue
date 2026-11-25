@@ -37,6 +37,10 @@ const toast = useToast()
 // F1 publik: widget Hijriah diperbarui dari sini, bukan dari kartu jam dashboard.
 useSinkronWidgetHijri()
 
+// Kyai 25 Nov 2026: gaya native (tanpa kartu) khusus Android & PWA — lihat .native-shell di
+// main.css; lebar layar HP dibatasi di CSS-nya, jadi tablet/desktop tak berubah.
+if (pakaiWilayahPublik()) document.documentElement.classList.add('native-shell')
+
 // v.95.0626: daftarkan FCM push begitu ada sesi login (native saja; no-op di web/desktop)
 const auth = useAuthStore()
 const push = usePushNotifications()

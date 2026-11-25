@@ -296,6 +296,94 @@ button,
   }
 }
 
+/* ===== Gaya native (Kyai 25 Nov 2026, mengacu NU Online) — HANYA Android & PWA di layar HP =====
+   html.native-shell dipasang App.vue (pakaiWilayahPublik). Isi halaman selebar layar: kartu tingkat
+   atas jadi "bagian" tanpa sudut/bingkai/bayangan, antarbagian dipisah pita 8px warna latar.
+   Kartu di dalam kartu, dialog melayang (.fixed), dan kertas cetak tak disentuh. */
+@media (max-width: 767px) {
+  html.native-shell .akar-halaman > * {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    max-width: none !important;
+  }
+  html.native-shell .akar-halaman > [class*='space-y'] > * + *,
+  html.native-shell .akar-halaman > * > [class*='space-y'] > * + * {
+    margin-top: 8px !important;
+  }
+  html.native-shell .akar-halaman > * > :is(.grid, [class*='gap-']) {
+    gap: 8px !important;
+  }
+  html.native-shell
+    .akar-halaman
+    :is(
+      .rounded-2xl,
+      .rounded-xl,
+      .rounded-3xl,
+      [class*='rounded-[var(--radius-lg)]'],
+      [class*='rounded-[var(--radius-xl)]']
+    ):is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white):not(
+      :is(
+          .rounded-2xl,
+          .rounded-xl,
+          .rounded-3xl,
+          [class*='rounded-[var(--radius-lg)]'],
+          [class*='rounded-[var(--radius-xl)]']
+        ):is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white)
+        *
+    ):not(.fixed *):not(.print-area):not(.print-area *):not(#rapor-print-area):not(
+      #rapor-print-area *
+    ) {
+    border-radius: 0 !important;
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
+    box-shadow: none !important;
+  }
+  /* Angka jumlah: tanpa kotak, dipisah garis tegak tipis (seperti mock-up). */
+  html.native-shell .ph-stat > * {
+    border: 0 !important;
+    background: transparent !important;
+  }
+  html.native-shell .ph-stat > * + * {
+    border-left: 1px solid var(--border-subtle) !important;
+    border-radius: 0 !important;
+  }
+  /* Kartu jam ikut selebar layar (gradiennya tetap). */
+  html.native-shell .akar-halaman .jam-ringkas {
+    border-radius: 0 !important;
+  }
+  /* Ikon ibadah: lingkaran tanpa kotak (seperti menu NU Online). */
+  html.native-shell .menu-ibadah {
+    background: var(--bg-card);
+    padding: 0.75rem 0.5rem;
+  }
+  html.native-shell .menu-ibadah > button {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0.25rem 0 !important;
+  }
+  html.native-shell .menu-ibadah > button > span:first-child {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 9999px;
+    font-size: 1.15rem;
+  }
+  /* Daftar berupa baris bergaris tipis (dipasang per halaman lewat .daftar-baris). */
+  html.native-shell .daftar-baris > * {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+  html.native-shell .daftar-baris > * + * {
+    border-top: 1px solid var(--border-subtle) !important;
+  }
+}
+
 /* Kyai 25 Nov 2026: judul halaman seragam — dulu 11 gaya ukuran berbeda. Semua <h1> di area isi
    aplikasi (bukan kertas cetak) memakai ukuran & tebal yang sama. */
 #app-scroll h1:not(.print-area h1):not(#rapor-print-area h1) {

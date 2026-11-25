@@ -77,7 +77,7 @@ function buka(tugas) {
         >
           {{ g.label }}
         </p>
-        <ul class="space-y-1.5">
+        <ul class="daftar-baris space-y-1.5">
           <li
             v-for="t in g.isi"
             :key="t.id"
@@ -111,7 +111,7 @@ function buka(tugas) {
         >
           {{ LABEL_PERLU }}
         </p>
-        <ul class="space-y-1.5">
+        <ul class="daftar-baris space-y-1.5">
           <li
             v-for="t in hasil.perlu"
             :key="t.id"

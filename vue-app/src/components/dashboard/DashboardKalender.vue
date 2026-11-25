@@ -30,7 +30,7 @@
     </div>
 
     <!-- v.71.0526: max 2 agenda (kyai req — match tinggi widget Hijri di sebelahnya) -->
-    <ul v-else class="space-y-2">
+    <ul v-else class="daftar-baris space-y-2">
       <li
         v-for="item in agenda.slice(0, 2)"
         :key="item.id"

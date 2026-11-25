@@ -432,7 +432,7 @@
     />
 
     <!-- Santri list -->
-    <div v-else class="space-y-2">
+    <div v-else :class="barisRingkas ? 'daftar-baris bg-[var(--bg-card)]' : 'space-y-2'">
       <template v-for="s in santriRows" :key="s.id">
         <!-- v.100b: header section utk guru dual-role (Qiraati / Sekolah) -->
         <div v-if="sectionHeaderFor(s)" class="flex items-center gap-2 pt-2 pb-1 first:pt-0">
@@ -441,7 +441,70 @@
           >
           <span class="flex-1 h-px bg-[var(--border-subtle)]"></span>
         </div>
+        <!-- Kyai 25 Nov 2026: di HP Android/PWA satu santri = satu baris ringkas (gaya native);
+             rincian & tombol kelola ada di halaman profil santri yang dibuka dengan mengetuknya. -->
         <div
+          v-if="barisRingkas"
+          class="baris-santri flex items-center gap-3 px-4 py-2.5 bg-[var(--bg-card)] cursor-pointer active:bg-[var(--bg-hover)]"
+          @click="goProfil(s, $event)"
+        >
+          <input
+            v-if="isMasterMode && isFullAccess"
+            type="checkbox"
+            :checked="selected.has(String(s.id))"
+            class="flex-shrink-0 w-4 h-4 rounded border-[var(--border-default)] text-teal-600"
+            @change="toggleSelect(s.id)"
+          />
+          <div
+            class="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--bg-muted)] flex items-center justify-center overflow-hidden text-xs font-black text-teal-700 dark:text-teal-300"
+          >
+            <img
+              v-if="urlBerkas(s.foto)"
+              :src="urlBerkas(s.foto)"
+              alt=""
+              class="w-full h-full object-cover"
+            />
+            <span v-else>{{ inisial(s.nama) }}</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[15px] font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
+            <p class="text-xs text-[var(--text-secondary)] truncate">
+              {{
+                [
+                  s.lembaga && s.lembaga + ' · ' + (s.kelas || '-'),
+                  s.jk === 'L' ? 'L' : 'P',
+                  usiaKini(s.tgl_lahir)
+                ]
+                  .filter(Boolean)
+                  .join(' · ')
+              }}
+            </p>
+          </div>
+          <span
+            v-if="s.aktif === false"
+            class="text-[10px] px-2 py-0.5 rounded-full border border-rose-300 text-rose-600 dark:text-rose-300 font-bold flex-shrink-0"
+            >Nonaktif</span
+          >
+          <span
+            v-else
+            :class="[
+              'text-[10px] px-2 py-0.5 rounded-full border font-bold flex-shrink-0',
+              KELAS_LABEL_STATUS[statusSantriKey(s)]
+            ]"
+            >{{ labelStatusSantri(s) }}</span
+          >
+          <button
+            v-if="!isFullAccess"
+            type="button"
+            aria-label="Edit kelas santri"
+            class="flex-shrink-0 w-8 h-8 rounded-full text-teal-600 dark:text-teal-300"
+            @click.stop="bukaEditKelas(s)"
+          >
+            <i class="fas fa-graduation-cap"></i>
+          </button>
+        </div>
+        <div
+          v-else
           class="bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition cursor-pointer"
           @click="goProfil(s, $event)"
         >
@@ -658,6 +721,8 @@ import EditKelasSantriDialog from '@/components/form/EditKelasSantriDialog.vue' 
 // v.1.4.2: penyaring Kelas-Guru bisa dicentang lebih dari satu.
 import MultiSelectFilter from '@/components/form/MultiSelectFilter.vue'
 import PanelFilter from '@/components/ui/PanelFilter.vue'
+import { useMobileShell } from '@/composables/useMobileShell'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import { OPSI_JK } from '@/utils/jenisKelamin'
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
 import { mergeOne, addOne, deleteOne, getAll, getOne, serverTimestamp } from '@/services/db'
@@ -973,6 +1038,17 @@ definePageActions(() => {
   return acts
 })
 
+// Kyai 25 Nov 2026: baris ringkas gaya native hanya di HP Android/PWA.
+const { isMobile: _hpSantri } = useMobileShell()
+const barisRingkas = computed(() => pakaiWilayahPublik() && _hpSantri.value)
+function inisial(nama) {
+  return String(nama || '?')
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((k) => k[0].toUpperCase())
+    .join('')
+}
 function goProfil(s, e) {
   if (e && e.target && e.target.closest('button, a, input, label')) return
   router.push('/profil/santri/' + s.id)

@@ -24,7 +24,7 @@
     </header>
 
     <main id="app-scroll" class="flex-1 overflow-y-auto custom-scrollbar">
-      <router-view />
+      <div class="akar-halaman"><router-view /></div>
     </main>
 
     <nav
