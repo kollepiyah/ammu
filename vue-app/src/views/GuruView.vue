@@ -23,116 +23,98 @@
         class="hidden"
         @change="onImportGuru"
       />
-      <!-- v.21.14.0526: Header refactor. v.98: header disembunyikan di Electron (aksi -> pita) -->
-      <div
+      <!-- v.21.14.0526: Header refactor. v.98: header disembunyikan di Electron (aksi -> pita).
+           Kyai 25 Nov 2026: pakai PageHeader yang sama dengan Data Santri (tata HP seragam). -->
+      <PageHeader
         v-if="!isDesktop"
-        class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+        icon="fa-chalkboard-teacher"
+        title="Data Guru / Pegawai"
+        subtitle="Master data guru & pegawai pondok"
       >
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div class="flex items-baseline gap-2 flex-wrap">
-            <h1
-              class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap"
-            >
-              <i class="fas fa-chalkboard-teacher text-teal-500 mr-1"></i>Data Guru / Pegawai
-            </h1>
-            <p class="text-[11px] text-[var(--text-secondary)]">
-              — Master data guru &amp; pegawai pondok
-            </p>
-          </div>
-          <!-- Stats badges + tombol tambah — v.103 mobile: toolbar 1-baris scroll-samping -->
+        <template #stats>
           <div
-            class="flex flex-nowrap md:flex-wrap gap-2 items-center overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0"
+            class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs"
           >
-            <div
-              class="px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700 text-xs"
-            >
-              <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
-              <span class="text-[var(--text-secondary)] ml-1">total</span>
-            </div>
-            <div
-              class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs"
-            >
-              <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{
-                stats.aktif
-              }}</span>
-              <span class="text-[var(--text-secondary)] ml-1">aktif</span>
-            </div>
-            <div
-              class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700 text-xs"
-            >
-              <span class="text-rose-700 dark:text-rose-300 font-bold">{{ stats.tidakAktif }}</span>
-              <span class="text-[var(--text-secondary)] ml-1">non-aktif</span>
-            </div>
-            <!-- v.21.17c.0526: View vs Master mode actions -->
-            <!-- v.21.109.0527: warna cyan (action) bukan rose (danger) -->
-            <div
-              class="flex flex-nowrap md:flex-wrap gap-2 items-center [&>*]:shrink-0 md:[&>*]:shrink"
-            >
-              <button
-                aria-label="Cetak daftar guru PDF"
-                class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer no-print"
-                @click="printPage"
-              >
-                <i class="fas fa-file-pdf"></i>Cetak PDF
-              </button>
-              <button
-                :disabled="exporting"
-                aria-label="Ekspor daftar guru Excel"
-                class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
-                @click="exportGuruExcel"
-              >
-                <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i
-                >{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
-              </button>
-              <button
-                v-if="gsheetConfigured()"
-                :disabled="sendingGsheet"
-                aria-label="Kirim daftar guru ke Google Sheet"
-                class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
-                @click="kirimGuruGsheet"
-              >
-                <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
-                >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
-              </button>
-              <router-link
-                v-if="!isMasterMode"
-                :to="alamatKelola"
-                class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition"
-                title="CRUD guru di Master Data (penyaring ikut terbawa)"
-              >
-                <i class="fas fa-edit"></i>Kelola
-              </router-link>
-              <template v-if="isMasterMode">
-                <button
-                  class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
-                  @click="downloadTemplateGuru"
-                >
-                  <i class="fas fa-download"></i>Template
-                </button>
-                <label
-                  class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
-                >
-                  <i :class="['fas', importingGuru ? 'fa-spinner fa-spin' : 'fa-upload']"></i
-                  >{{ importingGuru ? 'Impor...' : 'Impor XLSX' }}
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    class="hidden"
-                    :disabled="importingGuru"
-                    @change="onImportGuru"
-                  />
-                </label>
-                <router-link
-                  :to="{ path: '/guru/new', query: queryDaftar }"
-                  class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition"
-                >
-                  <i class="fas fa-plus"></i>Tambah Guru
-                </router-link>
-              </template>
-            </div>
+            <span class="text-teal-700 dark:text-teal-300 font-bold">{{ stats.total }}</span>
+            <span class="text-[var(--text-secondary)] ml-1">total</span>
           </div>
-        </div>
-      </div>
+          <div
+            class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs"
+          >
+            <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{ stats.aktif }}</span>
+            <span class="text-[var(--text-secondary)] ml-1">aktif</span>
+          </div>
+          <div
+            class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-700 text-xs"
+          >
+            <span class="text-rose-700 dark:text-rose-300 font-bold">{{ stats.tidakAktif }}</span>
+            <span class="text-[var(--text-secondary)] ml-1">non-aktif</span>
+          </div>
+        </template>
+        <template #actions>
+          <button
+            aria-label="Cetak daftar guru PDF"
+            class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer no-print"
+            @click="printPage"
+          >
+            <i class="fas fa-file-pdf"></i>Cetak PDF
+          </button>
+          <button
+            :disabled="exporting"
+            aria-label="Ekspor daftar guru Excel"
+            class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            @click="exportGuruExcel"
+          >
+            <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i
+            >{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
+          </button>
+          <button
+            v-if="gsheetConfigured()"
+            :disabled="sendingGsheet"
+            aria-label="Kirim daftar guru ke Google Sheet"
+            class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            @click="kirimGuruGsheet"
+          >
+            <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
+            >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
+          </button>
+          <router-link
+            v-if="!isMasterMode"
+            :to="alamatKelola"
+            class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition"
+            title="CRUD guru di Master Data (penyaring ikut terbawa)"
+          >
+            <i class="fas fa-edit"></i>Kelola
+          </router-link>
+          <template v-if="isMasterMode">
+            <button
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="downloadTemplateGuru"
+            >
+              <i class="fas fa-download"></i>Template
+            </button>
+            <label
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+            >
+              <i :class="['fas', importingGuru ? 'fa-spinner fa-spin' : 'fa-upload']"></i
+              >{{ importingGuru ? 'Impor...' : 'Impor XLSX' }}
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                class="hidden"
+                :disabled="importingGuru"
+                @change="onImportGuru"
+              />
+            </label>
+            <router-link
+              :to="{ path: '/guru/new', query: queryDaftar }"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition"
+            >
+              <i class="fas fa-plus"></i>Tambah Guru
+            </router-link>
+          </template>
+        </template>
+      </PageHeader>
 
       <!-- v.21.11.0526: Import preview modal -->
       <div
@@ -238,71 +220,82 @@
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
-        <!-- Pencarian -->
-        <div class="relative">
-          <i
-            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
-          ></i>
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Cari nama, WA, jabatan, atau username..."
-            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
-          />
-        </div>
-        <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status) gantikan chip -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-          <select
-            v-model="filterLembaga"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-          >
-            <option value="">Semua lembaga</option>
-            <optgroup v-if="uniqueLembaga.length" label="Qiraati (Ngaji)">
-              <option v-for="l in uniqueLembaga" :key="'ng-' + l" :value="l">{{ l }}</option>
-            </optgroup>
-            <optgroup v-if="uniqueLembagaSekolah.length" label="Sekolah (Formal)">
-              <option v-for="l in uniqueLembagaSekolah" :key="'sk-' + l" :value="l">{{ l }}</option>
-            </optgroup>
-          </select>
-          <!-- v.1.5.0 (Kyai): jenis guru -->
-          <select
-            v-model="filterJenis"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-          >
-            <option value="">Semua jenis</option>
-            <option v-for="o in JENIS_GURU_OPTS" :key="o.value" :value="o.value">
-              {{ o.label }}
-            </option>
-          </select>
-          <!-- v.1.5.0 (Kyai): Induk / Non-Induk (isian manual) -->
-          <select
-            v-model="filterInduk"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-          >
-            <option value="">Semua Induk/Non-Induk</option>
-            <option v-for="o in STATUS_INDUK_OPTS" :key="o.value" :value="o.value">
-              {{ o.label }}
-            </option>
-            <option value="kosong">Belum diisi</option>
-          </select>
-          <!-- v.1.5.0 (Kyai 16 Nov 2026): cek ID mesin absen sebelum mendaftarkan kartu -->
-          <select
-            v-model="filterIdMesin"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-          >
-            <option value="">Semua ID Fingerprint</option>
-            <option value="kosong">ID Fingerprint belum ada</option>
-            <option value="ganda">ID Fingerprint ganda</option>
-          </select>
-          <select
-            v-model="filterStatus"
-            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-          >
-            <option value="aktif">Hanya yang aktif</option>
-            <option value="">Semua status</option>
-            <option value="tidak_aktif">Tidak aktif saja</option>
-          </select>
-        </div>
+        <PanelFilter :jumlah-aktif="jumlahPenyaring" @reset="hapusPenyaring">
+          <template #cari>
+            <i
+              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+            ></i>
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Cari nama, WA, jabatan, atau username..."
+              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+            />
+          </template>
+          <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status) gantikan chip -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+            <select
+              v-model="filterLembaga"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">Semua lembaga</option>
+              <optgroup v-if="uniqueLembaga.length" label="Qiraati (Ngaji)">
+                <option v-for="l in uniqueLembaga" :key="'ng-' + l" :value="l">{{ l }}</option>
+              </optgroup>
+              <optgroup v-if="uniqueLembagaSekolah.length" label="Sekolah (Formal)">
+                <option v-for="l in uniqueLembagaSekolah" :key="'sk-' + l" :value="l">
+                  {{ l }}
+                </option>
+              </optgroup>
+            </select>
+            <!-- v.1.5.0 (Kyai): jenis guru -->
+            <select
+              v-model="filterJenis"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">Semua jenis</option>
+              <option v-for="o in JENIS_GURU_OPTS" :key="o.value" :value="o.value">
+                {{ o.label }}
+              </option>
+            </select>
+            <!-- v.1.5.0 (Kyai): Induk / Non-Induk (isian manual) -->
+            <select
+              v-model="filterInduk"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">Semua induk</option>
+              <option v-for="o in STATUS_INDUK_OPTS" :key="o.value" :value="o.value">
+                {{ o.label }}
+              </option>
+              <option value="kosong">Belum diisi</option>
+            </select>
+            <!-- v.1.5.0 (Kyai 16 Nov 2026): cek ID mesin absen sebelum mendaftarkan kartu -->
+            <select
+              v-model="filterIdMesin"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">Semua fingerprint</option>
+              <option value="kosong">ID Fingerprint belum ada</option>
+              <option value="ganda">ID Fingerprint ganda</option>
+            </select>
+            <select
+              v-model="filterStatus"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="aktif">Hanya yang aktif</option>
+              <option value="">Semua status</option>
+              <option value="tidak_aktif">Tidak aktif saja</option>
+            </select>
+            <!-- Kyai 25 Nov 2026: penyaring jenis kelamin -->
+            <select
+              v-model="filterJk"
+              class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+            >
+              <option value="">Semua jenis kelamin</option>
+              <option v-for="o in OPSI_JK" :key="o.value" :value="o.value">{{ o.label }}</option>
+            </select>
+          </div>
+        </PanelFilter>
       </div>
 
       <!-- v.21.22c.0526: Bulk action bar (Master mode only) -->
@@ -599,7 +592,7 @@
 
       <!-- Footer -->
       <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-        <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ guru.length }} guru
+        <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ guruShown.length }} guru
       </p>
     </template>
   </div>
@@ -609,6 +602,9 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
+import PageHeader from '@/components/layout/PageHeader.vue'
+import PanelFilter from '@/components/ui/PanelFilter.vue'
+import { OPSI_JK, saringJk } from '@/utils/jenisKelamin'
 import { definePageActions } from '@/composables/useRibbonContext'
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (Master Data, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
@@ -717,6 +713,7 @@ const router = useRouter()
 const filterJenis = ref('') // v.1.5.0: Qiraati-Sekolah / Qiraati / Sekolah / Pegawai
 const filterInduk = ref('') // v.1.5.0: 'induk' | 'non_induk' | 'kosong' (belum diisi)
 const filterIdMesin = ref('') // v.1.5.0: 'kosong' | 'ganda' (ID Fingerprint)
+const filterJk = ref('') // Kyai 25 Nov 2026: 'L' | 'P' | ''
 const SPEC_FILTER = [
   { kunci: 'q' },
   { kunci: 'lembaga' },
@@ -724,6 +721,7 @@ const SPEC_FILTER = [
   { kunci: 'jenis' },
   { kunci: 'induk' },
   { kunci: 'idmesin' },
+  { kunci: 'jk' },
   { kunci: 'status', bawaan: 'aktif' }
 ]
 // `tipe` = pita Data Guru vs Data Pegawai; `tab`/`sub` = Master Data sebagai halaman induk.
@@ -735,7 +733,18 @@ const refFilter = {
   jenis: filterJenis,
   induk: filterInduk,
   idmesin: filterIdMesin,
+  jk: filterJk,
   status: filterStatus
+}
+// Lencana tombol penyaring di HP: penyaring (selain kotak cari) yang tak bernilai bawaan.
+const jumlahPenyaring = computed(
+  () =>
+    SPEC_FILTER.filter(
+      (f) => f.kunci !== 'q' && String(refFilter[f.kunci]?.value ?? '') !== String(f.bawaan ?? '')
+    ).length
+)
+function hapusPenyaring() {
+  for (const f of SPEC_FILTER) if (f.kunci !== 'q') refFilter[f.kunci].value = f.bawaan ?? ''
 }
 function syncFiltersFromQuery() {
   const nilai = bacaFilterQuery(_route.query, SPEC_FILTER)
@@ -794,6 +803,7 @@ const guruShown = computed(() => {
     const want = filterInduk.value === 'kosong' ? '' : filterInduk.value
     list = list.filter((g) => normStatusInduk(g.status_induk) === want)
   }
+  list = saringJk(list, filterJk.value)
   if (filterIdMesin.value === 'kosong') list = list.filter((g) => !normIdMesin(g.id_fingerprint))
   else if (filterIdMesin.value === 'ganda') {
     list = list.filter((g) => petaIdGanda.value.has(normIdMesin(g.id_fingerprint)))
@@ -884,6 +894,7 @@ const hasFilter = computed(
     !!filterJenis.value ||
     !!filterInduk.value ||
     !!filterIdMesin.value ||
+    !!filterJk.value ||
     filterStatus.value !== 'aktif'
 )
 

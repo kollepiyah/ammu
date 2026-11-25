@@ -4,6 +4,42 @@
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
     >
       <h3 class="text-sm font-black text-[var(--text-primary)] mb-3 flex items-center gap-2">
+        <i class="fas fa-user-shield text-teal-600"></i>Akun
+      </h3>
+      <template v-if="auth.isLoggedIn">
+        <p class="text-xs text-[var(--text-secondary)] mb-3">
+          Masuk sebagai <b class="text-[var(--text-primary)]">{{ auth.sesiAktif?.nama }}</b>
+        </p>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="flex-1 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer bg-teal-600 text-white"
+            @click="router.push('/dashboard')"
+          >
+            <i class="fas fa-building-columns mr-1.5"></i>Buka Portal
+          </button>
+          <button
+            type="button"
+            class="flex-1 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border border-rose-200 text-rose-700 dark:border-rose-800 dark:text-rose-300"
+            @click="keluar"
+          >
+            <i class="fas fa-right-from-bracket mr-1.5"></i>Keluar
+          </button>
+        </div>
+      </template>
+      <button
+        v-else
+        type="button"
+        class="flex-1 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer bg-teal-600 text-white w-full"
+        @click="router.push('/login')"
+      >
+        <i class="fas fa-right-to-bracket mr-1.5"></i>Masuk ke Portal
+      </button>
+    </section>
+    <section
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+    >
+      <h3 class="text-sm font-black text-[var(--text-primary)] mb-3 flex items-center gap-2">
         <i class="fas fa-palette text-teal-600"></i>Tampilan
       </h3>
       <p class="text-xs text-[var(--text-secondary)] mb-2">Tema</p>
@@ -39,43 +75,6 @@
       <p class="text-xs text-[var(--text-secondary)]">
         Metode jadwal sholat, lokasi, dan suara adzan segera hadir, insyaAllah.
       </p>
-    </section>
-
-    <section
-      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
-    >
-      <h3 class="text-sm font-black text-[var(--text-primary)] mb-3 flex items-center gap-2">
-        <i class="fas fa-user-shield text-teal-600"></i>Akun
-      </h3>
-      <template v-if="auth.isLoggedIn">
-        <p class="text-xs text-[var(--text-secondary)] mb-3">
-          Masuk sebagai <b class="text-[var(--text-primary)]">{{ auth.sesiAktif?.nama }}</b>
-        </p>
-        <div class="flex gap-2">
-          <button
-            type="button"
-            class="flex-1 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer bg-teal-600 text-white"
-            @click="router.push('/dashboard')"
-          >
-            <i class="fas fa-building-columns mr-1.5"></i>Buka Portal
-          </button>
-          <button
-            type="button"
-            class="flex-1 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border border-rose-200 text-rose-700 dark:border-rose-800 dark:text-rose-300"
-            @click="keluar"
-          >
-            <i class="fas fa-right-from-bracket mr-1.5"></i>Keluar
-          </button>
-        </div>
-      </template>
-      <button
-        v-else
-        type="button"
-        class="flex-1 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer bg-teal-600 text-white w-full"
-        @click="router.push('/login')"
-      >
-        <i class="fas fa-right-to-bracket mr-1.5"></i>Masuk ke Portal
-      </button>
     </section>
 
     <!-- Kyai 25 Nov 2026: tombol unduh pindah dari layar masuk PWA ke sini. -->

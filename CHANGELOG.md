@@ -66,6 +66,16 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   tautan bersama `composables/useUnduhan.js`. Pengaturan publik juga punya kartu "Tentang" dengan
   Kebijakan Privasi; tautan di layar masuk SENGAJA dipertahankan karena itulah halaman yang
   diperiksa Google untuk verifikasi merek (`ammuonline.web.app` di browser = layar masuk).
+- **Data Santri & Data Guru di HP lebih rapi** (Kyai 25 Nov 2026): jumlah jadi kotak sejajar di
+  atas, tombol aksi jadi ikon saja di baris bawahnya (dulu satu deret geser yang saling tumpuk).
+  Diatur sekali di `PageHeader` (`.ph-stat`/`.ph-aksi`); kepala Data Guru yang dulu ditulis
+  sendiri kini memakai `PageHeader` yang sama. Layar lebar tetap seperti dulu.
+- **Penyaring dilipat di HP** (`components/ui/PanelFilter.vue`): kotak cari + tombol penyaring
+  berlencana jumlah penyaring aktif, isi dua kolom saat dibuka, plus "Hapus penyaring".
+- **Penyaring jenis kelamin** di Data Santri & Data Guru (`utils/jenisKelamin.js` + tes; ikut
+  tersimpan di URL `?jk=` seperti penyaring lain).
+- Pengaturan publik: kartu Akun di paling atas.
+
 - **Dashboard Android/PWA: kartu jam diganti baris ikon** Al-Qur'an · Wirid · Kiblat · Jadwal
   Sholat di bawah kartu sapaan (Kyai 25 Nov 2026), untuk semua peran. Ikon masih "segera hadir"
   sampai layarnya dibangun. Web & Electron tetap memakai kartu jam.
@@ -73,6 +83,9 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   jam dashboard, jadi widget berhenti diperbarui begitu kartu itu dihapus atau pengguna belum login.
 - Tombol kembali Android di layar masuk → Beranda publik; layar masuk punya tombol "Beranda";
   keluar dari header Portal di Android/PWA kembali ke Beranda publik, bukan layar masuk.
+
+### Fixed
+- Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.
 
 ---
 

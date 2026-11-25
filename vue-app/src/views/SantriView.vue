@@ -256,101 +256,110 @@
     <div
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <!-- Pencarian -->
-      <div class="relative">
-        <i
-          class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
-        ></i>
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Cari nama, No. Induk, atau wali..."
-          class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
-        />
-      </div>
-      <!-- v.1.2.0 (Kyai): akun GURU cukup cari nama — deretan filter ini hanya untuk
-           admin. Untuk guru, pemisahan Qiraati/Sekolah ditangani sub-tab di bawah. -->
-      <div v-if="isFullAccess" class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-        <select
-          v-model="filterLembaga"
-          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+      <PanelFilter :jumlah-aktif="jumlahPenyaring" @reset="hapusPenyaring">
+        <template #cari>
+          <i
+            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+          ></i>
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Cari nama, No. Induk, atau wali..."
+            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+          />
+        </template>
+        <!-- v.1.2.0 (Kyai): akun GURU cukup cari nama — deretan filter ini hanya untuk
+             admin. Untuk guru, pemisahan Qiraati/Sekolah ditangani sub-tab di bawah. -->
+        <div v-if="isFullAccess" class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+          <select
+            v-model="filterLembaga"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua lembaga</option>
+            <optgroup v-if="uniqueLembaga.length" label="Qiraati (Ngaji)">
+              <option v-for="l in uniqueLembaga" :key="'ng-' + l" :value="l">{{ l }}</option>
+            </optgroup>
+            <optgroup v-if="uniqueLembagaSekolah.length" label="Sekolah (Formal)">
+              <option v-for="l in uniqueLembagaSekolah" :key="'sk-' + l" :value="l">{{ l }}</option>
+            </optgroup>
+          </select>
+          <select
+            v-model="filterMukim"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua tempat</option>
+            <option value="mukim">Ma'had</option>
+            <option value="fullday">Fullday</option>
+            <option value="pondok_laju">Pondok Laju</option>
+            <option value="non-mukim">Non-mukim</option>
+          </select>
+          <select
+            v-model="filterStatus"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="aktif">Hanya aktif</option>
+            <option value="">Semua status</option>
+            <option value="tidak_aktif">Tidak aktif / Keluar</option>
+          </select>
+          <!-- Kyai 25 Nov 2026: penyaring jenis kelamin -->
+          <select
+            v-model="filterJk"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua jenis kelamin</option>
+            <option v-for="o in OPSI_JK" :key="o.value" :value="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <!-- v.111: filter Gedung & PJ PTPT — pisah Pra PTPT per gedung / PTPT per PJ ("gak campur") -->
+        <div
+          v-if="isFullAccess && (gedungOptions.length || pjPtptOptions.length)"
+          class="grid grid-cols-2 gap-2 mt-2"
         >
-          <option value="">Semua lembaga</option>
-          <optgroup v-if="uniqueLembaga.length" label="Qiraati (Ngaji)">
-            <option v-for="l in uniqueLembaga" :key="'ng-' + l" :value="l">{{ l }}</option>
-          </optgroup>
-          <optgroup v-if="uniqueLembagaSekolah.length" label="Sekolah (Formal)">
-            <option v-for="l in uniqueLembagaSekolah" :key="'sk-' + l" :value="l">{{ l }}</option>
-          </optgroup>
-        </select>
-        <select
-          v-model="filterMukim"
-          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-        >
-          <option value="">Semua status tempat</option>
-          <option value="mukim">Ma'had</option>
-          <option value="fullday">Fullday</option>
-          <option value="pondok_laju">Pondok Laju</option>
-          <option value="non-mukim">Non-mukim</option>
-        </select>
-        <select
-          v-model="filterStatus"
-          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-        >
-          <option value="aktif">Hanya aktif</option>
-          <option value="">Semua status</option>
-          <option value="tidak_aktif">Tidak aktif / Keluar</option>
-        </select>
-      </div>
-      <!-- v.111: filter Gedung & PJ PTPT — pisah Pra PTPT per gedung / PTPT per PJ ("gak campur") -->
-      <div
-        v-if="isFullAccess && (gedungOptions.length || pjPtptOptions.length)"
-        class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2"
-      >
-        <select
-          v-if="gedungOptions.length"
-          v-model="filterGedung"
-          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-        >
-          <option value="">Semua gedung</option>
-          <option v-for="g in gedungOptions" :key="g" :value="g">{{ g }}</option>
-        </select>
-        <select
-          v-if="pjPtptOptions.length"
-          v-model="filterPjPtpt"
-          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-        >
-          <option value="">Semua PJ PTPT</option>
-          <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
-        </select>
-      </div>
-      <!-- v.1.4.2 (Kyai): penyaring Kelas / Jilid / Level. Opsinya diturunkan dari data
-           santri yang boleh dilihat akun ini, bukan daftar tetap — penamaan kelas memang
-           beda-beda per lembaga dan berubah tiap penataan ulang. -->
-      <div v-if="kelasOptions.length" class="mt-2">
-        <select
-          v-model="filterKelas"
-          class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
-        >
-          <option value="">Semua kelas / jilid / level</option>
-          <option v-for="k in kelasOptions" :key="k.nilai" :value="k.nilai">
-            {{ k.nilai }} · {{ k.jumlah }} santri
-          </option>
-        </select>
-      </div>
-      <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru.
-           v.1.4.2 (Kyai): bisa dicentang lebih dari satu, "jadi bisa tampil kelas dari
-           beberapa guru" — membandingkan dua rombel tak lagi berarti buka-tutup penyaring. -->
-      <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
-        <MultiSelectFilter
-          v-model="filterKelasGuru"
-          :options="opsiKelasGuru"
-          label="kelas"
-          semua-label="Semua kelas (guru)"
-          placeholder-cari="Cari nama guru…"
-          kosong-label="Belum ada rombel pada lembaga ini."
-        />
-      </div>
+          <select
+            v-if="gedungOptions.length"
+            v-model="filterGedung"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua gedung</option>
+            <option v-for="g in gedungOptions" :key="g" :value="g">{{ g }}</option>
+          </select>
+          <select
+            v-if="pjPtptOptions.length"
+            v-model="filterPjPtpt"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua PJ PTPT</option>
+            <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
+          </select>
+        </div>
+        <!-- v.1.4.2 (Kyai): penyaring Kelas / Jilid / Level. Opsinya diturunkan dari data
+             santri yang boleh dilihat akun ini, bukan daftar tetap — penamaan kelas memang
+             beda-beda per lembaga dan berubah tiap penataan ulang. -->
+        <div v-if="kelasOptions.length" class="mt-2">
+          <select
+            v-model="filterKelas"
+            class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+          >
+            <option value="">Semua kelas / jilid / level</option>
+            <option v-for="k in kelasOptions" :key="k.nilai" :value="k.nilai">
+              {{ k.nilai }} · {{ k.jumlah }} santri
+            </option>
+          </select>
+        </div>
+        <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru.
+             v.1.4.2 (Kyai): bisa dicentang lebih dari satu, "jadi bisa tampil kelas dari
+             beberapa guru" — membandingkan dua rombel tak lagi berarti buka-tutup penyaring. -->
+        <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
+          <MultiSelectFilter
+            v-model="filterKelasGuru"
+            :options="opsiKelasGuru"
+            label="kelas"
+            semua-label="Semua kelas (guru)"
+            placeholder-cari="Cari nama guru…"
+            kosong-label="Belum ada rombel pada lembaga ini."
+          />
+        </div>
+      </PanelFilter>
       <!-- v.1.2.0: sub-tab Qiraati / Sekolah — muncul hanya bila akun ini memang
            menaungi KEDUA sisi (mis. kepala lembaga sekolah yang juga guru qiraati). -->
       <div v-if="punyaDuaSisi" class="flex gap-2 mt-3">
@@ -648,6 +657,8 @@ import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 import EditKelasSantriDialog from '@/components/form/EditKelasSantriDialog.vue' // v.1.2.1: edit kelas oleh guru
 // v.1.4.2: penyaring Kelas-Guru bisa dicentang lebih dari satu.
 import MultiSelectFilter from '@/components/form/MultiSelectFilter.vue'
+import PanelFilter from '@/components/ui/PanelFilter.vue'
+import { OPSI_JK } from '@/utils/jenisKelamin'
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
 import { mergeOne, addOne, deleteOne, getAll, getOne, serverTimestamp } from '@/services/db'
 // v.111: registry field santri = sumber tunggal template/ekspor/impor (auto-detect field baru)
@@ -708,6 +719,7 @@ const {
   kelasGuruOptions,
   filterMukim,
   filterStatus,
+  filterJk,
   filterGedung,
   filterPjPtpt,
   stats,
@@ -748,6 +760,7 @@ const SPEC_FILTER = [
   { kunci: 'lembaga' },
   { kunci: 'tempat' },
   { kunci: 'status', bawaan: 'aktif' },
+  { kunci: 'jk' },
   { kunci: 'gedung' },
   { kunci: 'pj' },
   { kunci: 'kelas' },
@@ -762,6 +775,7 @@ const refFilter = {
   lembaga: filterLembaga,
   tempat: filterMukim,
   status: filterStatus,
+  jk: filterJk,
   gedung: filterGedung,
   pj: filterPjPtpt,
   kelas: filterKelas,
@@ -780,6 +794,23 @@ const adaPenyaring = computed(() =>
     return String(v ?? '') !== String(f.bawaan ?? '')
   })
 )
+// Lencana tombol penyaring di HP: penyaring (selain kotak cari & sub-tab) yang tak bernilai bawaan.
+const jumlahPenyaring = computed(
+  () =>
+    SPEC_FILTER.filter((f) => {
+      if (f.kunci === 'q' || f.kunci === 'sisi') return false
+      const v = refFilter[f.kunci]?.value
+      if (Array.isArray(v)) return v.length > 0
+      return String(v ?? '') !== String(f.bawaan ?? '')
+    }).length
+)
+function hapusPenyaring() {
+  for (const f of SPEC_FILTER) {
+    if (f.kunci === 'q' || f.kunci === 'sisi') continue
+    const r = refFilter[f.kunci]
+    r.value = f.daftar ? [] : (f.bawaan ?? '')
+  }
+}
 function syncFiltersFromQuery() {
   const nilai = bacaFilterQuery(route.query, SPEC_FILTER)
   for (const [k, r] of Object.entries(refFilter)) r.value = nilai[k]

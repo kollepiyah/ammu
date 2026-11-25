@@ -1,5 +1,6 @@
 // useSantri — list santri real-time + role-based filter + search
 import { ref, computed } from 'vue'
+import { saringJk } from '@/utils/jenisKelamin'
 import { storeToRefs } from 'pinia'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
@@ -98,6 +99,7 @@ export function useSantri() {
   const filterMukim = ref('')
   // v.21.12.0526: + filterStatus (aktif/tidak_aktif/all)
   const filterStatus = ref('aktif')
+  const filterJk = ref('') // Kyai 25 Nov 2026: 'L' | 'P' | '' (semua)
   // v.111: filter Gedung & PJ PTPT (pisah Pra PTPT per gedung & PTPT per PJ — "gak campur")
   const filterGedung = ref('')
   const filterPjPtpt = ref('')
@@ -311,6 +313,8 @@ export function useSantri() {
     if (filterStatus.value === 'aktif') list = list.filter((s) => s.aktif !== false)
     else if (filterStatus.value === 'tidak_aktif') list = list.filter((s) => s.aktif === false)
 
+    list = saringJk(list, filterJk.value)
+
     // v.110.0625: Data Santri ikut aturan global — lembaga → kelas → USIA (muda→tua) → nama
     return sortSantri(list)
   })
@@ -369,6 +373,7 @@ export function useSantri() {
     kelasGuruOptions, // v.1.2.4: opsi dropdown Kelas-Guru
     filterMukim,
     filterStatus,
+    filterJk,
     filterGedung,
     filterPjPtpt,
     stats,
