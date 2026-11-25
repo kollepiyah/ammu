@@ -912,6 +912,15 @@ function _batasSegar(rawList) {
   return Number.isNaN(maks) ? null : new Date(maks - RT_SEGAR_MARGIN_MS).toISOString()
 }
 
+/** Daftar primary key saja (string) — untuk pemakai yang hanya butuh "id mana yang masih ada"
+ *  (v.1.5.5 P3 egress: Glondongan dulu melanggan tes_kenaikan PENUH demi daftar id). */
+export async function ambilIdSaja(collectionName, filters = []) {
+  _ensure()
+  const { pk } = _cfg(collectionName)
+  const rows = await _tarikIdSaja(collectionName, filters)
+  return rows.map((r) => String(r[pk]))
+}
+
 /** Primary key saja, URUT pk: tanpa urutan, halaman 1000-an bisa bergeser dan id yang
  *  terlewat akan dikira terhapus. */
 async function _tarikIdSaja(collectionName, filters) {

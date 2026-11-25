@@ -170,7 +170,8 @@ describe('settings store — save() tak menulis ulang config keuangan', () => {
     await s.load()
     s.subscribe()
     expect(opsiSub.general).toEqual({ tarikAwal: false })
-    expect(opsiSub.web).toEqual({ tarikAwal: false })
+    // v.1.5.5 (P3): `web` cermin `general` — tak dilanggan bila `general` terbaca.
+    expect(opsiSub.web).toBeUndefined()
     expect(opsiSub.keuangan).toEqual({ tarikAwal: false })
     s.unsubscribeNow?.()
 
@@ -180,14 +181,14 @@ describe('settings store — save() tak menulis ulang config keuangan', () => {
     expect(opsiSub.general).toEqual({ tarikAwal: true })
   })
 
-  it('event dok web sesudah load tetap mempertahankan nilai general dari load', async () => {
-    rows.general = { kopLine1: 'DARI GENERAL' }
-    rows.web = { kopLine1: 'DARI WEB', temaWarna: 'teal' }
+  it('web hanya cadangan: dibaca & dilanggan bila general tak ada (P3 egress)', async () => {
+    rows.general = null
+    rows.web = { kopLine1: 'DARI WEB' }
     const s = useSettingsStore()
     await s.load()
+    expect(s.settings.kopLine1).toBe('DARI WEB')
     s.subscribe()
-    subs.web({ kopLine1: 'WEB BARU', temaWarna: 'hijau' })
-    expect(s.settings.kopLine1).toBe('DARI GENERAL')
-    expect(s.settings.temaWarna).toBe('hijau')
+    subs.web({ kopLine1: 'WEB BARU' })
+    expect(s.settings.kopLine1).toBe('WEB BARU')
   })
 })

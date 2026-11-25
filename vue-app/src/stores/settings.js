@@ -150,12 +150,15 @@ export const useSettingsStore = defineStore('settings', () => {
       // error di sini = baca GAGAL (jaringan/RLS/sesi mati). Dulu di-`.catch(() => null)`,
       // sehingga gagal-baca tak bisa dibedakan dari baris-kosong dan settings ditimpa
       // DEFAULT_SETTINGS diam-diam — jalur KEDUA menuju gejala "balik ke default".
-      const [legacyData, vueData, keuData] = await Promise.all([
+      // v.1.5.5 (P3 audit egress): `web` = cermin persis `general` (save() menulis keduanya;
+      //   dicek 25 Nov: 192 kunci, nol beda) — dulu ditarik dua-duanya tiap app dibuka (±23 KB
+      //   terbuang). Kini `web` hanya cadangan bila `general` tak ada.
+      const [legacyData, keuData] = await Promise.all([
         getOne('settings', SETTINGS_DOC_ID_LEGACY),
-        getOne('settings', SETTINGS_DOC_ID_VUE),
         // A1: null utk anon/peran non-keuangan (RLS filter → maybeSingle null, BUKAN error)
         getOne('settings', SETTINGS_DOC_ID_KEUANGAN)
       ])
+      const vueData = legacyData ? null : await getOne('settings', SETTINGS_DOC_ID_VUE)
       // Merge: DEFAULT < vueData < legacyData < keuData. Kunci keuangan DIBUANG dari
       //   vueData/legacyData — bukan sekadar kalah urutan — supaya salinan basi di row
       //   publik tak pernah bisa dipakai walau row `keuangan` gagal/terlambat terbaca.
@@ -197,8 +200,10 @@ export const useSettingsStore = defineStore('settings', () => {
     //   dokumen ini — tarikan awal subscribeDoc cuma mengunduh yang sama dua kali (3 GET tiap
     //   app dibuka). Bila load() belum berhasil, tarikan awal tetap jalan sebagai cadangan.
     const opsi = { tarikAwal: !isLoaded.value }
-    // v.61.0526: subscribe ke kedua doc — general (legacy) + web (Vue PoC)
-    if (!unsubscribe) {
+    // v.61.0526: subscribe ke kedua doc — general (legacy) + web (Vue PoC).
+    // v.1.5.5 (P3): `web` cermin `general` dan ditulis bersamaan, jadi langganannya cuma
+    //   menggandakan event & sambungan realtime — dipasang hanya bila `general` tak terbaca.
+    if (!unsubscribe && !_lastLegacyData) {
       unsubscribe = subscribeDoc(
         'settings',
         SETTINGS_DOC_ID_VUE,

@@ -5,8 +5,16 @@
 //       guru kelas santri (baris 'berjalan', auto-assigned).
 //     - Baca catatan evaluasi              : guru kelas santri + PJ (via view Task #6).
 //   Nilai glondongan/berjalan TAK masuk rapor (murni catatan evaluasi).
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, subscribeDoc, updateOne, deleteOne, getOne, mergeOne } from '@/services/db'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import {
+  subscribeColl,
+  subscribeDoc,
+  updateOne,
+  deleteOne,
+  getOne,
+  mergeOne,
+  ambilIdSaja
+} from '@/services/db'
 import { antreNotifBanyak, targetGuru, targetSantri } from '@/services/notif'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -103,6 +111,20 @@ export function useGlondongan() {
   //    setelah buka layar semua baris terlihat yatim).
   const ajuanIds = ref(null)
   let unsubA = null
+  let _memuatIds = null
+  function muatAjuanIds() {
+    if (_memuatIds) return _memuatIds
+    _memuatIds = ambilIdSaja('tes_kenaikan')
+      .then((ids) => (ajuanIds.value = new Set(ids)))
+      .catch((e) => console.warn('[glondongan] id tes_kenaikan gagal:', e?.message || e))
+      .finally(() => (_memuatIds = null))
+    return _memuatIds
+  }
+  // Ajuan baru (dibuat sesudah daftar id ditarik) jangan sampai dikira yatim → tarik ulang.
+  watch(rowsRaw, (list) => {
+    const ids = ajuanIds.value
+    if (ids && (list || []).some((r) => r.ajuan_id && !ids.has(String(r.ajuan_id)))) muatAjuanIds()
+  })
   const rows = computed(() => {
     const ids = ajuanIds.value
     if (!ids) return rowsRaw.value
@@ -376,9 +398,9 @@ export function useGlondongan() {
     })
     // v.1.1.9: id ajuan yang MASIH ADA — dipakai membuang baris glondongan yatim.
     //   Hanya id-nya yang disimpan (bukan seluruh dokumen) supaya ringan.
-    unsubA = subscribeColl('tes_kenaikan', (docs) => {
-      ajuanIds.value = new Set((docs || []).map((d) => String(d.id)))
-    })
+    // v.1.5.5 (P3 egress): cukup DAFTAR ID tes_kenaikan, bukan langganan penuh (±390 KB tiap
+    //   layar ini dibuka). Ditarik ulang bila muncul baris dengan ajuan yang belum dikenal.
+    muatAjuanIds()
   })
   onUnmounted(() => {
     if (unsub) unsub()
