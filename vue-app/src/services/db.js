@@ -15,6 +15,7 @@
 // File ini sengaja cermin 1:1 firestore.js: getOne/getAll/queryColl/setOne/
 // mergeOne/updateOne/addOne/deleteOne/subscribeColl/subscribeDoc + setAuditSesi.
 import { supabase } from './supabase'
+import { muatSalinan, simpanSalinan, hapusSalinanLokal } from './salinanLokal'
 
 function _ensure() {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi (.env.local).')
@@ -846,6 +847,58 @@ const SEGAR_DELTA = new Set([
  *  yang mulai lebih dulu bisa commit sesudah baris lain terbaca. Jam perangkat tak dipakai. */
 const RT_SEGAR_MARGIN_MS = 10 * 60 * 1000
 
+// ---- v.1.5.5 · salinan di perangkat + tarikan AWAL segar (audit egress 25 Nov 2026, P2) ----
+// Pemulihan sudah delta sejak v.1.5.1, tapi tarikan AWAL tetap penuh: tiap membuka aplikasi
+// santri ditarik utuh (259×/hari), tes_glondongan & tes_kenaikan di layar tes, buku induk &
+// tagihan di PC kasir. Kini langganan TANPA penyaring pada tabel di bawah menyimpan salinannya
+// di IndexedDB (services/salinanLokal), dan saat dibuka lagi: salinan tampil seketika, lalu
+// tarikan SEGAR (daftar id + baris yang updated_at-nya berubah) — persis jalur pemulihan.
+// Syaratnya sama dengan SEGAR_DELTA (trigger set_updated_at; dijaga tes). Penyaring dikecualikan
+// karena penyaring bertanggal (mis. 30 hari lonceng) membuat kunci baru tiap hari.
+const SALINAN_LOKAL = new Set([
+  'santri',
+  'guru',
+  'tes_glondongan',
+  'tes_kenaikan',
+  'keuangan_buku_induk',
+  'keuangan_tagihan',
+  'keuangan_tabungan_santri',
+  'riwayat_prestasi',
+  'kegiatan'
+])
+/** Naikkan bila bentuk salinan berubah — salinan lama otomatis diabaikan. */
+const SALINAN_VERSI = 1
+/** Sesudah ini sejak tarikan PENUH terakhir, salinan diabaikan → tarikan penuh (jaring pengaman). */
+const SALINAN_UMUR_MAKS_MS = 7 * 24 * 60 * 60 * 1000
+/** Jeda penulisan salinan sesudah perubahan (banyak event beruntun = satu tulis). */
+const SALINAN_JEDA_SIMPAN_MS = 10000
+
+/** Kunci salinan: per PENGGUNA (RLS berbeda), tabel, urutan. null = tak memakai salinan. */
+function _kunciSalinan(table, filters, orders) {
+  if (!SALINAN_LOKAL.has(table) || filters.length) return null
+  const s = _auditSesi
+  if (!s || !s.role || !_ada(s.id)) return null
+  return `${s.role}:${s.id}|${table}|${JSON.stringify(orders)}`
+}
+
+/** Salinan yang tersimpan masih boleh dipakai? */
+function _salinanLayak(s, kini = Date.now()) {
+  return !!(
+    s &&
+    s.v === SALINAN_VERSI &&
+    Array.isArray(s.rows) &&
+    s.rows.length > 0 &&
+    Array.isArray(s.templat) &&
+    s.templat.includes('updated_at') &&
+    Number.isFinite(s.penuhPada) &&
+    kini - s.penuhPada >= 0 &&
+    kini - s.penuhPada < SALINAN_UMUR_MAKS_MS
+  )
+}
+
+/** Keluar akun → buang semua salinan di perangkat. */
+export { hapusSalinanLokal }
+
 /** Batas tarikan segar dari salinan: ISO (updated_at terbaru − margin), atau null. */
 function _batasSegar(rawList) {
   let maks = NaN
@@ -1100,13 +1153,31 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
   let salinan = null // { urutan: id[], baris: Map<id, {raw, doc}>, berkunci }
   let templat = null // nama kolom baris hasil tarikan (urutan PostgREST)
   let susulAwal = null // { mulai } selama celah awal belum ditambal
+  const kunciSalinan = _kunciSalinan(collectionName, filters, orders)
+  let penuhPada = 0 // kapan tarikan PENUH terakhir (umur salinan dihitung dari sini)
+  let timerSimpan = null
 
+  const simpanSekarang = () => {
+    if (timerSimpan) clearTimeout(timerSimpan)
+    timerSimpan = null
+    // Salinan kosong TAK disimpan: tarikan sebelum token menempel bisa kosong karena RLS.
+    if (!kunciSalinan || !salinan?.berkunci || !salinan.urutan.length || !penuhPada) return
+    if (!templat || !templat.includes('updated_at')) return
+    simpanSalinan(kunciSalinan, {
+      v: SALINAN_VERSI,
+      penuhPada,
+      templat,
+      rows: salinan.urutan.map((id) => salinan.baris.get(id).raw)
+    })
+  }
   const kirim = () => {
     try {
       callback(salinan.urutan.map((id) => salinan.baris.get(id).doc))
     } catch (err) {
       console.error(`[subscribeColl] ${collectionName} error:`, err)
     }
+    if (kunciSalinan && !timerSimpan)
+      timerSimpan = setTimeout(simpanSekarang, SALINAN_JEDA_SIMPAN_MS)
   }
 
   const keluarkan = (id) => {
@@ -1209,6 +1280,7 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
       })
       salinan = { urutan, baris, berkunci }
       if (rows.length) templat = Object.keys(rows[0])
+      penuhPada = mulai
       susulAwal = awal ? { mulai } : null
       kirim()
     } catch (err) {
@@ -1260,7 +1332,7 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
   // v.1.5.1: pemulihan dengan delta. Hasilnya harus sama dengan tarikan penuh: baris yang tak
   //   ada lagi di daftar id dibuang, yang berubah diganti, yang ada di server tapi belum
   //   dipegang (mis. baru terlihat karena RLS) ditanyakan per id.
-  const tarikSegar = async () => {
+  const tarikSegar = async (awal = false) => {
     if (
       !salinan ||
       !salinan.berkunci ||
@@ -1268,10 +1340,11 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
       !templat ||
       !templat.includes('updated_at')
     )
-      return tarikPenuh(false)
+      return tarikPenuh(awal)
     const batas = _batasSegar([...salinan.baris.values()].map((b) => b.raw))
-    if (!batas) return tarikPenuh(false)
+    if (!batas) return tarikPenuh(awal)
     terakhirTarik = Date.now()
+    const mulai = Date.now()
     const gen = ++generasi
     antre = [] // event yang tiba sebelum saat ini tercakup tarikan ini (cermin tarikPenuh)
     sibuk = true
@@ -1281,6 +1354,12 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
         _tarikMentah(collectionName, [...filters, ['updated_at', '>=', batas]], orders)
       ])
       if (lepas || gen !== generasi) return
+      // Tarikan awal dari salinan yang dijawab daftar KOSONG: hampir pasti token belum menempel
+      //   (RLS menyaring semua) — jangan kosongkan layar & salinan; tarik penuh seperti dulu.
+      if (awal && !idRows.length && salinan.urutan.length) {
+        perluPenuh = true
+        return
+      }
       const diServer = new Set()
       for (const r of idRows) if (_ada(r?.[pk])) diServer.add(String(r[pk]))
       let berubah = false
@@ -1301,7 +1380,9 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
           if (_ada(raw?.[pk]) && pasangBaris(String(raw[pk]), raw)) berubah = true
         }
       }
-      susulAwal = null // celah awal ikut tertutup tarikan ini
+      // Pemulihan menutup celah apa pun. Tarikan AWAL dari salinan berjalan bersamaan dengan
+      //   pemasangan channel — celahnya ditambal gelombang event pertama, seperti tarikPenuh(true).
+      susulAwal = awal ? { mulai } : null
       if (berubah) kirim()
     } catch (err) {
       console.error(`[subscribeColl] ${collectionName} error:`, err)
@@ -1388,7 +1469,32 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
     jadwal()
   }
 
-  tarikPenuh(true)
+  // Tarikan awal: dari salinan perangkat bila ada & layak, kalau tidak penuh seperti dulu.
+  const mulaiAwal = async () => {
+    if (!kunciSalinan) return tarikPenuh(true)
+    const s = await muatSalinan(kunciSalinan)
+    // Selagi membaca salinan, event/tarikan lain bisa sudah mengisi — jangan ditimpa.
+    if (lepas || salinan || generasi > 0) return
+    if (!_salinanLayak(s)) return tarikPenuh(true)
+    const baris = new Map()
+    const urutan = []
+    for (const raw of s.rows) {
+      if (!_ada(raw?.[pk])) return tarikPenuh(true)
+      const id = String(raw[pk])
+      if (!baris.has(id)) urutan.push(id)
+      baris.set(id, { raw, doc: _flatten(collectionName, raw) })
+    }
+    salinan = { urutan, baris, berkunci: true }
+    templat = s.templat
+    penuhPada = s.penuhPada
+    try {
+      callback(urutan.map((id) => baris.get(id).doc)) // tampil seketika dari salinan
+    } catch (err) {
+      console.error(`[subscribeColl] ${collectionName} error:`, err)
+    }
+    return tarikSegar(true)
+  }
+  mulaiAwal()
   // Dipakai pendengar global (kembali online / jendela dipakai lagi).
   const segarkanBilaPerlu = () => {
     if (lepas) return
@@ -1411,6 +1517,7 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
     lepas = true
     _penyegar.delete(segarkanBilaPerlu)
     if (timer) clearTimeout(timer) // jangan tarik data untuk komponen yang sudah dilepas
+    if (timerSimpan) simpanSekarang() // layar ditutup sebelum jeda simpan habis
     lepasChannel()
   }
 }
@@ -1507,6 +1614,12 @@ export const _internal = {
   RT_SUSUL_AWAL_MARGIN_MS,
   RT_SEGAR_MARGIN_MS,
   SEGAR_DELTA,
+  SALINAN_LOKAL,
+  SALINAN_VERSI,
+  SALINAN_UMUR_MAKS_MS,
+  SALINAN_JEDA_SIMPAN_MS,
+  kunciSalinan: _kunciSalinan,
+  salinanLayak: _salinanLayak,
   batasSegar: _batasSegar,
   cocokFilter: _cocokFilter,
   bandingUrutan: _bandingUrutan,

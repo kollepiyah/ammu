@@ -12,7 +12,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as authSupabase from '@/services/authSupabase'
-import { mergeOne, setAuditSesi } from '@/services/db'
+import { mergeOne, setAuditSesi, hapusSalinanLokal } from '@/services/db'
 import { useCollectionsStore } from '@/stores/collections'
 import { useToast } from '@/composables/useToast'
 import { cabutTokenWidget } from '@/composables/useWidgetToken'
@@ -295,6 +295,9 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (e) {
       /* noop */
     }
+    // v.1.5.5: salinan tabel di perangkat (IndexedDB) ikut dibuang — data santri/keuangan
+    //   tak boleh tertinggal untuk pengguna berikutnya.
+    hapusSalinanLokal()
     _zombieHandled = false // v.111b: reset one-shot utk sesi berikutnya
     _loggingOut = false
   }
@@ -344,6 +347,9 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (e) {
       /* noop */
     }
+    // v.1.5.5: salinan tabel di perangkat (IndexedDB) ikut dibuang — data santri/keuangan
+    //   tak boleh tertinggal untuk pengguna berikutnya.
+    hapusSalinanLokal()
     try {
       useToast().warning('Sesi berakhir — silakan masuk kembali.')
     } catch (e) {

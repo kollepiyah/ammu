@@ -17,6 +17,14 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
   kanan/kiri" sampai menghadap kiblat.
 - Ikon Kiblat dan Jadwal Sholat di dashboard kini terbuka (Al-Qur'an dan Wirid masih menyusul).
 
+**Perubahan**
+
+- **Aplikasi lebih cepat terbuka dan lebih hemat kuota.** Data santri, guru, tes, dan keuangan
+  kini disimpan di perangkat, jadi saat aplikasi dibuka lagi daftarnya langsung tampil dan hanya
+  perubahan terbaru yang diunduh. Salinan itu dihapus saat keluar akun.
+- **Sinkron mesin absensi (Ammu Desktop) jauh lebih ringan**: data absensi dibaca sekaligus, dan
+  sinkron otomatis dilewati selama mesin tidak menerima scan baru.
+
 **Catatan**
 
 - Aplikasi meminta izin **lokasi perkiraan** hanya saat layar Jadwal Sholat/Kiblat dibuka, untuk

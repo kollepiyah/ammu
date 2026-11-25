@@ -1,8 +1,14 @@
 # Audit Egress PostgREST — 25 Nov 2026
 
 Permintaan Kyai (25 Nov): siklus 21 Nov–21 Des berjalan ±100–225 MB/hari (90% PostgREST),
-proyeksi 4,5–6 GB melawan kuota Free Plan 5 GB. **Dokumen ini laporan temuan — belum ada
-perbaikan yang dikerjakan.** Perbaikan menunggu persetujuan Kyai.
+proyeksi 4,5–6 GB melawan kuota Free Plan 5 GB.
+
+**Status:** Kyai menyetujui P1 + P2 (25 Nov) → dikerjakan di v.1.5.5 gelombang 2 (P1 `37bd8b9`,
+P2 menyusul di commit sesudahnya). Hematnya baru terasa sesudah **Electron 1.5.5** terpasang di PC
+kantor (P1) dan web/AAB 1.5.5 dipakai (P2). P3 (kolom id saja di Glondongan) belum.
+**Cara memastikan:** ulangi kueri log di bawah ±1–2 hari sesudah rilis — `absensi_shift_guru` GET
+harus turun dari ±43 ribu ke ratusan, dan `santri ?select=*` tanpa penyaring dari ±259 ke
+puluhan/hari.
 
 ## Sumber data
 

@@ -28,14 +28,43 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.5] — 2026-11-25 — Ammu publik F2: Jadwal Sholat & Kiblat; audit egress
+## [v.1.5.5] — 2026-11-25 — Hemat egress: sinkron Fingerspot borongan, salinan tabel di perangkat
 
-**SIAP RILIS** — `versionCode` 155 / `versionName` `v.1.5.5` (web, AAB, Electron, PSB). Nomor naik
-karena v.1.5.4 sudah tayang di web (app-version 154) dan Electron 1.5.4 "Latest" 25 Nov. **AAB 154
-tak pernah dibangun** (Kyai menahannya sampai fitur ini jadi) — AAB vc155 ini sekaligus membawa
-seluruh isi v.1.5.4 ke HP. Tanpa migrasi, tanpa edge function. Perlu: deploy web (Permissions-Policy
-geolocation untuk PWA), **rebuild AAB** (izin lokasi baru di manifest), rilis Electron (tak ada
-perubahan desktop selain nomor). Rancangan: `docs/BLUEPRINT-AMMU-PUBLIK.md` fase F2.
+**SIAP RILIS** — `versionCode` 155 / `versionName` `v.1.5.5` (web, AAB, Electron, PSB), **2
+gelombang**. Nomor naik karena v.1.5.4 sudah tayang di web (app-version 154) dan Electron 1.5.4
+"Latest" 25 Nov. **AAB 154 tak pernah dibangun** (Kyai menahannya sampai Jadwal Sholat & Kiblat
+jadi) — AAB vc155 sekaligus membawa seluruh isi v.1.5.4 ke HP. Tanpa migrasi, tanpa edge function.
+Urutan: deploy web (Permissions-Policy geolocation untuk PWA + hemat egress), **rilis Electron**
+(WAJIB kali ini — perbaikan sinkron Fingerspot hanya ada di Ammu Desktop; PC kantor penyumbang
+egress terbesar), **rebuild AAB** (izin lokasi baru di manifest). Laporan audit:
+`docs/AUDIT-EGRESS-25NOV2026.md`.
+
+### Changed
+- **Sinkron Fingerspot (P1 audit egress)** — `useFingerprintSync`: baris absensi_shift_guru yang
+  sudah ada ditarik SEKALI untuk rentang yang disentuh (`queryColl` `tanggal >= awal`), bukan
+  `getOne` per baris dua kali (±760 permintaan per sinkron; PC kantor 43.821 GET/hari, 1,14 juta
+  sejak 21 Sep). Baris yang baru ditulis dimasukkan ke peta supaya tahap pulang tetap melihatnya.
+  Guru dari langganan bersama (`collections`), bukan `getAll` tiap putaran. Sinkron **otomatis**
+  dilewati total bila tanda att_log (jumlah scan, scan terbaru, tanggal hari ini, rentang hari —
+  `tandaAttLog` di utils/scanMesin) sama dengan sinkron sukses terakhir; manual selalu penuh;
+  ganti folder Personnel mengosongkan tanda. Mesin Absensi menampilkan "Terakhir dicek".
+  Tes: `fpSyncBorongan.test.js`.
+- **Salinan tabel di perangkat + tarikan awal SEGAR (P2)** — `services/salinanLokal.js` (IndexedDB)
+  + `subscribeColl`: langganan TANPA penyaring pada santri, guru, tes_glondongan, tes_kenaikan,
+  keuangan_buku_induk, keuangan_tagihan, keuangan_tabungan_santri, riwayat_prestasi, kegiatan
+  (`SALINAN_LOKAL`, wajib ⊆ `SEGAR_DELTA`) menyimpan salinan per pengguna. Dibuka lagi: salinan
+  tampil seketika, lalu tarikan segar (daftar id + baris `updated_at` berubah + id baru per id) —
+  jalur yang sama dengan pemulihan v.1.5.1; celah awal ditambal `susulAwal` seperti tarikan penuh.
+  Jaring pengaman ke tarikan penuh: salinan > 7 hari sejak tarikan penuh terakhir, versi salinan
+  beda, daftar id kosong saat tarikan awal (token belum menempel), atau galat. Salinan kosong tak
+  pernah disimpan; ditulis ±10 dtk sesudah perubahan (dan saat layar ditutup). **Keluar akun
+  membuang semua salinan** (`hapusSalinanLokal` di auth.js). Tes: `dbSalinanLokal.test.js`.
+
+---
+
+## [v.1.5.5 · gelombang 1] — 2026-11-25 — Ammu publik F2: Jadwal Sholat & Kiblat; audit egress
+
+Rancangan: `docs/BLUEPRINT-AMMU-PUBLIK.md` fase F2.
 
 ### Added
 - **Jadwal Sholat** (`/umum/sholat` untuk tamu, `/ibadah/sholat` di Portal — komponen sama,
