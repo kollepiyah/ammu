@@ -23,7 +23,7 @@
         <!-- v.91.0626: pull-to-refresh indikator (mobile shell) — tinggi ikut tarikan, dorong konten -->
         <div
           v-if="showBottomNav"
-          class="overflow-hidden flex items-end justify-center"
+          class="tarik-segar overflow-hidden flex items-end justify-center"
           :style="{ height: pullDist + 'px' }"
           aria-hidden="true"
         >

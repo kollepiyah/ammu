@@ -1184,3 +1184,16 @@ html.native-shell ::-webkit-scrollbar {
   width: 0 !important;
   height: 0 !important;
 }
+
+/* Kyai 25 Nov 2026: saat ditarik untuk menyegarkan, area di bawah top bar dulu berwarna latar
+   halaman sehingga top bar & kartu Hijriah tampak terpisah. Di Android/PWA area itu kini hijau
+   bermotif (sambungan top bar) dan ikonnya putih — terlihat seperti top bar yang memanjang. */
+html.native-shell .tarik-segar {
+  background:
+    var(--pola-berlian) 0 calc(-1 * (env(safe-area-inset-top, 0px) + var(--tinggi-topbar))) / 28px
+      28px,
+    #0f766e;
+}
+html.native-shell .tarik-segar i {
+  color: #fff !important;
+}
