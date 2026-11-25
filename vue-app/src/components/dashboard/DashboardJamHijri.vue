@@ -61,7 +61,7 @@ const { jam, menit, detik, hari, hijri, masehi } = useClock()
 }
 :global(.dark) .ammu-jam,
 .dark-mode .ammu-jam {
-  background: linear-gradient(135deg, #0f172a 0%, #0f172a 100%);
+  background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
 }
 .hijri-text {
   font-family:

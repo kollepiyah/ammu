@@ -88,7 +88,7 @@ async function setupNativeIntegration() {
       StatusBar.getInfo()
         .then((info) => {
           if (info && info.overlays === false)
-            return StatusBar.setBackgroundColor({ color: isDark ? '#1E293B' : '#FFFFFF' })
+            return StatusBar.setBackgroundColor({ color: isDark ? '#13161C' : '#FFFFFF' })
         })
         .catch(() => {})
     }
@@ -230,7 +230,7 @@ body {
   overscroll-behavior: none;
 }
 body.dark-mode {
-  background-color: #0f172a;
+  background-color: #0c0e12;
 }
 
 /* v.71.0526: Disable text selection di non-input elements untuk native feel.

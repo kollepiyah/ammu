@@ -52,6 +52,14 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   sakelar lama di header tetap bekerja.
 
 ### Changed
+- **Mode gelap "Obsidian" untuk seluruh aplikasi** (Kyai 25 Nov 2026, mengacu Maktaba POS): latar
+  abu-hitam netral `#0c0e12`, kartu `#13161c`, garis rambut putih transparan, teks lebih terang;
+  aksen teal tetap. Kelas `slate-600..950` kini lewat variabel CSS (`tailwind.config.js`) sehingga
+  ±330 `dark:bg-slate-*` ikut netral tanpa menyunting komponen — mode terang tidak berubah.
+  Penjaga kontras ditambah untuk `text-rose-600`/`text-red-600` (tanggal Minggu kalender).
+- Beranda publik & dashboard: kartu Channel = 3 postingan terbaru dalam daftar yang setinggi
+  fotonya (tanpa gambar → ikon pengganti); kartu jam tanpa bayangan; header publik cukup tulisan
+  nama aplikasi; tombol Masuk tanpa latar hijau.
 - **Dashboard Android/PWA: kartu jam diganti baris ikon** Al-Qur'an · Wirid · Kiblat · Jadwal
   Sholat di bawah kartu sapaan (Kyai 25 Nov 2026), untuk semua peran. Ikon masih "segera hadir"
   sampai layarnya dibangun. Web & Electron tetap memakai kartu jam.

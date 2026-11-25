@@ -15,7 +15,7 @@
       <button
         v-haptic
         type="button"
-        class="shrink-0 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-teal-600 hover:bg-teal-700 text-white transition cursor-pointer max-w-[45%]"
+        class="shrink-0 flex items-center gap-1.5 text-sm font-bold px-1 py-1 text-teal-700 dark:text-teal-300 hover:opacity-80 transition cursor-pointer max-w-[45%]"
         @click="bukaPortal"
       >
         <i :class="['fas', auth.isLoggedIn ? 'fa-user' : 'fa-right-to-bracket']"></i>

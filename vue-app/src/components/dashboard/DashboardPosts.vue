@@ -35,15 +35,17 @@
       <li
         v-for="p in posts.slice(0, 3)"
         :key="p.id"
-        class="p-3 bg-[var(--bg-card-elevated)] rounded-[var(--radius-md)] border border-[var(--border-subtle)] cursor-pointer hover:border-[var(--color-accent)] hover:shadow-[var(--shadow-md)] transition flex gap-3 items-start"
+        class="p-2 bg-[var(--bg-card-elevated)] rounded-[var(--radius-md)] border border-[var(--border-subtle)] cursor-pointer hover:border-[var(--color-accent)] transition flex gap-3 items-center"
         @click="goToPosts(p.id)"
       >
-        <!-- Thumbnail (kalau ada gambar) -->
+        <!-- Kyai 25 Nov 2026: tinggi kartu = tinggi foto. Foto selalu 64px (tanpa gambar →
+             ikon pengganti), teks dipadatkan ke 3 baris tunggal supaya tak melebihi foto. -->
         <div
-          v-if="firstImage(p)"
-          class="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded-[var(--radius-sm)] overflow-hidden bg-[var(--bg-muted)] relative"
+          class="w-16 h-16 flex-shrink-0 rounded-[var(--radius-sm)] overflow-hidden bg-[var(--bg-muted)] relative flex items-center justify-center"
         >
+          <i v-if="!firstImage(p)" class="fas fa-bullhorn text-[var(--text-tertiary)]"></i>
           <img
+            v-else
             :src="firstImage(p)"
             :alt="p.judul"
             class="w-full h-full object-cover"
@@ -76,22 +78,18 @@
           </span>
         </div>
         <!-- Caption + meta -->
-        <div class="flex-1 min-w-0">
-          <h4
-            v-if="p.judul"
-            class="text-sm font-black text-[var(--text-primary)] leading-snug truncate"
-          >
-            {{ p.judul }}
+        <div class="flex-1 min-w-0 h-16 flex flex-col justify-center gap-0.5">
+          <h4 class="text-sm font-black text-[var(--text-primary)] leading-snug truncate">
+            {{ p.judul || p.isi }}
           </h4>
-          <p class="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2 whitespace-pre-line">
+          <p v-if="p.judul && p.isi" class="text-xs text-[var(--text-secondary)] truncate">
             {{ p.isi }}
           </p>
-          <div class="flex items-center gap-2 mt-1.5 text-[10px] text-[var(--text-tertiary)]">
+          <div
+            class="flex items-center gap-1.5 text-[10px] text-[var(--text-tertiary)] whitespace-nowrap min-w-0"
+          >
             <i class="fas fa-clock"></i>
-            <span>{{ formatTanggalPost(p.tanggal || p.createdAt) }}</span>
-            <span v-if="p.pengirim_nama" class="ml-2 truncate">
-              <i class="fas fa-user mr-1"></i>{{ p.pengirim_nama }}
-            </span>
+            <span class="truncate">{{ formatTanggalPost(p.tanggal || p.createdAt) }}</span>
           </div>
         </div>
       </li>

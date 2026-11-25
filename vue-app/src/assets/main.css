@@ -27,6 +27,12 @@ html {
 }
 
 :root {
+  /* Slate gelap lewat variabel (lihat .dark); nilai asli Tailwind. */
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+  --slate-950: 2 6 23;
   /* === LIGHT MODE — Teal + Ivory (Tetap identitas asli, diberi kedalaman realistis) === */
   --bg-page: #f4f7f8;
   --bg-card: #ffffff;
@@ -86,23 +92,33 @@ html {
 
 .dark {
   /* === DARK MODE — Slate & Teal (Kontras AA+ + kedalaman realistis) === */
-  --bg-page: #0b1120;
-  --bg-card: #162032;
-  --bg-card-elevated: #1e293b;
-  --bg-overlay: rgba(2, 6, 23, 0.74);
-  --bg-sidebar: #111827;
-  --bg-input: #0f172a;
-  --bg-hover: rgba(148, 163, 184, 0.12);
-  --bg-muted: #1e293b;
+  /* Kyai 25 Nov 2026: gaya "Obsidian" ala Maktaba POS — abu-hitam netral (tak kebiruan),
+     garis rambut putih transparan, teks lebih terang. Aksen teal tetap. */
+  --bg-page: #0c0e12;
+  --bg-card: #13161c;
+  --bg-card-elevated: #1a1e26;
+  --bg-overlay: rgba(0, 0, 0, 0.72);
+  --bg-sidebar: #101318;
+  --bg-input: #0c0e12;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-muted: #1a1e26;
 
-  --border-subtle: rgba(148, 163, 184, 0.15);
-  --border-default: rgba(148, 163, 184, 0.26);
-  --border-strong: rgba(148, 163, 184, 0.42);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.13);
+  --border-strong: rgba(255, 255, 255, 0.22);
 
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --text-inverse: #0f172a;
+  /* Kelas slate-600..950 (dark:bg-slate-900 dsb, ±330 tempat) ikut netral lewat variabel
+     ini — lihat tailwind.config.js. Nilai :root = slate asli, jadi mode terang tak berubah. */
+  --slate-600: 61 68 82;
+  --slate-700: 42 47 58;
+  --slate-800: 26 30 38;
+  --slate-900: 19 22 28;
+  --slate-950: 12 14 18;
+
+  --text-primary: #f3f2ee;
+  --text-secondary: #c3c7cf;
+  --text-tertiary: #9aa1ad;
+  --text-inverse: #0c0e12;
   --text-on-primary: #ffffff;
   --text-on-accent: #ffffff;
 
@@ -132,8 +148,8 @@ html {
   --color-info-soft: rgba(59, 130, 246, 0.18);
   --color-info-text: #bfdbfe;
 
-  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-md: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 26px -6px rgba(0, 0, 0, 0.5);
+  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 28px -8px rgba(0, 0, 0, 0.45);
   --shadow-lg: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 40px -8px rgba(0, 0, 0, 0.62);
 }
 
@@ -345,20 +361,23 @@ button:not(:disabled):active {
 }
 
 /* 2. Kotak pastel terang (bg-*-50 / bg-*-100 / bg-white) tanpa dark:bg- -> translucent gelap elegan */
-.dark .bg-white:not([class*='dark:bg-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *) {
+.dark
+  .bg-white:not([class*='dark:bg-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(
+    #rapor-print-area *
+  ) {
   background-color: var(--bg-card);
 }
 .dark .bg-slate-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-gray-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
-  background-color: rgba(30, 41, 59, 0.72);
+  background-color: rgba(255, 255, 255, 0.04);
 }
 .dark .bg-slate-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-gray-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
-  background-color: rgba(51, 65, 85, 0.65);
+  background-color: rgba(255, 255, 255, 0.07);
 }
 .dark .bg-slate-200:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-slate-300:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
-  background-color: rgba(71, 85, 105, 0.72);
+  background-color: rgba(255, 255, 255, 0.11);
 }
 .dark .bg-teal-50:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *),
 .dark .bg-teal-100:not([class*='dark:bg-']):not(.print-area *):not(#rapor-print-area *) {
@@ -396,7 +415,7 @@ button:not(:disabled):active {
 .dark .border-slate-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
 .dark .border-slate-300:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
 .dark .border-gray-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *) {
-  border-color: rgba(148, 163, 184, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 .dark .border-teal-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
 .dark .border-emerald-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *) {
@@ -405,22 +424,43 @@ button:not(:disabled):active {
 .dark .border-amber-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
 .dark .border-rose-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *),
 .dark .border-blue-200:not([class*='dark:border-']):not(.print-area *):not(#rapor-print-area *) {
-  border-color: rgba(148, 163, 184, 0.25);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* 4. Teks gelap yang lupa dark:text- -> terang & tajam di atas kartu gelap */
-.dark .text-slate-900:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *),
-.dark .text-slate-800:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *),
-.dark .text-gray-900:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *),
-.dark .text-gray-800:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *) {
-  color: #f1f5f9;
+.dark
+  .text-slate-900:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(
+    #rapor-print-area
+  ):not(#rapor-print-area *),
+.dark
+  .text-slate-800:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(
+    #rapor-print-area
+  ):not(#rapor-print-area *),
+.dark
+  .text-gray-900:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(
+    #rapor-print-area
+  ):not(#rapor-print-area *),
+.dark
+  .text-gray-800:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(
+    #rapor-print-area
+  ):not(#rapor-print-area *) {
+  color: #f3f2ee;
 }
-.dark .text-slate-700:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *),
-.dark .text-gray-700:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *) {
-  color: #e2e8f0;
+.dark
+  .text-slate-700:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(
+    #rapor-print-area
+  ):not(#rapor-print-area *),
+.dark
+  .text-gray-700:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(
+    #rapor-print-area
+  ):not(#rapor-print-area *) {
+  color: #e3e4e8;
 }
-.dark .text-slate-600:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(#rapor-print-area):not(#rapor-print-area *) {
-  color: #cbd5e1;
+.dark
+  .text-slate-600:not([class*='dark:text-']):not(.print-area):not(.print-area *):not(
+    #rapor-print-area
+  ):not(#rapor-print-area *) {
+  color: #c3c7cf;
 }
 .dark .text-teal-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
 .dark .text-teal-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
@@ -435,6 +475,8 @@ button:not(:disabled):active {
 .dark .text-amber-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
   color: #fcd34d;
 }
+.dark .text-rose-600:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
+.dark .text-red-600:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
 .dark .text-rose-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
 .dark .text-rose-800:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *),
 .dark .text-red-700:not([class*='dark:text-']):not(.print-area *):not(#rapor-print-area *) {
@@ -448,7 +490,10 @@ button:not(:disabled):active {
 }
 
 /* 5. Form controls di mode gelap selalu nyaman dibaca */
-.dark input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.print-area *):not(#rapor-print-area *),
+.dark
+  input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.print-area *):not(
+    #rapor-print-area *
+  ),
 .dark select:not(.print-area *):not(#rapor-print-area *),
 .dark textarea:not(.print-area *):not(#rapor-print-area *) {
   color: #f1f5f9;

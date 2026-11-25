@@ -1,7 +1,7 @@
 <template>
   <!-- Kartu jam ringkas satu baris (blueprint 3.1) — pindahan kartu jam dashboard -->
   <div
-    class="jam-ringkas relative overflow-hidden rounded-2xl text-white px-4 py-3 shadow-sm flex items-center justify-between gap-3"
+    class="jam-ringkas relative overflow-hidden rounded-2xl text-white px-4 py-3 flex items-center justify-between gap-3"
   >
     <svg
       class="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
@@ -41,10 +41,9 @@ const { jam, menit, detik, hari, hijri, masehi } = useClock()
 </script>
 
 <style scoped>
+/* Tanpa bayangan (Kyai: bayangannya mengotori) dan teal yang sama di mode gelap supaya
+   tetap menyala di atas latar Obsidian. */
 .jam-ringkas {
   background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
-}
-:global(.dark) .jam-ringkas {
-  background: linear-gradient(135deg, #134e4a 0%, #0f172a 100%);
 }
 </style>
