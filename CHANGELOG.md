@@ -122,6 +122,14 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   Tab Jurnal kini hanya memuat kartu milik akun yang membuka — termasuk admin/kepala — supaya tak
   perlu menggulir kartu guru lain; melihat yang lain lewat tab Jadwal/Riwayat. "Tambah kartu"
   untuk menambal kelas lain tetap ada bagi penyusun.
+- **Login Google tanpa browser di Android** (Kyai 25 Nov 2026: pindah ke Chrome terasa kaku):
+  tombol Google kini membuka pemilih akun bawaan HP (Credential Manager, plugin
+  `@capgo/capacitor-social-login`), ID token-nya ditukar lewat `supabase.auth.signInWithIdToken`
+  dengan nonce (hash ke Google, asli ke Supabase). Layar pilih akun bawaan juga tak lagi
+  menampilkan alamat `supabase.co`. Bila jalur ini gagal (SHA-1 belum terdaftar, HP tanpa akun
+  Google) app jatuh ke jalur browser lama dengan pemberitahuan; menutup pemilih akun = batal senyap.
+  Web, PWA, Electron, dan "Tautkan Akun Google" di Profil tetap jalur lama. Hanya Google yang
+  dibundel (provider lain plugin dimatikan di `capacitor.config.json`).
 - **Penyeragaman tampilan, gelombang 3:** judul halaman (`<h1>` di area isi) satu ukuran untuk
   semua halaman (dulu 11 gaya berbeda); kepala gradasi Ceremonial PTPT, Kegiatan Pesantren, dan
   Guru Belum Isi Rekap jadi kartu polos seperti halaman lain; tombol kepala Kalender Kegiatan

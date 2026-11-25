@@ -470,16 +470,93 @@ export async function exchangeOAuthCode(code) {
   if (error) throw error
 }
 
+// Client ID WEB Google (yang dipakai Supabase) — bukan rahasia; aud token wajib cocok
+//   dengan "Client IDs" di Supabase → Auth → Google.
+export const GOOGLE_WEB_CLIENT_ID =
+  '289365012301-8p382o3p0gdqp8n04ghh5dq6rt0g89cb.apps.googleusercontent.com'
+
+// Galat yang menandai pengguna sendiri menutup pemilih akun — bukan kegagalan.
+export const GOOGLE_DIBATALKAN = 'GOOGLE_DIBATALKAN'
+
+let _socialSiap = null
+async function _socialLogin() {
+  const { SocialLogin } = await import('@capgo/capacitor-social-login')
+  if (!_socialSiap) {
+    _socialSiap = SocialLogin.initialize({
+      // skipAuth…: BridgeActivity bawaan bisa macet di langkah authorize; kita cuma butuh idToken.
+      google: { webClientId: GOOGLE_WEB_CLIENT_ID, skipAuthOnlyAuthorizationAfterSignIn: true }
+    }).catch((e) => {
+      _socialSiap = null
+      throw e
+    })
+  }
+  await _socialSiap
+  return SocialLogin
+}
+
+async function _sha256Hex(teks) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(teks))
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** Android: pemilih akun Google bawaan HP (Credential Manager) → signInWithIdToken.
+ *  Nonce: Google menerima HASH-nya, Supabase menerima aslinya lalu mencocokkan sendiri. */
+async function _loginGoogleNative() {
+  const SocialLogin = await _socialLogin()
+  const nonce = crypto.randomUUID() + crypto.randomUUID()
+  let res
+  try {
+    res = await SocialLogin.login({
+      provider: 'google',
+      options: { nonce: await _sha256Hex(nonce) }
+    })
+  } catch (e) {
+    if (e?.code === 'USER_CANCELLED' || /cancel/i.test(e?.message || '')) {
+      const batal = new Error('Login Google dibatalkan.')
+      batal.code = GOOGLE_DIBATALKAN
+      throw batal
+    }
+    throw e
+  }
+  const token = res?.result?.idToken
+  if (!token) throw new Error('Google tak memberi ID token.')
+  // Store auth memakai penanda ini untuk membedakan "akun Google belum tertaut".
+  window.dispatchEvent(new CustomEvent('ammu-google-masuk'))
+  const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token, nonce })
+  if (error) throw error
+}
+
+/**
+ * @returns {Promise<{lewatBrowser?: boolean, sebab?: string}>} Android: `lewatBrowser` bila jalur
+ *   native gagal (mis. SHA-1 belum terdaftar, HP tanpa akun Google) dan kita jatuh ke browser.
+ */
 export async function loginWithGoogle() {
   _ensure()
+  // Hanya Android: iOS butuh client ID iOS tersendiri yang belum ada.
+  if (isNativeApp() && window.Capacitor?.getPlatform?.() === 'android') {
+    try {
+      await _loginGoogleNative()
+      return {}
+    } catch (e) {
+      if (e?.code === GOOGLE_DIBATALKAN) throw e
+      console.warn('[loginWithGoogle] jalur native gagal, pakai browser:', e?.message || e)
+      await _bukaOAuth(() =>
+        supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: _googleRedirect(), skipBrowserRedirect: true }
+        })
+      )
+      return { lewatBrowser: true, sebab: e?.message || String(e) }
+    }
+  }
   await _bukaOAuth((native) =>
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: _googleRedirect(), skipBrowserRedirect: native }
     })
   )
-  // Web: browser sudah berpindah ke Google. Native: browser sistem yang terbuka.
-  // Dua-duanya tak punya nilai balik — sesi dibangun saat kembali.
+  // Web: browser sudah berpindah ke Google — sesi dibangun saat kembali.
+  return {}
 }
 
 export async function linkGoogleAccount() {

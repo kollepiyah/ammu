@@ -417,6 +417,11 @@ export const useAuthStore = defineStore('auth', () => {
     //   Berbeda dengan web, di sini TAK ADA muat ulang halaman: sesudah sesi terbentuk
     //   layar masih diam di /login, karena itu LoginView memantau isLoggedIn.
     if (authSupabase.isNativeApp()) {
+      // Login Google native (pemilih akun HP, tanpa browser): sesi lahir dari
+      //   signInWithIdToken tanpa deep link — penandanya datang lewat event ini.
+      window.addEventListener('ammu-google-masuk', () => {
+        _baruBalikOAuth = true
+      })
       try {
         const { App } = await import('@capacitor/app')
         App.addListener('appUrlOpen', async ({ url } = {}) => {

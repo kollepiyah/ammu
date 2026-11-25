@@ -5,7 +5,7 @@ import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import { useAuthStore, ambilSebabGoogleGagal } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
-import { loginWithGoogle } from '@/services/authSupabase'
+import { loginWithGoogle, GOOGLE_DIBATALKAN } from '@/services/authSupabase'
 import loginBg from '@/assets/loginBg.js'
 import { useUnduhan, URL_PRIVASI } from '@/composables/useUnduhan'
 
@@ -153,18 +153,18 @@ async function handleLogin() {
   }
 }
 
-// loginWithGoogle() me-REDIRECT ke Google dan tak pernah mengembalikan apa pun —
-//   sesi dibangun saat kembali, di initAuth Step 0. Jadi tak ada `cred.user` untuk
-//   ditunggu di sini; yang bisa gagal di titik ini hanya permintaan redirect-nya
-//   sendiri (mis. provider Google belum diaktifkan di dashboard Supabase).
+// Web: loginWithGoogle() me-REDIRECT ke Google; sesi dibangun saat kembali (initAuth Step 0).
+// Android: pemilih akun HP langsung memberi sesi — watch isLoggedIn di atas yang berpindah
+//   layar; bila jalur native gagal, ia jatuh ke browser seperti dulu.
 async function handleGoogleLogin() {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-    await loginWithGoogle()
-    // Sukses = browser berpindah ke Google. Baris di bawah ini praktis tak terjangkau.
+    const hasil = await loginWithGoogle()
+    if (hasil?.lewatBrowser) toast.info('Pemilih akun Google belum siap — dibuka lewat browser.')
+    isSubmitting.value = false
   } catch (e) {
-    toast.error(e?.message || 'Login Google gagal')
+    if (e?.code !== GOOGLE_DIBATALKAN) toast.error(e?.message || 'Login Google gagal')
     isSubmitting.value = false
   }
 }

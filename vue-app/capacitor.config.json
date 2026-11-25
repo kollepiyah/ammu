@@ -39,6 +39,14 @@
       "smallIcon": "ic_stat_ammu",
       "iconColor": "#0F766E"
     },
+    "SocialLogin": {
+      "providers": {
+        "google": true,
+        "facebook": false,
+        "apple": false,
+        "twitter": false
+      }
+    },
     "FirebaseAuthentication": {
       "skipNativeAuth": true,
       "providers": ["google.com"]
