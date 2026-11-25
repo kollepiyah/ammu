@@ -950,7 +950,10 @@ const kartuJurnal = computed(() =>
     kelasList: kelasList.value,
     guruId: myId.value,
     guruNama: myNama.value,
-    semuaKelas: bisaSemuaKelas.value,
+    // Kyai 25 Nov 2026: Jurnal hanya kartu milik akun ini — admin/kepala pun tak perlu
+    //   menggulir kartu guru lain; melihat yang lain lewat tab Jadwal/Riwayat. Menambal kelas
+    //   lain tetap bisa lewat "Tambah kartu" (kartuManual).
+    semuaKelas: false,
     manual: kartuManual.value
   }).map((k) => ({
     ...k,
