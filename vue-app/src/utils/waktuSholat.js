@@ -51,7 +51,7 @@ export const METODE = Object.freeze({
   nu: {
     kunci: 'nu',
     label: 'Falakiyah NU',
-    keterangan: 'Subuh 20°, Isya 18° — sama dengan jadwal NU Online (web)',
+    keterangan: 'Subuh 20°, Isya 18°, ihtiyath Zuhur 1 menit',
     subuh: 20,
     isya: 18,
     terbit: 0.8333 + 0.0347 * Math.sqrt(5), // kerendahan ufuk ketinggian 5 m
