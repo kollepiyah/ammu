@@ -161,9 +161,15 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   hapus merah; `.tetap-label` untuk tombol yang wajib bertulisan (Setoran Lain wali). Kepala
   Tabungan & Tagihan ditata ulang (angka di atas, tombol ikon di bawah, keterangan dibuang);
   daftar saldo Tabungan jadi baris tipis, tanggal "Update" tak lagi terbelah.
+- Deret tombol aksi di HP kini meniru tab Pondok Laju (wadah abu lembut, ikon di atas tulisan kecil,
+  sama lebar; >5 tombol jadi grid) — menggantikan kotak ikon-saja berwarna.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.
+- Gaya native: daftar bergaris di dalam kartu (Tugas Saya, Kalender Pendidikan) sempat tampak
+  berkotak gelap karena latar daftar diisi warna kartu; kini transparan (`.latar-bagian` untuk
+  daftar tingkat atas). Tombol tingkat atas seperti "Buat Postingan" kembali bentuk aslinya —
+  selebar baris dengan jarak tepi — setelah sempat melebar mepet tepi.
 
 ---
 

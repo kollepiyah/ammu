@@ -275,24 +275,50 @@ button,
     font-size: 10px;
     white-space: nowrap;
   }
-  /* Tombol berikon -> kotak ikon saja, satu baris sama lebar (tak ada tombol yatim di baris
-     kedua); teksnya disembunyikan (label tetap di aria-label/title). */
+  /* Kyai 25 Nov 2026: deret tombol aksi meniru tab Pondok Laju — wadah abu lembut, tiap tombol
+     polos sama lebar dengan ikon di atas tulisan kecil. >5 tombol jadi grid 3/4 kolom. */
   .ph-aksi {
     display: grid !important;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
+    gap: 0.25rem !important;
+    padding: 0.25rem;
+    border-radius: 0.85rem;
+    background: var(--bg-muted);
+  }
+  .ph-aksi:has(> :nth-child(6)) {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ph-aksi:has(> :nth-child(8)) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .ph-aksi > :is(button, a, label):has(> i):not(.tetap-label) {
     width: 100%;
-    height: 2.75rem;
-    padding: 0 !important;
+    min-height: 3.1rem;
+    height: auto !important;
+    padding: 0.4rem 0.2rem !important;
+    flex-direction: column;
     justify-content: center;
-    gap: 0 !important;
-    font-size: 0 !important;
+    gap: 0.2rem !important;
+    font-size: 10px !important;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+    border-radius: 0.6rem !important;
+    background: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: var(--text-secondary) !important;
   }
   .ph-aksi > :is(button, a, label) > i {
-    font-size: 1rem;
+    font-size: 0.95rem;
     margin: 0 !important;
+    color: var(--color-primary);
+  }
+  .ph-aksi > :is([class*='bg-rose'], [class*='bg-red']) > i {
+    color: #f43f5e !important;
   }
 }
 
@@ -471,21 +497,6 @@ button,
     grid-column: 3;
     grid-row: 1 / span 2;
   }
-  /* Kyai 25 Nov 2026: tombol aksi warna-warni jadi polos seragam (latar netral, ikon teal);
-     tombol hapus/bahaya tetap berikon merah. */
-  html.native-shell .ph-aksi > :is(button, a, label):has(> i):not(.tetap-label) {
-    background: var(--bg-card-elevated) !important;
-    color: var(--text-primary) !important;
-    border: 1px solid var(--border-subtle) !important;
-    box-shadow: none !important;
-    background-image: none !important;
-  }
-  html.native-shell .ph-aksi > :is(button, a, label) > i {
-    color: var(--color-accent) !important;
-  }
-  html.native-shell .ph-aksi > :is([class*='bg-rose'], [class*='bg-red']) > i {
-    color: #f43f5e !important;
-  }
   /* Kartu jam ikut selebar layar (gradiennya tetap). */
   html.native-shell .akar-halaman .jam-ringkas {
     border-radius: 0 !important;
@@ -545,12 +556,21 @@ button,
             .kepala-polos
           )
       )
-    ):not(.daftar-baris):not(.fixed) {
+    ):not(.daftar-baris):not(.fixed):not(button):not(a) {
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
   }
+  /* Tombol tingkat atas (mis. "Buat Postingan") tetap bentuk aslinya, berjarak dari tepi. */
+  html.native-shell .akar-halaman > * > :is(button, a) {
+    margin-left: 0.75rem !important;
+    margin-right: 0.75rem !important;
+  }
+  html.native-shell .akar-halaman > * > :is(button, a).w-full {
+    width: calc(100% - 1.5rem) !important;
+  }
   /* Daftar berupa baris bergaris tipis (dipasang per halaman lewat .daftar-baris). */
-  html.native-shell .daftar-baris {
+  /* Daftar tingkat atas (bukan di dalam kartu) butuh latar bagian sendiri. */
+  html.native-shell .latar-bagian {
     background: var(--bg-card);
   }
   html.native-shell .daftar-baris > * {

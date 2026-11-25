@@ -306,7 +306,10 @@
         </div>
 
         <!-- List santri -->
-        <div v-if="!loading && filteredItems.length > 0" class="daftar-baris space-y-2">
+        <div
+          v-if="!loading && filteredItems.length > 0"
+          class="daftar-baris latar-bagian space-y-2"
+        >
           <div
             v-for="t in filteredItems"
             :key="t.santri_id"
