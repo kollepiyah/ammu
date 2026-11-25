@@ -15,9 +15,6 @@ export function daftarGambar(p) {
   const satu = pilihBerkas(p?.gambar_url, p?.gambar, p?.foto)
   return satu ? [satu] : []
 }
-export function gambarPertama(p) {
-  return daftarGambar(p)[0] || ''
-}
 
 export function usePostTamu() {
   const { data, loading, galat, segarkan } = useDataTamu(

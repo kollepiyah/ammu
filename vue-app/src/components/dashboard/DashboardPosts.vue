@@ -115,11 +115,21 @@ import { subscribeColl } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
 import { pilihBerkas, urlBerkas } from '@/utils/urlBerkas'
 import { fmtDateTime } from '@/utils/format'
+import { usePostTamu } from '@/composables/usePostTamu'
+
+// Kyai 25 Nov 2026: Beranda publik memakai kartu yang sama dengan dashboard. Mode publik
+// menarik sekali tanpa realtime (usePostTamu) dan membuka tab Channel publik.
+const props = defineProps({ publik: { type: Boolean, default: false } })
 
 const settings = useSettingsStore()
 const router = useRouter()
-const posts = ref([])
-const loading = ref(true)
+const postsLive = ref([])
+const loadingLive = ref(true)
+const tamu = props.publik ? usePostTamu() : null
+const posts = computed(() => (tamu ? tamu.posts.value : postsLive.value))
+const loading = computed(() =>
+  tamu ? tamu.loading.value && !posts.value.length : loadingLive.value
+)
 let unsubscribe = null
 
 const channelName = computed(() => settings.settings?.namaChannel || 'Ammu Channel')
@@ -138,11 +148,8 @@ function imageCount(p) {
 }
 
 function goToPosts(postId) {
-  if (postId) {
-    router.push({ path: '/posts', query: { id: postId } })
-  } else {
-    router.push('/posts')
-  }
+  const path = props.publik ? '/umum/channel' : '/posts'
+  router.push(postId ? { path, query: { id: postId } } : path)
 }
 
 function formatTanggalPost(t) {
@@ -163,9 +170,10 @@ function sortByDateDesc(a, b) {
 }
 
 onMounted(() => {
+  if (tamu) return
   unsubscribe = subscribeColl('beranda_post', (docs) => {
-    posts.value = [...docs].sort(sortByDateDesc)
-    loading.value = false
+    postsLive.value = [...docs].sort(sortByDateDesc)
+    loadingLive.value = false
   })
 })
 
