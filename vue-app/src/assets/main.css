@@ -320,6 +320,7 @@ button,
       .rounded-2xl,
       .rounded-xl,
       .rounded-3xl,
+      [class*='rounded-[2rem]'],
       [class*='rounded-[var(--radius-lg)]'],
       [class*='rounded-[var(--radius-xl)]']
     ):is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white):not(
@@ -327,6 +328,7 @@ button,
           .rounded-2xl,
           .rounded-xl,
           .rounded-3xl,
+          [class*='rounded-[2rem]'],
           [class*='rounded-[var(--radius-lg)]'],
           [class*='rounded-[var(--radius-xl)]']
         ):is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white)
@@ -349,6 +351,115 @@ button,
   html.native-shell .ph-stat > * + * {
     border-left: 1px solid var(--border-subtle) !important;
     border-radius: 0 !important;
+  }
+  /* Profil (Kyai 25 Nov 2026, mock-up): spanduk gradasi -> kepala ringkas (foto kiri, nama &
+     peran kanan); kartu info geser-samping -> bertumpuk; Pengaturan Profil -> daftar baris. */
+  html.native-shell .profil-banner {
+    background: var(--bg-card) !important;
+    padding: 1rem !important;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  html.native-shell .profil-banner > img {
+    display: none !important;
+  }
+  html.native-shell .profil-banner > div {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.9rem !important;
+  }
+  html.native-shell .profil-banner > div > div:first-child {
+    width: 4rem !important;
+    height: 4rem !important;
+    border-width: 0 !important;
+    box-shadow: none !important;
+    background: var(--bg-muted) !important;
+  }
+  html.native-shell .profil-banner > div > div:first-child > i {
+    font-size: 1.5rem !important;
+    color: var(--text-tertiary) !important;
+  }
+  html.native-shell .profil-banner > div > div:last-child {
+    text-align: left !important;
+  }
+  html.native-shell .profil-banner :is(h2, p, span) {
+    color: var(--text-primary) !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+  html.native-shell .profil-banner h2 {
+    font-size: 1.1rem !important;
+  }
+  html.native-shell .profil-banner p {
+    color: var(--text-secondary) !important;
+    font-size: 0.75rem !important;
+    margin-top: 0.15rem !important;
+  }
+  html.native-shell .profil-banner span {
+    margin-top: 0.4rem !important;
+    padding: 0.1rem 0.6rem !important;
+    font-size: 10px !important;
+    background: transparent !important;
+    border-color: var(--border-default) !important;
+    box-shadow: none !important;
+  }
+  html.native-shell .profil-geser {
+    display: block !important;
+    overflow: visible !important;
+  }
+  html.native-shell .profil-geser > * {
+    width: 100% !important;
+    border-radius: 0 !important;
+    border-width: 0 !important;
+    background: transparent !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  html.native-shell .profil-geser > * + * {
+    border-top: 1px solid var(--border-subtle) !important;
+  }
+  html.native-shell .profil-geser ~ div {
+    border-radius: 0 !important;
+    border-width: 1px 0 0 0 !important;
+    border-color: var(--border-subtle) !important;
+    background: transparent !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  html.native-shell .daftar-pengaturan {
+    display: block !important;
+  }
+  html.native-shell .daftar-pengaturan > button {
+    display: grid !important;
+    grid-template-columns: 1.75rem 1fr 1rem;
+    column-gap: 0.75rem;
+    align-items: center;
+    width: 100%;
+    padding: 0.8rem 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+  html.native-shell .daftar-pengaturan > button + button {
+    border-top: 1px solid var(--border-subtle) !important;
+  }
+  html.native-shell .daftar-pengaturan > button > i {
+    grid-row: span 2;
+    font-size: 1.15rem !important;
+    margin: 0 !important;
+    text-align: center;
+  }
+  html.native-shell .daftar-pengaturan > button > p {
+    grid-column: 2;
+    margin: 0 !important;
+  }
+  html.native-shell .daftar-pengaturan > button::after {
+    content: '054';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    grid-column: 3;
+    grid-row: 1 / span 2;
   }
   /* Kartu jam ikut selebar layar (gradiennya tetap). */
   html.native-shell .akar-halaman .jam-ringkas {
@@ -382,6 +493,57 @@ button,
   html.native-shell .daftar-baris > * + * {
     border-top: 1px solid var(--border-subtle) !important;
   }
+}
+
+/* Kyai 25 Nov 2026: kepala halaman bergradasi (Statistik) & kotak menu bergradasi (Kegiatan,
+   Pengaturan Web) disamakan dengan kartu polos halaman lain — semua lebar layar. */
+.kepala-polos {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm) !important;
+}
+.kepala-polos > img {
+  display: none !important;
+}
+.kepala-polos .text-white,
+.kepala-polos[class*='text-white'] h2 {
+  color: var(--text-primary) !important;
+}
+.kepala-polos > p:first-child {
+  color: var(--color-primary) !important;
+  opacity: 1 !important;
+}
+.kepala-polos [class*='opacity-9'] {
+  opacity: 1 !important;
+  color: var(--text-secondary) !important;
+}
+.kepala-polos [class*='bg-white/'] {
+  background: var(--bg-muted) !important;
+  color: var(--text-secondary) !important;
+  backdrop-filter: none !important;
+}
+.menu-petak > button {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle);
+  box-shadow: none !important;
+}
+.menu-petak > button [class*='text-white'] {
+  color: var(--text-secondary) !important;
+}
+.menu-petak > button > i {
+  color: var(--color-primary) !important;
+  filter: none !important;
+}
+.menu-petak > button :is(h3, p) {
+  filter: none !important;
+  text-shadow: none !important;
+}
+.menu-petak > button[class*='ring-2'] {
+  border-color: var(--color-primary) !important;
+  background: var(--color-primary-soft) !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
 }
 
 /* Kyai 25 Nov 2026: judul halaman seragam — dulu 11 gaya ukuran berbeda. Semua <h1> di area isi

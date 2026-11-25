@@ -4,7 +4,7 @@
       class="bg-[var(--bg-card)] rounded-2xl overflow-hidden border border-[var(--border-subtle)] shadow-sm"
     >
       <div
-        class="relative bg-gradient-to-br from-cyan-500 dark:from-cyan-700 via-cyan-600 dark:via-cyan-800 to-cyan-700 dark:to-cyan-900 px-6 py-7"
+        class="profil-banner relative bg-gradient-to-br from-cyan-500 dark:from-cyan-700 via-cyan-600 dark:via-cyan-800 to-cyan-700 dark:to-cyan-900 px-6 py-7"
       >
         <img
           src="/logo.png"
@@ -65,7 +65,7 @@
       <div v-if="mode === 'view'" class="p-4 space-y-4">
         <!-- v.103 mobile: kartu info scroll-samping (snap); grid 2-kolom di desktop -->
         <div
-          class="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory hide-scrollbar pb-1"
+          class="profil-geser flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory hide-scrollbar pb-1"
         >
           <div
             class="snap-center shrink-0 w-[88%] md:w-auto bg-[var(--bg-card-elevated)] p-4 rounded-2xl border border-[var(--border-subtle)]"

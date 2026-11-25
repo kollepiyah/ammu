@@ -9,7 +9,7 @@
       Pengaturan Profil
     </h3>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <div class="daftar-pengaturan grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       <button
         v-for="item in items"
         :key="item.id"

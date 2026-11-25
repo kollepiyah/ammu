@@ -24,7 +24,7 @@
     <!-- ============================================================
          TAB BAR: grid kartu gradient untuk pilih section
          ============================================================ -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-4">
+    <div class="menu-petak grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-4">
       <button
         v-for="t in tabs"
         :key="t.id"

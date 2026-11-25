@@ -6,7 +6,7 @@
     >
       <!-- HEADER BANNER — gradient teal/emerald dengan logo app sebagai watermark -->
       <div
-        class="relative bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-hover)] to-[var(--color-primary-hover)] px-6 md:px-8 py-6 md:py-7 overflow-hidden"
+        class="profil-banner relative bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-hover)] to-[var(--color-primary-hover)] px-6 md:px-8 py-6 md:py-7 overflow-hidden"
       >
         <!-- Logo app watermark (efek mirip Ahlan widget) -->
         <img
@@ -87,7 +87,7 @@
       <div v-if="mode === 'view'" class="p-4 md:p-6 space-y-4">
         <!-- v.103 mobile: 2 kartu info jadi scroll-samping (snap), grid 2-kolom di desktop -->
         <div
-          class="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory hide-scrollbar pb-1"
+          class="profil-geser flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory hide-scrollbar pb-1"
         >
           <!-- Identitas -->
           <div

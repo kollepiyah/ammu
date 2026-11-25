@@ -6,7 +6,7 @@
     >
       <!-- HEADER BANNER — gradient teal/emerald dengan logo app sebagai watermark -->
       <div
-        class="relative bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-hover)] to-[var(--color-primary-hover)] px-6 md:px-8 py-6 md:py-7 overflow-hidden"
+        class="profil-banner relative bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-hover)] to-[var(--color-primary-hover)] px-6 md:px-8 py-6 md:py-7 overflow-hidden"
       >
         <!-- Logo app watermark efek (mirip Ahlan widget) -->
         <img
@@ -59,7 +59,7 @@
       <div class="p-6 md:p-8">
         <!-- v.103 mobile: kartu detail jadi scroll-samping (snap-carousel); grid di desktop -->
         <div
-          class="flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0 pb-2 hide-scrollbar"
+          class="profil-geser flex md:grid md:grid-cols-2 gap-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0 pb-2 hide-scrollbar"
         >
           <div
             class="snap-center shrink-0 w-[85%] md:w-auto bg-[var(--bg-card-elevated)] p-5 rounded-2xl border border-[var(--border-subtle)]"

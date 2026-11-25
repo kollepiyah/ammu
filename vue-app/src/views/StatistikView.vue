@@ -5,7 +5,7 @@
          ============================================================ -->
     <div
       v-if="role !== 'santri'"
-      class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl p-5 md:p-6 text-white shadow-lg"
+      class="kepala-polos bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl p-5 md:p-6 text-white shadow-lg"
     >
       <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
         <i class="fas fa-chart-pie mr-1"></i>Dashboard Statistik
@@ -19,7 +19,7 @@
          ============================================================ -->
     <div
       v-if="role === 'santri' && santriProfile"
-      class="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-hover)] to-[var(--color-primary-hover)] rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden"
+      class="kepala-polos bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-hover)] to-[var(--color-primary-hover)] rounded-2xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden"
     >
       <img
         :src="logoSrc"

@@ -8,7 +8,7 @@
     </div>
 
     <!-- Tab buttons -->
-    <div class="grid grid-cols-3 gap-2 md:gap-3">
+    <div class="menu-petak grid grid-cols-3 gap-2 md:gap-3">
       <button
         v-for="tab in TABS"
         :key="tab.id"

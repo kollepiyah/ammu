@@ -135,6 +135,14 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   status) — tombol kelola pindah ke halaman profil yang dibuka dengan mengetuk baris; guru tetap
   punya tombol Edit Kelas di baris. Ikon ibadah jadi lingkaran tanpa kotak; angka jumlah tanpa
   kotak bersekat tipis. Tablet, desktop, dan Electron tak berubah.
+- **Profil gaya native** (HP Android/PWA, sesuai mock-up): spanduk gradasi jadi kepala ringkas
+  (foto kiri, nama & peran kanan), kartu Identitas/Tugas yang digeser ke samping jadi bertumpuk,
+  "Sistem & Akses" rata, dan petak Pengaturan Profil jadi daftar baris berikon dengan tanda ›
+  (`.profil-banner`, `.profil-geser`, `.daftar-pengaturan`) — berlaku untuk profil guru, santri,
+  dan admin.
+- **Kepala gradasi Statistik** (Dasbor, Detail Lembaga, Detail Santri Berprestasi) & **kotak menu
+  gradasi** (Kegiatan Pesantren, Pengaturan Web) jadi kartu polos sesuai tema lewat `.kepala-polos`
+  / `.menu-petak` di main.css — semua lebar layar; petak aktif ditandai bingkai teal.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.
