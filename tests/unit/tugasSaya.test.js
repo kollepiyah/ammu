@@ -82,9 +82,9 @@ describe('susunTugasSaya — piket Pondok Laju', () => {
     const h = susunTugasSaya({ guruId: 'g1', hariIni: HARI_INI, jadwalLaju, capaianLaju: [] })
     expect(h.terjadwal).toHaveLength(2)
     expect(h.terjadwal[0].kelompok).toBe('hari_ini')
-    expect(h.terjadwal[0].judul).toBe('Piket Laju 2')
+    expect(h.terjadwal[0].judul).toBe('Piket Laju 2 (Tadarus Sore)')
     expect(h.terjadwal[1].kelompok).toBe('besok')
-    expect(h.terjadwal[1].judul).toBe('Piket Laju 1')
+    expect(h.terjadwal[1].judul).toBe('Piket Laju 1 (Tadarus Siang)')
   })
 
   it('horizon bisa dilebarkan supaya piket bulan depan ikut tampil', () => {
@@ -113,7 +113,7 @@ describe('susunTugasSaya — capaian yang belum diisi', () => {
     expect(h.terjadwal).toHaveLength(0)
     expect(h.perlu).toHaveLength(1)
     expect(h.perlu[0].jenis).toBe('capaian_laju')
-    expect(h.perlu[0].judul).toBe('Capaian Laju 1 belum diisi')
+    expect(h.perlu[0].judul).toBe('Capaian Laju 1 (Tadarus Siang) belum diisi')
   })
 
   it('satu baris capaian saja sudah menandai sesi itu beres', () => {
@@ -237,7 +237,11 @@ describe('susunTugasSaya — urutan', () => {
         }
       ]
     })
-    expect(h.terjadwal.map((t) => t.judul)).toEqual(['Pagi', 'Sore', 'Piket Laju 1'])
+    expect(h.terjadwal.map((t) => t.judul)).toEqual([
+      'Pagi',
+      'Sore',
+      'Piket Laju 1 (Tadarus Siang)'
+    ])
   })
 })
 
@@ -258,7 +262,7 @@ describe('ringkasUntukWidget', () => {
     expect(ringkas[0]).toEqual({
       t: HARI_INI,
       j: '',
-      h: 'Piket Laju 1',
+      h: 'Piket Laju 1 (Tadarus Siang)',
       d: 'Kelas A',
       n: 'piket_laju'
     })

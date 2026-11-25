@@ -14,8 +14,8 @@
 
 const SESI_LAJU = [
   { key: 'tadarus', label: 'Tadarus Pagi' },
-  { key: 'laju1', label: 'Laju 1' },
-  { key: 'laju2', label: 'Laju 2' }
+  { key: 'laju1', label: 'Laju 1 (Tadarus Siang)' },
+  { key: 'laju2', label: 'Laju 2 (Tadarus Sore)' }
 ]
 
 export function labelSesi(key: string): string {
