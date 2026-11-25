@@ -9,43 +9,47 @@
           <h1 class="text-base md:text-lg font-black">
             <i class="fas fa-file-invoice-dollar text-cyan-500 mr-2"></i>Tagihan Santri
           </h1>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Daftar tagihan + status bayar</p>
         </div>
-        <div class="flex gap-2">
-          <div class="px-3 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 text-xs">
-            <span class="text-cyan-700 font-bold">{{ stats.totalTagihan }}</span>
-            <span class="text-[var(--text-secondary)]">tagihan</span>
+        <!-- Kyai 25 Nov 2026: di HP angka di atas, tombol di bawah (.ph-stat/.ph-aksi). -->
+        <div class="flex flex-col md:flex-row gap-2 md:items-center">
+          <div class="ph-stat grid grid-flow-col auto-cols-fr gap-2 md:flex">
+            <div class="px-3 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 text-xs">
+              <span class="text-cyan-700 font-bold">{{ stats.totalTagihan }}</span>
+              <span class="text-[var(--text-secondary)]">tagihan</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs">
+              <span class="text-rose-700 font-bold">{{ fmtRp(stats.totalTunggakan) }}</span>
+              <span class="text-[var(--text-secondary)]">tunggakan</span>
+            </div>
           </div>
-          <div class="px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs">
-            <span class="text-rose-700 font-bold">{{ fmtRp(stats.totalTunggakan) }}</span>
-            <span class="text-[var(--text-secondary)]">tunggakan</span>
-          </div>
-          <!-- v.87.0526: santri/wali — ikon Riwayat pembayaran (alur 1 pintu, ganti tab) -->
-          <button
-            v-if="isSantriRole"
-            aria-label="Riwayat pembayaran"
-            title="Riwayat pembayaran"
-            class="flex items-center justify-center w-8 h-8 rounded-full border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-slate-50 dark:hover:bg-slate-700/40 text-xs font-black transition cursor-pointer"
-            @click="goRiwayat"
-          >
-            <i class="fas fa-history"></i>
-          </button>
-          <!-- v.87.0526: santri/wali — setoran/bayar di luar tagihan (kategori bebas). Tagihan = 1 pintu pembayaran.
+          <div class="ph-aksi flex gap-2 items-center">
+            <!-- v.87.0526: santri/wali — ikon Riwayat pembayaran (alur 1 pintu, ganti tab) -->
+            <button
+              v-if="isSantriRole"
+              aria-label="Riwayat pembayaran"
+              title="Riwayat pembayaran"
+              class="flex items-center justify-center w-8 h-8 rounded-full border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-slate-50 dark:hover:bg-slate-700/40 text-xs font-black transition cursor-pointer"
+              @click="goRiwayat"
+            >
+              <i class="fas fa-history"></i>
+            </button>
+            <!-- v.87.0526: santri/wali — setoran/bayar di luar tagihan (kategori bebas). Tagihan = 1 pintu pembayaran.
                v.1.4.9: hanya bila ada cara bayar online yang aktif (transfer manual dihapus). -->
-          <button
-            v-if="isSantriRole && bayarOnlineAktif"
-            class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
-            @click="goSetoranLain"
-          >
-            <i class="fas fa-paper-plane mr-1"></i>Setoran Lain
-          </button>
-          <button
-            v-if="isFullAccess"
-            class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
-            @click="openModalNew"
-          >
-            <i class="fas fa-plus mr-1"></i>Tambah Tagihan
-          </button>
+            <button
+              v-if="isSantriRole && bayarOnlineAktif"
+              class="tetap-label bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+              @click="goSetoranLain"
+            >
+              <i class="fas fa-paper-plane mr-1"></i>Setoran Lain
+            </button>
+            <button
+              v-if="isFullAccess"
+              class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+              @click="openModalNew"
+            >
+              <i class="fas fa-plus mr-1"></i>Tambah Tagihan
+            </button>
+          </div>
         </div>
       </div>
     </div>

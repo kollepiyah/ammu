@@ -208,7 +208,7 @@ function bukaWaAdmin() {
     <button
       v-if="wilayahPublik"
       type="button"
-      class="absolute top-3 left-3 z-20 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-white/85 dark:bg-slate-800/85 text-teal-700 dark:text-teal-300 shadow cursor-pointer"
+      class="tombol-kembali absolute top-3 left-3 z-20 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-white/85 dark:bg-slate-800/85 text-teal-700 dark:text-teal-300 shadow cursor-pointer"
       @click="router.replace('/umum')"
     >
       <i class="fas fa-arrow-left"></i>Beranda

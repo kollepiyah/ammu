@@ -156,6 +156,11 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
     Personal jadi `.kepala-polos` dan ikut rata selebar layar.
   - Isi tingkat atas yang bukan bagian berlatar (deret tab, petak, penyaring) diberi jarak tepi.
   - Bilah Simpan Pengaturan Web & bilah bayar Kode Bayar tak lagi menutupi menu bawah.
+- Uji APK Kyai (25 Nov, lanjutan): tombol "Beranda" di layar masuk ikut disembunyikan di HP;
+  tombol aksi warna-warni (`.ph-aksi`) jadi polos seragam di HP — latar netral, ikon teal, ikon
+  hapus merah; `.tetap-label` untuk tombol yang wajib bertulisan (Setoran Lain wali). Kepala
+  Tabungan & Tagihan ditata ulang (angka di atas, tombol ikon di bawah, keterangan dibuang);
+  daftar saldo Tabungan jadi baris tipis, tanggal "Update" tak lagi terbelah.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.

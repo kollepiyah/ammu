@@ -147,54 +147,62 @@
               Saldo {{ pageTitle.toLowerCase() }} santri{{ isUangSaku ? " ma'had" : '' }}
             </p>
           </div>
-          <div class="flex flex-wrap gap-2 items-center">
-            <div
-              class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs"
-            >
-              <span class="text-emerald-700 dark:text-emerald-300 font-bold">
-                {{ totalSaldoFmt }}
-              </span>
+          <!-- Kyai 25 Nov 2026: di HP saldo di atas, tombol ikon sejajar di bawahnya (.ph-stat/.ph-aksi). -->
+          <div class="flex flex-col md:flex-row md:flex-wrap gap-2 md:items-center">
+            <div class="ph-stat grid grid-flow-col auto-cols-fr md:flex">
+              <div
+                class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs"
+              >
+                <span class="text-emerald-700 dark:text-emerald-300 font-bold">
+                  {{ totalSaldoFmt }}
+                </span>
+                <span class="text-[var(--text-secondary)] md:hidden">Total saldo</span>
+              </div>
             </div>
-            <template v-if="!isDesktop">
-              <button
-                title="Ekspor PDF rekap saldo"
-                class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
-                @click="exportPdf"
-              >
-                <i class="fas fa-file-pdf mr-1"></i>PDF
-              </button>
-              <button
-                title="Unduh template XLSX"
-                class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
-                @click="downloadTemplate"
-              >
-                <i class="fas fa-file-download mr-1"></i>Template
-              </button>
-              <button
-                :disabled="importingTab"
-                title="Impor mutasi dari XLSX"
-                class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
-                @click="triggerImport"
-              >
-                <i :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"></i
-                >Impor
-              </button>
-            </template>
-            <input
-              ref="importInput"
-              type="file"
-              accept=".xlsx,.xls"
-              class="hidden"
-              @change="importXlsx"
-            />
-            <template v-if="!isDesktop">
-              <button
-                class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
-                @click="openModal()"
-              >
-                <i class="fas fa-plus mr-1"></i>Input Mutasi
-              </button>
-            </template>
+            <div class="ph-aksi flex flex-wrap gap-2 items-center">
+              <template v-if="!isDesktop">
+                <button
+                  title="Ekspor PDF rekap saldo"
+                  class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                  @click="exportPdf"
+                >
+                  <i class="fas fa-file-pdf mr-1"></i>PDF
+                </button>
+                <button
+                  title="Unduh template XLSX"
+                  class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                  @click="downloadTemplate"
+                >
+                  <i class="fas fa-file-download mr-1"></i>Template
+                </button>
+                <button
+                  :disabled="importingTab"
+                  title="Impor mutasi dari XLSX"
+                  class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                  @click="triggerImport"
+                >
+                  <i
+                    :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"
+                  ></i
+                  >Impor
+                </button>
+              </template>
+              <input
+                ref="importInput"
+                type="file"
+                accept=".xlsx,.xls"
+                class="hidden"
+                @change="importXlsx"
+              />
+              <template v-if="!isDesktop">
+                <button
+                  class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                  @click="openModal()"
+                >
+                  <i class="fas fa-plus mr-1"></i>Input Mutasi
+                </button>
+              </template>
+            </div>
           </div>
         </div>
       </div>
@@ -298,7 +306,7 @@
         </div>
 
         <!-- List santri -->
-        <div v-if="!loading && filteredItems.length > 0" class="space-y-2">
+        <div v-if="!loading && filteredItems.length > 0" class="daftar-baris space-y-2">
           <div
             v-for="t in filteredItems"
             :key="t.santri_id"
@@ -324,7 +332,7 @@
                       : t.nama_cache || `(orphan ID: ${t.santri_id})`
                   }}
                 </p>
-                <p class="text-[10px] text-[var(--text-secondary)]">
+                <p class="text-[10px] text-[var(--text-secondary)] truncate">
                   {{ t.terakhir_update ? `Update: ${fmtTgl(t.terakhir_update)}` : '' }}
                 </p>
               </div>
@@ -332,7 +340,7 @@
                    jadi yang benar-benar punya uang harus tetap menonjol. -->
               <p
                 :class="[
-                  'text-base font-black mr-2',
+                  'text-sm md:text-base font-black whitespace-nowrap',
                   Number(t.saldo) || 0
                     ? 'text-emerald-700 dark:text-emerald-400'
                     : 'text-[var(--text-tertiary)] font-bold'
