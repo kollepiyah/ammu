@@ -76,7 +76,7 @@
     <div
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <div class="grid grid-cols-7 gap-1.5 mb-2">
+      <div :class="['grid grid-cols-7 mb-2', kisiNative ? '-mx-3' : 'gap-1.5']">
         <div
           v-for="(hari, idx) in HARI"
           :key="idx"
@@ -92,7 +92,53 @@
           {{ hari }}
         </div>
       </div>
-      <div class="grid grid-cols-7 gap-1.5">
+      <!-- Kyai 25 Nov 2026: di HP Android/PWA kisi gaya NU Online — tanpa kotak per tanggal,
+           garis tipis; Masehi besar, Hijriah kecil di pojok, pasaran di bawah, titik agenda. -->
+      <div
+        v-if="kisiNative"
+        class="kisi-nu grid grid-cols-7 border-t border-[var(--border-subtle)] -mx-3"
+      >
+        <div
+          v-for="n in firstDayOffset"
+          :key="`k-${n}`"
+          class="border-r border-b border-[var(--border-subtle)]"
+        ></div>
+        <button
+          v-for="cell in cells"
+          :key="'n' + cell.dateStr"
+          :class="[
+            'relative h-14 border-r border-b border-[var(--border-subtle)] flex flex-col items-center justify-center cursor-pointer',
+            cell.isToday
+              ? 'outline outline-2 -outline-offset-2 outline-teal-500 bg-teal-500/10'
+              : ''
+          ]"
+          @click="onClickCell(cell.dateStr)"
+        >
+          <span
+            class="absolute top-0.5 left-1 font-arabic text-[11px] leading-none text-[var(--text-tertiary)]"
+            >{{ cell.hijriDay }}</span
+          >
+          <span
+            :class="[
+              'text-base font-black leading-tight',
+              cell.isMinggu || cell.isLibur
+                ? 'text-rose-500'
+                : cell.isJumat
+                  ? 'text-emerald-500'
+                  : 'text-[var(--text-primary)]'
+            ]"
+            >{{ cell.day }}</span
+          >
+          <span class="text-[9px] leading-none text-[var(--text-secondary)]">{{
+            cell.pasaran
+          }}</span>
+          <span
+            v-if="cell.hasEvent"
+            class="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-amber-400"
+          ></span>
+        </button>
+      </div>
+      <div v-else class="grid grid-cols-7 gap-1.5">
         <div v-for="n in firstDayOffset" :key="`empty-${n}`" class="aspect-square"></div>
         <button
           v-for="cell in cells"
@@ -370,6 +416,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useKegiatan } from '@/composables/useKegiatan'
+import { useMobileShell } from '@/composables/useMobileShell'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import { formatMasehi, formatHijri, masehiToHijri, toArabicDigit } from '@/utils/hijri'
 import { hitungPasaran } from '@/utils/pasaran'
 // v.21.114.0528: libur nasional seed util
@@ -381,6 +429,9 @@ const toast = useToast()
 const confirmDlg = useConfirm()
 // F1: rute /umum/kalender memakai layar yang sama dalam mode baca untuk tamu.
 const modePublik = !!useRoute().meta?.kalenderPublik
+// Kisi gaya NU Online hanya di HP Android/PWA.
+const { isMobile: _hpKal } = useMobileShell()
+const kisiNative = computed(() => pakaiWilayahPublik() && _hpKal.value)
 const { kegiatanRelevan, simpanKegiatan, hapusKegiatan } = useKegiatan({ publik: modePublik })
 
 const bisaEdit = computed(() => {

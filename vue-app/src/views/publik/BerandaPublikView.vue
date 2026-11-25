@@ -4,9 +4,7 @@
 
     <!-- Kartu jadwal sholat menyusul di F2 (utils/waktuSholat.js + lokasi). -->
 
-    <section>
-      <MenuIbadah jenis="beranda" />
-    </section>
+    <MenuIbadah jenis="beranda" />
 
     <!-- Kartu Channel sama dengan dashboard Portal (Kyai 25 Nov 2026) -->
     <DashboardPosts publik />

@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
     <button
-      class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-teal-600 transition cursor-pointer"
+      class="tombol-kembali inline-flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-teal-600 transition cursor-pointer"
       @click="goBack"
     >
       <i class="fas fa-arrow-left"></i>Kembali

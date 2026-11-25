@@ -16,7 +16,7 @@
       </div>
       <router-link
         to="/santri"
-        class="px-3 py-2 text-sm bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl transition"
+        class="tombol-kembali px-3 py-2 text-sm bg-[var(--bg-muted)] hover:bg-slate-200 text-slate-700 dark:text-[var(--text-tertiary)] font-bold rounded-xl transition"
       >
         <i class="fas fa-arrow-left mr-1"></i>Kembali
       </router-link>

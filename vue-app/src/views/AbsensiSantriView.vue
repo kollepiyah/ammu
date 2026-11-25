@@ -51,7 +51,7 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"
+          class="tombol-kembali text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"
           @click="backToLanding"
         >
           <i class="fas fa-arrow-left text-slate-600 dark:text-slate-300"></i>
@@ -121,7 +121,7 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"
+          class="tombol-kembali text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer"
           @click="backToLanding"
         >
           <i class="fas fa-arrow-left text-slate-600 dark:text-slate-300"></i>
@@ -167,7 +167,7 @@
     <template v-else-if="step === 'input'">
       <button
         v-if="showBackBtn"
-        class="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer text-slate-700 dark:text-slate-200"
+        class="tombol-kembali inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer text-slate-700 dark:text-slate-200"
         @click="backToSub"
       >
         <i class="fas fa-arrow-left"></i>
@@ -466,6 +466,7 @@
 import { ref, reactive, computed, onUnmounted, watch } from 'vue'
 import { subscribeColl, mergeOne, serverTimestamp } from '@/services/db'
 import { useToast } from '@/composables/useToast'
+import { useLangkahRiwayat } from '@/composables/useLangkahRiwayat'
 import { useAuthStore } from '@/stores/auth'
 import { isFullFilterRole } from '@/utils/roleScope'
 import { ownsNgaji, ownsSekolah } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
@@ -587,6 +588,14 @@ function backToLanding() {
   step.value = 'landing'
   selectedLembaga.value = ''
 }
+// Kembali HP (Android/PWA) mundur satu langkah — tombol di layar disembunyikan di HP.
+useLangkahRiwayat(step, 'landing', (t) => {
+  if (t === 'landing') backToLanding()
+  else {
+    if (t.startsWith('sub')) selectedLembaga.value = ''
+    step.value = t
+  }
+})
 function backToSub() {
   if (isGuru.value) {
     // guru kembali ke landing (kalau punya 2 kategori) — kalau cuma 1 tetap di input

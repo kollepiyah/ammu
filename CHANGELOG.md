@@ -143,6 +143,19 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
 - **Kepala gradasi Statistik** (Dasbor, Detail Lembaga, Detail Santri Berprestasi) & **kotak menu
   gradasi** (Kegiatan Pesantren, Pengaturan Web) jadi kartu polos sesuai tema lewat `.kepala-polos`
   / `.menu-petak` di main.css — semua lebar layar; petak aktif ditandai bingkai teal.
+- **Gaya native, lanjutan dari uji APK Kyai:**
+  - Tombol "Kembali" / "Pilih Lembaga Lain" / panah kembali disembunyikan di HP Android/PWA
+    (`.tombol-kembali`); mundur lewat tombol/geser kembali HP. Langkah di dalam halaman Rekap
+    Prestasi, Absensi Santri, dan Rapor kini dicatat di riwayat (`?langkah=`,
+    `composables/useLangkahRiwayat.js`) supaya kembali HP mundur satu langkah, bukan keluar.
+  - Ikon ibadah bergaya 3D (`components/publik/IkonIbadah.vue`, SVG buatan sendiri): mushaf di
+    rehal, tasbih, kompas Ka'bah, jam sholat, kalender agenda.
+  - Kalender di HP bergaya NU Online: tanpa kotak per tanggal, garis tipis, Masehi besar, Hijriah
+    kecil di pojok, pasaran, titik agenda.
+  - Petak menu gradasi Dasbor Keuangan & tab Absensi Guru jadi `.menu-petak`; kartu gradasi
+    Personal jadi `.kepala-polos` dan ikut rata selebar layar.
+  - Isi tingkat atas yang bukan bagian berlatar (deret tab, petak, penyaring) diberi jarak tepi.
+  - Bilah Simpan Pengaturan Web & bilah bayar Kode Bayar tak lagi menutupi menu bawah.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.

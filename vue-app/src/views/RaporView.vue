@@ -66,7 +66,7 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 transition cursor-pointer"
+          class="tombol-kembali text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 transition cursor-pointer"
           title="Kembali"
           @click="view = 'picker'"
         >
@@ -147,7 +147,7 @@
         <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
           <div class="flex items-center gap-2">
             <button
-              class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
+              class="tombol-kembali text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
               title="Kembali"
               @click="view = isFullFilter ? 'lembaga' : 'picker'"
             >
@@ -323,7 +323,7 @@
           <div class="flex items-center gap-2">
             <button
               v-if="!isSantri"
-              class="text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
+              class="tombol-kembali text-xs font-bold px-2 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
               title="Kembali"
               @click="kembaliSantri"
             >
@@ -1283,6 +1283,7 @@ import { ref, computed, onMounted, onUnmounted, unref, nextTick, watch } from 'v
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
 import { useRoute } from 'vue-router'
+import { useLangkahRiwayat } from '@/composables/useLangkahRiwayat'
 import { subscribeColl, mergeOne, serverTimestamp } from '@/services/db'
 import { toTitleCase } from '@/utils/format'
 import { useSantri } from '@/composables/useSantri'
@@ -2948,6 +2949,11 @@ function pilihSantri(s) {
   view.value = 'detail'
 }
 
+// Kembali HP (Android/PWA) mundur satu langkah — tombol di layar disembunyikan di HP.
+useLangkahRiwayat(view, 'picker', (t) => {
+  if (t === 'santri') kembaliSantri()
+  else view.value = t
+})
 function kembaliSantri() {
   view.value = 'santri'
   santriId.value = ''

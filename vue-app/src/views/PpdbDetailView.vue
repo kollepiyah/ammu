@@ -6,7 +6,10 @@
     >
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <RouterLink to="/psb" class="text-[11px] text-teal-600 hover:underline font-bold">
+          <RouterLink
+            to="/psb"
+            class="tombol-kembali text-[11px] text-teal-600 hover:underline font-bold"
+          >
             <i class="fas fa-arrow-left mr-1"></i>Kembali ke Daftar PSB
           </RouterLink>
           <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] mt-1">

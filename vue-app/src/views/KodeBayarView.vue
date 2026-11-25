@@ -227,7 +227,7 @@
 
     <!-- Tombol bawah -->
     <div
-      class="fixed bottom-0 inset-x-0 z-10 p-3 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] md:static md:border-0 md:bg-transparent"
+      class="bilah-simpan fixed bottom-0 inset-x-0 z-10 p-3 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] md:static md:border-0 md:bg-transparent"
     >
       <button
         class="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-black text-sm cursor-pointer"

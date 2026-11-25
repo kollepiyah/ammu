@@ -5,7 +5,7 @@
          ============================================================ -->
     <header class="mb-4 flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">
-        <UiButton variant="ghost" size="sm" @click="goBack">
+        <UiButton class="tombol-kembali" variant="ghost" size="sm" @click="goBack">
           <ArrowLeftIcon class="w-4 h-4" />
         </UiButton>
         <div>
@@ -1646,7 +1646,7 @@
          FOOTER FLOATING: Reset + Simpan Semua
          ============================================================ -->
     <div
-      class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl p-3 flex gap-2 z-20"
+      class="bilah-simpan fixed bottom-4 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl p-3 flex gap-2 z-20"
     >
       <UiButton variant="secondary" size="sm" @click="resetForm">
         <i class="fas fa-undo mr-1"></i>Reset

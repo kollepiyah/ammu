@@ -143,7 +143,7 @@
       </div>
 
       <!-- Tabs -->
-      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 md:gap-3">
+      <div class="menu-petak grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
         <button
           :class="[
             'group relative overflow-hidden bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 rounded-xl p-2.5 md:p-3 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col gap-1 cursor-pointer',

@@ -10,7 +10,7 @@
         <router-link
           v-if="route.query.from === 'master-data'"
           :to="{ path: '/master-data', query: { tab: 'lembaga' } }"
-          class="text-cyan-600 hover:underline cursor-pointer"
+          class="tombol-kembali text-cyan-600 hover:underline cursor-pointer"
         >
           <i class="fas fa-arrow-left mr-1"></i>Kembali ke Master Data
         </router-link>

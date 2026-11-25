@@ -25,7 +25,7 @@
       </div>
 
       <!-- v.72.15.0526: 7 Quick Actions (+ Hutang Piutang baru) -->
-      <div class="grid grid-cols-4 md:grid-cols-7 gap-2 md:gap-3">
+      <div class="menu-petak grid grid-cols-4 md:grid-cols-7 gap-2 md:gap-3">
         <router-link
           to="/pos-santri"
           class="group relative overflow-hidden bg-gradient-to-br from-rose-500 dark:from-rose-700 to-rose-700 dark:to-rose-900 rounded-xl p-2.5 md:p-3 text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1 text-center"

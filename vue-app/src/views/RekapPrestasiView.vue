@@ -225,7 +225,7 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+          class="tombol-kembali text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
           title="Kembali"
           @click="backToLanding"
         >
@@ -272,7 +272,7 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+          class="tombol-kembali text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
           title="Kembali"
           @click="backToLanding"
         >
@@ -322,7 +322,7 @@
       <!-- HEADER WITH BACK (admin/super only) -->
       <button
         v-if="isFullFilter"
-        class="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer text-slate-700 dark:text-slate-200"
+        class="tombol-kembali inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer text-slate-700 dark:text-slate-200"
         title="Pilih lembaga lain"
         @click="backToSub"
       >
@@ -1425,6 +1425,7 @@ import { gambarRekapPrestasi } from '@/utils/rekapPrestasiPdf'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
 import { useKonteksRombel } from '@/composables/useKonteksRombel'
+import { useLangkahRiwayat } from '@/composables/useLangkahRiwayat'
 import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
 import { isFullFilterRole, isSuperAdmin } from '@/utils/roleScope'
 import { ownsSekolah, deteksiTipeGuru, scopeQiraati } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual; v.1.2.8: scopeQiraati = scope kepala per-sisi
@@ -1767,6 +1768,14 @@ function backToSub() {
   else viewStep.value = 'sub-qiraati'
   filterLembaga.value = ''
 }
+// Kembali HP (Android/PWA) mundur satu langkah — tombol di layar disembunyikan di HP.
+useLangkahRiwayat(viewStep, 'landing', (t) => {
+  if (t === 'landing') backToLanding()
+  else {
+    if (t.startsWith('sub')) filterLembaga.value = ''
+    viewStep.value = t
+  }
+})
 
 // edits state (Awal/Akhir/Total/Juz per santri)
 const edits = reactive({})

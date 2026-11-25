@@ -323,7 +323,12 @@ button,
       [class*='rounded-[2rem]'],
       [class*='rounded-[var(--radius-lg)]'],
       [class*='rounded-[var(--radius-xl)]']
-    ):is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white):not(
+    ):is(
+      [class*='bg-[var(--bg-card)]'],
+      [class*='bg-[var(--bg-card-elevated)]'],
+      .bg-white,
+      .kepala-polos
+    ):not(
       :is(
           .rounded-2xl,
           .rounded-xl,
@@ -331,7 +336,12 @@ button,
           [class*='rounded-[2rem]'],
           [class*='rounded-[var(--radius-lg)]'],
           [class*='rounded-[var(--radius-xl)]']
-        ):is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white)
+        ):is(
+          [class*='bg-[var(--bg-card)]'],
+          [class*='bg-[var(--bg-card-elevated)]'],
+          .bg-white,
+          .kepala-polos
+        )
         *
     ):not(.fixed *):not(.print-area):not(.print-area *):not(#rapor-print-area):not(
       #rapor-print-area *
@@ -476,11 +486,53 @@ button,
     box-shadow: none !important;
     padding: 0.25rem 0 !important;
   }
-  html.native-shell .menu-ibadah > button > span:first-child {
-    width: 3.25rem;
-    height: 3.25rem;
-    border-radius: 9999px;
-    font-size: 1.15rem;
+  /* Kembali cukup lewat tombol/geser kembali HP (Kyai 25 Nov 2026); langkah dalam halaman
+     dicatat di riwayat (useLangkahRiwayat) supaya kembali HP mundur satu langkah. */
+  html.native-shell .tombol-kembali {
+    display: none !important;
+  }
+  /* Bilah tombol melayang di bawah (Simpan/Bayar) jangan menutupi menu bawah. */
+  html.native-shell .bilah-simpan {
+    bottom: calc(4.25rem + env(safe-area-inset-bottom)) !important;
+  }
+  /* Isi tingkat atas yang BUKAN bagian berlatar (deret tab, petak menu, baris penyaring, judul)
+     tetap diberi jarak tepi supaya tak menempel ke tepi layar. */
+  html.native-shell
+    .akar-halaman
+    > *
+    > :not(
+      :is(
+        .rounded-2xl,
+        .rounded-xl,
+        .rounded-3xl,
+        [class*='rounded-[2rem]'],
+        [class*='rounded-[var(--radius-lg)]'],
+        [class*='rounded-[var(--radius-xl)]']
+      ):is(
+        [class*='bg-[var(--bg-card)]'],
+        [class*='bg-[var(--bg-card-elevated)]'],
+        .bg-white,
+        .kepala-polos
+      )
+    ):not(
+      :has(
+        > :is(
+            .rounded-2xl,
+            .rounded-xl,
+            .rounded-3xl,
+            [class*='rounded-[2rem]'],
+            [class*='rounded-[var(--radius-lg)]'],
+            [class*='rounded-[var(--radius-xl)]']
+          ):is(
+            [class*='bg-[var(--bg-card)]'],
+            [class*='bg-[var(--bg-card-elevated)]'],
+            .bg-white,
+            .kepala-polos
+          )
+      )
+    ):not(.daftar-baris):not(.fixed) {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
   }
   /* Daftar berupa baris bergaris tipis (dipasang per halaman lewat .daftar-baris). */
   html.native-shell .daftar-baris > * {
@@ -514,6 +566,12 @@ button,
   color: var(--color-primary) !important;
   opacity: 1 !important;
 }
+.kepala-polos [class*='text-white'] {
+  color: var(--text-primary) !important;
+}
+.kepala-polos [class*='text-white/'] {
+  color: var(--text-secondary) !important;
+}
 .kepala-polos [class*='opacity-9'] {
   opacity: 1 !important;
   color: var(--text-secondary) !important;
@@ -523,20 +581,20 @@ button,
   color: var(--text-secondary) !important;
   backdrop-filter: none !important;
 }
-.menu-petak > button {
+.menu-petak > :is(button, a) {
   background: var(--bg-card) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--border-subtle);
   box-shadow: none !important;
 }
-.menu-petak > button [class*='text-white'] {
+.menu-petak > :is(button, a) [class*='text-white'] {
   color: var(--text-secondary) !important;
 }
-.menu-petak > button > i {
+.menu-petak > :is(button, a) > i {
   color: var(--color-primary) !important;
   filter: none !important;
 }
-.menu-petak > button :is(h3, p) {
+.menu-petak > :is(button, a) :is(h3, p) {
   filter: none !important;
   text-shadow: none !important;
 }

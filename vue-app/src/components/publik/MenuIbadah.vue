@@ -9,9 +9,7 @@
       class="flex flex-col items-center gap-1.5 py-2.5 rounded-2xl bg-[var(--bg-card)] border border-slate-200 dark:border-slate-700 shadow-sm active:scale-95 transition cursor-pointer"
       @click="buka(m)"
     >
-      <span :class="['w-10 h-10 rounded-xl flex items-center justify-center', m.warna]">
-        <i :class="['fas text-base', m.ikon]"></i>
-      </span>
+      <IkonIbadah :jenis="m.kunci" />
       <span class="text-[11px] font-bold text-[var(--text-primary)] leading-none">{{
         m.label
       }}</span>
@@ -23,6 +21,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import IkonIbadah from '@/components/publik/IkonIbadah.vue'
 
 const props = defineProps({
   // 'beranda' = menu cepat publik; 'portal' = baris ikon dashboard setelah login

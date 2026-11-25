@@ -18,7 +18,7 @@
     <!-- Ringkasan stat pribadi -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
       <div
-        class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-4 text-white shadow-sm"
+        class="kepala-polos bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-4 text-white shadow-sm"
       >
         <p class="text-[10px] uppercase font-black text-white/85">Bisyaroh Bulan Ini</p>
         <p class="text-2xl font-black mt-1 !text-white">
@@ -28,7 +28,9 @@
           {{ slipBulanIni ? 'Sudah diterbitkan' : 'Belum diterbitkan' }}
         </p>
       </div>
-      <div class="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-4 text-white shadow-sm">
+      <div
+        class="kepala-polos bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-4 text-white shadow-sm"
+      >
         <p class="text-[10px] uppercase font-black text-white/85">Lama Mengabdi</p>
         <p class="text-2xl font-black mt-1 !text-white">{{ lamaMengajar }}</p>
         <p class="text-[10px] text-white/80 mt-1">Sejak {{ guru?.tanggal_mengabdi || '-' }}</p>
