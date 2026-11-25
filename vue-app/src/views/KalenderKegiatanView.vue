@@ -14,7 +14,7 @@
             {{ hijriRangeLabel }}
           </p>
         </div>
-        <div class="flex items-center gap-2 flex-wrap justify-end">
+        <div class="ph-aksi w-full md:w-auto flex items-center gap-2 flex-wrap justify-end">
           <button
             aria-label="Bulan sebelumnya"
             title="Bulan sebelumnya"
