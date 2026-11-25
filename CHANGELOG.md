@@ -115,6 +115,10 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   - **`<InfoLipat>`** (komponen global, `components/ui/InfoLipat.vue`): 80 keterangan/petunjuk
     panjang di 19 halaman kini terlipat jadi satu baris "ⓘ Keterangan" yang bisa dibuka.
     Peringatan berwarna, pesan data kosong, dan baris berisi data tidak dilipat.
+- **Pondok Laju — jurnal bersambung antar guru** (Kyai 25 Nov 2026): sesi berlabel **Laju 1 (Tadarus
+  Siang)** dan **Laju 2 (Tadarus Sore)**. Kartu jurnal tak lagi menyalin posisi sesi sebelumnya ke
+  kolom isian — kolom kosong sampai sesi itu disimpan — dan posisi terakhir dipajang besar di
+  kotak "Terakhir Tadarus Pagi (hari ini): Juz · hal. · surah ayat" sebagai patokan guru berikutnya.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.

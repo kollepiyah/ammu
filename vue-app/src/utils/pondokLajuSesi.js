@@ -11,8 +11,9 @@ import { isPjLembaga } from './glondongan'
 
 export const SESI_LAJU = [
   { key: 'tadarus', label: 'Tadarus Pagi', piket: false },
-  { key: 'laju1', label: 'Laju 1', piket: true },
-  { key: 'laju2', label: 'Laju 2', piket: true }
+  // Kyai 25 Nov 2026: Laju 1 = tadarus siang, Laju 2 = tadarus sore (disebut di label).
+  { key: 'laju1', label: 'Laju 1 (Tadarus Siang)', piket: true },
+  { key: 'laju2', label: 'Laju 2 (Tadarus Sore)', piket: true }
 ]
 export const SESI_PIKET = SESI_LAJU.filter((s) => s.piket).map((s) => s.key)
 const _RANK = Object.fromEntries(SESI_LAJU.map((s, i) => [s.key, i]))

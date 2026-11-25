@@ -45,7 +45,7 @@ const memuat = ref(false)
 const menyimpan = ref(false)
 const baris = ref([])
 const sudah = ref(0) // berapa santri sudah punya baris tersimpan di tanggal & sesi ini
-const sebelumnya = ref('')
+const sebelumnya = ref(null) // { sesi, hariIni, tgl, posisi } — posisi akhir sesi sebelumnya
 const kls = reactive({ juz: '', halaman: '', surah: '', ayat: '', catatan: '' })
 
 const jumlahSantri = computed(() => props.kelas?.santri?.length || 0)
@@ -56,7 +56,7 @@ async function muat() {
   const k = props.kelas
   baris.value = []
   sudah.value = 0
-  sebelumnya.value = ''
+  sebelumnya.value = null
   if (!k?.santri?.length) return
   memuat.value = true
   try {
@@ -81,7 +81,9 @@ async function muat() {
     // Sekelas membaca bersama, jadi satu santri cukup mewakili posisi kelasnya.
     const ini = iniSemua.find((r) => String(r.santri_id) === sid0) || iniSemua[0] || null
     const lalu = posisiSebelum(rows, sid0, props.tanggal, props.sesi)
-    const src = ini || lalu || {}
+    // Kyai 25 Nov 2026: kolom isian KOSONG sampai sesi ini disimpan — posisi sesi sebelumnya
+    //   (guru lain) cukup dipajang besar sebagai patokan, bukan disalin ke kolom.
+    const src = ini || {}
     kls.juz = String(src.juz ?? '')
     kls.halaman = String(src.halaman ?? '')
     kls.surah = src.surah ? String(src.surah) : ''
@@ -89,8 +91,13 @@ async function muat() {
     // Catatan TIDAK diwarisi dari hari lalu — ia catatan hari itu, bukan posisi bacaan.
     kls.catatan = ini?.catatan || ''
     sebelumnya.value = lalu
-      ? `${teksPosisi(lalu)} (${labelSesi(lalu.sesi)} ${fmtTgl(lalu.tanggal)})`
-      : ''
+      ? {
+          sesi: labelSesi(lalu.sesi),
+          hariIni: lalu.tanggal === props.tanggal,
+          tgl: fmtTgl(lalu.tanggal),
+          posisi: teksPosisi(lalu)
+        }
+      : null
   } catch (e) {
     toast.error('Gagal memuat jurnal: ' + (e?.message || e))
   } finally {
@@ -171,9 +178,29 @@ async function simpan() {
     </div>
 
     <template v-else>
-      <p v-if="sebelumnya" class="text-[11px] text-[var(--text-secondary)]">
-        <i class="fas fa-clock-rotate-left mr-1"></i>Terakhir: {{ sebelumnya }}
-      </p>
+      <!-- Posisi akhir sesi sebelumnya (biasanya guru lain) — patokan untuk sesi ini, tulisan
+           besar supaya terbaca sekilas (Kyai 25 Nov 2026). -->
+      <div
+        v-if="sebelumnya"
+        class="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/25 px-3 py-2.5"
+      >
+        <p class="text-sm font-bold text-amber-800 dark:text-amber-200">
+          <i class="fas fa-clock-rotate-left mr-1"></i>Terakhir {{ sebelumnya.sesi }}
+          <span class="font-medium">{{ sebelumnya.hariIni ? '(hari ini)' : sebelumnya.tgl }}</span>
+        </p>
+        <p class="text-lg font-black text-[var(--text-primary)] leading-snug mt-0.5">
+          {{ sebelumnya.posisi }}
+        </p>
+        <p class="text-sm text-amber-800 dark:text-amber-200 mt-0.5">
+          Isi posisi terakhir bacaan {{ labelSesi(sesi) }} di bawah.
+        </p>
+      </div>
+      <div
+        v-else-if="!sudah"
+        class="rounded-xl border border-[var(--border-default)] px-3 py-2 text-sm text-[var(--text-secondary)]"
+      >
+        <i class="fas fa-circle-info mr-1"></i>Belum ada catatan sesi sebelumnya.
+      </div>
 
       <div
         class="rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50/60 dark:bg-teal-900/20 p-3 space-y-2"

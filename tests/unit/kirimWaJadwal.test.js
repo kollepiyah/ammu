@@ -68,8 +68,8 @@ describe('susunPesanJadwal', () => {
     })
     expect(teks).toContain("Assalamu'alaikum")
     expect(teks).toContain('*Ahmad, S.Pd.*')
-    expect(teks).toContain('• Selasa, 24 Nov 2026 — *Laju 1* · Kelas Ust. Fulan')
-    expect(teks).toContain('• Selasa, 24 Nov 2026 — *Laju 2* · Kelas Bu Ani')
+    expect(teks).toContain('• Selasa, 24 Nov 2026 — *Laju 1 (Tadarus Siang)* · Kelas Ust. Fulan')
+    expect(teks).toContain('• Selasa, 24 Nov 2026 — *Laju 2 (Tadarus Sore)* · Kelas Bu Ani')
     expect(teks.endsWith('— Pondok Pesantren Mambaul Ulum')).toBe(true)
   })
 
