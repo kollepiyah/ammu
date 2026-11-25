@@ -9,8 +9,9 @@
 // Tulis pakai source 'fingerprint' (auto) — beda dari 'fingerprint_import' (impor xlsx manual).
 // Logika = CERMIN AbsensiGuruView.importFingerprint + fp_sync.py (jembatan sementara).
 
-import { getAll, getOne, setOne, mergeOne, queryColl } from '@/services/db'
+import { getAll, setOne, mergeOne, queryColl } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
+import { useCollectionsStore } from '@/stores/collections'
 import { statusFor, shiftsForGuru, pilihShiftPulang } from '@/utils/shiftDerive'
 // v.1.4.6 gel. 3: pengelompokan scan (+ diagnosa scan tanpa absen) pindah ke utils/scanMesin,
 //   dipakai bersama tambal log HiView. Perilaku sinkron ini TIDAK berubah.
@@ -18,7 +19,10 @@ import {
   kelompokkanScan,
   hitungScanTanpaAbsen,
   shiftMilikHari,
-  saringScan
+  saringScan,
+  idBarisShift,
+  tandaAttLog,
+  tanggalAwalSinkron
 } from '@/utils/scanMesin'
 // v.1.5.0: shift Pondok Laju yang aktif per tanggal (jadwal piket Laju 1/2).
 import { idShiftLaju, penentuShiftLaju } from '@/utils/shiftLaju'
@@ -36,6 +40,7 @@ export { hitungScanTanpaAbsen }
 
 export function useFingerprintSync() {
   const settingsStore = useSettingsStore()
+  const collections = useCollectionsStore()
 
   // sync tersedia? (Electron desktop dgn bridge readAttLog)
   function available() {
@@ -50,9 +55,17 @@ export function useFingerprintSync() {
    * @param {number} [opts.hariMundur=14] v.1.5.0: hanya scan N hari terakhir yang diproses
    *   (0 = semua riwayat). Dulu SELURUH att_log sejak mesin dipasang dibaca ulang & dicek satu
    *   per satu ke database tiap sinkron — boros kuota bila sinkron otomatis tiap 30 menit.
-   * @returns ringkasan { scan, kandidat, written, skipIzin, skipSame, takKenal[], luar, rows[] }
+   * @param {string} [opts.tandaLewati] v.1.5.5: tanda att_log sinkron sukses terakhir — bila
+   *   sama (tak ada scan baru, hari sama), sinkron berhenti sebelum menyentuh server.
+   * @returns ringkasan { scan, kandidat, written, skipIzin, skipSame, takKenal[], luar, rows[],
+   *   tanda } — atau { dilewati: true, tanda } bila tandaLewati cocok.
    */
-  async function sync({ personnelDir = '', commit = true, hariMundur = 14 } = {}) {
+  async function sync({
+    personnelDir = '',
+    commit = true,
+    hariMundur = 14,
+    tandaLewati = ''
+  } = {}) {
     if (!available()) {
       throw new Error('Sinkron mesin hanya tersedia di Ammu Desktop (Electron).')
     }
@@ -64,9 +77,20 @@ export function useFingerprintSync() {
     const { dipakai: scans } = saringScan(semuaScan, { dari, hariIni })
     // Scan terbaru di Personnel — tanda apakah unduh otomatis Personnel dari mesin berjalan.
     const scanTerbaru = semuaScan.length ? String(semuaScan[semuaScan.length - 1].timestamp) : ''
+    const tanda = tandaAttLog({
+      jumlah: semuaScan.length,
+      terbaru: scanTerbaru,
+      hariIni,
+      hariMundur
+    })
+    // Audit egress 25 Nov 2026: PC kantor dulu menjalankan ±760 permintaan tiap 5 menit walau
+    //   mesin diam. att_log dibaca lokal (tanpa jaringan), jadi pemeriksaan ini gratis.
+    if (tandaLewati && tandaLewati === tanda) return { dilewati: true, tanda, scanTerbaru }
 
     const settings = settingsStore.settings || {}
-    const guru = await getAll('guru')
+    // Guru dari langganan bersama (shell desktop sudah memasangnya, realtime) — bukan getAll
+    //   tiap putaran. Belum termuat → tarik sekali seperti dulu.
+    const guru = collections.isLoaded('guru') ? collections.guru : await getAll('guru')
 
     // v.1.5.0: shift Pondok Laju per tanggal — dibaca hanya bila Kyai sudah memilih shift sesi.
     let shiftHarian
@@ -88,6 +112,16 @@ export function useFingerprintSync() {
       shiftHarian
     )
 
+    // Audit egress 25 Nov 2026: baris yang sudah ada ditarik SEKALI untuk seluruh rentang
+    //   (dulu getOne per baris, dua kali — ±760 permintaan per sinkron, 1,14 juta sejak 21 Sep).
+    //   RLS-nya sama dengan getOne: baris yang tak boleh dibaca tetap tak terlihat.
+    const awal = tanggalAwalSinkron(agg, pulangScans)
+    const ada = new Map()
+    if (awal) {
+      const barisAda = await queryColl('absensi_shift_guru', [['tanggal', '>=', awal]])
+      for (const r of barisAda) ada.set(String(r.id), r)
+    }
+
     const nowIso = new Date().toISOString()
     let written = 0
     let skipIzin = 0
@@ -96,8 +130,8 @@ export function useFingerprintSync() {
     for (const key of Object.keys(agg)) {
       const a = agg[key]
       const status = statusFor(a.hhmm, a.sh, settings)
-      const docId = 'shift_' + a.g.id + '_' + a.date + '_' + a.sh
-      const existing = await getOne('absensi_shift_guru', docId)
+      const docId = idBarisShift(a.g.id, a.date, a.sh)
+      const existing = ada.get(docId) || null
       if (existing) {
         const exst = String(existing.status || '').toLowerCase()
         if (exst === 'izin' || exst === 'sakit') {
@@ -110,7 +144,7 @@ export function useFingerprintSync() {
         }
       }
       if (commit) {
-        await setOne('absensi_shift_guru', docId, {
+        const baris = {
           id: docId,
           guru_id: a.g.id,
           periode: a.date.slice(0, 7),
@@ -121,7 +155,11 @@ export function useFingerprintSync() {
           status,
           source: 'fingerprint',
           synced_at: nowIso
-        })
+        }
+        await setOne('absensi_shift_guru', docId, baris)
+        // Tahap pulang di bawah harus melihat baris yang baru ditulis ini (dulu lewat getOne).
+        //   setOne menimpa penuh, jadi jam_pulang lama ikut hilang — cermin perilaku server.
+        ada.set(docId, baris)
       }
       written++
       rows.push({ nama: a.g.nama, tanggal: a.date, shift: a.sh, jam: a.hhmm, status })
@@ -137,8 +175,8 @@ export function useFingerprintSync() {
       const shiftRows = {}
       const barisMasuk = []
       for (const sh of shiftMilikHari(g, date, settings, shiftHarian)) {
-        const docId = 'shift_' + g.id + '_' + date + '_' + sh
-        const row = await getOne('absensi_shift_guru', docId)
+        const docId = idBarisShift(g.id, date, sh)
+        const row = ada.get(docId)
         if (!row) continue
         shiftRows[sh] = { docId, exPulang: String(row.jam_pulang || '') }
         barisMasuk.push({ shift: sh, jam: String(row.jam || ''), status: row.status })
@@ -187,7 +225,8 @@ export function useFingerprintSync() {
       luar,
       luarGuru,
       luarGuruLebih,
-      rows
+      rows,
+      tanda
     }
   }
 

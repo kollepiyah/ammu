@@ -302,3 +302,26 @@ export function rencanaTambalScan({ kelompok, ada, guruAktif, settings, sumber, 
 
   return { baru, pulang, gabungan, lewat, perTanggal }
 }
+
+/**
+ * Tanda keadaan att_log untuk sinkron OTOMATIS (audit egress 25 Nov 2026): sama dengan tanda
+ * sinkron sukses terakhir = tak ada scan baru → sinkron dilewati, nol permintaan ke server.
+ * Tanggal hari ini ikut di dalamnya supaya tiap hari tetap ada minimal satu sinkron penuh
+ * (mis. setelan shift/guru berubah). Sinkron MANUAL tak memakai tanda ini.
+ */
+export function tandaAttLog({ jumlah = 0, terbaru = '', hariIni = '', hariMundur = '' } = {}) {
+  return [jumlah, terbaru, hariIni, hariMundur].join('|')
+}
+
+/**
+ * Tanggal paling awal yang disentuh sinkron (baris masuk & kandidat pulang) — batas bawah
+ * tarikan borongan absensi_shift_guru. '' bila tak ada apa pun.
+ */
+export function tanggalAwalSinkron(agg, pulangScans) {
+  let awal = ''
+  for (const x of [...Object.values(agg || {}), ...Object.values(pulangScans || {})]) {
+    const d = String(x?.date || '')
+    if (d && (!awal || d < awal)) awal = d
+  }
+  return awal
+}

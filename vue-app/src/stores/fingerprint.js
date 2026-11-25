@@ -49,6 +49,10 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
   const lastResult = ref(null) // ringkasan sync terakhir { written, skipIzin, takKenal[], luar, ... }
   const lastError = ref(null) // pesan error sync terakhir
   const lastTrigger = ref(null) // 'manual' | 'auto'
+  // v.1.5.5 (audit egress): tanda att_log sinkron SUKSES terakhir — sinkron otomatis dilewati
+  //   bila att_log tak berubah. Per PC, ikut tersimpan.
+  const lastTanda = ref(String(cfg.lastTanda || ''))
+  const lastDilewatiAt = ref(null) // ISO pemeriksaan terakhir yang dilewati (sesi ini saja)
 
   let _timer = null
   let _inited = false
@@ -69,7 +73,8 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
           autoSync: autoSync.value,
           intervalMin: intervalMin.value,
           hariMundur: hariMundur.value,
-          lastSyncAt: lastSyncAt.value
+          lastSyncAt: lastSyncAt.value,
+          lastTanda: lastTanda.value
         })
       )
     } catch (e) {
@@ -88,9 +93,17 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
       const res = await fp.sync({
         personnelDir: personnelDir.value,
         commit: true,
-        hariMundur: hariMundur.value
+        hariMundur: hariMundur.value,
+        // Tombol manual selalu sinkron penuh; hanya penjadwal yang boleh melewati.
+        tandaLewati: trigger === 'auto' ? lastTanda.value : ''
       })
+      if (res && res.dilewati) {
+        // Mesin diam sejak sinkron terakhir: hasil terakhir tetap ditampilkan apa adanya.
+        lastDilewatiAt.value = new Date().toISOString()
+        return res
+      }
       lastResult.value = res
+      lastTanda.value = (res && res.tanda) || ''
       lastSyncAt.value = new Date().toISOString()
       persist()
       return res
@@ -129,6 +142,7 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
   // Setters (persist + sinkronkan scheduler)
   function setPersonnelDir(v) {
     personnelDir.value = String(v || '').trim()
+    lastTanda.value = '' // folder lain = att_log lain; sinkron berikutnya wajib penuh
     persist()
   }
   function setAutoSync(v) {
@@ -189,6 +203,7 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
     lastResult,
     lastError,
     lastTrigger,
+    lastDilewatiAt,
     available,
     runNow,
     startScheduler,

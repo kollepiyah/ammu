@@ -132,6 +132,13 @@
           </span>
           <span v-else class="fp-status-v fp-muted">Belum pernah</span>
         </div>
+        <!-- v.1.5.5 (hemat kuota): sinkron otomatis dilewati selama tak ada scan baru -->
+        <div v-if="store.lastDilewatiAt" class="fp-status">
+          <span class="fp-lab">Terakhir dicek</span>
+          <span class="fp-status-v fp-muted"
+            >{{ fmtWaktu(store.lastDilewatiAt) }} — tak ada scan baru, tak perlu sinkron</span
+          >
+        </div>
         <!-- v.1.5.0: scan terbaru yang sudah ada di Personnel — tanda unduh otomatis Personnel
              dari mesin berjalan. Kalau jauh tertinggal dari hari ini, Personnel belum mengunduh. -->
         <div v-if="store.lastResult && store.lastResult.scanTerbaru" class="fp-status">
