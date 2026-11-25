@@ -7,13 +7,10 @@
       <h1 class="text-xl md:text-2xl font-black text-[var(--text-primary)]">
         <i class="fas fa-chart-bar text-teal-600 mr-2"></i>Laporan &amp; Analitik
       </h1>
-      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        Ringkasan data lintas waktu — diperbarui beberapa saat setelah data berubah.
-      </p>
     </div>
 
     <!-- Tabs (disembunyikan saat embedded — tab dikontrol Dasbor Statistik) -->
-    <div v-if="!embedded" class="flex gap-2 flex-wrap">
+    <div v-if="!embedded" class="bar-tab flex gap-2 flex-wrap">
       <button
         v-for="t in tabs"
         :key="t.id"

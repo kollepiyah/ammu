@@ -11,11 +11,10 @@
         <div>
           <h1 class="text-xl font-bold">Pengaturan Web</h1>
           <p class="text-xs text-[var(--text-secondary)]">
-            Setting global aplikasi (match legacy)
             <span
               v-if="dirty"
-              class="ml-1 px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 text-[10px] font-bold"
-              >UNSAVED</span
+              class="px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 text-[10px] font-bold"
+              >Belum disimpan</span
             >
           </p>
         </div>
@@ -1171,9 +1170,7 @@
         </div>
 
         <!-- Integrasi Instagram Graph API (disimpan di settings/instagram, khusus admin) -->
-        <div
-          class="mt-4 pt-4 border-t border-[var(--border-subtle)] space-y-3"
-        >
+        <div class="mt-4 pt-4 border-t border-[var(--border-subtle)] space-y-3">
           <div>
             <p class="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">
               <i class="fab fa-instagram text-pink-600 mr-1.5"></i>Instagram Graph API (Al Manshur
@@ -1240,7 +1237,9 @@
               v-if="igStatusText"
               :class="[
                 'text-[11px] font-bold',
-                igStatusOk ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                igStatusOk
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-rose-600 dark:text-rose-400'
               ]"
             >
               {{ igStatusText }}

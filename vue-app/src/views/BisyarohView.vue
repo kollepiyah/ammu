@@ -20,9 +20,6 @@
         <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
           <i class="fas fa-money-check-alt text-emerald-600 mr-2"></i>Bisyaroh Guru/Pegawai
         </h2>
-        <p class="text-xs text-[var(--text-secondary)] mt-1">
-          Generate slip bisyaroh bulanan, terhubung dengan absensi &amp; bisyaroh pokok.
-        </p>
         <!-- v.103b: tab strip 1-baris scroll-samping, scrollbar disembunyikan -->
         <div
           v-if="!isDesktop"

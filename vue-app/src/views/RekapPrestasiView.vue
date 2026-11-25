@@ -346,7 +346,7 @@
                  petunjuk) dibuang — membuat halaman penuh. -->
           </div>
           <!-- View mode toggle -->
-          <div class="flex gap-1 bg-slate-100 p-1 rounded-xl">
+          <div class="bar-tab flex gap-1 bg-slate-100 p-1 rounded-xl">
             <button
               v-for="m in modes"
               :key="m.id"
@@ -508,9 +508,7 @@
         </div>
         <!-- v.21.115.0528: standardize per design-tokens — Cetak cyan, PDF cyan, Excel emerald, Simpan primary -->
         <!-- v.103b: mobile = toolbar 1-baris scroll-samping (sebelumnya wrap jadi 3 baris berantakan) -->
-        <div
-          class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink w-full md:w-auto -mx-1 px-1 md:mx-0 md:px-0"
-        >
+        <div class="ph-aksi w-full md:w-auto flex flex-wrap items-center gap-2">
           <button
             aria-label="Cetak rekap HTML"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
@@ -1108,9 +1106,7 @@
               >, <b>dipisah per PJ PTPT</b></template
             >.
           </div>
-          <div
-            class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink w-full md:w-auto -mx-1 px-1 md:mx-0 md:px-0"
-          >
+          <div class="ph-aksi w-full md:w-auto flex flex-wrap items-center gap-2">
             <button
               aria-label="Cetak peringkat"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"

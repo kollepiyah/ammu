@@ -99,7 +99,7 @@ const formatted = computed(() => {
     <header class="post-hdr">
       <div class="hdr-l">
         <div class="ava"><img :src="'/logo.png'" alt="Logo" class="ava-img" /></div>
-        <div>
+        <div class="hdr-teks">
           <p class="nama">Pondok Pesantren Mambaul Ulum</p>
           <p class="meta">
             {{ formatted }}<span v-if="author && author !== 'Admin'"> · {{ author }}</span>
@@ -197,6 +197,18 @@ const formatted = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+/* Kyai 25 Nov 2026: nama & tanggal dulu terbelah dua baris di HP -> satu baris, dipotong "…". */
+.hdr-teks {
+  min-width: 0;
+}
+.hdr-teks .nama,
+.hdr-teks .meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ava {
   width: 44px;
@@ -242,6 +254,7 @@ const formatted = computed(() => {
 .hdr-r {
   display: flex;
   gap: 0.25rem;
+  flex-shrink: 0;
 }
 .btn-edit,
 .btn-del {
@@ -253,7 +266,10 @@ const formatted = computed(() => {
   transition: background 150ms;
 }
 .btn-edit {
-  color: #2563eb;
+  color: #0f766e;
+}
+:global(.dark) .btn-edit {
+  color: #5eead4;
 }
 .btn-edit:hover {
   background: #eff6ff;
@@ -416,7 +432,9 @@ const formatted = computed(() => {
   background: rgba(15, 23, 42, 0.78);
   backdrop-filter: blur(4px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  transition: transform 150ms, background 150ms;
+  transition:
+    transform 150ms,
+    background 150ms;
   z-index: 2;
 }
 .link-badge:hover {

@@ -35,9 +35,7 @@
           </div>
           <!-- v.21.113.0528: tombol aksi grup kanan — Ekspor/Input/Cetak konsisten h-9 px-3 rounded-xl -->
           <!-- v.103b: mobile = toolbar 1-baris scroll-samping (tak wrap berantakan); desktop wrap normal -->
-          <div
-            class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0"
-          >
+          <div class="ph-aksi w-full md:w-auto flex flex-wrap items-center gap-2">
             <button
               :disabled="exportingBI"
               aria-label="Ekspor Buku Induk ke Excel"

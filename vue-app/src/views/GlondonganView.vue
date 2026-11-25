@@ -847,14 +847,10 @@ async function exportRekapBisyarohPdf() {
       <h1 class="text-lg md:text-xl font-black text-[var(--text-primary)]">
         <i class="fas fa-people-arrows text-teal-500 mr-2"></i>Glondongan PTPT
       </h1>
-      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        Muroja'ah kumulatif sebelum tes kenaikan juz. Nilai di sini
-        <b>tidak masuk rapor</b> — catatan evaluasi saja.
-      </p>
     </div>
 
     <!-- Tab bar -->
-    <div class="flex gap-2 flex-wrap">
+    <div class="bar-tab flex gap-2 flex-wrap">
       <button
         v-if="canAssignAny"
         type="button"
@@ -1111,7 +1107,7 @@ async function exportRekapBisyarohPdf() {
                 Tampilkan juga guru yang sedang bertugas
               </template>
               <template v-else>
-                Hanya penyimak {{ kategoriLabel(row) }} yang senggang · tampilkan semua guru PTPT
+                <i class="fas fa-users mr-1"></i>Tampilkan semua guru PTPT
               </template>
             </button>
             <button
@@ -1120,8 +1116,7 @@ async function exportRekapBisyarohPdf() {
               class="text-[var(--text-tertiary)] hover:underline"
               @click="bukaSemuaGuru[row.id] = false"
             >
-              Menampilkan semua guru PTPT (termasuk yang sedang bertugas) · kembali ke penyimak
-              {{ kategoriLabel(row) }} yang senggang
+              <i class="fas fa-user-check mr-1"></i>Hanya penyimak yang senggang
             </button>
           </p>
         </li>

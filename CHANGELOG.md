@@ -96,6 +96,18 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   jam dashboard, jadi widget berhenti diperbarui begitu kartu itu dihapus atau pengguna belum login.
 - Tombol kembali Android di layar masuk → Beranda publik; layar masuk punya tombol "Beranda";
   keluar dari header Portal di Android/PWA kembali ke Beranda publik, bukan layar masuk.
+- **Penyeragaman tampilan HP, gelombang 1** (Kyai: "semua diseragamkan, di semua device"):
+  - `.bar-tab` (main.css) — semua bar tab jadi kotak sama lebar, ikon di atas label; dipasang di
+    Glondongan, Pondok Laju, Master Data, Rekap Prestasi, Tes Kenaikan, Tes Sekolah, Statistik,
+    Laporan, Supervisi, Pembayaran Pending. Tab dua pilihan Ceremonial = dua kolom sama lebar.
+  - Deret tombol geser lama di Buku Induk, Naik Kelas, Rekap Prestasi (2), Uang Pos → `.ph-aksi`.
+  - Keterangan penjelas fitur di bawah judul dibuang di Bisyaroh, Kegiatan Pesantren, Laporan,
+    Pembayaran Pending, Perizinan, PSB Admin, Supervisi, Tes Kenaikan, Dasbor Keuangan, Pengaturan
+    Web, Glondongan, Pondok Laju (keterangan berisi data — jumlah, periode — tetap).
+  - Glondongan: tautan "tampilkan semua guru" dipendekkan. Pondok Laju (Jurnal): baris tanggal /
+    sesi / kelas / Tambah kartu jadi grid rapi. Kartu Channel: nama & tanggal satu baris, ikon ubah
+    teal.
+  - Aturan ditulis di `DESIGN-SYSTEM-RULES.md` (RULE HP) supaya halaman baru ikut.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.

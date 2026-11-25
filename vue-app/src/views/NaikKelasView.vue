@@ -457,7 +457,7 @@
         <!-- v.21.115.0528: standardize per design-tokens — Excel emerald, PDF cyan -->
         <div
           v-if="riwayatLembaga && riwayatList.length > 0"
-          class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 sm:mx-0 sm:px-0"
+          class="ph-aksi w-full md:w-auto flex flex-wrap items-center gap-2"
         >
           <button
             :disabled="exportingExcel"

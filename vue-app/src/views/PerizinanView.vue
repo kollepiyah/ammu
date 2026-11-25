@@ -11,11 +11,6 @@
       <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-calendar-minus text-cyan-600 mr-2"></i>Perizinan &amp; Cuti
       </h1>
-      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        Ajukan izin / sakit / cuti<span v-if="izinIsApprover"
-          >, setujui pengajuan, dan lihat riwayatnya</span
-        >.
-      </p>
     </div>
 
     <!-- Pengajuan saya -->

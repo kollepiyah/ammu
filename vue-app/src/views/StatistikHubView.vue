@@ -3,7 +3,7 @@
     <!-- Satu deret tab menyatu (admin): Ringkasan + analitik. Non-admin: tanpa tab,
          langsung dasbor (StatistikView menangani konten per-peran sendiri). -->
     <div v-if="showTabs" class="max-w-6xl mx-auto px-4 md:px-6 pt-4">
-      <div class="flex gap-2 flex-wrap">
+      <div class="bar-tab flex gap-2 flex-wrap">
         <button
           v-for="t in tabs"
           :key="t.id"

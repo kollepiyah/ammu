@@ -770,3 +770,25 @@ Override max-width: tambah utility class di samping (e.g., `class="mu-modal-card
 
 **Phase 4 Sesi A+B by:** Claude autonomous session
 **Last updated:** 14 Mei 2026
+
+---
+
+## 📱 RULE HP — POLA TATA LETAK SERAGAM (Kyai, 25 Nov 2026)
+
+Semua halaman WAJIB memakai kelas bersama di `vue-app/src/assets/main.css`, bukan menata sendiri.
+Semuanya hanya berlaku di HP (< 768 px); layar lebar & Electron tetap gaya asli.
+
+| Kelas | Dipasang di | Hasil di HP |
+|---|---|---|
+| `.ph-stat` | wadah chip jumlah (otomatis lewat `PageHeader` slot `stats`) | kotak angka sejajar sama lebar |
+| `.ph-aksi` | wadah tombol aksi halaman (otomatis lewat `PageHeader` slot `actions`) | ikon saja, satu baris sama lebar |
+| `.bar-tab` | wadah tombol tab | kotak sama lebar, ikon di atas label; 6 tab = 3 kolom, 7–8 = 4 kolom |
+| `.aksi-kartu` | deret aksi di kaki kartu (Edit/Hapus/dst.) | satu deret kotak sama lebar |
+| `PanelFilter` | penyaring daftar | kotak cari + tombol penyaring berlencana; penyaring dilipat |
+
+- Tombol berikon di `.ph-aksi` WAJIB punya `aria-label` atau `title` — teksnya disembunyikan di HP.
+- Jangan pakai lagi deret geser `overflow-x-auto … [&>*]:shrink-0` untuk tombol.
+- Keterangan di bawah judul hanya bila berisi DATA (jumlah, periode); kalimat penjelas fitur dibuang.
+- Mode gelap: warna terang (`bg-*-50/100`, teks `*-700/800/900`) dijaga otomatis oleh penjaga
+  kontras di main.css; kertas cetak (`#rapor-print-area`, `.print-area`) selalu terang.
+

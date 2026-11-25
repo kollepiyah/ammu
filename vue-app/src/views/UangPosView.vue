@@ -29,9 +29,7 @@
               {{ getBulanLabel(selectedMonth) }} {{ selectedYear }}
             </p>
           </div>
-          <div
-            class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 lg:mx-0 lg:px-0"
-          >
+          <div class="ph-aksi w-full md:w-auto flex flex-wrap items-center gap-2">
             <button
               aria-label="Input transaksi manual"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition cursor-pointer"

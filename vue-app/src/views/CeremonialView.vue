@@ -403,7 +403,7 @@ function jamRange(s) {
     </div>
 
     <!-- v.1.2.0: tab utama — Kandidat (perlu ditindak) vs Sesi (jadwal yang sudah ada) -->
-    <div v-if="canKelola" class="flex gap-1.5">
+    <div v-if="canKelola" class="grid grid-cols-2 gap-1.5">
       <button
         v-for="t in [
           { v: 'kandidat', l: 'Kandidat', n: kandidatBelum.length },
@@ -427,7 +427,7 @@ function jamRange(s) {
 
     <!-- ══════════ TAB KANDIDAT ══════════ -->
     <div v-if="tabAktif === 'kandidat'" class="space-y-3">
-      <div class="flex gap-1.5">
+      <div class="grid grid-cols-2 gap-1.5">
         <button
           v-for="t in [
             { v: 'belum', l: 'Belum Dijadwalkan', n: kandidatBelum.length },

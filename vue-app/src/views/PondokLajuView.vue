@@ -10,12 +10,12 @@
           <i class="fas fa-book-quran text-teal-600 mr-1"></i>Pondok Laju
         </h1>
         <p class="text-[11px] text-[var(--text-secondary)]">
-          Urutan sesi: <b>Tadarus Pagi</b> (guru kelas) → <b>Laju 1</b> → <b>Laju 2</b> (guru
-          piket). Bacaannya bersambung; yang dicatat posisi akhir tiap sesi.
-          {{ kelasList.length }} kelas · {{ jumlahSantri }} santri.
+          {{ kelasList.length }} kelas · {{ jumlahSantri }} santri
         </p>
       </div>
-      <div class="flex flex-wrap gap-1 bg-[var(--bg-muted)] p-1 rounded-xl w-fit max-w-full">
+      <div
+        class="bar-tab flex flex-wrap gap-1 bg-[var(--bg-muted)] p-1 rounded-xl w-fit max-w-full"
+      >
         <button
           v-for="t in tabs"
           :key="t.id"
@@ -43,7 +43,7 @@
     <!-- ============ JURNAL: satu kartu per sesi yang memang terjadwal ============ -->
     <template v-else-if="tab === 'capaian'">
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm flex flex-wrap items-center gap-2"
+        class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm grid grid-cols-2 md:flex md:flex-wrap items-center gap-2"
       >
         <input
           v-model="cTanggal"
@@ -51,14 +51,10 @@
           aria-label="Tanggal jurnal"
           class="px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
         />
-        <p class="text-[11px] text-[var(--text-secondary)] grow min-w-[8rem]">
-          {{ kartuJurnal.length }} kartu, mengikuti jadwal piket tanggal ini
-          <!-- Kyai 24 Nov 2026 bertanya kenapa akunnya memuat kartu guru lain: memang begitu untuk
-               admin/penyusun (menambal jurnal terlupa); akun guru hanya melihat kartunya sendiri. -->
-          <span v-if="bisaSemuaKelas" class="block">
-            Anda admin/penyusun: semua kartu piket tanggal ini tampil. Akun guru hanya melihat
-            kartunya sendiri.
-          </span>
+        <!-- Admin/penyusun melihat semua kartu piket tanggal itu (menambal jurnal terlupa);
+             akun guru hanya kartunya sendiri. Keterangan panjangnya dibuang (Kyai 25 Nov 2026). -->
+        <p class="text-[11px] text-[var(--text-secondary)] text-right md:text-left md:grow">
+          {{ kartuJurnal.length }} kartu
         </p>
         <!-- Admin/PJ: menambal kelas lain. Guru biasa tak melihat pemilih apa pun. -->
         <template v-if="bisaSemuaKelas">
@@ -72,7 +68,7 @@
           <select
             v-model="tKelas"
             aria-label="Kelas kartu tambahan"
-            class="px-2 py-2 text-xs rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] max-w-[12rem]"
+            class="px-2 py-2 text-xs rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] md:max-w-[12rem]"
           >
             <option value="">— kelas lain —</option>
             <option v-for="k in kelasList" :key="k.key" :value="k.key">
@@ -80,7 +76,7 @@
             </option>
           </select>
           <button
-            class="h-9 px-3 rounded-xl bg-[var(--bg-muted)] hover:bg-[var(--border-subtle)] text-xs font-bold cursor-pointer"
+            class="col-span-2 md:col-span-1 h-9 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold cursor-pointer"
             @click="tambahKartu"
           >
             <i class="fas fa-plus mr-1"></i>Tambah kartu

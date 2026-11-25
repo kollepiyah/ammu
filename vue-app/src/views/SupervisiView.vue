@@ -7,9 +7,6 @@
           <h1 class="text-base md:text-lg font-black">
             <i class="fas fa-clipboard-check text-cyan-500 mr-2"></i>Data Supervisi
           </h1>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-            Catatan & rekomendasi untuk lembaga dan guru/pegawai
-          </p>
         </div>
         <span class="text-[10px] font-bold bg-cyan-50 text-cyan-700 px-2.5 py-1 rounded-full">
           <i class="fas fa-user-shield mr-1"></i
@@ -32,7 +29,7 @@
 
     <template v-else>
       <!-- Tab — v.98: di Electron sub-menu (Buat/Riwayat/Rekap) ada di pita; sembunyikan di sini -->
-      <div v-if="!isDesktop" class="flex gap-2 bg-[var(--bg-card-elevated)] p-1 rounded-xl">
+      <div v-if="!isDesktop" class="bar-tab flex gap-2 bg-[var(--bg-card-elevated)] p-1 rounded-xl">
         <button
           v-for="t in tabs"
           :key="t.id"

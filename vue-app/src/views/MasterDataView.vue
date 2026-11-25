@@ -914,7 +914,7 @@ async function simpanPengaturanRekap() {
       v-if="!isDesktop"
       class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-2"
     >
-      <div class="flex flex-wrap gap-1.5">
+      <div class="bar-tab flex flex-wrap gap-1.5">
         <button
           v-for="tab in TABS"
           :key="tab.id"

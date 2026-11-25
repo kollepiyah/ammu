@@ -10,9 +10,6 @@
       <h2 class="text-lg md:text-2xl font-black mt-1">
         Master Kegiatan &amp; Absensi Santri Mukim
       </h2>
-      <p class="text-xs md:text-sm font-medium mt-1 opacity-90">
-        Kelola jadwal kegiatan harian, rekap absensi, dan impor fingerprint.
-      </p>
     </div>
 
     <!-- Tab buttons -->

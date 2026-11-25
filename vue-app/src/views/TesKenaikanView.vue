@@ -8,10 +8,6 @@
       <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-clipboard-check text-teal-500 mr-2"></i>Tes Kenaikan Qiraati
       </h1>
-      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        Guru mengajukan tes santri ke Kepala/PJ. <b>Lulus = siap naik</b> (kenaikan tetap diproses
-        di menu Kenaikan).
-      </p>
     </div>
 
     <!-- Saklar Qiraati | Sekolah. Sisi "Sekolah" hanya muncul untuk yang berhak
@@ -19,7 +15,7 @@
     <TesModeSwitch aktif="qiraati" />
 
     <!-- Tabs -->
-    <div class="flex gap-1.5 flex-wrap">
+    <div class="bar-tab flex gap-1.5 flex-wrap">
       <button
         v-for="t in tabs"
         :key="t.id"

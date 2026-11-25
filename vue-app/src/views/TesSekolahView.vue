@@ -221,7 +221,7 @@ async function hapusBaris(b) {
     </div>
 
     <!-- Tabs -->
-    <div v-if="tabs.length > 0" class="flex gap-1.5 flex-wrap">
+    <div v-if="tabs.length > 0" class="bar-tab flex gap-1.5 flex-wrap">
       <button
         v-for="t in tabs"
         :key="t.id"

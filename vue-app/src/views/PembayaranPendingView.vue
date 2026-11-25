@@ -9,9 +9,6 @@
         <h1 class="text-base md:text-lg font-black">
           <i class="fas fa-hourglass-half text-amber-500 mr-2"></i>Verifikasi Pembayaran
         </h1>
-        <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-          Bukti transfer dari wali yang menunggu verifikasi
-        </p>
       </div>
       <div class="flex gap-2">
         <span class="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs">
@@ -27,7 +24,7 @@
 
     <!-- Tab Status -->
     <div class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-2">
-      <div class="flex gap-1.5">
+      <div class="bar-tab flex gap-1.5">
         <button
           v-for="t in tabs"
           :key="t.id"

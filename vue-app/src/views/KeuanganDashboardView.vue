@@ -22,10 +22,6 @@
           <i class="fas fa-chart-line text-teal-500 mr-2"></i>Dashboard Keuangan
           <span v-if="gedungScoped" class="text-teal-600">— {{ myGedung }}</span>
         </h1>
-        <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-          <template v-if="gedungScoped">Keuangan gedung Anda realtime + tren 12 bulan</template>
-          <template v-else>Overview keuangan pondok realtime + tren 12 bulan</template>
-        </p>
       </div>
 
       <!-- v.72.15.0526: 7 Quick Actions (+ Hutang Piutang baru) -->
