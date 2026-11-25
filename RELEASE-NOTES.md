@@ -5,6 +5,33 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.5.4 — November 2026
+
+**Baru**
+
+- **Beranda tanpa login di aplikasi Android.** Santri, alumni, dan wali kini bisa membuka aplikasi
+  dan langsung melihat kabar terbaru Channel, kalender kegiatan, dan informasi pondok tanpa harus
+  masuk. Tombol **Portal** membawa guru dan pengurus ke halaman masuk seperti biasa.
+- **Masuk dengan Google tanpa membuka browser** (Android): cukup pilih akun Google yang ada di HP.
+- **Baris ikon Al-Qur'an, Wirid, Kiblat, dan Jadwal Sholat** di beranda (Android). Isinya menyusul,
+  insyaAllah.
+- **Penyaring jenis kelamin** di Data Santri dan Data Guru.
+- Halaman **Tentang** aplikasi.
+
+**Perubahan**
+
+- **Tampilan HP lebih lega dan seragam** ala aplikasi bawaan: bagian selebar layar tanpa kotak
+  bertumpuk, tombol aksi berikon rapi, judul halaman satu ukuran, keterangan panjang bisa dilipat.
+  Tombol "Kembali" di layar diganti tombol kembali HP.
+- **Mode gelap baru** yang lebih pekat dan terbaca di semua layar.
+- Beranda dan dashboard cukup menampilkan **3 postingan Channel terbaru**.
+- **Pondok Laju:** Laju 1 = Tadarus Siang, Laju 2 = Tadarus Sore. Kolom jurnal kini kosong untuk
+  diisi, dengan posisi bacaan terakhir terpampang besar sebagai patokan. Tab Jurnal hanya memuat
+  kartu milik sendiri.
+- Tombol unduh aplikasi Android kini menuju Play Store.
+
+---
+
 ## v.1.5.3 — November 2026
 
 **Perubahan**

@@ -28,11 +28,15 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.3] — 2026-11-25 — Ammu publik F1: Beranda tanpa login + baris ikon ibadah
+## [v.1.5.4] — 2026-11-25 — Ammu publik F1: Beranda tanpa login, tampilan native, login Google tanpa browser
 
-**SIAP RILIS** — `versionCode` 153 / `versionName` `v.1.5.3`, gelombang 3 (AAB belum dirilis, jadi
-nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK) dan deploy web
-(untuk PWA). Rancangan: `docs/BLUEPRINT-AMMU-PUBLIK.md` fase F1.
+**SIAP RILIS** — `versionCode` 154 / `versionName` `v.1.5.4` (web, AAB, Electron, PSB). Isinya
+pekerjaan yang semula dicatat sebagai "v.1.5.3 gelombang 3" (judul commit fe05551…8f5fff4 masih
+menyebut itu); nomornya naik karena v.1.5.3 keburu tayang penuh — web app-version 153, Electron
+1.5.3 "Latest" 24 Nov, AAB vc153 dibangun 24 Nov 21:26 (isi sampai ad207dd) dan sedang ditinjau
+Play. Tanpa migrasi. Deploy web, **rebuild AAB** (tampilan HP dibundel), rilis Electron, dan deploy
+ulang edge function `widget-tugas` (label sesi Laju "Tadarus Siang/Sore" — cermin di
+`tugasSaya.ts`). Rancangan: `docs/BLUEPRINT-AMMU-PUBLIK.md` fase F1.
 
 ### Added
 - **Wilayah publik tanpa login di Android & PWA** (rute `/umum/*`, `PublikLayout`): tamu yang membuka
@@ -181,9 +185,10 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
 
 ---
 
-## [v.1.5.3 · gelombang 2] — 2026-11-24 — Pondok Laju: guru biasa hanya melihat miliknya, kabar WA lewat wa.me
+## [v.1.5.3] — 2026-11-24 — Pondok Laju: guru biasa hanya melihat miliknya, kabar WA lewat wa.me
 
-`versionCode` 153 / `versionName` `v.1.5.3` (web, AAB, Electron, PSB), gelombang 2.
+**TAYANG 24 Nov 2026** (web, Electron, AAB vc153 ditinjau Play) — `versionCode` 153 /
+`versionName` `v.1.5.3`, gelombang 2.
 Web gelombang 1 sudah di-deploy Kyai 24 Nov; AAB & Electron belum → gelombang ini tetap 1.5.3.
 Tanpa migrasi. Deploy web. Opsional: `supabase functions delete kirim-wa-jadwal` &
 `supabase secrets unset FONNTE_TOKEN` (fungsi tak dipanggil lagi); `widget-tugas` boleh di-deploy
