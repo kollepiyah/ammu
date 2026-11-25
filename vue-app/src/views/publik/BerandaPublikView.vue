@@ -2,7 +2,7 @@
   <div class="p-3 space-y-4 max-w-xl mx-auto">
     <JamRingkas />
 
-    <!-- Kartu jadwal sholat menyusul di F2 (utils/waktuSholat.js + lokasi). -->
+    <KartuSholat />
 
     <MenuIbadah jenis="beranda" />
 
@@ -14,5 +14,6 @@
 <script setup>
 import JamRingkas from '@/components/publik/JamRingkas.vue'
 import MenuIbadah from '@/components/publik/MenuIbadah.vue'
+import KartuSholat from '@/components/publik/KartuSholat.vue'
 import DashboardPosts from '@/components/dashboard/DashboardPosts.vue'
 </script>

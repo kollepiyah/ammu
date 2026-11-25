@@ -28,6 +28,58 @@ menyuntikkan data pengguna).
 
 ---
 
+## [v.1.5.5] — 2026-11-25 — Ammu publik F2: Jadwal Sholat & Kiblat; audit egress
+
+**SIAP RILIS** — `versionCode` 155 / `versionName` `v.1.5.5` (web, AAB, Electron, PSB). Nomor naik
+karena v.1.5.4 sudah tayang di web (app-version 154) dan Electron 1.5.4 "Latest" 25 Nov. **AAB 154
+tak pernah dibangun** (Kyai menahannya sampai fitur ini jadi) — AAB vc155 ini sekaligus membawa
+seluruh isi v.1.5.4 ke HP. Tanpa migrasi, tanpa edge function. Perlu: deploy web (Permissions-Policy
+geolocation untuk PWA), **rebuild AAB** (izin lokasi baru di manifest), rilis Electron (tak ada
+perubahan desktop selain nomor). Rancangan: `docs/BLUEPRINT-AMMU-PUBLIK.md` fase F2.
+
+### Added
+- **Jadwal Sholat** (`/umum/sholat` untuk tamu, `/ibadah/sholat` di Portal — komponen sama,
+  `views/publik/JadwalSholatView.vue`): waktu berikutnya + hitung mundur, Imsak–Isya, geser hari,
+  roda gigi ke setelan ibadah. Kartu ringkas di Beranda publik (`KartuSholat.vue`, blueprint 3.1).
+- **Sumber tunggal `utils/waktuSholat.js`** (fungsi murni, tanpa pustaka): posisi matahari ala
+  almanak + sudut & ihtiyath per metode. **Kemenag RI** (bawaan: Subuh 20°, Isya 18°, ihtiyath 2
+  menit / Dzuhur 3 / Terbit −2, dibulatkan ke atas, Dhuha 4,5°, Imsak −10) dan **Umm al-Qura**.
+  Diverifikasi terhadap jadwal resmi Kemenag Kab. Sidoarjo 12 tanggal di 4 musim: 70 dari 84
+  waktu persis, sisanya ±1 menit (`tests/unit/waktuSholat.test.js`). **Falakiyah NU belum ada**:
+  jadwal LFNU/NU Online tak bisa diambil sebagai pembanding (jadwalsholat.nu.or.id 429), dan
+  blueprint melarang menebak sudutnya.
+- **Arah Kiblat** (`KiblatView.vue`, `utils/kiblat.js`): azimut lingkaran besar ke Ka'bah
+  (pesantren Waru 294° 04′, jarak ±8.564 km), kompas dari `deviceorientationabsolute`
+  (iOS: `webkitCompassHeading` + izin), "putar ke kanan/kiri n°", getar sekali saat pas (±3°).
+  Arah relatif utara magnetik (deklinasi Jawa Timur ±1° — diabaikan).
+- **Setelan ibadah** (`PengaturanIbadah.vue`, dipakai Pengaturan publik & roda gigi Jadwal
+  Sholat): metode, lokasi otomatis + "Perbarui", pilih kota (16 kota). State di HP
+  (`composables/useIbadah.js`, localStorage `ammu_ibadah`) — **nol egress Supabase**.
+  - Lokasi lewat `navigator.geolocation` (izin perkiraan). Beranda tak pernah memunculkan dialog
+    izin; dialog hanya dari layar Jadwal Sholat/Kiblat atau tombol. Pembaruan otomatis saat app
+    dibuka/kembali dari latar bila izin sudah ada (paling sering 30 menit); pindah > 10 km →
+    koordinat diganti. Ditolak → sakelar otomatis mati, jadwal memakai lokasi pesantren.
+- `docs/AUDIT-EGRESS-25NOV2026.md` — laporan audit egress PostgREST (lihat Notes).
+
+### Changed
+- `MenuIbadah`: ikon Kiblat & Jadwal Sholat membuka layarnya (tamu → `/umum/…`, Portal →
+  `/ibadah/…` supaya tetap di shell login, blueprint 3.7).
+- AndroidManifest: `ACCESS_COARSE_LOCATION` + `ACCESS_FINE_LOCATION maxSdkVersion=30` (Android ≤ 11
+  tak punya pilihan "perkiraan" dan BridgeWebChromeClient baru menerima COARSE saja mulai Android 12).
+  **Play Console → Data safety perlu diisi: lokasi perkiraan, tidak dikumpulkan/dibagikan, diproses
+  di perangkat.**
+- `firebase.json` Permissions-Policy: `geolocation=()` → `geolocation=(self)` (tanpanya PWA tak bisa
+  membaca lokasi).
+
+### Notes — audit egress (laporan, BELUM diperbaiki)
+- Log gateway 24 jam: `absensi_shift_guru` 43.821 GET (62% permintaan), hampir semuanya sinkron
+  Fingerspot di satu PC kantor yang memeriksa ±490 baris satu per satu tiap ±5 menit; sejak 21 Sep
+  1,14 juta kali. Lalu tarikan penuh `santri` saat app dibuka, layar Glondongan/Tes Kenaikan
+  (kedua tabel tes penuh), dan buku induk/tagihan di PC kasir. Rincian, angka, dan usulan P1–P3
+  di `docs/AUDIT-EGRESS-25NOV2026.md`; menunggu persetujuan Kyai.
+
+---
+
 ## [v.1.5.4] — 2026-11-25 — Ammu publik F1: Beranda tanpa login, tampilan native, login Google tanpa browser
 
 **SIAP RILIS** — `versionCode` 154 / `versionName` `v.1.5.4` (web, AAB, Electron, PSB). Isinya

@@ -72,8 +72,9 @@
       <h3 class="text-sm font-black text-[var(--text-primary)] mb-3 flex items-center gap-2">
         <i class="fas fa-mosque text-teal-600"></i>Ibadah
       </h3>
-      <p class="text-xs text-[var(--text-secondary)]">
-        Metode jadwal sholat, lokasi, dan suara adzan segera hadir, insyaAllah.
+      <PengaturanIbadah />
+      <p class="text-[11px] text-[var(--text-secondary)] mt-3">
+        <i class="fas fa-bell mr-1 text-teal-600"></i>Suara adzan segera hadir, insyaAllah.
       </p>
     </section>
 
@@ -126,6 +127,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { isNativeAndroid } from '@/composables/useWidgetSync'
+import PengaturanIbadah from '@/components/publik/PengaturanIbadah.vue'
 
 const PILIHAN_TEMA = [
   { mode: 'terang', label: 'Terang', ikon: 'fa-sun' },

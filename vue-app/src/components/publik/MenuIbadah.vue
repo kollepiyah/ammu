@@ -72,8 +72,13 @@ const router = useRouter()
 const toast = useToast()
 const daftar = computed(() => (URUTAN[props.jenis] || URUTAN.beranda).map((k) => MENU[k]))
 
+// F2: layar ibadah yang sudah jadi. Tamu ke /umum/…, Portal ke /ibadah/… (tetap di shell login).
+const LAYAR_IBADAH = { kiblat: 'kiblat', sholat: 'sholat' }
+
 function buka(m) {
-  if (m.to) router.push(m.to)
+  const layar = LAYAR_IBADAH[m.kunci]
+  if (layar) router.push(`${props.jenis === 'portal' ? '/ibadah' : '/umum'}/${layar}`)
+  else if (m.to) router.push(m.to)
   else toast.info(`${m.label} segera hadir, insyaAllah.`)
 }
 </script>

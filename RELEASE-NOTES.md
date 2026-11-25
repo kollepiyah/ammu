@@ -5,6 +5,26 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 ---
 
+## v.1.5.5 — November 2026
+
+**Baru**
+
+- **Jadwal Sholat** (Android & aplikasi web terpasang): Imsak sampai Isya untuk lokasi HP,
+  hitung mundur ke waktu sholat berikutnya, dan jadwal hari-hari lain. Dihitung langsung di HP —
+  tetap jalan tanpa internet. Metode Kemenag RI (bawaan) atau Umm al-Qura; lokasi otomatis atau
+  pilih kota. Kartu jadwal juga tampil di Beranda.
+- **Arah Kiblat** dengan kompas HP: piringan berputar mengikuti HP dan memberi tahu "putar ke
+  kanan/kiri" sampai menghadap kiblat.
+- Ikon Kiblat dan Jadwal Sholat di dashboard kini terbuka (Al-Qur'an dan Wirid masih menyusul).
+
+**Catatan**
+
+- Aplikasi meminta izin **lokasi perkiraan** hanya saat layar Jadwal Sholat/Kiblat dibuka, untuk
+  menghitung waktu dan arah. Lokasi tidak dikirim ke mana pun. Bila ditolak, jadwal memakai
+  lokasi pesantren (Waru, Sidoarjo).
+
+---
+
 ## v.1.5.4 — November 2026
 
 **Baru**

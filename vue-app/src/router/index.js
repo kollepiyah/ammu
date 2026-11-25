@@ -121,6 +121,9 @@ const BerandaPublikView = () => import('@/views/publik/BerandaPublikView.vue')
 const ChannelPublikView = () => import('@/views/publik/ChannelPublikView.vue')
 const PengaturanPublikView = () => import('@/views/publik/PengaturanPublikView.vue')
 const TentangView = () => import('@/views/publik/TentangView.vue')
+// F2: layar ibadah — komponen yang sama di /umum (tamu) dan /ibadah (Portal, blueprint 3.7)
+const JadwalSholatView = () => import('@/views/publik/JadwalSholatView.vue')
+const KiblatView = () => import('@/views/publik/KiblatView.vue')
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -149,7 +152,14 @@ const routes = [
         component: PengaturanPublikView,
         meta: { public: true }
       },
-      { path: 'tentang', name: 'umum-tentang', component: TentangView, meta: { public: true } }
+      { path: 'tentang', name: 'umum-tentang', component: TentangView, meta: { public: true } },
+      {
+        path: 'sholat',
+        name: 'umum-sholat',
+        component: JadwalSholatView,
+        meta: { public: true }
+      },
+      { path: 'kiblat', name: 'umum-kiblat', component: KiblatView, meta: { public: true } }
     ]
   },
   // Route tanpa layout (full-screen)
@@ -162,6 +172,8 @@ const routes = [
     component: AppShell,
     children: [
       { path: 'dashboard', name: 'dashboard', component: DashboardView },
+      { path: 'ibadah/sholat', name: 'ibadah-sholat', component: JadwalSholatView },
+      { path: 'ibadah/kiblat', name: 'ibadah-kiblat', component: KiblatView },
       // v.98: ribbon-native — Home desktop (dua dasbor) + Bantuan + placeholder modul
       { path: 'beranda', name: 'beranda', component: BerandaDesktopView, meta: { noSantri: true } },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },

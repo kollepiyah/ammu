@@ -162,6 +162,12 @@ Kegiatan (sky). **Hanya agenda yang ditandai admin "tampil di publik".**
 - **WAJIB verifikasi, jangan menebak sudut/ihtiyath**: cocokkan dengan jadwal resmi Kemenag
   (Bimas Islam) untuk kabupaten pesantren dan jadwal LFNU / NU Online, minimal 3 tanggal
   berbeda musim. Target selisih **≤ 1 menit**. Simpan tabel pembanding itu sebagai tes.
+- **Dikerjakan 25 Nov (F2):** rumus sendiri tanpa pustaka. Kemenag cocok dengan jadwal resmi
+  Kab. Sidoarjo (12 tanggal, ≤1 menit). **Falakiyah NU belum dibuat** — butuh tabel jadwal
+  LFNU/NU Online untuk Sidoarjo/Surabaya (min. 3 tanggal beda musim) dari Kyai; jadwalsholat.nu.or.id
+  menolak akses otomatis (429). Begitu ada, tambahkan entri di `METODE` + baris tes.
+  Lokasi memakai `navigator.geolocation` (WebView Capacitor), **bukan** `@capacitor/geolocation`
+  — tak perlu plugin baru.
 - Lokasi: `@capacitor/geolocation` (izin **perkiraan/coarse** cukup). Ditolak → koordinat
   pesantren. **Perbarui otomatis** saat aplikasi dibuka/kembali dari latar: kalau pindah
   > ±10 km, hitung ulang + jadwalkan ulang adzan. **Tanpa lokasi latar belakang** (kebijakan
@@ -271,7 +277,7 @@ lalu dipakai F7). F10 butuh F2.
 |---|---|---|---|
 | **F0** | Persiapan: jawab K1–K6, serahkan PDF & berkas suara, buat bucket R2 | — | Buat bucket + domain R2 |
 | **F1** ✅ 25 Nov (v.1.5.3 gel. 3) | Kerangka publik: rute `/umum/*` (`meta.public`), shell + bottom nav 5 tab, `/` → beranda publik di Android, Electron tetap ke Portal, tab Portal → login/dashboard, pindah kartu jam ringkas + sinkron widget global, hapus kartu jam dari dashboard + baris ikon ibadah (3.7; ikon yang layarnya belum jadi tampil "segera hadir" atau disembunyikan), Pengaturan publik (tema Terang/Gelap/Otomatis di `stores/ui.js`) | — | AAB |
-| **F2** | `utils/waktuSholat.js` + tes pembanding resmi, geolocation + perbarui otomatis, kartu jadwal, pengaturan metode & lokasi, kompas kiblat (sensor arah) | F1 | AAB |
+| **F2** ✅ 25 Nov (v.1.5.5; NU belum) | `utils/waktuSholat.js` + tes pembanding resmi, geolocation + perbarui otomatis, kartu jadwal, pengaturan metode & lokasi, kompas kiblat (sensor arah) | F1 | AAB |
 | **F3** | Adzan (kanal suara, penjadwalan, jadwal ulang) + uji HP asli; plugin native bila perlu | F2 | AAB |
 | **F4** | Agenda publik: migrasi `publik`, akses anon aman, centang di form admin, layar Agenda | F1 | `supabase db push`, deploy web, AAB |
 | **F5** | Tab Channel publik (+ penanda publik bila perlu) | F1 | (db push bila ada migrasi), AAB |
