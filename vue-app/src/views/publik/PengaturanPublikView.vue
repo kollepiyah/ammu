@@ -78,12 +78,60 @@
       </button>
     </section>
 
+    <!-- Kyai 25 Nov 2026: tombol unduh pindah dari layar masuk PWA ke sini. -->
+    <section
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+    >
+      <h3 class="text-sm font-black text-[var(--text-primary)] mb-3 flex items-center gap-2">
+        <i class="fas fa-download text-teal-600"></i>Unduh Aplikasi
+      </h3>
+      <div class="space-y-2">
+        <a
+          v-for="u in daftarUnduh"
+          :key="u.label"
+          :href="u.url"
+          target="_blank"
+          rel="noopener"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-teal-500 transition"
+        >
+          <i :class="[u.ikon, 'text-lg w-5 text-center', u.warna]"></i>
+          <span class="flex-1 min-w-0">
+            <span class="block text-xs font-bold text-[var(--text-primary)]">{{ u.label }}</span>
+            <span class="block text-[10px] text-[var(--text-secondary)]">{{ u.ket }}</span>
+          </span>
+          <i class="fas fa-arrow-up-right-from-square text-[10px] text-[var(--text-tertiary)]"></i>
+        </a>
+      </div>
+    </section>
+
+    <section
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+    >
+      <h3 class="text-sm font-black text-[var(--text-primary)] mb-2 flex items-center gap-2">
+        <i class="fas fa-circle-info text-teal-600"></i>Tentang
+      </h3>
+      <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
+        Ammu Online — sistem informasi Pondok Pesantren Mambaul Ulum untuk santri, wali, guru, dan
+        pengurus.
+      </p>
+      <a
+        :href="URL_PRIVASI"
+        target="_blank"
+        rel="noopener"
+        class="inline-flex items-center gap-1.5 mt-2 text-xs font-bold text-teal-700 dark:text-teal-300"
+      >
+        <i class="fas fa-shield-halved"></i>Kebijakan Privasi
+      </a>
+    </section>
+
     <p class="text-center text-[10px] text-[var(--text-secondary)]">{{ versiApp }}</p>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUnduhan, URL_PRIVASI } from '@/composables/useUnduhan'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useConfirm } from '@/composables/useConfirm'
@@ -104,6 +152,34 @@ const confirm = useConfirm()
 const toast = useToast()
 const isAndroid = isNativeAndroid()
 const versiApp = 'Ammu Online ' + (APP_VERSION || '')
+
+const { androidUrl, desktopUrl, desktopWin7Url } = useUnduhan()
+// Di aplikasi Android sendiri tautan Play Store tak berguna -> hanya installer Windows.
+const daftarUnduh = computed(() =>
+  [
+    !isAndroid && {
+      label: 'Android',
+      ket: 'Google Play Store',
+      url: androidUrl,
+      ikon: 'fab fa-google-play',
+      warna: 'text-emerald-600'
+    },
+    {
+      label: 'Windows 10/11',
+      ket: 'Aplikasi desktop',
+      url: desktopUrl.value,
+      ikon: 'fab fa-windows',
+      warna: 'text-sky-600'
+    },
+    {
+      label: 'Windows 7',
+      ket: 'Aplikasi desktop (versi lama)',
+      url: desktopWin7Url.value,
+      ikon: 'fab fa-windows',
+      warna: 'text-amber-600'
+    }
+  ].filter(Boolean)
+)
 
 async function keluar() {
   const ok = await confirm({

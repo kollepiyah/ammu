@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { loginWithGoogle } from '@/services/authSupabase'
 import loginBg from '@/assets/loginBg.js'
-import { HALAMAN_RILIS, urlApk, urlInstallerDesktop, urlInstallerWin7 } from '@/utils/unduhan'
+import { useUnduhan, URL_PRIVASI } from '@/composables/useUnduhan'
 
 // v.86.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
 const router = useRouter()
@@ -85,19 +85,19 @@ const loginSubtitle = computed(
 //   diketik manual lagi. `downloadIos` DIBUANG — cuma dideklarasikan, tak pernah
 //   dipakai di template, dan AmmuOnline.ipa tak pernah ada di satu rilis pun.
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''
-const downloadAndroidUrl = computed(() => settings.settings?.downloadAndroid || urlApk())
-const downloadDesktopUrl = computed(
-  () => settings.settings?.downloadDesktop || urlInstallerDesktop(APP_VERSION) || HALAMAN_RILIS
-)
-// v.95.0626: installer khusus Windows 7 (Electron 22)
-const downloadDesktopWin7Url = computed(
-  () => settings.settings?.downloadDesktopWin7 || urlInstallerWin7(APP_VERSION) || HALAMAN_RILIS
-)
+// Kyai 25 Nov 2026: Android ke Play Store; sumber tautan bersama di composables/useUnduhan.js.
+const {
+  androidUrl: downloadAndroidUrl,
+  desktopUrl: downloadDesktopUrl,
+  desktopWin7Url: downloadDesktopWin7Url
+} = useUnduhan()
 const showDesktopMenu = ref(false)
 
-// v.86.0526: Tampilkan download section HANYA di web browser
+// v.86.0526: Tampilkan download section HANYA di web browser. F1: di PWA tombolnya pindah
+//   ke Pengaturan publik, jadi di sini hanya untuk web biasa (tanpa wilayah publik).
 const isWebOnly = computed(() => {
   if (typeof window === 'undefined') return false
+  if (wilayahPublik) return false
   const isCap = window.Capacitor?.isNativePlatform?.() === true
   const isElectron =
     window.location?.protocol === 'file:' || /Electron/i.test(navigator?.userAgent || '')
@@ -519,7 +519,7 @@ function bukaWaAdmin() {
             :href="downloadAndroidUrl"
             target="_blank"
             rel="noopener"
-            aria-label="Unduh APK Android"
+            aria-label="Unduh Android di Play Store"
             class="flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-gradient-to-br from-emerald-500/80 to-teal-600/80 hover:from-emerald-400 hover:to-teal-500 border border-emerald-300/30 shadow-sm hover:shadow-md transition cursor-pointer group"
           >
             <i class="fab fa-android text-white text-sm group-hover:scale-110 transition"></i>
@@ -586,7 +586,7 @@ function bukaWaAdmin() {
         pengurus.
       </p>
       <a
-        href="https://ammuonline.web.app/privacy.html"
+        :href="URL_PRIVASI"
         target="_blank"
         rel="noopener"
         class="inline-block mt-1 text-[11px] text-white font-bold underline underline-offset-2 hover:no-underline drop-shadow"

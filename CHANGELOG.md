@@ -60,6 +60,12 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
 - Beranda publik & dashboard: kartu Channel = 3 postingan terbaru dalam daftar yang setinggi
   fotonya (tanpa gambar → ikon pengganti); kartu jam tanpa bayangan; header publik cukup tulisan
   nama aplikasi; tombol Masuk tanpa latar hijau.
+- **Unduh aplikasi:** Android kini ke **Play Store** (dulu APK di GitHub). Di PWA tombol unduh
+  pindah dari layar masuk ke Pengaturan publik (kartu "Unduh Aplikasi": Play Store — disembunyikan
+  di aplikasi Android sendiri — Windows 10/11, Windows 7); web biasa tetap di layar masuk. Sumber
+  tautan bersama `composables/useUnduhan.js`. Pengaturan publik juga punya kartu "Tentang" dengan
+  Kebijakan Privasi; tautan di layar masuk SENGAJA dipertahankan karena itulah halaman yang
+  diperiksa Google untuk verifikasi merek (`ammuonline.web.app` di browser = layar masuk).
 - **Dashboard Android/PWA: kartu jam diganti baris ikon** Al-Qur'an · Wirid · Kiblat · Jadwal
   Sholat di bawah kartu sapaan (Kyai 25 Nov 2026), untuk semua peran. Ikon masih "segera hadir"
   sampai layarnya dibangun. Web & Electron tetap memakai kartu jam.
