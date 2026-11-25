@@ -1,8 +1,8 @@
 // useKegiatan — subscribe kegiatan collection real-time + CRUD
 // Port dari legacy db_kegiatan + simpanKegiatan/hapusKegiatan/editKegiatan
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, getAll, setOne, deleteOne } from '@/services/db'
-import { kegiatanUntukTamu } from '@/utils/wilayahPublik'
+import { subscribeColl, getAll, queryColl, setOne, deleteOne } from '@/services/db'
+import { kegiatanUntukTamu, publikBawaan } from '@/utils/wilayahPublik'
 import { useAuthStore } from '@/stores/auth'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 
@@ -35,7 +35,10 @@ export function useKegiatan({ publik = false } = {}) {
   function start() {
     // Tamu: tarik sekali tanpa realtime — hemat egress & kuota koneksi Supabase Free.
     if (publik) {
-      getAll('kegiatan')
+      // Hanya baris publik (RLS anon pun hanya mengizinkan itu). Sebelum migrasi kolom
+      //   `publik` ada, penyaring ini galat → jatuh ke tarikan lama.
+      queryColl('kegiatan', [['publik', '==', true]])
+        .catch(() => getAll('kegiatan'))
         .then((docs) => (kegiatanRaw.value = docs))
         .catch((err) => (error.value = err))
         .finally(() => (loading.value = false))
@@ -96,6 +99,9 @@ export function useKegiatan({ publik = false } = {}) {
       // v.1.2.3: scope lembaga utk libur — [] = SEMUA lembaga (kompat mundur), terisi =
       //   hanya lembaga tsb libur (mis. sekolah libur tapi ngaji tetap masuk).
       lembaga: Array.isArray(data.lembaga) ? data.lembaga.filter(Boolean) : [],
+      // v.1.5.5: tampil di Agenda publik? Belum dipilih (impor Excel, libur nasional) → aturan
+      //   bawaan; tanpa ini kolom DB default false dan agenda hilang dari tamu.
+      publik: typeof data.publik === 'boolean' ? data.publik : publikBawaan(data),
       dibuat_oleh: auth.sesiAktif?.nama || 'Admin',
       timestamp: new Date().toISOString()
     }

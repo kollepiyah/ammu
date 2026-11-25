@@ -362,6 +362,25 @@
                 }}
               </InfoLipat>
             </div>
+            <!-- v.1.5.5: agenda yang boleh dilihat tamu (Beranda tanpa login → Agenda). -->
+            <label
+              class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-[var(--border-default)] cursor-pointer"
+            >
+              <span class="min-w-0">
+                <span class="block text-xs font-bold text-[var(--text-primary)]"
+                  ><i class="fas fa-globe text-teal-600 mr-1.5"></i>Tampilkan di Agenda publik</span
+                >
+                <span class="block text-[11px] text-[var(--text-tertiary)]"
+                  >Terlihat santri, wali & alumni tanpa masuk aplikasi.</span
+                >
+              </span>
+              <input
+                type="checkbox"
+                class="w-5 h-5 accent-teal-600 shrink-0"
+                :checked="publikEfektif"
+                @change="form.publik = $event.target.checked"
+              />
+            </label>
             <div>
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Deskripsi</label
@@ -417,7 +436,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useKegiatan } from '@/composables/useKegiatan'
 import { useMobileShell } from '@/composables/useMobileShell'
-import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
+import { pakaiWilayahPublik, publikBawaan } from '@/utils/wilayahPublik'
 import { formatMasehi, formatHijri, masehiToHijri, toArabicDigit } from '@/utils/hijri'
 import { hitungPasaran } from '@/utils/pasaran'
 // v.21.114.0528: libur nasional seed util
@@ -583,8 +602,14 @@ const form = reactive({
   deskripsi: '',
   tipe: 'kegiatan',
   // v.1.2.3: scope lembaga libur — [] = SEMUA (default). Broad 'Qiraati'/'Sekolah' didukung.
-  lembaga: []
+  lembaga: [],
+  // v.1.5.5: null = belum dipilih admin → ikut aturan bawaan (publikBawaan)
+  publik: null
 })
+// Centang "Tampilkan di Agenda publik": pilihan admin, atau bawaan selama belum disentuh.
+const publikEfektif = computed(() =>
+  typeof form.publik === 'boolean' ? form.publik : publikBawaan(form)
+)
 
 // Opsi scope lembaga utk libur: broad (cepat) + spesifik. Kosong = semua lembaga.
 const LIBUR_LEMBAGA_OPSI = [
@@ -615,6 +640,7 @@ function openModal(k = null) {
     form.deskripsi = k.deskripsi || ''
     form.tipe = k.tipe || 'kegiatan'
     form.lembaga = Array.isArray(k.lembaga) ? [...k.lembaga] : []
+    form.publik = typeof k.publik === 'boolean' ? k.publik : null
   } else {
     form.id = ''
     form.judul = ''
@@ -624,6 +650,7 @@ function openModal(k = null) {
     form.deskripsi = ''
     form.tipe = 'kegiatan'
     form.lembaga = []
+    form.publik = null
   }
   modalOpen.value = true
 }
@@ -667,7 +694,7 @@ async function simpan() {
   }
   saving.value = true
   try {
-    await simpanKegiatan({ ...form })
+    await simpanKegiatan({ ...form, publik: publikEfektif.value })
     toast.success(form.id ? 'Diperbarui' : 'Tersimpan')
     modalOpen.value = false
   } catch (e) {

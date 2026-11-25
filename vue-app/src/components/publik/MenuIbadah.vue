@@ -54,13 +54,13 @@ const MENU = {
     ikon: 'fa-mosque',
     warna: 'bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
   },
-  // Sementara ke kalender publik; layar daftar Agenda menyusul di F4.
+  // F4: daftar agenda publik (bukan kalender).
   agenda: {
     kunci: 'agenda',
     label: 'Agenda',
     ikon: 'fa-calendar-check',
     warna: 'bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
-    to: '/umum/kalender'
+    to: '/umum/agenda'
   }
 }
 const URUTAN = {

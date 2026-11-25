@@ -149,7 +149,8 @@ const COLS = {
   // -- konten & sistem --
   posts: ['judul', 'isi'],
   beranda_post: ['judul', 'isi'],
-  kegiatan: ['judul', 'tgl_mulai'],
+  // publik (v.1.5.5, migrasi 20261125150000): agenda yang boleh dibaca tamu (RLS anon).
+  kegiatan: ['judul', 'tgl_mulai', 'publik'],
   kegiatan_pesantren: ['judul'],
   kegiatan_master: [],
   profil_pesantren: [],

@@ -29,6 +29,15 @@ function deteksi() {
 
 /** Tamu hanya melihat agenda untuk "semua" tanpa batasan lembaga; libur tetap tampil. */
 export function kegiatanUntukTamu(k) {
+  // v.1.5.5: admin kini memilih sendiri lewat centang "Tampilkan di publik" (kolom `publik`).
+  //   Aturan lama di bawah = bawaan untuk agenda yang belum punya pilihan itu.
+  if (typeof k?.publik === 'boolean') return k.publik
+  return publikBawaan(k)
+}
+
+/** Nilai awal "Tampilkan di publik": untuk semua, dan bukan agenda khusus lembaga (libur selalu).
+ *  CERMIN isi awal migrasi 20261125150000_kegiatan_publik.sql — ubah keduanya bersama. */
+export function publikBawaan(k) {
   if ((k?.audience || 'semua') !== 'semua') return false
   if ((k?.tipe || 'kegiatan') !== 'kegiatan') return true
   return !(Array.isArray(k?.lembaga) && k.lembaga.some((x) => String(x || '').trim()))

@@ -124,6 +124,8 @@ const TentangView = () => import('@/views/publik/TentangView.vue')
 // F2: layar ibadah — komponen yang sama di /umum (tamu) dan /ibadah (Portal, blueprint 3.7)
 const JadwalSholatView = () => import('@/views/publik/JadwalSholatView.vue')
 const KiblatView = () => import('@/views/publik/KiblatView.vue')
+// F4: Agenda publik (daftar, tanpa kalender)
+const AgendaPublikView = () => import('@/views/publik/AgendaPublikView.vue')
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -159,7 +161,13 @@ const routes = [
         component: JadwalSholatView,
         meta: { public: true }
       },
-      { path: 'kiblat', name: 'umum-kiblat', component: KiblatView, meta: { public: true } }
+      { path: 'kiblat', name: 'umum-kiblat', component: KiblatView, meta: { public: true } },
+      {
+        path: 'agenda',
+        name: 'umum-agenda',
+        component: AgendaPublikView,
+        meta: { public: true }
+      }
     ]
   },
   // Route tanpa layout (full-screen)
