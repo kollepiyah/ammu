@@ -54,19 +54,19 @@
         />
       </div>
 
-      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
+      <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
         <i class="fas fa-info-circle mr-1"></i>
         Total: <b>TPQ Pagi/Sore + PPPH</b> manual, <b>Pra PTPT</b> auto dari khotam (Lvl
         &le;1&frac12; Juz: 2x, Lvl 2-3 Juz: 3x), <b>PTPT</b> auto = Akhir - Awal Hal.
-      </p>
+      </InfoLipat>
       <!-- v.1.3.7 (Kyai 31 Agu 2026): tiap bulan mulai kosong. Perlu diterangkan karena
            bagi yang terbiasa melihat angka bulan lalu sudah terisi, ini terlihat seperti
            data hilang. -->
-      <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+      <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1">
         <i class="fas fa-rotate-left mr-1"></i>
         Kolom prestasi mulai <b>kosong</b> tiap bulan; angka abu-abu di kotak isian hanya
         <b>petunjuk bulan lalu</b> dan tidak ikut tersimpan. Kelas &amp; Juz tidak di-reset.
-      </p>
+      </InfoLipat>
     </div>
 
     <!-- v.1.5.0 (Kyai): Pondok Laju — prestasi bulanan diisi SEKALI per kelas (cermin Rekap
@@ -78,10 +78,10 @@
       <p class="text-[11px] font-black text-teal-800 dark:text-teal-200 uppercase tracking-wider">
         <i class="fas fa-people-group mr-1"></i>Pondok Laju — isi sekali per kelas
       </p>
-      <p class="text-[10px] text-teal-700 dark:text-teal-300">
+      <InfoLipat class="text-[10px] text-teal-700 dark:text-teal-300">
         Angka di sini berlaku untuk semua santri kelas itu. Santri yang berbeda tetap bisa diubah di
         tabel bawah. Lalu tekan <b>Simpan</b> seperti biasa.
-      </p>
+      </InfoLipat>
       <div
         v-for="k in kelasLajuIsian"
         :key="k.key"

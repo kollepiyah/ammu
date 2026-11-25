@@ -308,13 +308,13 @@
                   {{ opt }}
                 </button>
               </div>
-              <p class="text-[11px] text-[var(--text-tertiary)] mt-1">
+              <InfoLipat class="text-[11px] text-[var(--text-tertiary)] mt-1">
                 {{
                   form.tipe === 'kegiatan'
                     ? 'Kosongkan = agenda utk semua lembaga. Pilih mis. "PTPT" bila agenda khusus lembaga tsb (hanya tampil & dinotif ke sana).'
                     : 'Kosongkan = libur semua lembaga. Pilih mis. "Sekolah" bila sekolah libur tapi ngaji tetap masuk.'
                 }}
-              </p>
+              </InfoLipat>
             </div>
             <div>
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"

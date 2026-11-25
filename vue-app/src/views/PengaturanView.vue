@@ -646,11 +646,11 @@
           </tbody>
         </table>
       </div>
-      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
+      <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
         Urutan baris = prioritas bila satu jam scan masuk ke lebih dari satu shift. Shift
         <b>bawaan</b> dikenali mesin absensi (fp_sync.py); shift <b>baru</b> baru terbaca lewat
         input manual &amp; sync Desktop.
-      </p>
+      </InfoLipat>
     </UiCard>
 
     <!-- Dialog Tambah/Ubah Shift -->
@@ -701,10 +701,13 @@
                 {{ o.label }}
               </option>
             </select>
-            <p v-if="dlgShift.bawaan" class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+            <InfoLipat
+              v-if="dlgShift.bawaan"
+              class="text-[10px] text-[var(--text-tertiary)] italic mt-1"
+            >
               Shift bawaan (id <b>{{ dlgShift.id }}</b> dikenali fp_sync.py). Nama, jam, dan "Untuk"
               bebas diubah — <b>id tetap</b> supaya absensi lama tak yatim.
-            </p>
+            </InfoLipat>
           </div>
           <div class="grid grid-cols-3 gap-2">
             <div>
@@ -779,11 +782,11 @@
               </div>
             </div>
           </div>
-          <p class="text-[10px] text-[var(--text-tertiary)] italic">
+          <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic">
             Window scan efektif jadi <b class="font-mono">{{ windowEfektifLabel }}</b
             >. Isi <b>0</b> untuk perilaku lama (hanya jam Mulai&ndash;Selesai yang dihitung).
             Datang lebih awal tetap <b>hadir</b>; scan setelah Selesai dihitung <b>terlambat</b>.
-          </p>
+          </InfoLipat>
           <p
             v-if="peringatanToleransi"
             class="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-2.5 py-1.5"
@@ -864,11 +867,11 @@
                 {{ o.label }}
               </label>
             </div>
-            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+            <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
               Guru yang hadir di shift tercentang otomatis dianggap hadir di shift ini — mis.
               <b>Sekolah</b> ikut <b>Pagi</b> (guru gabungan cukup 1&times; scan pagi). Kosongkan
               bila tak perlu.
-            </p>
+            </InfoLipat>
           </div>
           <div v-if="(lembagaRaw || []).length">
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
@@ -972,12 +975,12 @@
       >
         <i class="fas fa-plus"></i>Tambah Kategori
       </button>
-      <p class="text-[10px] text-[var(--text-secondary)] italic mt-3">
+      <InfoLipat class="text-[10px] text-[var(--text-secondary)] italic mt-3">
         <i class="fas fa-info-circle mr-1"></i>Kuota = jatah hari per tahun per pegawai. Sisa
         dihitung otomatis dari pengajuan cuti yang <b>disetujui</b>. Melebihi kuota = peringatan
         (penyetuju tetap bisa menyetujui). Hari cuti tidak mendapat bonus shift, sama seperti
         izin/sakit.
-      </p>
+      </InfoLipat>
     </UiCard>
 
     <!-- ============================================================
@@ -1176,11 +1179,11 @@
               <i class="fab fa-instagram text-pink-600 mr-1.5"></i>Instagram Graph API (Al Manshur
               Channel)
             </p>
-            <p class="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-relaxed">
+            <InfoLipat class="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-relaxed">
               Tempel <b>Instagram User ID</b> (opsional) dan <b>Access Token</b> akun IG Business /
               Creator pondok agar link Instagram di Al Manshur Channel otomatis menarik foto
               carousel, cover Reels, dan caption. Token disimpan aman khusus Admin.
-            </p>
+            </InfoLipat>
           </div>
           <div>
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
@@ -1631,11 +1634,11 @@
           </div>
         </div>
 
-        <p class="text-[11px] text-[var(--text-secondary)] italic">
+        <InfoLipat class="text-[11px] text-[var(--text-secondary)] italic">
           <i class="fas fa-info-circle mr-1"></i>Schema ini dipakai di Rapor Semester
           (perLevel/perKelas/sections) + Predikat auto-compute. Save semua via tombol Simpan di
           bawah.
-        </p>
+        </InfoLipat>
       </div>
     </UiCard>
 

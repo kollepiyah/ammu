@@ -295,10 +295,10 @@
           <i :class="['fas', kabarBuka ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
         </button>
         <template v-if="kabarBuka">
-          <p class="text-[11px] text-[var(--text-secondary)]">
+          <InfoLipat class="text-[11px] text-[var(--text-secondary)]">
             Berisi piket yang sudah tersimpan mulai hari ini sampai akhir bulan. Tombol membuka
             WhatsApp dengan pesan siap kirim.
-          </p>
+          </InfoLipat>
           <p v-if="!kabarWa.length" class="text-[11px] text-[var(--text-secondary)]">
             Belum ada piket tersimpan yang akan datang di bulan ini.
           </p>
@@ -343,11 +343,11 @@
           <i :class="['fas', piketBuka ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
         </button>
         <template v-if="piketBuka">
-          <p class="text-[11px] text-[var(--text-secondary)]">
+          <InfoLipat class="text-[11px] text-[var(--text-secondary)]">
             Guru yang dicentang tampil paling atas di pilihan jadwal; pengajar lain tetap bisa
             dipilih di bagian "Guru lain".
             <template v-if="!adminPenuh"> Yang mengubah daftar ini admin.</template>
-          </p>
+          </InfoLipat>
           <template v-if="adminPenuh">
             <input
               v-model="piketCari"
@@ -680,12 +680,12 @@
         <p class="text-xs font-black text-[var(--text-primary)] uppercase">
           <i class="fas fa-fingerprint text-teal-600 mr-1"></i>Shift absen tiap sesi
         </p>
-        <p class="text-[11px] text-[var(--text-secondary)]">
+        <InfoLipat class="text-[11px] text-[var(--text-secondary)]">
           Buat dulu shiftnya (dengan jam) di Pengaturan → Master Shift, lalu pilih di sini. Shift
           Laju 1/Laju 2 aktif otomatis untuk guru pada tanggal ia dijadwalkan; scan di jam itu
           tercatat dan muncul di rekap absen guru; bisyaroh piket dibayar per sesi yang dihadiri.
           Tadarus Pagi tetap ikut absen shift pagi guru kelas — tak ada yang berubah.
-        </p>
+        </InfoLipat>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
           <label v-for="s in SESI_LAJU.filter((x) => x.piket)" :key="s.key" class="block">
             <span class="block text-[10px] font-black uppercase text-teal-700 mb-0.5">{{
@@ -762,10 +762,10 @@
         <p class="text-xs font-black text-[var(--text-primary)] uppercase">
           <i class="fas fa-user-shield text-teal-600 mr-1"></i>Admin Pondok Laju
         </p>
-        <p class="text-[11px] text-[var(--text-secondary)]">
+        <InfoLipat class="text-[11px] text-[var(--text-secondary)]">
           Guru yang ditunjuk boleh menyusun jadwal piket Laju (seperti koordinator glondongan). PJ
           PTPT dan admin selalu boleh.
-        </p>
+        </InfoLipat>
         <input
           v-model="peranCari"
           type="text"

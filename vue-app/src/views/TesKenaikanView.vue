@@ -497,7 +497,7 @@
             {{ buatUlangBusy === a.id ? 'membuat…' : 'buat ulang baris' }}
           </button>
         </div>
-        <div class="flex gap-2 mt-2">
+        <div class="aksi-kartu flex gap-2 mt-2">
           <button
             :disabled="busyId === a.id"
             class="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black"
@@ -811,10 +811,10 @@
             </template>
           </div>
         </div>
-        <p class="text-[10px] text-[var(--text-tertiary)]">
+        <InfoLipat class="text-[10px] text-[var(--text-tertiary)]">
           Dihitung dari santri yang <b>lulus</b> tes dari ajuan guru itu (tanggal hasil tes),
           mengikuti penyaring lembaga/jenis di atas. Ketuk baris untuk melihat santrinya.
-        </p>
+        </InfoLipat>
         <div
           v-if="peringkatGuru.length === 0"
           class="text-xs text-[var(--text-tertiary)] italic text-center py-4"
@@ -1110,10 +1110,10 @@
                 class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-teal-500 outline-none"
                 @input="setTgl(lulusFor.id, $event.target.value)"
               />
-              <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+              <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1">
                 Default hari ini. Mundurkan bila tes benar terjadi di tanggal lampau — kartu
                 kenaikan, masa tempuh &amp; rapor mengikuti tanggal ini.
-              </p>
+              </InfoLipat>
             </div>
             <p class="text-[10px] text-[var(--text-tertiary)] italic">
               Catatan tes diambil dari kolom catatan di antrian; nilai aspek yang sudah diisi ikut

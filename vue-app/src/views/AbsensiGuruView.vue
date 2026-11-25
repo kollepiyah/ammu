@@ -319,10 +319,10 @@
             <p class="text-sm font-bold text-[var(--text-primary)]">
               Tidak ada scan yang sampai pada tanggal ini
             </p>
-            <p class="text-[11px] text-[var(--text-secondary)] mt-1">
+            <InfoLipat class="text-[11px] text-[var(--text-secondary)] mt-1">
               Kalau guru mengaku sudah scan, berarti mesin tidak berhasil mengirim — periksa
               jaringan mesin &amp; setelan HTTP Listening, bukan data guru di aplikasi.
-            </p>
+            </InfoLipat>
           </div>
           <div v-else class="overflow-x-auto">
             <table class="w-full text-sm min-w-[680px]">
@@ -375,10 +375,10 @@
           </div>
         </template>
 
-        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-3">
+        <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-3">
           Jejak ini khusus mesin <b>HiView</b> (push langsung ke server). Mesin Fingerspot Revo
           punya diagnosanya sendiri di Ammu Desktop &rarr; Mesin Absensi.
-        </p>
+        </InfoLipat>
       </div>
 
       <!-- TAB: Impor Fingerprint -->
@@ -398,10 +398,10 @@
         <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-3">
           <i class="fas fa-file-import text-cyan-600 mr-2"></i>Impor Data Fingerprint Guru
         </h3>
-        <p class="text-xs text-[var(--text-secondary)] mb-4">
+        <InfoLipat class="text-xs text-[var(--text-secondary)] mb-4">
           Upload file rekap fingerprint device (.xlsx atau .csv) untuk mengimpor data kehadiran guru
           per shift Pagi/Sore.
-        </p>
+        </InfoLipat>
         <div
           class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border-2 border-dashed border-[var(--border-default)] text-center"
         >
@@ -433,13 +433,13 @@
         <div
           class="mt-4 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-700 rounded-xl p-3"
         >
-          <p class="text-[11px] text-cyan-800 dark:text-cyan-200">
+          <InfoLipat class="text-[11px] text-cyan-800 dark:text-cyan-200">
             <i class="fas fa-exclamation-triangle mr-1"></i>
             <strong>Format kolom:</strong>
             <code>tanggal</code> (YYYY-MM-DD atau DD-MM-YYYY), <code>jam</code> (HH:MM),
             <code>fingerprint_id</code> atau <code>nama</code> guru, <code>shift</code> (pagi/sore).
             Excel XLSX atau CSV diterima.
-          </p>
+          </InfoLipat>
         </div>
 
         <!-- v.110: SET PIN / FINGERPRINT ID MASSAL dari file master mesin -->
@@ -447,11 +447,11 @@
           <h3 class="text-sm md:text-base font-black text-[var(--text-primary)] mb-1">
             <i class="fas fa-id-badge text-indigo-600 mr-2"></i>Set PIN (Fingerprint ID) Massal
           </h3>
-          <p class="text-xs text-[var(--text-secondary)] mb-3">
+          <InfoLipat class="text-xs text-[var(--text-secondary)] mb-3">
             Upload file <strong>master karyawan</strong> dari mesin (kolom <code>Nama</code> +
             <code>ID Karyawan</code>) untuk mengisi <code>id_fingerprint</code> tiap guru otomatis
             (cocok by nama). Pratinjau dulu — tak ada yang ditulis sebelum Anda konfirmasi.
-          </p>
+          </InfoLipat>
           <div class="flex items-center gap-2 flex-wrap">
             <input
               ref="fileInputPin"
@@ -820,10 +820,10 @@
             </button>
           </div>
 
-          <p class="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
+          <InfoLipat class="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
             Jam masuk/pulang tak perlu diisi. Untuk <b>Hadir</b>/<b>Terlambat</b> jam yang sudah ada
             tetap dijaga; untuk <b>Izin/Sakit/Cuti/Alpa</b> jamnya dikosongkan.
-          </p>
+          </InfoLipat>
 
           <button
             type="button"
@@ -871,11 +871,11 @@
           Mengisi tanggal yang sudah lewat ({{ formatTgl(tglHarian) }}). Baris yang sudah ada akan
           ditimpa &mdash; nanti dikonfirmasi dulu sebelum disimpan.
         </p>
-        <p class="text-xs text-[var(--text-secondary)] mb-4">
+        <InfoLipat class="text-xs text-[var(--text-secondary)] mb-4">
           Centang yang hadir per shift. Kolom muncul sesuai tipe &amp; shift: guru → shift mengajar
           (+ Sekolah bila ada), pegawai → Peg. Pagi/Sore, dual-role → keduanya. Submit untuk simpan
           ke koleksi <code>absensi_shift_guru</code>.
-        </p>
+        </InfoLipat>
         <div class="overflow-x-auto">
           <table class="w-full text-xs">
             <thead class="bg-[var(--bg-muted)] text-[var(--text-primary)]">
@@ -1353,16 +1353,16 @@
               </tr>
             </tbody>
           </table>
-          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
+          <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
             H=Hadir &middot; T=Terlambat &middot; I=Izin &middot; S=Sakit &middot; C=Cuti &middot;
             A=Alpha &middot; Blm Plg=hadir tanpa absen pulang. Hari efektif Senin–Sabtu; Ahad/Minggu
             &amp; hari libur kalender dikecualikan.
-          </p>
+          </InfoLipat>
           <!-- v.1.3.8: dua sebab sel bisa kosong, dan Kyai perlu bisa membedakannya. -->
-          <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+          <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
             L=Libur lembaga &middot; &ldquo;&middot;&rdquo;=bukan hari mengajarnya (jadwal guru
             diatur di Form Guru &rsaquo; Jadwal Hari) &mdash; keduanya tidak dihitung alpa.
-          </p>
+          </InfoLipat>
         </div>
       </div>
 

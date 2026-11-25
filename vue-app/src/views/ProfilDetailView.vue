@@ -19,7 +19,7 @@
            Full-access (super/admin) dapat pintasan ke Master Data ter-filter ke record ini
            (kartu tampil dgn Edit/Reset Sandi/Hapus/Non-aktifkan). SantriView/GuruView sudah
            baca ?q= + ?kelola=1. admin_keuangan dikecualikan (tak bisa tulis santri/guru RLS). -->
-      <div v-if="bisaKelola" class="flex flex-wrap items-center justify-end gap-2">
+      <div v-if="bisaKelola" class="ph-aksi flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
           class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"

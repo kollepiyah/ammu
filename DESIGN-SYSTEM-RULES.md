@@ -789,6 +789,9 @@ Semuanya hanya berlaku di HP (< 768 px); layar lebar & Electron tetap gaya asli.
 - Tombol berikon di `.ph-aksi` WAJIB punya `aria-label` atau `title` — teksnya disembunyikan di HP.
 - Jangan pakai lagi deret geser `overflow-x-auto … [&>*]:shrink-0` untuk tombol.
 - Keterangan di bawah judul hanya bila berisi DATA (jumlah, periode); kalimat penjelas fitur dibuang.
+- Keterangan/petunjuk panjang (> ±110 huruf) dibungkus `<InfoLipat>` (komponen global): tampil
+  sebagai satu baris "ⓘ Keterangan" yang dibuka saat perlu. Peringatan berwarna (amber/rose) &
+  pesan data kosong TIDAK dilipat.
 - Mode gelap: warna terang (`bg-*-50/100`, teks `*-700/800/900`) dijaga otomatis oleh penjaga
   kontras di main.css; kertas cetak (`#rapor-print-area`, `.print-area`) selalu terang.
 

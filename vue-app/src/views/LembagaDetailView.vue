@@ -138,7 +138,7 @@
     <!-- v.21.24.0526: Section tab pill bar — tetap visible saat section aktif, bisa langsung pindah sub-menu -->
     <div
       v-else
-      class="bg-[var(--bg-card)] rounded-xl p-2 border border-[var(--border-subtle)] flex items-center gap-1.5 flex-wrap"
+      class="bar-tab bg-[var(--bg-card)] rounded-xl p-2 border border-[var(--border-subtle)] flex items-center gap-1.5 flex-wrap"
     >
       <button
         class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] cursor-pointer"
@@ -743,13 +743,13 @@
         <h5 class="text-xs font-black text-emerald-900 uppercase mb-2">
           <i class="fas fa-info-circle mr-1"></i>Rekap Prestasi {{ lembagaId }}
         </h5>
-        <p class="text-[11px] text-emerald-800 leading-relaxed">
+        <InfoLipat class="text-[11px] text-emerald-800 leading-relaxed">
           {{
             isFormalLembaga
               ? 'Untuk Diniyah, atur mata pelajaran Rekap di bawah ini.'
               : 'Untuk Rekap Qiraati, struktur kolom (Awal Bulan, Akhir Bulan, Total) sudah ditentukan otomatis sesuai jenis lembaga. Tidak perlu konfigurasi manual.'
           }}
-        </p>
+        </InfoLipat>
       </div>
 
       <div
@@ -759,10 +759,10 @@
         <h5 class="text-xs font-black text-[var(--text-on-accent)] uppercase">
           <i class="fas fa-list mr-1"></i>Mata Pelajaran
         </h5>
-        <p class="text-[11px] text-[var(--text-secondary)]">
+        <InfoLipat class="text-[11px] text-[var(--text-secondary)]">
           Mata pelajaran kolom di Rekap &amp; Rapor Diniyah, diatur PER KELAS (tiap kelas bisa
           beda). Tambah/hapus tiap mapel di bawah.
-        </p>
+        </InfoLipat>
 
         <!-- v.90.0626b: input mapel per-KELAS (dari daftar kelas lembaga) -->
         <p

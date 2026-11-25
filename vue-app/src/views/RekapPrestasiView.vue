@@ -189,10 +189,10 @@
           <i :class="['fas', tambalBusy ? 'fa-spinner fa-spin' : 'fa-notes-medical']"></i>
           Periksa Riwayat Bulanan
         </button>
-        <p class="text-[11px] text-slate-500 mt-1.5">
+        <InfoLipat class="text-[11px] text-slate-500 mt-1.5">
           Mencari bulan yang angkanya hanya ada di data santri dan belum punya riwayat sendiri.
           Memeriksa dulu &mdash; tak ada yang tersimpan sampai Kyai menekan Terapkan.
-        </p>
+        </InfoLipat>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <button
@@ -1298,10 +1298,10 @@
         <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest">
           <i class="fas fa-notes-medical text-amber-600 mr-1"></i>Penambalan Riwayat Bulanan
         </h3>
-        <p class="text-[11px] text-slate-500 mt-1">
+        <InfoLipat class="text-[11px] text-slate-500 mt-1">
           Menyalin angka yang kini hanya ada di data santri ke riwayat bulan yang bersangkutan,
           supaya tak ikut hilang saat data santri dikosongkan.
-        </p>
+        </InfoLipat>
       </div>
 
       <div class="px-5 py-4 overflow-y-auto space-y-4">

@@ -81,7 +81,7 @@
             class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none resize-y"
           ></textarea>
         </div>
-        <div class="flex gap-2 flex-wrap">
+        <div class="ph-aksi flex gap-2 flex-wrap">
           <button
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
             @click="tambahPanduan"
@@ -174,7 +174,7 @@
             class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none resize-y"
           ></textarea>
         </div>
-        <div class="flex gap-2 flex-wrap">
+        <div class="ph-aksi flex gap-2 flex-wrap">
           <button
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
             @click="tambahFaq"
@@ -292,7 +292,7 @@
           <p class="text-sm font-bold text-[var(--text-primary)] mb-1">
             <i class="fab fa-android text-emerald-600 mr-1"></i>Aplikasi Android
           </p>
-          <p class="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
+          <InfoLipat class="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
             <template v-if="isAndroid">
               Pembaruan datang sendiri lewat Google Play. Kalau ingin memeriksa lebih awal, buka
               halaman aplikasi di Play Store lalu tekan Perbarui bila tersedia.
@@ -300,7 +300,7 @@
             <template v-else>
               Aplikasi Android dipasang dan diperbarui lewat Google Play Store.
             </template>
-          </p>
+          </InfoLipat>
           <div class="flex flex-wrap gap-2">
             <a
               :href="URL_PLAYSTORE"

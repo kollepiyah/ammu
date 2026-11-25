@@ -125,7 +125,7 @@
         <!-- Action buttons -->
         <div
           v-if="p.status === 'pending'"
-          class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]"
+          class="aksi-kartu flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--border-subtle)]"
         >
           <button
             class="px-3 py-1.5 text-xs font-bold bg-cyan-100 dark:bg-cyan-900/40 hover:bg-cyan-200 text-cyan-700 dark:text-cyan-300 rounded-lg cursor-pointer"

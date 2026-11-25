@@ -108,10 +108,10 @@
             type="month"
             class="w-full md:w-56 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
           />
-          <p class="text-[11px] text-[var(--text-secondary)] mt-1 leading-snug">
+          <InfoLipat class="text-[11px] text-[var(--text-secondary)] mt-1 leading-snug">
             Bulan sebelum ini tak muncul merah "belum" di POS dan tak dihitung tunggakan. Kosongkan
             = ikut awal Tahun Ajaran berjalan.
-          </p>
+          </InfoLipat>
         </div>
 
         <!-- v.95.0626: kill-switch cron server auto-generate (tombol manual di atas TETAP berfungsi) -->
@@ -328,11 +328,11 @@
             </button>
           </div>
           <div class="p-3 space-y-2">
-            <p class="text-[11px] text-cyan-900/80 dark:text-cyan-200/80">
+            <InfoLipat class="text-[11px] text-cyan-900/80 dark:text-cyan-200/80">
               Membandingkan uang yang tercatat di <b>Buku Induk</b> dengan yang diakui
               <b>tagihan</b> untuk tiap (santri × jenis × periode). Tak ada yang ditulis sampai
               tombol perbaikan ditekan.
-            </p>
+            </InfoLipat>
 
             <div v-if="cocokHasil" class="space-y-2">
               <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -615,12 +615,12 @@
                 <p v-if="batalTerlewat.rencana.length > 25" class="text-[10px] italic">
                   …dan {{ batalTerlewat.rencana.length - 25 }} lagi (semua ikut diproses)
                 </p>
-                <p class="text-[10px] italic opacity-80">
+                <InfoLipat class="text-[10px] italic opacity-80">
                   Mulai v.1.4.3 menghapus transaksi langsung mengembalikan tagihannya; daftar ini
                   berisi penghapusan sebelum itu. Tagihan yang masih ditopang pembayaran lain tak
                   diturunkan di bawah pembayaran itu. Kalau ada transaksi yang terhapus padahal
                   uangnya memang diterima, input ulang lewat POS sesudahnya.
-                </p>
+                </InfoLipat>
               </div>
               <p
                 v-if="batalTerlewat && batalTerlewat.ambigu.length"
@@ -715,7 +715,7 @@
             </div>
           </div>
           <div class="px-3 pb-3 pt-2">
-            <p
+            <InfoLipat
               class="text-[11px] text-emerald-900/90 dark:text-emerald-200/90 leading-relaxed mb-2"
             >
               Perkiraan uang <b>masuk sebulan</b> bila semua santri aktif membayar penuh. Memakai
@@ -723,7 +723,7 @@
               bisa mengubah nominal lalu Hitung Ulang. Jenis
               <b>tahunan &amp; manual tidak dihitung</b> — memasukkannya membuat angka bulanan
               tampak jauh lebih besar dari yang benar-benar masuk tiap bulan.
-            </p>
+            </InfoLipat>
             <div v-if="simPemasukan" class="overflow-x-auto">
               <table class="w-full text-xs">
                 <thead class="text-[10px] uppercase text-[var(--text-secondary)]">
@@ -792,7 +792,7 @@
                   </tr>
                 </tfoot>
               </table>
-              <p
+              <InfoLipat
                 v-if="simPemasukan.tagihanGabungan"
                 class="text-[10px] text-emerald-800 dark:text-emerald-200 italic mt-2"
               >
@@ -802,18 +802,18 @@
                 <b>Rp {{ Number(simPemasukan.nilaiMenempel).toLocaleString('id-ID') }}</b
                 >. Nilai itu <b>sudah ikut</b> di total, dan jenis yang menempel
                 <b>tidak dihitung lagi</b> sebagai baris sendiri — jadi tak ada yang dobel.
-              </p>
+              </InfoLipat>
               <p v-else class="text-[10px] text-amber-800 dark:text-amber-200 italic mt-2">
                 <i class="fas fa-triangle-exclamation mr-1"></i>Tak ada satu pun tagihan gabungan.
                 Kalau semestinya ada (mis. Qiraati Pagi menempel ke Syahriyah Sekolah), berarti
                 <b>Gabung ke</b> pada jenis ngajinya belum disetel — tiap jenis masih ditagih
                 sendiri-sendiri dan totalnya lebih besar dari semestinya.
               </p>
-              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
+              <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
                 <i class="fas fa-circle-info mr-1"></i>{{ simPemasukan.santriKena }} dari
                 {{ simPemasukan.santriTotal }} santri aktif kena tagihan bulanan. Yang tak kena
                 biasanya karena whitelist lembaga/status jenisnya, atau tarifnya masih 0.
-              </p>
+              </InfoLipat>
             </div>
           </div>
         </div>
@@ -829,11 +829,11 @@
           >
             <i class="fas fa-plus-circle"></i>Generate Tagihan Khusus
           </button>
-          <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+          <InfoLipat class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
             <i class="fas fa-info-circle mr-1"></i>Untuk infaq pembangunan, infaq kegiatan, dsb.
             Tidak menyentuh Syahriyah &amp; bisa ditarget per lembaga/kelas/santri. Tagihan yang
             sudah ada (santri + kategori + periode sama) otomatis di-skip.
-          </p>
+          </InfoLipat>
         </div>
 
         <!-- v.21.89.0527: Lebar kertas struk POS (dot-matrix) -->
@@ -849,10 +849,10 @@
             <option value="thermal80">80 mm thermal (~42 kolom)</option>
             <option value="thermal58">58 mm thermal (~32 kolom)</option>
           </select>
-          <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+          <InfoLipat class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
             <i class="fas fa-info-circle mr-1"></i>Untuk cetak struk POS ke printer dot-matrix Epson
             LX-310 atau thermal. Cetak langsung (silent) tersedia di aplikasi Desktop (Windows).
-          </p>
+          </InfoLipat>
           <!-- v.94.0626: buka Pengaturan Printer (deteksi printer terhubung Windows) -->
           <button
             type="button"
@@ -921,14 +921,14 @@
               />
             </div>
           </div>
-          <p class="text-[10px] text-[var(--text-secondary)] mt-2 italic">
+          <InfoLipat class="text-[10px] text-[var(--text-secondary)] mt-2 italic">
             <i class="fas fa-info-circle mr-1"></i>Struk dicetak
             <b>grafis langsung ke printer (ESC/P)</b> — tajam &amp; tanpa feed kosong. Lebar maks
             cetak ~8 inci (200mm). Untuk <b>center</b>: kecilkan <b>Lebar slip</b> (mis. 185) lalu
             naikkan <b>Geser kanan</b> (mis. 15–18) sampai konten di tengah. <b>Margin atas</b> =
             jarak dari tepi atas (0 = paling atas). <b>Tinggi slip</b> = tinggi fisik slip (mis.
             140) agar tiap cetak maju tepat 1 slip.
-          </p>
+          </InfoLipat>
         </div>
       </div>
       <!-- /blok tagihan -->
@@ -1091,7 +1091,7 @@
           <i class="fas fa-info-circle mr-1"></i>Kriteria yang dikosongkan
           <b>tidak menyaring</b> (berlaku semua). Semua jenis yang cocok dijumlahkan.
         </p>
-        <div class="flex items-center gap-1.5 flex-wrap">
+        <div class="ph-aksi flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
             class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
@@ -1250,10 +1250,10 @@
           class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
           @input="onFmtChange($event, 'keu_glondongan_per_juz')"
         />
-        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+        <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
           Tarif per juz yang disimak penguji glondongan/berjalan — di luar Jenis Bisyaroh karena
           dihitung per juz, bukan per tugas/shift. Rekap ada di layar Glondongan PTPT.
-        </p>
+        </InfoLipat>
       </div>
     </div>
 
@@ -1327,7 +1327,7 @@
               />
             </div>
           </div>
-          <p class="text-[10px] text-[var(--text-secondary)] italic">
+          <InfoLipat class="text-[10px] text-[var(--text-secondary)] italic">
             <i class="fas fa-info-circle mr-1"></i>
             {{
               dlgJb.hitungan === 'per_hadir'
@@ -1342,7 +1342,7 @@
                         ? 'Nominal × JUMLAH shift guru yang cocok. Mengajar pagi + sore (scope Pagi,Sore) = 2× nominal. Cocok utk bisyaroh pokok per shift.'
                         : 'Dibayar sekali per bulan bila cocok scope.'
             }}
-          </p>
+          </InfoLipat>
           <div class="border-t border-[var(--border-subtle)] pt-3 space-y-3">
             <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase">
               Berlaku Untuk — kosongkan = semua
@@ -1536,15 +1536,15 @@
           >
             <i class="fas fa-book text-teal-600 mr-1"></i>Beban Mengajar Sekolah
           </h3>
-          <p class="text-[11px] text-[var(--text-secondary)] mt-1">
+          <InfoLipat class="text-[11px] text-[var(--text-secondary)] mt-1">
             Cukup isi <b>JP per minggu</b> tiap guru di tiap sekolah — tak perlu dirinci per mapel.
             Bisyaroh sekolah = tarif × JP yang <b>benar-benar diajar</b> (Jenis Bisyaroh "× JP
             diajar"). JP dibagi rata ke hari aktif sekolah, jadi guru yang tidak masuk terpotong
             porsi hari itu; hari libur & di luar hari aktif tidak dihitung absen. Total:
             <b>{{ bebanTotalJP }}</b> JP/minggu.
-          </p>
+          </InfoLipat>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="ph-aksi flex items-center gap-2">
           <button
             type="button"
             class="inline-flex items-center gap-1.5 border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)] font-bold px-3 py-2 rounded-lg text-xs"
@@ -1638,11 +1638,11 @@
         >
           <i class="fas fa-calendar-week text-teal-600 mr-1"></i>Hari Aktif Sekolah
         </h4>
-        <p class="text-[11px] text-[var(--text-secondary)] mb-3">
+        <InfoLipat class="text-[11px] text-[var(--text-secondary)] mb-3">
           Hari sekolah benar-benar masuk. Dipakai membagi JP/minggu jadi JP per hari — hari yang
           <b>tidak</b> dicentang tak pernah dihitung sebagai absen. Kalau tak diatur, dianggap semua
           hari kecuali Jumat.
-        </p>
+        </InfoLipat>
         <div
           v-if="sekolahLembagaList.length === 0"
           class="text-xs text-[var(--text-tertiary)] italic"
@@ -1872,10 +1872,10 @@
         <h4 class="font-black text-[var(--text-primary)] text-[11px] uppercase tracking-wider mb-1">
           <i class="fas fa-wallet text-teal-600 mr-1"></i>Kategori Tabungan
         </h4>
-        <p class="text-[10px] text-[var(--text-secondary)] italic mb-2">
+        <InfoLipat class="text-[10px] text-[var(--text-secondary)] italic mb-2">
           Muncul di menu Tabungan → Input Mutasi (dropdown Kategori). Nominal default opsional
           (auto-isi saat kategori dipilih).
-        </p>
+        </InfoLipat>
         <div class="space-y-1.5 mb-2">
           <div
             v-for="(kat, idx) in form.keu_tabungan_kategori"
@@ -1942,12 +1942,12 @@
           <i class="fas fa-plus"></i>Tambah Tunjangan
         </button>
       </div>
-      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
+      <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
         Bentuknya sama dengan Jenis Bisyaroh: nominal ditentukan <b>jabatan &amp; lembaga</b>, bukan
         diketik per orang. Tiap jenis yang cocok = satu baris tunjangan di slip, semuanya
         dijumlahkan. Tunjangan pengabdian membaca <b>Tgl. Tugas</b> di data guru — yang kosong tak
         terbit.
-      </p>
+      </InfoLipat>
       <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
         <table class="w-full text-sm min-w-[560px]">
           <thead>
@@ -2085,13 +2085,13 @@
                 min="0"
                 class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
               />
-              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
                 {{
                   dlgTj.hitungan === 'per_tahun_pengabdian'
                     ? 'Nominal PER TAHUN mengabdi — dikalikan tahunnya tiap bulan.'
                     : 'Nominal per bulan.'
                 }}
-              </p>
+              </InfoLipat>
             </div>
           </div>
           <p class="text-[10px] text-[var(--text-secondary)] italic">
@@ -2113,10 +2113,10 @@
                 max="60"
                 class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold text-right"
               />
-              <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
                 0 = tanpa syarat. Isi 5 untuk "khusus yang mengabdi di atas 5 tahun". Guru yang
                 <b>Tgl. Tugas</b>-nya kosong tidak lolos.
-              </p>
+              </InfoLipat>
             </div>
             <div v-if="dlgTj.hitungan === 'flat_prestasi'">
               <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
@@ -2300,7 +2300,7 @@
         >
           <i class="fas fa-minus-circle text-rose-600 mr-1"></i>Jenis Potongan
         </h3>
-        <div class="flex items-center gap-1.5 flex-wrap">
+        <div class="ph-aksi flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
             class="inline-flex items-center gap-1.5 text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50"
@@ -2330,12 +2330,12 @@
           </button>
         </div>
       </div>
-      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
+      <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mb-2">
         Otomatis memotong slip bisyaroh guru yang cocok scope-nya. Penyaringnya sama dengan Jenis
         Bisyaroh &amp; Tunjangan — <b>jabatan, lembaga, shift, jenis kelamin</b>, atau orang
         tertentu — jadi "Potongan Seragam Putri" cukup satu baris ber-scope Perempuan. Nominalnya
         flat per bulan; tiap jenis yang cocok dijumlahkan.
-      </p>
+      </InfoLipat>
       <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
         <table class="w-full text-sm min-w-[520px]">
           <thead>
@@ -2618,10 +2618,10 @@
       >
         <i class="fas fa-scissors text-rose-600 mr-1"></i>Potongan POS
       </h3>
-      <p class="text-[11px] text-[var(--text-secondary)] mb-3">
+      <InfoLipat class="text-[11px] text-[var(--text-secondary)] mb-3">
         Dipakai kasir saat menerima pembayaran, dipilih <b>per baris</b> (per jenis), bukan untuk
         seluruh transaksi. Potongan ikut menutup tagihan — tagihan tak menyisakan tunggakan.
-      </p>
+      </InfoLipat>
       <div class="space-y-1.5 mb-2">
         <div
           v-for="(p, idx) in form.keuPotonganPos"
@@ -2732,10 +2732,10 @@
       >
         <i class="fas fa-credit-card text-indigo-600 mr-1"></i>Integrasi BMT PETA (Virtual Account)
       </h3>
-      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
+      <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
         Aktifkan untuk menampilkan opsi pembayaran Virtual Account (VA tetap per santri) di halaman
         Pembayaran wali. Konfirmasi otomatis menyusul setelah integrasi API BMT siap.
-      </p>
+      </InfoLipat>
       <label
         class="flex items-start gap-2 p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 mb-3 cursor-pointer"
       >
@@ -2788,11 +2788,11 @@
       >
         <i class="fas fa-building-columns text-cyan-600 mr-1"></i>Pembayaran Online (Midtrans)
       </h3>
-      <p class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
+      <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
         Wali memilih Virtual Account bank atau QRIS di halaman Pembayaran; nomor VA / kode QR
         beserta nominalnya tampil di halaman Midtrans, dan tagihan terisi otomatis begitu dana
         masuk. Biaya layanan ditanggung wali — ditambahkan di atas nominal tagihan.
-      </p>
+      </InfoLipat>
       <label
         class="flex items-start gap-2 p-2.5 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-700 mb-3 cursor-pointer"
       >
@@ -2865,11 +2865,11 @@
           placeholder="SB-Mid-client-…"
           class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
         />
-        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+        <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
           Kunci PUBLIK dari Settings → Access Keys (bukan Server Key). BRI, BNI, BCA, Mandiri &amp;
           QRIS tampil langsung di Ammu; BSI memakai jendela Midtrans di dalam Ammu bila kunci ini
           diisi — kosong = halaman Midtrans dibuka di browser.
-        </p>
+        </InfoLipat>
       </div>
       <p class="text-[10px] text-[var(--text-tertiary)] mt-3 leading-relaxed">
         <i class="fas fa-circle-info mr-1"></i>Contoh: tagihan Rp750.000 lewat VA → wali membayar
@@ -3072,13 +3072,13 @@
                 {{ o.nama }}{{ o.ket ? ` — ${o.ket}` : '' }}
               </option>
             </select>
-            <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+            <InfoLipat class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
               <i class="fas fa-info-circle mr-1"></i>Dipakai laporan pemasukan per lembaga — kasnya
               tetap satu, kas yayasan. Dibiarkan kosong: kalau "Hanya untuk lembaga ini" berisi
               <b>tepat satu</b> lembaga, uangnya dicatat untuk lembaga itu — selain itu tercatat
               sebagai {{ LABEL_KAS_UMUM }}. Beberapa lembaga boleh BERBAGI satu label (mis. Kelas
               Baca dicatat ke <b>TPQ Pagi</b>) — cukup pilih lembaga yang sama.
-            </p>
+            </InfoLipat>
           </div>
           <div>
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
@@ -3115,10 +3115,10 @@
                 <i :class="['fas', opt.i, 'mr-1']"></i>{{ opt.l }}
               </button>
             </div>
-            <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
+            <InfoLipat class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
               <i class="fas fa-info-circle mr-1"></i>Bulanan = tagihan otomatis tiap bulan · Tahunan
               = sekali per tahun ajaran · Manual = hanya saat ditagih/dibayar.
-            </p>
+            </InfoLipat>
           </div>
           <!-- Kyai 3-4 Agu: Penggabungan syahriyah (collapsible).
                "200rb itu sudah termasuk, baik untuk TPQ (90rb) atau PTPT (100rb)" — jenis
@@ -3147,11 +3147,11 @@
               ></i>
             </button>
             <div v-if="dlgGabung" class="mt-3 space-y-3">
-              <p class="text-[10px] text-[var(--text-secondary)] italic">
+              <InfoLipat class="text-[10px] text-[var(--text-secondary)] italic">
                 Pakai ini di jenis <b>ngaji</b>: nominalnya tidak ditagih sendiri, melainkan
                 <b>sudah termasuk</b> di dalam tagihan yang dipilih di bawah. Kosongkan kalau jenis
                 ini ditagih tersendiri.
-              </p>
+              </InfoLipat>
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
                   <i class="fas fa-arrow-right mr-1"></i>Termasuk di dalam jenis ini (boleh pilih
@@ -3180,10 +3180,10 @@
                     {{ opt.label }}
                   </label>
                 </div>
-                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1">
                   Sisi sekolah ada beberapa jenis (SD / TK / PKBM / Kelas Baca) — centang semua yang
                   mungkin, sistem memilih yang berlaku untuk tiap santri.
-                </p>
+                </InfoLipat>
               </div>
               <div v-if="(dlgJenis.gabung_ke || []).length">
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
@@ -3197,10 +3197,10 @@
                     {{ sy.label }}{{ sy.saran ? ' — disarankan' : '' }}
                   </option>
                 </select>
-                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1">
                   Santri yang tak memenuhi syarat ini tetap ditagih jenis ngajinya
                   <b>tersendiri</b> — jadi tak ada pemasukan yang hilang.
-                </p>
+                </InfoLipat>
               </div>
             </div>
           </div>
@@ -3287,11 +3287,11 @@
                 >
                   <i class="fas fa-plus mr-1"></i>Tambah paket
                 </button>
-                <p class="text-[10px] text-[var(--text-tertiary)] mt-1.5">
+                <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1.5">
                   Urutan menang: <b>nominal khusus per santri</b> &gt; <b>paket</b> &gt; tarif per
                   kelas &gt; per lembaga &gt; default. Paket tanpa nama atau bernominal 0 dibuang
                   saat disimpan.
-                </p>
+                </InfoLipat>
               </div>
             </div>
           </div>
@@ -3370,10 +3370,10 @@
                   </label>
                 </div>
                 <!-- v.1.5.0: aturan "centang dua" Pondok Laju (utils/statusSantri.matchStatusOnly) -->
-                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1">
                   Santri Pondok Laju yang juga Fullday ditagih sebagai Fullday saja. Yang tidak
                   Fullday tetap kena jenis Non-mukim, ditambah jenis bertanda Pondok Laju.
-                </p>
+                </InfoLipat>
               </div>
               <!-- 1b2) Kyai 4 Agu: Whitelist SHIFT NGAJI (pagi/sore).
                    "syahriyah pagi untuk ngaji pagi, syahriyah sore untuk sore". Tanpa ini
@@ -3401,11 +3401,11 @@
                     {{ sh.label }}
                   </label>
                 </div>
-                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1">
                   Santri yang <b>Shift Ngaji</b>-nya belum diisi dianggap <b>ikut keduanya</b>, jadi
                   ia tetap tertagih — tagihannya membaik sendiri begitu guru kelas mengoreksi
                   datanya. Aman: tak ada tagihan yang hilang di tengah jalan.
-                </p>
+                </InfoLipat>
               </div>
               <!-- Kyai 8 Agu 2026: saringan "sekolah di sini" — sasaran yang paling sering
                    dipakai: santri ngaji MURNI vs yang juga bersekolah di lembaga pondok. -->
@@ -3581,7 +3581,7 @@
                       @input="setNominalSantri(dlgJenis, s.id, $event.target.value)"
                     />
                   </div>
-                  <p
+                  <InfoLipat
                     v-if="santriCariFor(dlgJenis).length === 0"
                     class="text-[9px] text-[var(--text-tertiary)] italic px-1 py-1"
                   >
@@ -3590,7 +3590,7 @@
                         ? 'Santri tidak ditemukan.'
                         : 'Ketik nama/No. Induk untuk set nominal khusus.'
                     }}
-                  </p>
+                  </InfoLipat>
                 </div>
               </div>
             </div>
@@ -3911,10 +3911,10 @@
               </li>
             </ul>
           </details>
-          <p class="text-[10px] italic opacity-80">
+          <InfoLipat class="text-[10px] italic opacity-80">
             Sesudah terbit, sasaran <b>tidak bisa disunting</b> — perbaikannya hanya lewat hapus
             lalu generate ulang. Periksa sebarannya dulu.
-          </p>
+          </InfoLipat>
         </div>
         <div class="flex gap-2">
           <button

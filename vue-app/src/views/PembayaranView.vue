@@ -254,11 +254,11 @@
               >— {{ vaSantri.nama }}</span
             >
           </h3>
-          <p class="text-[11px] text-[var(--text-secondary)] mb-3">
+          <InfoLipat class="text-[11px] text-[var(--text-secondary)] mb-3">
             Centang tagihan yang ingin dibayar dan/atau isi top-up uang saku. Semuanya dibayar
             <b>sekali</b>. Mau <b>mencicil</b>? Ubah nominal di kotak kanan tagihan — sisanya bisa
             dibayar lain kali.
-          </p>
+          </InfoLipat>
 
           <!-- Tagihan belum lunas -->
           <div v-if="vaTagihanList.length" class="space-y-1.5">
@@ -454,7 +454,7 @@
             <i :class="['fas mr-1', membuatKode ? 'fa-spinner fa-spin' : 'fa-lock']"></i
             >{{ membuatKode ? 'Menyiapkan…' : 'Bayar ' + fmtRp(rincianMidtrans.total) }}
           </button>
-          <p class="text-[10px] text-[var(--text-tertiary)] mt-2 leading-relaxed">
+          <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-2 leading-relaxed">
             {{ selectedMethod === 'qris' ? 'Kode QR' : 'Nomor Virtual Account' }} beserta nominalnya
             tampil di sini<template v-if="kanalMidtrans === 'bsi'">
               (lewat jendela Midtrans)</template
@@ -462,7 +462,7 @@
             — tinggal bayar dari m-banking<template v-if="selectedMethod === 'qris'">
               / e-wallet</template
             >. Biaya layanan ditanggung pembayar. Status berubah sendiri begitu dana masuk.
-          </p>
+          </InfoLipat>
         </div>
 
         <!-- B2. Kartu Nomor VA BMT -->
@@ -483,11 +483,11 @@
               <i class="fas fa-copy"></i>
             </button>
           </p>
-          <p class="text-[11px] opacity-90 mt-3 leading-relaxed">
+          <InfoLipat class="text-[11px] opacity-90 mt-3 leading-relaxed">
             Setelah membuat Tagihan VA, transfer <b>sejumlah total</b> ke nomor VA di atas lewat
             m-banking / ATM / teller / kantor {{ bmtNama || 'BMT PETA' }}. Saat dana masuk, tagihan
             &amp; uang saku terisi otomatis sesuai rincian.
-          </p>
+          </InfoLipat>
         </div>
 
         <!-- Catatan integrasi BMT (belum live) -->

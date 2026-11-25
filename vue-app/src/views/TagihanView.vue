@@ -142,13 +142,13 @@
                   : t.santri_nama || getNamaSantri(t.santri_id)
               }}
             </p>
-            <p class="text-[10px] text-[var(--text-secondary)]">
+            <InfoLipat class="text-[10px] text-[var(--text-secondary)]">
               {{
                 isSantriRole
                   ? 'Jatuh tempo: ' + fmtTgl(t.jatuh_tempo)
                   : (t.kategori || '-') + ' · ' + (t.periode || '-') + ' · ' + fmtTgl(t.jatuh_tempo)
               }}
-            </p>
+            </InfoLipat>
             <!-- K1: tagihan gabungan tampil SATU kartu; rinciannya di sini supaya wali tak
                  bertanya-tanya kenapa syahriyah ngajinya tak ada tagihan sendiri. -->
             <p

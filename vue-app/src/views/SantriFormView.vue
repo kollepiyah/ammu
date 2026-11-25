@@ -212,10 +212,10 @@
               <option value="gabung">Selalu digabung</option>
               <option value="pisah">Jangan digabung</option>
             </select>
-            <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+            <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1">
               Untuk santri yang syahriyah ngajinya sudah termasuk di syahriyah sekolah/fullday. Ubah
               hanya bila hasil otomatisnya keliru.
-            </p>
+            </InfoLipat>
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"

@@ -28,6 +28,10 @@ app.use(VueQueryPlugin, { queryClient })
 import { vHaptic } from './composables/useHaptic'
 app.directive('haptic', vHaptic)
 
+// Kyai 25 Nov 2026: keterangan panjang dilipat seragam di semua halaman (components/ui/InfoLipat).
+import InfoLipat from './components/ui/InfoLipat.vue'
+app.component('InfoLipat', InfoLipat)
+
 // Init dark mode dari storage SEBELUM mount supaya tidak flash
 const ui = useUiStore(pinia)
 ui.initDarkFromStorage()

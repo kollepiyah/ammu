@@ -12,7 +12,7 @@
           <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] mt-1">
             <i class="fas fa-user-graduate text-teal-500 mr-2"></i>{{ pendaftar.nama || '...' }}
           </h1>
-          <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+          <InfoLipat class="text-xs text-[var(--text-secondary)] mt-0.5">
             No. Pendaftaran:
             <span class="font-bold text-[var(--text-primary)]">{{
               pendaftar.no_pendaftaran || '—'
@@ -21,9 +21,9 @@
             <span class="font-bold text-[var(--text-primary)]">{{
               fmtTgl(pendaftar.tanggal_daftar || pendaftar.tgl_daftar)
             }}</span>
-          </p>
+          </InfoLipat>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="ph-aksi flex flex-wrap gap-2">
           <span
             :class="[
               'text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-wider',

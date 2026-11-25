@@ -313,12 +313,12 @@
                   {{ ringkasJadwal(s.id) }}
                 </p>
               </div>
-              <p class="text-[10px] text-[var(--text-secondary)] italic">
+              <InfoLipat class="text-[10px] text-[var(--text-secondary)] italic">
                 <i class="fas fa-info-circle mr-1"></i>Biarkan mati bila guru masuk tiap hari kerja
                 lembaga &mdash; itu perilaku lama, tak ada yang berubah. Nyalakan hanya untuk guru
                 paruh-waktu: hari yang tidak dicentang <b>tidak dihitung alpa</b>, dan JP/minggu-nya
                 dibagi ke hari itu saja (bukan ke seluruh hari sekolah).
-              </p>
+              </InfoLipat>
             </div>
           </div>
           <!-- Kyai 7 Agu 2026: field lama `tanggal_tugas` DIGANTI NAMANYA jadi "Tgl. Syahadah"
@@ -333,10 +333,10 @@
               type="date"
               class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer"
             />
-            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+            <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
               Dasar penomoran NIG — jangan diubah tanpa perlu.
               <b>Boleh kosong</b> untuk yang belum bersyahadah (NIG-nya tak terbit otomatis).
-            </p>
+            </InfoLipat>
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"

@@ -67,7 +67,7 @@
       v-if="(isAdmin || isGuru) && !isDesktop"
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-2"
     >
-      <div class="flex gap-1.5 overflow-x-auto custom-scrollbar">
+      <div class="bar-tab flex gap-1.5 overflow-x-auto custom-scrollbar">
         <button
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
@@ -666,10 +666,10 @@
             <h4 class="text-sm font-black text-cyan-800 dark:text-cyan-300 mb-1">
               <i class="fas fa-flag mr-1"></i>KOP Kartu Kenaikan (Per Lembaga)
             </h4>
-            <p class="text-[11px] text-[var(--text-secondary)] mb-3">
+            <InfoLipat class="text-[11px] text-[var(--text-secondary)] mb-3">
               Atur judul, subjudul, alamat khusus untuk lembaga ini. Mis: PTPT pakai "PASCA TPQ
               PROGRAM TAHFIZH", TPQ pakai "TAMAN PENDIDIKAN AL-QURAN".
-            </p>
+            </InfoLipat>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label

@@ -10,13 +10,13 @@
       <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-triangle-exclamation text-amber-600 mr-2"></i>Layanan Pengaduan
       </h1>
-      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+      <InfoLipat class="text-xs text-[var(--text-secondary)] mt-0.5">
         {{
           canManage
             ? 'Inbox pengaduan — tindak lanjuti & pantau statusnya'
             : 'Sampaikan pengaduan Anda secara aman & rahasia'
         }}
-      </p>
+      </InfoLipat>
     </div>
 
     <!-- FORM KIRIM (semua user) -->

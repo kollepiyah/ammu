@@ -108,6 +108,13 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
     sesi / kelas / Tambah kartu jadi grid rapi. Kartu Channel: nama & tanggal satu baris, ikon ubah
     teal.
   - Aturan ditulis di `DESIGN-SYSTEM-RULES.md` (RULE HP) supaya halaman baru ikut.
+- **Penyeragaman tampilan HP, gelombang 2:**
+  - Toolbar → `.ph-aksi`: Bantuan (2), Pengaturan Keuangan (3), Tabungan, Profil detail, PSB detail.
+    Bar tab → `.bar-tab`: Bisyaroh, Detail Lembaga, Naik Kelas. Aksi kartu → `.aksi-kartu`:
+    Pembayaran Pending, Tes Kenaikan.
+  - **`<InfoLipat>`** (komponen global, `components/ui/InfoLipat.vue`): 80 keterangan/petunjuk
+    panjang di 19 halaman kini terlipat jadi satu baris "ⓘ Keterangan" yang bisa dibuka.
+    Peringatan berwarna, pesan data kosong, dan baris berisi data tidak dilipat.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.

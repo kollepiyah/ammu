@@ -54,7 +54,7 @@
       <div v-if="mainTab === 'generate'" class="space-y-4">
         <!-- Sub-tab switcher -->
         <div
-          class="bg-[var(--bg-card)] rounded-2xl p-2 border border-[var(--border-subtle)] shadow-sm flex gap-1"
+          class="bar-tab bg-[var(--bg-card)] rounded-2xl p-2 border border-[var(--border-subtle)] shadow-sm flex gap-1"
         >
           <button
             :class="[
@@ -269,10 +269,10 @@
                     {{ r.label }}: <b>{{ r.jml }}×</b>
                   </span>
                 </div>
-                <p class="text-[9px] text-cyan-600 italic mt-1">
+                <InfoLipat class="text-[9px] text-cyan-600 italic mt-1">
                   Tidak hadir = tidak dapat bonus (bukan dipotong). Nominalnya diatur di Pengaturan
                   Keuangan &rsaquo; Bisyaroh sebagai jenis "× hadir".
-                </p>
+                </InfoLipat>
               </div>
               <!-- v.111: Bisyaroh Glondongan PTPT auto (per juz disimak) -->
               <div
@@ -399,12 +399,12 @@
           <div
             class="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 border border-emerald-200"
           >
-            <p class="text-xs text-emerald-800">
+            <InfoLipat class="text-xs text-emerald-800">
               <i class="fas fa-info-circle mr-1"></i>Target:
               <b>{{ bulkTargets.length }} guru</b> akan di-generate slip-nya. Nominal dari
               <b>Jenis Bisyaroh</b>, <b>Jenis Tunjangan</b>, dan <b>Jenis Potongan</b> — semuanya
               ber-scope (Pengaturan Keuangan). Yang sudah punya slip periode ini akan di-OVERWRITE.
-            </p>
+            </InfoLipat>
             <!-- v.1.4.1: jendela absensinya ditulis juga di sini — tombol Generate di bawah
                  menulis slip untuk RATUSAN guru sekaligus, jadi rentang yang dipakai tak
                  boleh cuma diketahui dari layar sebelah. -->
@@ -718,12 +718,12 @@
               <i class="fas fa-file-excel text-emerald-600 mr-1"></i>Tunjangan &amp; Potongan
               Bulanan
             </p>
-            <p class="text-[10px] text-[var(--text-secondary)] mb-2">
+            <InfoLipat class="text-[10px] text-[var(--text-secondary)] mb-2">
               Unduh template berisi daftar guru untuk periode
               <b>{{ BULAN_NAMES[bulan - 1] }} {{ tahun }}</b
               >, isi kolom Tunjangan/Potongan, lalu impor. Slip guru yang diisi akan di-generate
               ulang + ditambah nominal itu.
-            </p>
+            </InfoLipat>
             <div class="flex gap-2 flex-wrap">
               <button
                 type="button"
@@ -777,11 +777,11 @@
                   <i class="fas fa-triangle-exclamation mr-1"></i>{{ imporMiss.length }} baris tak
                   cocok dengan guru mana pun (ID/nama) — dilewati.
                 </p>
-                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-1">
                   Slip guru di bawah di-generate ULANG dari Jenis Bisyaroh/Tunjangan/Potongan, lalu
                   ditambah nominal dari Excel. Penyesuaian bulanan sebelumnya pada slip itu
                   tergantikan.
-                </p>
+                </InfoLipat>
               </div>
 
               <ul class="space-y-1 max-h-72 overflow-y-auto">
@@ -1164,10 +1164,10 @@
                   </tfoot>
                 </table>
               </div>
-              <p class="mt-2 text-[10px] text-[var(--text-tertiary)] italic">
+              <InfoLipat class="mt-2 text-[10px] text-[var(--text-tertiary)] italic">
                 <i class="fas fa-circle-info mr-1"></i>Klik baris untuk melihat perinciannya. Angka
                 ini plafon (hadir penuh) — slip sungguhan mengikuti absensi nyata.
-              </p>
+              </InfoLipat>
             </div>
           </div>
         </div>

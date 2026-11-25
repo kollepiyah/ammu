@@ -119,11 +119,11 @@
             </select>
           </div>
         </div>
-        <p class="text-[11px] text-[var(--text-secondary)] italic mb-3">
+        <InfoLipat class="text-[11px] text-[var(--text-secondary)] italic mb-3">
           Rekap kehadiran santri mukim per kegiatan untuk periode {{ NAMA_BULAN[bulanFilter] }}
           {{ tahunFilter }}. Data absensi terhubung dengan fingerprint device yang di-impor pada tab
           Impor Fingerprint.
-        </p>
+        </InfoLipat>
         <div
           v-if="santriMukim.length === 0"
           class="text-xs text-[var(--text-tertiary)] italic text-center py-8"
@@ -256,14 +256,14 @@
         <div
           class="mt-4 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-700 rounded-xl p-3"
         >
-          <p class="text-[11px] text-cyan-800 dark:text-cyan-200">
+          <InfoLipat class="text-[11px] text-cyan-800 dark:text-cyan-200">
             <i class="fas fa-exclamation-triangle mr-1"></i>
             <strong>Format CSV/XLSX:</strong> kolom
             <code>tanggal, jam, fingerprint_id (atau nama), kegiatan</code>. Tanggal:
             <code>YYYY-MM-DD</code> atau <code>DD-MM-YYYY</code>. Hanya santri
             <strong>mukim</strong> yang masuk; nama kegiatan match (case-insensitive) ke Master
             Kegiatan.
-          </p>
+          </InfoLipat>
         </div>
       </div>
     </div>
