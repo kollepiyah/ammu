@@ -162,7 +162,7 @@ Kegiatan (sky). **Hanya agenda yang ditandai admin "tampil di publik".**
 - **WAJIB verifikasi, jangan menebak sudut/ihtiyath**: cocokkan dengan jadwal resmi Kemenag
   (Bimas Islam) untuk kabupaten pesantren dan jadwal LFNU / NU Online, minimal 3 tanggal
   berbeda musim. Target selisih **≤ 1 menit**. Simpan tabel pembanding itu sebagai tes.
-- **Dikerjakan 25 Nov (F2):** rumus sendiri tanpa pustaka. Kemenag cocok dengan jadwal resmi
+- **Dikerjakan 25 Nov (F2):** rumus sendiri tanpa pustaka. **Falakiyah NU (bawaan) ditambah malamnya** dari jadwalsholat.nu.or.id (116/119 persis). Kemenag cocok dengan jadwal resmi
   Kab. Sidoarjo (12 tanggal, ≤1 menit). **Falakiyah NU belum dibuat** — butuh tabel jadwal
   LFNU/NU Online untuk Sidoarjo/Surabaya (min. 3 tanggal beda musim) dari Kyai; jadwalsholat.nu.or.id
   menolak akses otomatis (429). Begitu ada, tambahkan entri di `METODE` + baris tes.

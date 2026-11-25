@@ -1,8 +1,10 @@
 // Jadwal sholat — SATU sumber kebenaran (blueprint Ammu publik §4.1). Fungsi murni, tanpa
 // pustaka luar: posisi matahari ala almanak (presisi ±0,01°), lalu sudut & ihtiyath per metode.
 // Metode Kemenag diverifikasi terhadap jadwal resmi Kab. Sidoarjo (12 tanggal, 4 musim) di
-// tests/unit/waktuSholat.test.js — semua selisih ≤ 1 menit. Falakiyah NU BELUM ada: data
-// pembanding LFNU belum didapat, dan sudutnya tak boleh ditebak.
+// tests/unit/waktuSholat.test.js — semua selisih ≤ 1 menit. Falakiyah NU dicocokkan dengan
+// jadwalsholat.nu.or.id/kab-sidoarjo (17 tanggal, Nov 2026–Sep 2027): 116 dari 119 waktu persis.
+
+import { masehiToHijri } from '@/utils/hijri'
 
 const D2R = Math.PI / 180
 const R2D = 180 / Math.PI
@@ -43,6 +45,23 @@ export function namaTempatPanjang(l) {
  * `isyaMenit` = Isya sekian menit sesudah Maghrib (Umm al-Qura), mengganti sudut Isya.
  */
 export const METODE = Object.freeze({
+  // Kyai 25 Nov 2026 — acuan jadwalsholat.nu.or.id ("metode hisab Lembaga Falakiyah NU, Subuh -20°
+  // & Isya -18°", Sidoarjo ketinggian 5 m). Angka web itu TANPA ihtiyath 2 menit kecuali Zuhur +1;
+  // aplikasi NU Online menambah ±2 menit lagi (setelan ihtiyath-nya). Selama Ramadhan Maghrib +1.
+  nu: {
+    kunci: 'nu',
+    label: 'Falakiyah NU',
+    keterangan: 'Subuh 20°, Isya 18° — sama dengan jadwal NU Online (web)',
+    subuh: 20,
+    isya: 18,
+    terbit: 0.8333 + 0.0347 * Math.sqrt(5), // kerendahan ufuk ketinggian 5 m
+    dhuha: 4.5,
+    imsakMenit: 10,
+    ihtiyath: { subuh: 0, terbit: 0, dhuha: 0, dzuhur: 1, ashar: 0, maghrib: 0, isya: 0 },
+    ramadhanMaghrib: 1,
+    bulat: 'atas',
+    bulatTerbit: 'terdekat'
+  },
   kemenag: {
     kunci: 'kemenag',
     label: 'Kemenag RI',
@@ -68,7 +87,8 @@ export const METODE = Object.freeze({
     bulat: 'terdekat'
   }
 })
-export const METODE_BAWAAN = 'kemenag'
+// Blueprint §4.1: Falakiyah NU bawaan (pondok NU) — kini sudah terverifikasi.
+export const METODE_BAWAAN = 'nu'
 
 export const NAMA_WAKTU = Object.freeze({
   imsak: 'Imsak',
@@ -157,7 +177,13 @@ export function hitungWaktuSholat({ tanggal, lat, lon, tz = 7, metode = METODE_B
   }
   const geser = tz - lon / 15
   const menit = {}
-  for (const k of Object.keys(t)) menit[k] = keMenit(t[k] + geser, M.ihtiyath[k] || 0, M.bulat)
+  for (const k of Object.keys(t)) {
+    const bulat = k === 'terbit' && M.bulatTerbit ? M.bulatTerbit : M.bulat
+    menit[k] = keMenit(t[k] + geser, M.ihtiyath[k] || 0, bulat)
+  }
+  // NU: selama Ramadhan ihtiyath Maghrib +1 menit (catatan jadwalsholat.nu.or.id).
+  if (M.ramadhanMaghrib && masehiToHijri(new Date(y, m - 1, d, 12)).month === 9)
+    menit.maghrib += M.ramadhanMaghrib
   menit.imsak = menit.subuh - M.imsakMenit
 
   const jam = {}

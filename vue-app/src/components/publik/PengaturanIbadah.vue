@@ -30,8 +30,8 @@
         </button>
       </div>
       <p class="text-[11px] text-[var(--text-secondary)] mt-2 leading-relaxed">
-        <i class="fas fa-circle-info mr-1 text-teal-600"></i>Falakiyah NU menyusul setelah
-        dicocokkan dengan jadwal resmi LFNU.
+        <i class="fas fa-circle-info mr-1 text-teal-600"></i>Falakiyah NU mengikuti jadwal NU Online
+        (web). Aplikasi NU Online menambah ihtiyath ±2 menit, jadi angkanya bisa lebih lambat.
       </p>
     </div>
 

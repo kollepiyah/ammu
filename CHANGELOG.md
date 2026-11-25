@@ -38,6 +38,13 @@ kolom `kegiatan.publik`, dan menyimpan agenda akan galat bila kolomnya belum ada
 rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biometric`).
 
 ### Added
+- **Metode Falakiyah NU — kini BAWAAN** (`METODE.nu`, utils/waktuSholat): dicocokkan dengan
+  jadwalsholat.nu.or.id/kab-sidoarjo (Kyai 25 Nov; 17 tanggal Nov 2026–Sep 2027, 116/119 waktu
+  persis, sisanya ±1 menit — `waktuSholat.test.js`). Subuh 20°, Isya 18°, kerendahan ufuk 5 m,
+  ihtiyath 0 kecuali Zuhur +1, bulat ke atas (Terbit ke terdekat), Maghrib +1 selama Ramadhan.
+  Catatan: **aplikasi** NU Online menambah ihtiyath ±2 menit dari angka web (setelannya
+  "2 Menit"), jadi bisa lebih lambat 1–2 menit. Metode kini hanya diingat bila dipilih pengguna —
+  HP yang dulu menyimpan "Kemenag" diam-diam ikut bawaan baru.
 - **Kunci Portal dengan sidik jari / Face ID** (Android & PWA, blueprint F9): sakelar di tab
   Pengaturan (Keamanan) dan Pengaturan publik (Akun). Terkunci saat aplikasi dibuka & sesudah di
   latar ≥ 3 menit; wilayah publik tetap terbuka; layar kunci punya jalan ke Beranda umum & masuk

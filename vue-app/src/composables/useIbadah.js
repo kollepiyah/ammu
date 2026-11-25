@@ -57,7 +57,10 @@ function muat() {
 }
 
 const awal = muat()
-const metode = ref(METODE[awal.metode] ? awal.metode : METODE_BAWAAN)
+// Metode hanya diingat bila DIPILIH pengguna; selebihnya ikut bawaan (kini Falakiyah NU). Simpanan
+// lama tanpa penanda ini menyimpan 'kemenag' diam-diam — ikut bawaan yang baru.
+let metodeDipilih = !!awal.metodeDipilih && !!METODE[awal.metode]
+const metode = ref(metodeDipilih ? awal.metode : METODE_BAWAAN)
 const otomatis = ref(awal.otomatis !== false)
 const lokasi = ref(
   awal.lokasi && Number.isFinite(awal.lokasi.lat) && Number.isFinite(awal.lokasi.lon)
@@ -78,7 +81,12 @@ function simpan() {
   try {
     localStorage.setItem(
       KUNCI,
-      JSON.stringify({ metode: metode.value, otomatis: otomatis.value, lokasi: lokasi.value })
+      JSON.stringify({
+        metode: metode.value,
+        metodeDipilih,
+        otomatis: otomatis.value,
+        lokasi: lokasi.value
+      })
     )
   } catch {
     /* penyimpanan penuh/terkunci — setelan tetap berlaku se-sesi */
@@ -183,6 +191,7 @@ async function lengkapiNamaTempat() {
 function setMetode(k) {
   if (!METODE[k]) return
   metode.value = k
+  metodeDipilih = true
   simpan()
 }
 function setOtomatis(v) {
