@@ -257,7 +257,7 @@ Kegiatan (sky). **Hanya agenda yang ditandai admin "tampil di publik".**
 
 | # | Pertanyaan | Saran | Fase |
 |---|---|---|---|
-| K1 | Wirid/maulid/doa: **teks** (Word/ketik) atau **gambar** seperti mushaf? | Teks bila tersedia (A−/A+, Latin, Arti berfungsi) — wajib diperiksa harakatnya | F7 |
+| K1 | ~~Wirid/maulid/doa: teks atau gambar?~~ **Dijawab 25 Nov:** **teks** (Arab rapi + terjemahan) | Teks; harakat wajib diperiksa | F7 |
 | K2 | Ukuran & jumlah halaman PDF mushaf; sudah bertashih LPMQ? **25 Nov:** mushaf *Waqaf Ibtida'* masih disusun Kyai (PDF), isi Al-Qur'an & Kitab/Wirid **menyusul** — F1 jalan tanpa menunggu, ikonnya "segera hadir" dulu | Ukur dulu; konversi WebP (skrip F6) | F6 |
 | K3 | ~~Dari Portal kembali ke wilayah publik lewat mana?~~ **Dijawab 25 Nov:** tidak perlu jalan pulang; fitur ibadah dibuka dari baris ikon di dashboard (3.7). Sesi tetap tersimpan | — | F1 |
 | K4 | ~~Kartu jam dihapus dari dashboard atau tampil di keduanya?~~ **Dijawab 25 Nov:** dihapus dari dashboard, diganti baris ikon; sinkron widget pindah ke tempat global | — | F1 |

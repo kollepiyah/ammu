@@ -26,6 +26,7 @@
             <i class="fas fa-right-from-bracket mr-1.5"></i>Keluar
           </button>
         </div>
+        <PengaturanKunci class="mt-3" />
       </template>
       <button
         v-else
@@ -113,6 +114,7 @@ import { useToast } from '@/composables/useToast'
 import { isNativeAndroid } from '@/composables/useWidgetSync'
 import PengaturanIbadah from '@/components/publik/PengaturanIbadah.vue'
 import PilihTema from '@/components/publik/PilihTema.vue'
+import PengaturanKunci from '@/components/publik/PengaturanKunci.vue'
 
 const router = useRouter()
 const auth = useAuthStore()

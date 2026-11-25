@@ -11,6 +11,8 @@
   <component :is="PrinterModal" v-if="PrinterModal" ref="printerModalRef" />
   <!-- v.90.0626: ToastStack di-mount GLOBAL (sebelumnya tak pernah dipasang -> toast tak muncul) -->
   <ToastStack />
+  <!-- Kyai 25 Nov 2026: kunci sidik jari / Face ID untuk Portal (Android & PWA) -->
+  <KunciAplikasi v-if="wilayahPublik" />
 </template>
 
 <script setup>
@@ -26,6 +28,18 @@ import { usePushNotifications } from '@/composables/usePushNotifications'
 // v.1.2.8: tawaran unduh pembaruan APK (aplikasi Android saja)
 import { useSinkronWidgetHijri } from '@/composables/useSinkronWidgetHijri'
 import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
+import KunciAplikasi from '@/components/KunciAplikasi.vue'
+import { useKunciAplikasiStore } from '@/stores/kunciAplikasi'
+
+const wilayahPublik = pakaiWilayahPublik()
+// Kunci dinilai SESUDAH sesi dipulihkan dari penyimpanan (authReady), kalau tidak sesinya
+// belum terbaca dan aplikasi lolos tanpa kunci.
+if (wilayahPublik) {
+  const kunciAplikasi = useKunciAplikasiStore()
+  Promise.resolve(useAuthStore().authReady)
+    .catch(() => {})
+    .then(() => kunciAplikasi.mulai())
+}
 
 // v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.

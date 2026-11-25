@@ -60,6 +60,17 @@
       <p class="text-xs text-[var(--text-secondary)] mb-2">Tema</p>
       <PilihTema />
     </section>
+
+    <!-- Kyai 25 Nov 2026: kunci sidik jari / Face ID — hanya Android & PWA -->
+    <section
+      v-if="!loading && wilayahPublik"
+      class="mt-4 bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+    >
+      <h3 class="text-sm font-black text-[var(--text-primary)] mb-3 flex items-center gap-2">
+        <i class="fas fa-shield-halved text-teal-600"></i>Keamanan
+      </h3>
+      <PengaturanKunci />
+    </section>
   </div>
 </template>
 
@@ -71,6 +82,10 @@ import ProfilAdmin from './profil/ProfilAdmin.vue'
 import ProfilGuru from './profil/ProfilGuru.vue'
 import ProfilSantri from './profil/ProfilSantri.vue'
 import PilihTema from '@/components/publik/PilihTema.vue'
+import PengaturanKunci from '@/components/publik/PengaturanKunci.vue'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
+
+const wilayahPublik = pakaiWilayahPublik()
 
 const auth = useAuthStore()
 const sesi = computed(() => auth.sesiAktif)
