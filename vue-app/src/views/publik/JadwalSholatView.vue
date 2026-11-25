@@ -4,8 +4,18 @@
        Layar yang sama untuk /umum/sholat (tamu) dan /ibadah/sholat (Portal). -->
   <div class="max-w-xl mx-auto">
     <section
-      class="kepala-sholat lanjut-topbar text-white text-center px-4 pt-4 pb-4 rounded-b-3xl"
+      class="kepala-sholat lanjut-topbar relative text-white text-center px-4 pt-4 pb-4 rounded-b-3xl"
     >
+      <!-- Kyai 25 Nov 2026: roda gigi di pojok kanan atas, bukan di tengah baris tombol. -->
+      <button
+        type="button"
+        class="absolute top-2 right-2 w-9 h-9 rounded-full flex items-center justify-center cursor-pointer"
+        :class="bukaSetelan ? 'bg-white/20' : ''"
+        aria-label="Pengaturan ibadah"
+        @click="bukaSetelan = !bukaSetelan"
+      >
+        <i class="fas fa-gear text-base"></i>
+      </button>
       <p class="text-xs text-white/90">
         <i class="fas fa-location-dot text-red-400 mr-1"></i>{{ tempat }}
         <i v-if="memuatLokasi" class="fas fa-spinner fa-spin ml-1"></i>
@@ -24,15 +34,6 @@
           @click="perbaruiLokasi({ paksa: true })"
         >
           <i class="fas fa-location-crosshairs"></i>Perbarui
-        </button>
-        <button
-          type="button"
-          class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer"
-          :class="bukaSetelan ? 'bg-white/20' : ''"
-          aria-label="Pengaturan ibadah"
-          @click="bukaSetelan = !bukaSetelan"
-        >
-          <i class="fas fa-gear text-base"></i>
         </button>
         <button
           type="button"

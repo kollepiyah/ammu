@@ -1172,3 +1172,15 @@ html.native-shell body {
 .topbar-hijau .gs-pemicu:hover {
   background: rgba(255, 255, 255, 0.12) !important;
 }
+
+/* Kyai 25 Nov 2026: di Android & PWA batang gulir di samping layar tak perlu — gulir tetap jalan,
+   hanya batangnya disembunyikan (seperti aplikasi HP bawaan). Web & Electron tetap ada. */
+html.native-shell,
+html.native-shell * {
+  scrollbar-width: none;
+}
+html.native-shell ::-webkit-scrollbar {
+  display: none;
+  width: 0 !important;
+  height: 0 !important;
+}
