@@ -6,9 +6,7 @@
          sengaja DI DALAM akar: di luar, mode dev menjadikannya fragment dan <transition> App
          macet saat meninggalkan layar ini. -->
     <!-- Kyai 25 Nov 2026: top bar hijau tetap (terang & gelap), menyambung kartu Hijriah -->
-    <header
-      class="shrink-0 flex items-center justify-between gap-3 px-4 py-3 bg-[#0f766e] text-white"
-    >
+    <header class="topbar-hijau shrink-0 flex items-center justify-between gap-3 px-4 text-white">
       <!-- Kyai 25 Nov 2026: cukup tulisan nama aplikasi seperti header Portal, tanpa logo -->
       <h2 class="text-base font-black text-white tracking-tight truncate">
         {{ namaApp }}

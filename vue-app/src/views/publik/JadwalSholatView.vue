@@ -3,7 +3,9 @@
        menyambung top bar, isi rata tengah, tanpa kartu & tanpa tombol kembali (pakai tombol HP).
        Layar yang sama untuk /umum/sholat (tamu) dan /ibadah/sholat (Portal). -->
   <div class="max-w-xl mx-auto">
-    <section class="kepala-sholat text-white text-center px-4 pt-4 pb-4 rounded-b-3xl">
+    <section
+      class="kepala-sholat lanjut-topbar text-white text-center px-4 pt-4 pb-4 rounded-b-3xl"
+    >
       <p class="text-xs text-white/90">
         <i class="fas fa-location-dot text-red-400 mr-1"></i>{{ tempat }}
         <i v-if="memuatLokasi" class="fas fa-spinner fa-spin ml-1"></i>
@@ -209,10 +211,3 @@ onMounted(() => {
 })
 onUnmounted(() => clearInterval(detak))
 </script>
-
-<style scoped>
-/* Teal sama dengan top bar & kartu Hijriah — menyambung, juga di mode gelap. */
-.kepala-sholat {
-  background: linear-gradient(180deg, #0f766e 0%, #134e4a 100%);
-}
-</style>
