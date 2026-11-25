@@ -38,6 +38,14 @@ kolom `kegiatan.publik`, dan menyimpan agenda akan galat bila kolomnya belum ada
 rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biometric`).
 
 ### Added
+- **Mode baca layar penuh** (blueprint §3.6/§4.10, F8) — `composables/useModeBaca` SATU untuk
+  Kitab & Wirid sekarang dan Al-Qur'an nanti: tombol ⤢ di layar baca, akar layar jadi lapisan
+  fixed menutupi header & menu bawah (safe-area untuk lubang kamera), ketuk tengah layar =
+  sembunyi/tampil kontrol (`utils/modeBaca` + tes), tombol kembali Android keluar dari layar penuh
+  dulu. Android: plugin native kecil `LayarBacaPlugin` (sembunyikan status bar + navigasi,
+  muncul sementara bila tepi digeser; FLAG_KEEP_SCREEN_ON). PWA/web: Fullscreen API bila ada
+  (iPhone tidak — cukup lapisan) + Wake Lock. Sakelar "Layar tetap menyala saat membaca" di
+  Pengaturan ibadah (bawaan nyala).
 - **Widget Android "Jadwal Sholat"** (mock-up disetujui Kyai 25 Nov) **menggantikan widget
   Kalender**: latar teal + motif berlian (widget_bg), desa · tanggal Masehi & Hijriah, waktu
   berikutnya + hitung mundur (Chronometer, berdetak sendiri), lima waktu dengan yang berikutnya

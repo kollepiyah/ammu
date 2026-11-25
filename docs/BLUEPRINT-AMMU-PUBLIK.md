@@ -282,7 +282,7 @@ lalu dipakai F7). F10 butuh F2.
 | **F4** ✅ 25 Nov (v.1.5.5) | Agenda publik: migrasi `publik`, akses anon aman, centang di form admin, layar Agenda | F1 | `supabase db push`, deploy web, AAB |
 | **F5** | Tab Channel publik (+ penanda publik bila perlu) | F1 | (db push bila ada migrasi), AAB |
 | **F6** | Al-Qur'an: skrip PDF→WebP, R2 + CSP, indeks surah/juz, pembaca + cache offline + zoom + geser + terakhir dibaca, **mode layar penuh (F8) dibuat di sini** | F1, K2, K6 | Unggah ke R2, AAB |
-| **F8** | Mode layar penuh `useModeBaca` (3.6, 4.10) — **dikerjakan di dalam F6**, dipakai ulang F7 | F1 | (ikut AAB F6) |
+| **F8** ✅ 25 Nov (v.1.5.5) | Mode layar penuh `useModeBaca` (3.6, 4.10) — **dikerjakan di dalam F6**, dipakai ulang F7 | F1 | (ikut AAB F6) |
 | **F7** ✅ 25 Nov (v.1.5.5; Tasbih belum) | Kitab & Wirid: tabel + RLS, CRUD Master Data, daftar + layar baca + Tasbih, pakai `useModeBaca` | F1, F8, K1 | `supabase db push`, deploy web, AAB |
 | **F9** ✅ 25 Nov (v.1.5.5, kunci aplikasi) | Login ringkas + biometrik | F1 | AAB |
 | **F10** | Widget jadwal sholat | F2 | AAB |

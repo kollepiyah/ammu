@@ -78,6 +78,25 @@
       </label>
     </div>
 
+    <label
+      class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer"
+    >
+      <span class="min-w-0">
+        <span class="block text-xs font-bold text-[var(--text-primary)]">
+          <i class="fas fa-sun text-teal-600 mr-1.5"></i>Layar tetap menyala saat membaca
+        </span>
+        <span class="block text-[11px] text-[var(--text-secondary)]"
+          >Di mode layar penuh Kitab &amp; Wirid dan Al-Qur&#39;an</span
+        >
+      </span>
+      <input
+        type="checkbox"
+        class="w-5 h-5 accent-teal-600 shrink-0"
+        :checked="setelanBaca.tetapMenyala"
+        @change="setTetapMenyala($event.target.checked)"
+      />
+    </label>
+
     <PengaturanAdzan />
   </div>
 </template>
@@ -87,6 +106,7 @@ import { computed } from 'vue'
 import { useIbadah, DAFTAR_KOTA } from '@/composables/useIbadah'
 import { METODE, namaTempatPanjang } from '@/utils/waktuSholat'
 import PengaturanAdzan from '@/components/publik/PengaturanAdzan.vue'
+import { setelanBaca, setTetapMenyala } from '@/composables/useModeBaca'
 
 const {
   metode,

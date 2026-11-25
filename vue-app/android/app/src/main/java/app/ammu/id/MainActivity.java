@@ -31,6 +31,8 @@ public class MainActivity extends BridgeActivity {
     SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
     // v.94.0626: daftarkan plugin bridge widget (push data Hijri + agenda ke widget home screen)
     registerPlugin(WidgetBridgePlugin.class);
+    // v.1.5.5: mode baca layar penuh (imersif + layar tetap menyala) — Kitab & Wirid / Al-Qur'an
+    registerPlugin(LayarBacaPlugin.class);
     super.onCreate(savedInstanceState);
 
     batasiSkalaTeks();

@@ -1,9 +1,12 @@
 <template>
   <!-- Layar baca Kitab & Wirid (blueprint §3.5): Arab besar (Scheherazade New), A−/A+, sakelar
        Latin & Arti. Isi disimpan di HP 24 jam — dibaca ulang tanpa internet. -->
-  <div class="max-w-xl mx-auto pb-6">
+  <!-- Layar penuh (useModeBaca): akar jadi lapisan fixed yang menutupi header & menu bawah;
+       ketuk tengah layar = sembunyikan/tampilkan kontrol. -->
+  <div :class="aktif ? 'baca-penuh' : 'max-w-xl mx-auto pb-6'" @click="ketuk">
     <div
-      class="sticky top-0 z-10 flex items-center gap-2 px-3 py-2 bg-[var(--bg-page)] border-b border-slate-100 dark:border-slate-800"
+      v-show="!aktif || kontrol"
+      class="kepala-baca sticky top-0 z-10 flex items-center gap-2 px-3 py-2 bg-[var(--bg-page)] border-b border-slate-100 dark:border-slate-800"
     >
       <h2 class="flex-1 min-w-0 text-sm font-black text-[var(--text-primary)] truncate">
         {{ amalan?.judul || 'Memuat…' }}
@@ -24,8 +27,16 @@
       >
         A+
       </button>
+      <button
+        type="button"
+        class="w-9 h-9 rounded-full text-base text-[var(--text-primary)] cursor-pointer"
+        :aria-label="aktif ? 'Keluar dari layar penuh' : 'Layar penuh'"
+        @click.stop="alihkanLayar"
+      >
+        <i :class="['fas', aktif ? 'fa-compress' : 'fa-expand']"></i>
+      </button>
     </div>
-    <div class="flex gap-2 px-4 py-2.5">
+    <div v-show="!aktif || kontrol" class="flex gap-2 px-4 py-2.5">
       <button
         v-for="s in SAKELAR"
         :key="s.kunci"
@@ -100,6 +111,7 @@ import { useRoute } from 'vue-router'
 import { useDataTamu } from '@/composables/useDataTamu'
 import { ambilAmalan } from '@/services/amalan'
 import { ukuranArab } from '@/utils/amalan'
+import { useModeBaca } from '@/composables/useModeBaca'
 
 const KUNCI_SETELAN = 'ammu_baca_amalan'
 const SAKELAR = [
@@ -108,6 +120,7 @@ const SAKELAR = [
 ]
 
 const route = useRoute()
+const { aktif, kontrol, ketuk, alihkan: alihkanLayar } = useModeBaca()
 const id = String(route.params.id || '')
 const { data, loading } = useDataTamu(`amalan_${id}`, () => ambilAmalan(id), {
   umurMs: 24 * 60 * 60 * 1000
@@ -139,3 +152,24 @@ function alihkan(k) {
   simpan()
 }
 </script>
+
+<style scoped>
+/* Mode layar penuh: lapisan di atas header & menu bawah; isi tak tertutup lubang kamera/garis
+   navigasi (safe-area). */
+.baca-penuh {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  overflow-y: auto;
+  background: var(--bg-page);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem);
+}
+.baca-penuh > * {
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+.baca-penuh .kepala-baca {
+  padding-top: calc(env(safe-area-inset-top) + 0.5rem);
+}
+</style>
