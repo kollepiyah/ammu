@@ -385,17 +385,16 @@ function jamRange(s) {
 
 <template>
   <div class="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
-    <!-- Header -->
+    <!-- Header — Kyai 25 Nov 2026: kartu polos seperti halaman lain (dulu blok gradasi). -->
     <div
-      class="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] rounded-2xl p-5 md:p-6 text-white shadow-lg"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm flex items-center justify-between gap-3"
     >
-      <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
-        <i class="fas fa-award mr-1"></i>PTPT
-      </p>
-      <h2 class="text-xl md:text-2xl font-black mt-1">Ceremonial PTPT</h2>
+      <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
+        <i class="fas fa-award text-teal-500 mr-1"></i>Ceremonial PTPT
+      </h1>
       <button
         v-if="canKelola"
-        class="mt-3 inline-flex items-center gap-1.5 bg-white/90 hover:bg-white text-teal-700 dark:text-teal-800 text-[11px] font-black px-3 py-1.5 rounded-lg shadow-sm transition"
+        class="h-10 md:h-9 px-3 shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition cursor-pointer"
         @click="bukaBaru"
       >
         <i class="fas fa-plus"></i>Jadwalkan Sesi

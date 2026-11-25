@@ -119,6 +119,10 @@ nomor tetap). Tanpa migrasi. Perlu **rebuild AAB** (tampilan HP dibundel di APK)
   Siang)** dan **Laju 2 (Tadarus Sore)**. Kartu jurnal tak lagi menyalin posisi sesi sebelumnya ke
   kolom isian — kolom kosong sampai sesi itu disimpan — dan posisi terakhir dipajang besar di
   kotak "Terakhir Tadarus Pagi (hari ini): Juz · hal. · surah ayat" sebagai patokan guru berikutnya.
+- **Penyeragaman tampilan, gelombang 3:** judul halaman (`<h1>` di area isi) satu ukuran untuk
+  semua halaman (dulu 11 gaya berbeda); kepala gradasi Ceremonial PTPT, Kegiatan Pesantren, dan
+  Guru Belum Isi Rekap jadi kartu polos seperti halaman lain; tombol kepala Kalender Kegiatan
+  `.ph-aksi`.
 
 ### Fixed
 - Data Guru: "Menampilkan N guru" menghitung semua guru, bukan yang lolos penyaring.

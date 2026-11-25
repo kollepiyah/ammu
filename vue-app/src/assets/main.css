@@ -296,6 +296,20 @@ button,
   }
 }
 
+/* Kyai 25 Nov 2026: judul halaman seragam — dulu 11 gaya ukuran berbeda. Semua <h1> di area isi
+   aplikasi (bukan kertas cetak) memakai ukuran & tebal yang sama. */
+#app-scroll h1:not(.print-area h1):not(#rapor-print-area h1) {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+  font-weight: 900 !important;
+}
+@media (min-width: 768px) {
+  #app-scroll h1:not(.print-area h1):not(#rapor-print-area h1) {
+    font-size: 1.125rem !important;
+    line-height: 1.75rem !important;
+  }
+}
+
 /* Kyai 25 Nov 2026: bar tab seragam di semua halaman (.bar-tab). Di HP: kotak sama lebar,
    ikon di atas label (seperti menu bawah) — tak ada lagi tab yang turun baris tak rata.
    <=5 tab satu baris; 6 tab = 3 kolom; 7-8 tab = 4 kolom. Layar lebar tetap gaya asli. */

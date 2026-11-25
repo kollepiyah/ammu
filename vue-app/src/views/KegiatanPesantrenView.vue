@@ -1,15 +1,10 @@
 <template>
   <div class="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
     <!-- Hero banner -->
-    <div
-      class="bg-gradient-to-br from-cyan-600 dark:from-cyan-800 to-cyan-700 dark:to-cyan-900 rounded-2xl p-5 md:p-6 text-white shadow-lg"
-    >
-      <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
-        <i class="fas fa-calendar-check mr-1"></i>Kegiatan Pesantren
-      </p>
-      <h2 class="text-lg md:text-2xl font-black mt-1">
-        Master Kegiatan &amp; Absensi Santri Mukim
-      </h2>
+    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
+        <i class="fas fa-calendar-check text-cyan-600 mr-1"></i>Kegiatan Pesantren
+      </h1>
     </div>
 
     <!-- Tab buttons -->

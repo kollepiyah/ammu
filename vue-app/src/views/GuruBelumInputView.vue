@@ -20,18 +20,16 @@
     </button>
 
     <!-- Header -->
-    <div
-      class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 md:p-6 text-white shadow-lg"
-    >
-      <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
-        <i class="fas fa-user-clock mr-1"></i>Guru Belum Isi Rekap Prestasi
-      </p>
-      <h2 class="text-xl md:text-2xl font-black mt-1">Periode {{ periodeLabel }}</h2>
-      <p class="text-xs md:text-sm font-medium mt-1 opacity-90">
+    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+      <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
+        <i class="fas fa-user-clock text-amber-500 mr-1"></i>Guru Belum Isi Rekap ·
+        {{ periodeLabel }}
+      </h1>
+      <p class="text-xs text-[var(--text-secondary)] mt-0.5">
         {{ guruBelumInput.length }} guru &middot; {{ totalSantriBelum }} santri belum dinilai
       </p>
       <!-- v.1.3.8: rekap diisi untuk bulan LALU, batas tanggal 5 (Kyai, 1 Sep 2026). -->
-      <p v-if="batasLabel" class="text-[11px] font-bold mt-2 opacity-95">
+      <p v-if="batasLabel" class="text-[11px] font-bold mt-1 text-amber-700 dark:text-amber-300">
         <i class="fas fa-clock mr-1"></i>PTPT &amp; PPPH &mdash;
         <span v-if="rekapSudahTerlambat">sudah lewat batas ({{ batasLabel }})</span>
         <span v-else>batas pengisian {{ batasLabel }}</span>
