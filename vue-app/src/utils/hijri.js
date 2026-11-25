@@ -62,6 +62,33 @@ export function formatHijri(date = new Date(), kalibrasiOffset = 0) {
   }
 }
 
+/** Nama bulan Hijriah Latin — satu sumber (dulu hanya di AppSidebar). */
+export const NAMA_BULAN_HIJRI = [
+  'Muharram',
+  'Shafar',
+  'Rabiul Awal',
+  'Rabiul Akhir',
+  'Jumadil Awal',
+  'Jumadil Akhir',
+  'Rajab',
+  "Sya'ban",
+  'Ramadhan',
+  'Syawal',
+  "Dzulqo'dah",
+  'Dzulhijjah'
+]
+
+/** Format Hijriah Latin: "15 Jumadil Akhir 1448" (layar Jadwal Sholat). */
+export function formatHijriLatin(date = new Date(), kalibrasiOffset = 0) {
+  try {
+    const h = masehiToHijri(date, kalibrasiOffset)
+    if (!h.day || !h.month || !h.year) return ''
+    return `${h.day} ${NAMA_BULAN_HIJRI[h.month - 1] || ''} ${h.year}`
+  } catch {
+    return ''
+  }
+}
+
 /** Format Masehi: "16 Mei 2026" */
 export function formatMasehi(date = new Date()) {
   return new Intl.DateTimeFormat('id-ID', {

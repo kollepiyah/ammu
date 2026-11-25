@@ -1,6 +1,9 @@
 <template>
   <!-- v.48.0526: header cream warm match legacy + border teal accent -->
+  <!-- Kyai 25 Nov 2026: di Android/PWA top bar hijau menyambung kartu Hijriah (.topbar-hijau di
+       main.css), dan tombol tema pindah ke tab Pengaturan. Web & Electron tak berubah. -->
   <header
+    :class="{ 'topbar-hijau': topbarHijau }"
     class="bg-white/85 dark:bg-slate-900/80 backdrop-blur-xl shadow-[0_1px_12px_rgba(15,23,42,0.06)] dark:shadow-[0_1px_16px_rgba(0,0,0,0.45)] border-b border-teal-600/15 dark:border-white/10 px-4 md:px-8 py-3 flex justify-between items-center gap-2 md:gap-0 z-30 sticky top-0 transition-colors"
   >
     <!-- v.72.2.0526: Header match legacy — hamburger (always) + leaf logo + "Ammu Online" branding -->
@@ -50,7 +53,7 @@
       <!-- v.86.0526: Wali multi-anak -> dropdown pilih anak; selain itu nama statis -->
       <div v-if="isSantriRole && hasMultiple" ref="childRef" class="relative mr-1">
         <button
-          class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition cursor-pointer"
+          class="th-anak flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition cursor-pointer"
           aria-label="Pilih anak"
           @click="childOpen = !childOpen"
         >
@@ -124,6 +127,7 @@
 
       <!-- v.21.115.0528: tap target w-9 → w-10 (40px) — mobile-friendly per design-tokens -->
       <button
+        v-if="!topbarHijau"
         class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
         :title="ui.isDark ? 'Mode Terang' : 'Mode Gelap'"
         aria-label="Toggle dark mode"
@@ -211,6 +215,7 @@ import { useWaliChildren } from '@/composables/useWaliChildren'
 // v.91.0626: sembunyikan bell saat bottom nav aktif (notif pindah ke bottom nav)
 import { useMobileShell } from '@/composables/useMobileShell'
 import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
+const topbarHijau = pakaiWilayahPublik()
 const { showBottomNav } = useMobileShell()
 // v.91.0626: Global search (admin/guru saja)
 import GlobalSearch from '@/components/layout/GlobalSearch.vue'

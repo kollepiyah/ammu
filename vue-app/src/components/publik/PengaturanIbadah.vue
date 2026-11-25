@@ -87,7 +87,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useIbadah, DAFTAR_KOTA } from '@/composables/useIbadah'
-import { METODE } from '@/utils/waktuSholat'
+import { METODE, namaTempatPanjang } from '@/utils/waktuSholat'
 
 const {
   metode,
@@ -111,7 +111,7 @@ const ketLokasi = computed(() => {
   const jam = t
     ? `${String(t.getHours()).padStart(2, '0')}.${String(t.getMinutes()).padStart(2, '0')}`
     : '-'
-  return `Lokasi HP · diperbarui ${jam}`
+  return `${namaTempatPanjang(l)} · diperbarui ${jam}`
 })
 
 function pilih(nama) {

@@ -97,7 +97,7 @@
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm text-xs text-[var(--text-secondary)] space-y-1.5"
     >
       <p>
-        <i class="fas fa-location-dot mr-1.5 text-teal-600"></i>{{ lokasi.nama }} ({{
+        <i class="fas fa-location-dot mr-1.5 text-teal-600"></i>{{ tempat }} ({{
           lokasi.lat.toFixed(3)
         }}, {{ lokasi.lon.toFixed(3) }})
         <i v-if="memuatLokasi" class="fas fa-spinner fa-spin ml-1"></i>
@@ -126,6 +126,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useIbadah } from '@/composables/useIbadah'
 import { arahKiblat, jarakKeKabah, selisihSudut, formatDerajat } from '@/utils/kiblat'
+import { namaTempatPanjang } from '@/utils/waktuSholat'
 
 const MATA_ANGIN = [
   { t: 'U', d: 0 },
@@ -140,6 +141,7 @@ const router = useRouter()
 const route = useRoute()
 const { lokasi, memuatLokasi, galatLokasi, perbaruiLokasi, geolokasiTersedia } = useIbadah()
 
+const tempat = computed(() => namaTempatPanjang(lokasi.value))
 const azimut = computed(() => arahKiblat(lokasi.value.lat, lokasi.value.lon))
 const jarak = computed(() =>
   Math.round(jarakKeKabah(lokasi.value.lat, lokasi.value.lon)).toLocaleString('id-ID')

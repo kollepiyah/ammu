@@ -20,7 +20,7 @@
 
     <!-- Mobile: ikon -->
     <button
-      class="md:hidden w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+      class="gs-pemicu md:hidden w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
       aria-label="Cari"
       @click="openMobile"
     >

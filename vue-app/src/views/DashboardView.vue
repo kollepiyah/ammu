@@ -12,6 +12,7 @@ import DashboardJamHijri from '@/components/dashboard/DashboardJamHijri.vue'
 import DashboardKalender from '@/components/dashboard/DashboardKalender.vue'
 import DashboardPosts from '@/components/dashboard/DashboardPosts.vue'
 import MenuIbadah from '@/components/publik/MenuIbadah.vue'
+import JamRingkas from '@/components/publik/JamRingkas.vue'
 import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 
 const wilayahPublik = pakaiWilayahPublik()
@@ -36,6 +37,9 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
 <template>
   <!-- v.72.6.0526: Beranda 2-col layout match legacy (left: greeting+jam, right: kalender list) -->
   <div class="p-3 md:p-5 max-w-6xl mx-auto space-y-4">
+    <!-- Kyai 25 Nov 2026: di Android/PWA kartu Hijriah + sholat berikutnya kembali, paling atas,
+         menyambung top bar hijau; salam Ahlan di bawahnya. -->
+    <JamRingkas v-if="wilayahPublik" />
     <!-- Row 1: Greeting (left col) + Kalender (right col) — desktop only, stacked di mobile -->
     <!-- Kyai 18 Nov 2026: Tugas Saya di kolom kiri memanjangkan kolom itu, dan Kalender di
          kanan ikut melar jadi kotak kosong tinggi. Kini di desktop: Salam + Jam | Kalender
@@ -44,8 +48,8 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="space-y-4 order-1 lg:col-start-1 lg:row-start-1">
         <DashboardGreeting />
-        <!-- Kyai 25 Nov 2026: di Android/PWA kartu jam pindah ke Beranda publik, gantinya
-             baris ikon ibadah. Web & Electron tak punya wilayah publik -> jam tetap. -->
+        <!-- Android/PWA: baris ikon ibadah (kartu jam sudah paling atas). Web & Electron tak
+             punya wilayah publik -> kartu jam lama tetap di sini. -->
         <MenuIbadah v-if="wilayahPublik" jenis="portal" />
         <DashboardJamHijri v-else />
       </div>

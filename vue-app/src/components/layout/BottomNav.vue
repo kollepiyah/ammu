@@ -11,9 +11,7 @@
       :to="tab.path"
       class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-all duration-150 cursor-pointer"
       :class="
-        isActive(tab)
-          ? 'text-teal-600 dark:text-teal-300'
-          : 'text-slate-500 dark:text-slate-400'
+        isActive(tab) ? 'text-teal-600 dark:text-teal-300' : 'text-slate-500 dark:text-slate-400'
       "
       :aria-label="tab.name"
     >
@@ -22,7 +20,8 @@
         <span
           v-if="tab.notif && unreadCount > 0"
           class="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-600 text-white text-[9px] font-black flex items-center justify-center"
-        >{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+          >{{ unreadCount > 99 ? '99+' : unreadCount }}</span
+        >
       </span>
       <span class="text-[10px] font-bold leading-none">{{ tab.name }}</span>
     </RouterLink>
@@ -45,21 +44,21 @@ const TABS = {
     { name: 'Pendidikan', path: '/capaian-prestasi', icon: 'fa-graduation-cap' },
     { name: 'Keuangan', path: '/tagihan', icon: 'fa-wallet' },
     { name: 'Notifikasi', path: '/notifikasi', icon: 'fa-bell', notif: true },
-    { name: 'Profil', path: '/profil', icon: 'fa-user' }
+    { name: 'Pengaturan', path: '/profil', icon: 'fa-gear' }
   ],
   guru: [
     { name: 'Beranda', path: '/dashboard', icon: 'fa-home' },
     { name: 'Pendidikan', path: '/santri', icon: 'fa-users' },
     { name: 'Rekap', path: '/rekap-prestasi', icon: 'fa-book-open' },
     { name: 'Notifikasi', path: '/notifikasi', icon: 'fa-bell', notif: true },
-    { name: 'Profil', path: '/profil', icon: 'fa-user' }
+    { name: 'Pengaturan', path: '/profil', icon: 'fa-gear' }
   ],
   admin: [
     { name: 'Beranda', path: '/dashboard', icon: 'fa-home' },
     { name: 'Pendidikan', path: '/santri', icon: 'fa-users' },
     { name: 'Keuangan', path: '/keuangan', icon: 'fa-wallet' },
     { name: 'Notifikasi', path: '/notifikasi', icon: 'fa-bell', notif: true },
-    { name: 'Profil', path: '/profil', icon: 'fa-user' }
+    { name: 'Pengaturan', path: '/profil', icon: 'fa-gear' }
   ]
 }
 

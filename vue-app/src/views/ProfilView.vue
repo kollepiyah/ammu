@@ -48,6 +48,18 @@
         Akun ini ({{ sesi?.role || '?' }}) belum terkonfigurasi penuh. Hubungi admin pondok.
       </p>
     </div>
+
+    <!-- Kyai 25 Nov 2026: tab bawah "Profil" kini "Pengaturan"; tombol tema pindah dari top bar ke sini -->
+    <section
+      v-if="!loading"
+      class="mt-4 bg-[var(--bg-card)] rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+    >
+      <h3 class="text-sm font-black text-[var(--text-primary)] mb-3 flex items-center gap-2">
+        <i class="fas fa-palette text-teal-600"></i>Tampilan
+      </h3>
+      <p class="text-xs text-[var(--text-secondary)] mb-2">Tema</p>
+      <PilihTema />
+    </section>
   </div>
 </template>
 
@@ -58,6 +70,7 @@ import { getOne } from '@/services/db'
 import ProfilAdmin from './profil/ProfilAdmin.vue'
 import ProfilGuru from './profil/ProfilGuru.vue'
 import ProfilSantri from './profil/ProfilSantri.vue'
+import PilihTema from '@/components/publik/PilihTema.vue'
 
 const auth = useAuthStore()
 const sesi = computed(() => auth.sesiAktif)

@@ -11,8 +11,9 @@
       class="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 h-24 md:h-32 w-auto opacity-[0.18] pointer-events-none select-none object-contain"
     />
 
-    <!-- Avatar -->
+    <!-- Avatar — Kyai 25 Nov 2026: di Android/PWA tak perlu, foto sudah ada di top bar -->
     <div
+      v-if="!wilayahPublik"
       class="relative z-10 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-700 dark:to-cyan-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0"
     >
       <img v-if="fotoUrl" :src="fotoUrl" alt="Foto" class="w-full h-full object-cover" />
@@ -46,7 +47,9 @@ import { useSettingsStore } from '@/stores/settings'
 import { useGuru } from '@/composables/useGuru'
 import { getNamaGuruGelar } from '@/utils/format'
 import { urlBerkas } from '@/utils/urlBerkas' // v.1.4.5: URL Firebase lama (402) → ikon
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 const { guruRaw } = useGuru()
+const wilayahPublik = pakaiWilayahPublik()
 
 const auth = useAuthStore()
 const settings = useSettingsStore()

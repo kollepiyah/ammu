@@ -28,10 +28,45 @@ menyuntikkan data pengguna).
 
 ---
 
-## [v.1.5.5] — 2026-11-25 — Hemat egress: sinkron Fingerspot borongan, salinan tabel di perangkat
+## [v.1.5.5] — 2026-11-25 — Top bar hijau, kartu Hijriah + sholat berikutnya, Jadwal Sholat ala NU Online
 
-**SIAP RILIS** — `versionCode` 155 / `versionName` `v.1.5.5` (web, AAB, Electron, PSB), **2
-gelombang**. Nomor naik karena v.1.5.4 sudah tayang di web (app-version 154) dan Electron 1.5.4
+**SIAP RILIS** — `versionCode` 155 / `versionName` `v.1.5.5` (web, AAB, Electron, PSB), **3
+gelombang** (lihat kepala rilis di gelombang 2 untuk urutan deploy; tetap berlaku). Gelombang ini
+dari mock-up yang disetujui Kyai 25 Nov 2026; semua perubahan tampilan hanya Android & PWA
+(`pakaiWilayahPublik`) kecuali disebut lain.
+
+### Changed
+- **Top bar hijau** `#0f766e` di wilayah publik (`PublikLayout`) dan di Portal (`AppHeader`
+  `.topbar-hijau`, CSS di `main.css`), tulisan putih di mode terang & gelap. Latar body ikut hijau
+  supaya area status bar HP hijau; `App.vue` memasang ikon status bar terang (dan warna latar
+  hijau di HP yang status bar-nya padat).
+- **Kartu Hijriah + sholat berikutnya** (`JamRingkas.vue`): jam digital dihapus (jam sudah di
+  status bar), diganti waktu sholat berikutnya + "dalam n m"; kanan atas pin merah + nama **desa**;
+  pola berlian tetap. Menyambung top bar (sudut atas lurus, `selebar-layar` mengecualikannya dari
+  jarak tepi tombol native-shell). Ketuk → Jadwal Sholat. Kartu jadwal lima waktu di Beranda
+  (`KartuSholat.vue`) dihapus.
+- **Dashboard login (Android/PWA):** kartu itu kembali, di paling atas; salam "Ahlan" di bawahnya
+  **tanpa foto** (foto sudah di top bar).
+- **Layar Jadwal Sholat ala NU Online:** tanpa kartu & tanpa tombol kembali; kepala hijau rata
+  tengah (lokasi desa, kecamatan · "Isya 18:48 WIB" · hitung mundur berdetik "− 00 : 57 : 12" ·
+  Perbarui / roda gigi / Arah Kiblat), tanggal Masehi + Hijriah Latin, daftar waktu polos.
+  `formatHijriLatin` + `NAMA_BULAN_HIJRI` kini di `utils/hijri.js` (dulu hanya di AppSidebar).
+- **Tombol tema pindah:** dihapus dari top bar Portal di HP; tab bawah "Profil" jadi
+  **"Pengaturan"** (ikon roda gigi), layarnya mendapat bagian Tampilan (Terang/Gelap/Otomatis —
+  komponen bersama `PilihTema.vue`, juga dipakai Pengaturan publik).
+
+### Added
+- **Nama desa/kecamatan dari koordinat** (`services/namaTempat.js`): OpenStreetMap Nominatim
+  (sampai desa), cadangan BigDataCloud (sampai kecamatan). Koordinat dibulatkan 0,005° (±500 m),
+  ditanya hanya saat lokasi berpindah, jawaban disimpan per titik di HP. CSP `connect-src`
+  ditambah kedua host. **Data safety Play: lokasi perkiraan kini DIBAGIKAN ke layanan peta pihak
+  ketiga untuk nama tempat.** Tes: `namaTempat.test.js`.
+
+---
+
+## [v.1.5.5 · gelombang 2] — 2026-11-25 — Hemat egress: sinkron Fingerspot borongan, salinan tabel di perangkat
+
+Kepala rilis v.1.5.5 (gelombang 1–3): Nomor naik karena v.1.5.4 sudah tayang di web (app-version 154) dan Electron 1.5.4
 "Latest" 25 Nov. **AAB 154 tak pernah dibangun** (Kyai menahannya sampai Jadwal Sholat & Kiblat
 jadi) — AAB vc155 sekaligus membawa seluruh isi v.1.5.4 ke HP. Tanpa migrasi, tanpa edge function.
 Urutan: deploy web (Permissions-Policy geolocation untuk PWA + hemat egress), **rilis Electron**

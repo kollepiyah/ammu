@@ -19,8 +19,23 @@ const putar = (a, b) => a - b * Math.floor(a / b)
 export const LOKASI_PESANTREN = Object.freeze({
   lat: -7.352,
   lon: 112.729,
-  nama: 'Pesantren Mambaul Ulum, Waru'
+  nama: 'Pesantren Mambaul Ulum, Waru',
+  desa: 'Panjunan',
+  kecamatan: 'Waru',
+  kabupaten: 'Sidoarjo'
 })
+
+/** Nama tempat ringkas (desa → kecamatan → nama) untuk kartu Beranda. */
+export function namaTempatPendek(l) {
+  return (l && (l.desa || l.kecamatan || l.nama)) || 'Lokasi HP'
+}
+/** "Panjunan, Waru" — desa & kecamatan untuk layar Jadwal Sholat. */
+export function namaTempatPanjang(l) {
+  if (!l) return 'Lokasi HP'
+  const bagian = [l.desa, l.kecamatan].filter(Boolean)
+  if (!bagian.length) return l.kabupaten || l.nama || 'Lokasi HP'
+  return bagian.join(', ')
+}
 
 /**
  * Metode perhitungan. `ihtiyath` (menit) ditambahkan lalu dibulatkan ke ATAS (terbit: ke
@@ -177,4 +192,19 @@ export function jarakKm(a, b) {
   const dLon = (b.lon - a.lon) * D2R
   const h = Math.sin(dLat / 2) ** 2 + cos(a.lat) * cos(b.lat) * Math.sin(dLon / 2) ** 2
   return 2 * 6371 * Math.asin(Math.sqrt(h))
+}
+
+/** Detik dari `kini` (Date) sampai waktu `berikutnya` (hasil waktuBerikutnya) — untuk hitung mundur. */
+export function detikMenuju(berikutnya, kini) {
+  const t = new Date(kini)
+  t.setHours(0, 0, 0, 0)
+  t.setMinutes(berikutnya.menit + (berikutnya.besok ? 1440 : 0))
+  return Math.max(0, Math.round((t.getTime() - kini.getTime()) / 1000))
+}
+
+/** 3432 → "− 00 : 57 : 12" (gaya hitung mundur NU Online). */
+export function formatHitungMundur(detik) {
+  const n = Math.max(0, Math.floor(detik))
+  const p = (x) => String(x).padStart(2, '0')
+  return `− ${p(Math.floor(n / 3600))} : ${p(Math.floor((n % 3600) / 60))} : ${p(n % 60)}`
 }

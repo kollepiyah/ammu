@@ -43,22 +43,7 @@
         <i class="fas fa-palette text-teal-600"></i>Tampilan
       </h3>
       <p class="text-xs text-[var(--text-secondary)] mb-2">Tema</p>
-      <div class="grid grid-cols-3 gap-2">
-        <button
-          v-for="t in PILIHAN_TEMA"
-          :key="t.mode"
-          type="button"
-          class="py-2 rounded-xl text-xs font-bold border transition cursor-pointer"
-          :class="
-            ui.temaMode === t.mode
-              ? 'bg-teal-600 border-teal-600 text-white'
-              : 'border-slate-200 dark:border-slate-700 text-[var(--text-primary)]'
-          "
-          @click="ui.setTemaMode(t.mode)"
-        >
-          <i :class="['fas mr-1', t.ikon]"></i>{{ t.label }}
-        </button>
-      </div>
+      <PilihTema />
       <p v-if="isAndroid" class="text-[11px] text-[var(--text-secondary)] mt-3 leading-relaxed">
         <i class="fas fa-mobile-screen mr-1 text-teal-600"></i>Widget Android: tekan lama layar
         utama HP → <b>Widget</b> → cari <b>Ammu Online</b>, lalu seret widget Jam Hijriah atau
@@ -122,21 +107,14 @@
 import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useUnduhan } from '@/composables/useUnduhan'
-import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { isNativeAndroid } from '@/composables/useWidgetSync'
 import PengaturanIbadah from '@/components/publik/PengaturanIbadah.vue'
-
-const PILIHAN_TEMA = [
-  { mode: 'terang', label: 'Terang', ikon: 'fa-sun' },
-  { mode: 'gelap', label: 'Gelap', ikon: 'fa-moon' },
-  { mode: 'otomatis', label: 'Otomatis', ikon: 'fa-circle-half-stroke' }
-]
+import PilihTema from '@/components/publik/PilihTema.vue'
 
 const router = useRouter()
-const ui = useUiStore()
 const auth = useAuthStore()
 const confirm = useConfirm()
 const toast = useToast()

@@ -1,8 +1,7 @@
 <template>
   <div class="p-3 space-y-4 max-w-xl mx-auto">
+    <!-- Kyai 25 Nov 2026: Hijriah + sholat berikutnya jadi satu kartu, menyambung top bar -->
     <JamRingkas />
-
-    <KartuSholat />
 
     <MenuIbadah jenis="beranda" />
 
@@ -14,6 +13,5 @@
 <script setup>
 import JamRingkas from '@/components/publik/JamRingkas.vue'
 import MenuIbadah from '@/components/publik/MenuIbadah.vue'
-import KartuSholat from '@/components/publik/KartuSholat.vue'
 import DashboardPosts from '@/components/dashboard/DashboardPosts.vue'
 </script>

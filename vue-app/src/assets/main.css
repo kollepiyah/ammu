@@ -561,11 +561,12 @@ button,
     padding-right: 0.75rem !important;
   }
   /* Tombol tingkat atas (mis. "Buat Postingan") tetap bentuk aslinya, berjarak dari tepi. */
-  html.native-shell .akar-halaman > * > :is(button, a) {
+  /* .selebar-layar = kecuali (kartu Hijriah yang menyambung top bar). */
+  html.native-shell .akar-halaman > * > :is(button, a):not(.selebar-layar) {
     margin-left: 0.75rem !important;
     margin-right: 0.75rem !important;
   }
-  html.native-shell .akar-halaman > * > :is(button, a).w-full {
+  html.native-shell .akar-halaman > * > :is(button, a).w-full:not(.selebar-layar) {
     width: calc(100% - 1.5rem) !important;
   }
   /* Daftar berupa baris bergaris tipis (dipasang per halaman lewat .daftar-baris). */
@@ -1125,4 +1126,27 @@ button:not(:disabled):active {
 .dark input::placeholder,
 .dark textarea::placeholder {
   color: #94a3b8;
+}
+
+/* ===== Top bar hijau Android/PWA (Kyai 25 Nov 2026, mengacu NU Online) =====
+   Header Portal (AppHeader .topbar-hijau) dan header publik sama-sama teal #0f766e, terang
+   maupun gelap, menyambung kartu Hijriah. Latar body ikut teal: di HP edge-to-edge area di
+   belakang status bar = padding-top body, jadi status bar pun hijau. */
+html.native-shell body {
+  background-color: #0f766e;
+}
+.topbar-hijau {
+  background: #0f766e !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.topbar-hijau > div:first-child > :is(button, h2),
+.topbar-hijau .gs-pemicu i,
+.topbar-hijau .th-anak :is(span, i) {
+  color: #fff !important;
+}
+.topbar-hijau > div:first-child > button:hover,
+.topbar-hijau .gs-pemicu:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
 }

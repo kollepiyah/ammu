@@ -82,7 +82,9 @@ async function setupNativeIntegration() {
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
     applyStatusBar = () => {
-      const isDark = ui.isDark
+      // Kyai 25 Nov 2026: di Android top bar selalu hijau → status bar berikon terang di kedua tema.
+      const hijau = pakaiWilayahPublik()
+      const isDark = ui.isDark || hijau
       // Style.Dark = teks TERANG (utk bg gelap), Style.Light = teks GELAP (utk bg terang) — per definisi plugin.
       StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {})
       // v.1.4.8: di HP Android <=14 yang WebView-nya < 140, MainActivity memasang status bar
@@ -92,7 +94,9 @@ async function setupNativeIntegration() {
       StatusBar.getInfo()
         .then((info) => {
           if (info && info.overlays === false)
-            return StatusBar.setBackgroundColor({ color: isDark ? '#13161C' : '#FFFFFF' })
+            return StatusBar.setBackgroundColor({
+              color: hijau ? '#0F766E' : isDark ? '#13161C' : '#FFFFFF'
+            })
         })
         .catch(() => {})
     }

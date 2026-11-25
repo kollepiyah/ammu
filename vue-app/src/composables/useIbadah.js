@@ -12,6 +12,7 @@ import {
   METODE,
   METODE_BAWAAN
 } from '@/utils/waktuSholat'
+import { cariNamaTempat } from '@/services/namaTempat'
 
 const KUNCI = 'ammu_ibadah'
 // Lokasi baru dianggap "pindah" bila bergeser lebih dari ini (blueprint: ±10 km).
@@ -21,7 +22,14 @@ const JEDA_OTOMATIS_MS = 30 * 60 * 1000
 
 /** Kota pilihan manual — titik acuan kabupaten/kota (cukup untuk jadwal ±1 menit). */
 export const DAFTAR_KOTA = Object.freeze([
-  { nama: 'Waru (Pesantren)', lat: LOKASI_PESANTREN.lat, lon: LOKASI_PESANTREN.lon },
+  {
+    nama: 'Waru (Pesantren)',
+    lat: LOKASI_PESANTREN.lat,
+    lon: LOKASI_PESANTREN.lon,
+    desa: LOKASI_PESANTREN.desa,
+    kecamatan: LOKASI_PESANTREN.kecamatan,
+    kabupaten: LOKASI_PESANTREN.kabupaten
+  },
   { nama: 'Sidoarjo', lat: -7.45, lon: 112.717 },
   { nama: 'Surabaya', lat: -7.2575, lon: 112.7521 },
   { nama: 'Gresik', lat: -7.1566, lon: 112.6555 },
@@ -53,7 +61,10 @@ const metode = ref(METODE[awal.metode] ? awal.metode : METODE_BAWAAN)
 const otomatis = ref(awal.otomatis !== false)
 const lokasi = ref(
   awal.lokasi && Number.isFinite(awal.lokasi.lat) && Number.isFinite(awal.lokasi.lon)
-    ? awal.lokasi
+    ? // Titik pesantren tersimpan versi lama belum bernama desa — lengkapi dari sumbernya.
+      awal.lokasi.sumber === 'pesantren'
+      ? { ...awal.lokasi, ...LOKASI_PESANTREN }
+      : awal.lokasi
     : { ...LOKASI_PESANTREN, sumber: 'pesantren', diperbarui: '' }
 )
 const memuatLokasi = ref(false)
@@ -118,15 +129,21 @@ async function perbaruiLokasi({ paksa = false } = {}) {
       lat: Math.round(pos.coords.latitude * 1e4) / 1e4,
       lon: Math.round(pos.coords.longitude * 1e4) / 1e4
     }
-    const pindah = lokasi.value.sumber !== 'gps' || jarakKm(lokasi.value, baru) > AMBANG_PINDAH_KM
+    const lama = lokasi.value
+    const pindah = lama.sumber !== 'gps' || jarakKm(lama, baru) > AMBANG_PINDAH_KM
     lokasi.value = {
-      ...(pindah ? baru : { lat: lokasi.value.lat, lon: lokasi.value.lon }),
+      ...(pindah ? baru : { lat: lama.lat, lon: lama.lon }),
       nama: 'Lokasi HP',
+      // Nama desa ikut koordinat: dipertahankan selama tak pindah, ditanya ulang bila pindah.
+      desa: pindah ? '' : lama.desa || '',
+      kecamatan: pindah ? '' : lama.kecamatan || '',
+      kabupaten: pindah ? '' : lama.kabupaten || '',
       sumber: 'gps',
       diperbarui: new Date().toISOString()
     }
     if (paksa) otomatis.value = true
     simpan()
+    lengkapiNamaTempat()
     return true
   } catch (e) {
     // 1 = izin ditolak, 2 = tak tersedia (GPS mati), 3 = waktu habis. Ditolak → sakelar
@@ -142,6 +159,24 @@ async function perbaruiLokasi({ paksa = false } = {}) {
     return false
   } finally {
     memuatLokasi.value = false
+  }
+}
+
+/** Lokasi HP tanpa nama → tanyakan nama desa/kecamatan (sekali; jawaban disimpan per titik). */
+let _mencariNama = false
+async function lengkapiNamaTempat() {
+  const l = lokasi.value
+  if (l.sumber !== 'gps' || l.desa || l.kecamatan || _mencariNama) return
+  _mencariNama = true
+  try {
+    const n = await cariNamaTempat(l.lat, l.lon)
+    // Lokasi bisa sudah berganti selagi menunggu jawaban — jangan tempel nama ke titik lain.
+    if (n && lokasi.value.lat === l.lat && lokasi.value.lon === l.lon) {
+      lokasi.value = { ...lokasi.value, ...n }
+      simpan()
+    }
+  } finally {
+    _mencariNama = false
   }
 }
 
@@ -163,6 +198,9 @@ function pilihKota(kota) {
     lat: kota.lat,
     lon: kota.lon,
     nama: kota.nama,
+    desa: kota.desa || '',
+    kecamatan: kota.kecamatan || '',
+    kabupaten: kota.kabupaten || '',
     sumber: 'kota',
     diperbarui: new Date().toISOString()
   }
@@ -217,6 +255,7 @@ export function useIbadah({ otomatisSaatDibuka = true } = {}) {
     }
     sekarang.value = new Date()
     if (otomatisSaatDibuka) perbaruiLokasi()
+    lengkapiNamaTempat() // lokasi HP lama (sebelum ada nama desa)
   })
   onUnmounted(() => {
     _pemakai = Math.max(0, _pemakai - 1)

@@ -19,6 +19,11 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 **Perubahan**
 
+- **Tampilan baru di Android:** bilah atas kini hijau, menyambung dengan kartu tanggal Hijriah yang
+  menampilkan waktu sholat berikutnya dan nama desa Anda. Kartu ini juga ada di beranda setelah
+  masuk, paling atas.
+- **Layar Jadwal Sholat lebih rapi** seperti NU Online, lengkap dengan hitung mundur.
+- Tab bawah **Profil** kini bernama **Pengaturan**; pilihan tema terang/gelap ada di sana.
 - **Aplikasi lebih cepat terbuka dan lebih hemat kuota.** Data santri, guru, tes, dan keuangan
   kini disimpan di perangkat, jadi saat aplikasi dibuka lagi daftarnya langsung tampil dan hanya
   perubahan terbaru yang diunduh. Salinan itu dihapus saat keluar akun.
@@ -28,7 +33,8 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 **Catatan**
 
 - Aplikasi meminta izin **lokasi perkiraan** hanya saat layar Jadwal Sholat/Kiblat dibuka, untuk
-  menghitung waktu dan arah. Lokasi tidak dikirim ke mana pun. Bila ditolak, jadwal memakai
+  menghitung waktu dan arah. Untuk menampilkan nama desa, perkiraan lokasi (dibulatkan ±500 m)
+  ditanyakan ke layanan peta OpenStreetMap saat lokasi berpindah; selebihnya lokasi tetap di HP. Bila ditolak, jadwal memakai
   lokasi pesantren (Waru, Sidoarjo).
 
 ---

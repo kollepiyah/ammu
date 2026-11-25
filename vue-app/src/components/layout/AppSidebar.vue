@@ -129,7 +129,7 @@ import { labelVersi } from '@/utils/appVersion'
 import { useUiStore } from '@/stores/ui'
 import { useMenus } from '@/composables/useMenus'
 import { useToast } from '@/composables/useToast'
-import { masehiToHijri, getKalibrasi } from '@/utils/hijri'
+import { masehiToHijri, getKalibrasi, NAMA_BULAN_HIJRI } from '@/utils/hijri'
 
 const settings = useSettingsStore()
 const versiApp = computed(() => labelVersi(settings.settings))
@@ -181,20 +181,6 @@ function onLogoError(e) {
   if (e?.target) e.target.src = '/favicon.svg'
 }
 
-const NAMA_BULAN_HIJRI = [
-  'Muharram',
-  'Shafar',
-  'Rabiul Awal',
-  'Rabiul Akhir',
-  'Jumadil Awal',
-  'Jumadil Akhir',
-  'Rajab',
-  "Sya'ban",
-  'Ramadhan',
-  'Syawal',
-  "Dzulqo'dah",
-  'Dzulhijjah'
-]
 const periodeHijri = computed(() => {
   const custom = String(settings.settings?.txtPeriode || '').trim()
   if (custom) return custom
