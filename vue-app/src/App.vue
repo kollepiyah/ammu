@@ -225,13 +225,15 @@ onBeforeUnmount(() =>
 </script>
 
 <style>
-/* v.20.74.0526: Scheherazade WOFF2 first (148KB, 75% smaller than TTF) + TTF fallback */
+/* v.20.74.0526: Scheherazade WOFF2 first (148KB, 75% smaller than TTF) + TTF fallback.
+   font-weight 400 (bukan 600): bila dideklarasikan 600, browser mematikan bold synthesis untuk
+   <strong>/<b> sehingga teks Arab tebal tampak identik dengan teks biasa. */
 @font-face {
   font-family: 'Scheherazade New';
   src:
     url('/fonts/ScheherazadeNew-SemiBold.woff2') format('woff2'),
     url('/fonts/ScheherazadeNew-SemiBold.ttf') format('truetype');
-  font-weight: 600;
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }

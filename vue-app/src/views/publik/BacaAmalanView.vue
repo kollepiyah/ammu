@@ -26,7 +26,7 @@
         <i class="fas fa-chevron-left"></i>
       </button>
       <h2 class="flex-1 min-w-0 px-1 text-sm font-black text-teal-700 dark:text-teal-300 truncate">
-        {{ judulKepala }}
+        {{ tampilJudulKepala ? judulKepala : '' }}
       </h2>
       <button
         type="button"
@@ -221,9 +221,11 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDataTamu } from '@/composables/useDataTamu'
+import { useUiStore } from '@/stores/ui'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import { ambilAmalan } from '@/services/amalan'
 import {
   ukuranArab,
@@ -243,6 +245,8 @@ const KELAS_HIJAU = 'text-teal-700 dark:text-teal-300' // warna bawaan judul
 
 const route = useRoute()
 const router = useRouter()
+const ui = useUiStore()
+const topbarHijau = pakaiWilayahPublik()
 const akarRef = ref(null)
 const { aktif, kontrol, ketuk, alihkan: alihkanLayar } = useModeBaca()
 const menuBuka = ref(false)
@@ -275,6 +279,18 @@ const judulKepala = computed(() => {
   if (!amalan.value) return 'Memuat…'
   return berbab.value && babKini.value?.judul ? babKini.value.judul : amalan.value.judul
 })
+// Di Android/PWA, judul kitab tampil langsung di top bar hijau (mis. "Ratib Al-Haddad").
+// Sub-judul di kepala bacaan hanya perlu tampil bila layar penuh, di web biasa, atau saat
+// menampilkan nama bab yang berbeda dari judul kitab di top bar.
+watch(
+  () => amalan.value?.judul,
+  (j) => ui.setJudulTopBar(j || ''),
+  { immediate: true }
+)
+onUnmounted(() => ui.setJudulTopBar(''))
+const tampilJudulKepala = computed(
+  () => !topbarHijau || aktif.value || (berbab.value && hal.value >= 0 && !!babKini.value?.judul)
+)
 
 function labelBab(i) {
   return berbab.value ? bab.value[i]?.judul || `Bab ${i + 1}` : `Halaman ${i + 1}`

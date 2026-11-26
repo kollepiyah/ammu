@@ -64,3 +64,31 @@ export const WarnaKata = Mark.create({
     }
   }
 })
+
+/** Ukuran teks relatif: <span class="ukuran-*"> (kecil / sedang / besar / sangat-besar). */
+export const UkuranTeks = Mark.create({
+  name: 'ukuranTeks',
+  addAttributes() {
+    return {
+      ukuran: {
+        default: null,
+        parseHTML: (el) => kelasBerawalan(el, 'ukuran-'),
+        renderHTML: (a) => (a.ukuran ? { class: `ukuran-${a.ukuran}` } : {})
+      }
+    }
+  },
+  parseHTML() {
+    return [{ tag: 'span', getAttrs: (el) => (kelasBerawalan(el, 'ukuran-') ? null : false) }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', HTMLAttributes, 0]
+  },
+  addCommands() {
+    return {
+      aturUkuran:
+        (ukuran) =>
+        ({ commands }) =>
+          ukuran ? commands.setMark(this.name, { ukuran }) : commands.unsetMark(this.name)
+    }
+  }
+})

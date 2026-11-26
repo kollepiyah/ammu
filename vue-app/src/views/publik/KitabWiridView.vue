@@ -4,7 +4,7 @@
   <div class="max-w-xl mx-auto">
     <div class="flex gap-2 px-4 py-3 overflow-x-auto">
       <button
-        v-for="k in PILIHAN"
+        v-for="k in pilihan"
         :key="k.kunci"
         type="button"
         class="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold border transition cursor-pointer"
@@ -53,9 +53,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDataTamu } from '@/composables/useDataTamu'
 import { ambilDaftarAmalan } from '@/services/amalan'
-import { KATEGORI_AMALAN, susunDaftarAmalan } from '@/utils/amalan'
-
-const PILIHAN = [{ kunci: 'semua', label: 'Semua' }, ...KATEGORI_AMALAN]
+import { daftarKategoriTampil, susunDaftarAmalan } from '@/utils/amalan'
 
 const router = useRouter()
 const route = useRoute()
@@ -64,5 +62,6 @@ const kategori = ref('semua')
 const { data, loading, galat } = useDataTamu('amalan_daftar', ambilDaftarAmalan, {
   umurMs: 6 * 60 * 60 * 1000
 })
+const pilihan = computed(() => daftarKategoriTampil(data.value || []))
 const daftar = computed(() => susunDaftarAmalan(data.value || [], kategori.value))
 </script>

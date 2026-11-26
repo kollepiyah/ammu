@@ -26,6 +26,11 @@ export const useUiStore = defineStore('ui', () => {
   function toggleSidebar() {
     sidebarOpen.value = !sidebarOpen.value
   }
+  // Judul top bar dinamis (mis. judul kitab "Ratib Al-Haddad" saat layar baca dibuka di Android/PWA).
+  const judulTopBar = ref('')
+  function setJudulTopBar(teks) {
+    judulTopBar.value = String(teks || '').trim()
+  }
 
   // Dark mode. F1: ditambah mode 'otomatis' (ikut sistem HP); portalMu_darkMode tetap
   // menyimpan hasil akhirnya supaya skrip awal index.html tak berkedip.
@@ -170,6 +175,8 @@ export const useUiStore = defineStore('ui', () => {
     openSidebar,
     closeSidebar,
     toggleSidebar,
+    judulTopBar,
+    setJudulTopBar,
     // dark
     isDark,
     temaMode,

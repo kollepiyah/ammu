@@ -1373,6 +1373,28 @@ html.native-shell .akar-halaman > * > div:has(> div:only-child > h1:only-child:n
   margin: 0.35em 0;
   line-height: 1.7;
 }
+/* Bold di teks Latin & Arab: perkuat teks Arab Scheherazade (1 berkas font) agar jelas menebal. */
+.isi-amalan strong,
+.isi-amalan b {
+  font-weight: 700;
+  font-synthesis: weight;
+}
+.isi-amalan :is(.gaya-arab, .gaya-syair) :is(strong, b) {
+  -webkit-text-stroke: 0.45px currentColor;
+}
+/* Ukuran teks relatif (em) — tetap ikut membesar/mengecil dengan tombol A−/A+ di layar baca. */
+.isi-amalan .ukuran-kecil {
+  font-size: 0.82em;
+}
+.isi-amalan .ukuran-sedang {
+  font-size: 1.18em;
+}
+.isi-amalan .ukuran-besar {
+  font-size: 1.4em;
+}
+.isi-amalan .ukuran-sangat-besar {
+  font-size: 1.7em;
+}
 .isi-amalan .gaya-arab,
 .isi-amalan .gaya-syair {
   font-family: 'Scheherazade New', serif;

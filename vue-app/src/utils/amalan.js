@@ -11,20 +11,59 @@ export const KATEGORI_AMALAN = Object.freeze([
   { kunci: 'maulid', label: 'Maulid' },
   { kunci: 'lainnya', label: 'Lainnya' }
 ])
-const KUNCI_KATEGORI = new Set(KATEGORI_AMALAN.map((k) => k.kunci))
+const KUNCI_KATEGORI = new Map(
+  KATEGORI_AMALAN.flatMap((k) => [
+    [k.kunci.toLowerCase(), k.kunci],
+    [k.label.toLowerCase(), k.kunci]
+  ])
+)
+
+/** Rapikan kategori: cocok bawaan → kunci kanonik; kategori buatan admin (huruf/angka) disimpan apa adanya. */
+export function rapikanKategori(k) {
+  const s = String(k ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40)
+  if (!s || !/[\p{L}\p{N}]/u.test(s)) return 'lainnya'
+  return KUNCI_KATEGORI.get(s.toLowerCase()) || s
+}
 
 export function labelKategori(k) {
-  return KATEGORI_AMALAN.find((x) => x.kunci === k)?.label || 'Lainnya'
+  const s = String(k ?? '').trim()
+  if (!s) return 'Lainnya'
+  const bawaan = KATEGORI_AMALAN.find((x) => x.kunci === s.toLowerCase())
+  if (bawaan) return bawaan.label
+  return /[\p{L}\p{N}]/u.test(s) ? s : 'Lainnya'
+}
+
+/** Daftar chip kategori untuk layar publik: Semua + kategori bawaan/kustom yang relevan. */
+export function daftarKategoriTampil(list) {
+  const hasil = [{ kunci: 'semua', label: 'Semua' }]
+  const sudah = new Set(['semua'])
+  for (const k of KATEGORI_AMALAN) {
+    hasil.push(k)
+    sudah.add(k.kunci.toLowerCase())
+  }
+  for (const a of list || []) {
+    const raw = rapikanKategori(a?.kategori)
+    const key = raw.toLowerCase()
+    if (!sudah.has(key)) {
+      sudah.add(key)
+      hasil.push({ kunci: raw, label: labelKategori(raw) })
+    }
+  }
+  return hasil
 }
 
 /** Daftar untuk layar publik: saring kategori ('semua' = semua), urut kategori → urutan → judul. */
 export function susunDaftarAmalan(list, kategori = 'semua') {
   const posisi = (k) => {
-    const i = KATEGORI_AMALAN.findIndex((x) => x.kunci === k)
+    const i = KATEGORI_AMALAN.findIndex((x) => x.kunci === String(k || '').toLowerCase())
     return i < 0 ? KATEGORI_AMALAN.length : i
   }
+  const target = String(kategori || 'semua').toLowerCase()
   return (list || [])
-    .filter((a) => kategori === 'semua' || (a.kategori || 'lainnya') === kategori)
+    .filter((a) => target === 'semua' || rapikanKategori(a?.kategori).toLowerCase() === target)
     .slice()
     .sort(
       (a, b) =>
@@ -135,7 +174,7 @@ export function bersihkanAmalan(form) {
     ok: true,
     nilai: {
       judul,
-      kategori: KUNCI_KATEGORI.has(form?.kategori) ? form.kategori : 'lainnya',
+      kategori: rapikanKategori(form?.kategori),
       urutan: Math.max(0, Math.floor(Number(form?.urutan) || 0)),
       aktif: form?.aktif !== false,
       keterangan: rapi(form?.keterangan),

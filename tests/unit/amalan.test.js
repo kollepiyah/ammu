@@ -5,6 +5,8 @@ import {
   pecahTeksAmalan,
   ukuranArab,
   labelKategori,
+  rapikanKategori,
+  daftarKategoriTampil,
   babAmalan,
   pecahTeksBab,
   barisSyair,
@@ -30,9 +32,13 @@ describe('susunDaftarAmalan', () => {
     expect(susunDaftarAmalan(L, 'doa').map((a) => a.id)).toEqual(['4', '1'])
     expect(susunDaftarAmalan(L, 'lainnya').map((a) => a.id)).toEqual(['5'])
   })
-  it('label kategori', () => {
+  it('label kategori (bawaan & buatan sendiri)', () => {
     expect(labelKategori('maulid')).toBe('Maulid')
-    expect(labelKategori('aneh')).toBe('Lainnya')
+    expect(labelKategori('Ratib')).toBe('Ratib')
+    expect(labelKategori('')).toBe('Lainnya')
+    expect(rapikanKategori('  Sholawat  ')).toBe('Sholawat')
+    expect(rapikanKategori('Wirid')).toBe('wirid')
+    expect(daftarKategoriTampil([{ kategori: 'Ratib' }]).map((k) => k.label)).toContain('Ratib')
   })
 })
 

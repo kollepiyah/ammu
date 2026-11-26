@@ -21,7 +21,7 @@
       <h2
         class="text-sm md:text-base font-black text-slate-800 dark:text-white tracking-tight truncate"
       >
-        {{ ringkas ? judulHalaman(route.path) || appName : appName }}
+        {{ ringkas ? ui.judulTopBar || judulHalaman(route.path) || appName : appName }}
       </h2>
       <!-- v.91.0626: indikator koneksi — LED kecil (hijau=online / merah=offline), SELALU tampil -->
       <span

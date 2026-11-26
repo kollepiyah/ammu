@@ -17,12 +17,12 @@ describe('saringHtmlAmalan', () => {
     )
     expect(h).toBe('<p>ab</p>')
   })
-  it('hanya kelas gaya/warna & rata teks yang lolos; warna tempelan Word dibuang', () => {
+  it('hanya kelas gaya/warna/ukuran & rata teks yang lolos; warna tempelan Word dibuang', () => {
     const h = saringHtmlAmalan(
-      '<p class="gaya-arab MsoNormal" style="text-align: center; font-size: 40px"><span class="warna-merah x" style="color:red">ح</span></p>'
+      '<p class="gaya-arab MsoNormal" style="text-align: center; font-size: 40px"><span class="warna-merah ukuran-besar x" style="color:red">ح</span></p>'
     )
     expect(h).toBe(
-      '<p class="gaya-arab" style="text-align: center;"><span class="warna-merah">ح</span></p>'
+      '<p class="gaya-arab" style="text-align: center;"><span class="warna-merah ukuran-besar">ح</span></p>'
     )
   })
   it('tebal, miring, garis bawah, pemisah dipertahankan', () => {

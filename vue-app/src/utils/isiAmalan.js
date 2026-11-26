@@ -22,9 +22,19 @@ export const WARNA_KATA = Object.freeze([
   { kunci: 'ungu', label: 'Ungu', contoh: '#6d28d9' }
 ])
 
+/** Ukuran teks relatif (kelas `ukuran-…`, tetap ikut skala tombol A−/A+ layar baca). */
+export const UKURAN_TEKS = Object.freeze([
+  { kunci: '', label: 'Normal' },
+  { kunci: 'kecil', label: 'Kecil' },
+  { kunci: 'sedang', label: 'Agak besar' },
+  { kunci: 'besar', label: 'Besar' },
+  { kunci: 'sangat-besar', label: 'Sangat besar' }
+])
+
 const KELAS_SAH = new Set([
   ...GAYA_BARIS.filter((g) => g.kunci).map((g) => `gaya-${g.kunci}`),
   ...WARNA_KATA.map((w) => `warna-${w.kunci}`),
+  ...UKURAN_TEKS.filter((u) => u.kunci).map((u) => `ukuran-${u.kunci}`),
   'syair-awal',
   'syair-akhir'
 ])

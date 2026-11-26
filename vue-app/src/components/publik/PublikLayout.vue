@@ -10,7 +10,7 @@
       <!-- Kyai 25 Nov 2026: cukup tulisan nama aplikasi seperti header Portal, tanpa logo -->
       <!-- Kyai 26 Nov 2026: di luar Beranda cukup judul halaman (tanpa tombol Masuk/nama). -->
       <h2 class="text-base font-black text-white tracking-tight truncate">
-        {{ beranda ? namaApp : judulHalaman(route.path) || namaApp }}
+        {{ beranda ? namaApp : ui.judulTopBar || judulHalaman(route.path) || namaApp }}
       </h2>
       <button
         v-if="beranda"
@@ -58,6 +58,7 @@ import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
+import { useUiStore } from '@/stores/ui'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { halamanBeranda, judulHalaman } from '@/utils/judulHalaman'
 
@@ -75,6 +76,7 @@ const beranda = computed(() => halamanBeranda(route.path))
 const router = useRouter()
 const auth = useAuthStore()
 const settings = useSettingsStore()
+const ui = useUiStore()
 
 // Sama dengan AppHeader: Teks Header Bar > Nama Aplikasi > bawaan.
 const namaApp = computed(

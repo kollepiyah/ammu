@@ -8,7 +8,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
-import { GayaBaris, WarnaKata } from '@/components/amalan/ekstensiAmalan'
+import { GayaBaris, WarnaKata, UkuranTeks } from '@/components/amalan/ekstensiAmalan'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useAuthStore } from '@/stores/auth'
@@ -17,6 +17,7 @@ import { KATEGORI_AMALAN, WARNA_TEKS, babAmalan, bersihkanAmalan, kelasWarna } f
 import {
   GAYA_BARIS,
   WARNA_KATA,
+  UKURAN_TEKS,
   htmlBab,
   rapikanTampilan,
   saringHtmlAmalan
@@ -70,7 +71,8 @@ const editor = useEditor({
     }),
     TextAlign.configure({ types: ['paragraph'] }),
     GayaBaris,
-    WarnaKata
+    WarnaKata,
+    UkuranTeks
   ],
   content: '',
   editorProps: {
@@ -206,10 +208,14 @@ function kembali() {
 // ── Toolbar ──
 // Fungsi (bukan computed): dibaca ulang tiap render yang dipicu transaksi editor.
 const gayaKini = () => (versi.value, editor.value?.getAttributes('paragraph')?.gaya || '')
+const ukuranKini = () => (versi.value, editor.value?.getAttributes('ukuranTeks')?.ukuran || '')
 const aktif = (nama, attr) => (versi.value, !!editor.value?.isActive(nama, attr))
 const rataAktif = (r) => (versi.value, !!editor.value?.isActive({ textAlign: r }))
 function aturGaya(e) {
   editor.value?.chain().focus().aturGaya(e.target.value).run()
+}
+function aturUkuran(e) {
+  editor.value?.chain().focus().aturUkuran(e.target.value).run()
 }
 function aturWarna(w) {
   editor.value?.chain().focus().aturWarna(w).run()
@@ -289,13 +295,18 @@ const kelasTombolAktif = 'bg-teal-100 text-teal-900 dark:bg-teal-900/50 dark:tex
           <div class="grid grid-cols-3 gap-2">
             <label class="block col-span-2">
               <span class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
-                >Kategori</span
+                >Kategori (pilih atau ketik sendiri)</span
               >
-              <select v-model="form.kategori" :class="kelasIsian">
-                <option v-for="k in KATEGORI_AMALAN" :key="k.kunci" :value="k.kunci">
-                  {{ k.label }}
-                </option>
-              </select>
+              <input
+                v-model="form.kategori"
+                type="text"
+                list="opsi-kategori-amalan"
+                placeholder="Wirid, Maulid, Ratib, Sholawat…"
+                :class="kelasIsian"
+              />
+              <datalist id="opsi-kategori-amalan">
+                <option v-for="k in KATEGORI_AMALAN" :key="k.kunci" :value="k.label"></option>
+              </datalist>
             </label>
             <label class="block">
               <span class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Urutan</span>
@@ -431,6 +442,16 @@ const kelasTombolAktif = 'bg-teal-100 text-teal-900 dark:bg-teal-900/50 dark:tex
           >
             <option v-for="g in GAYA_BARIS" :key="g.kunci" :value="g.kunci">
               {{ g.label }}
+            </option>
+          </select>
+          <select
+            :value="ukuranKini()"
+            title="Ukuran huruf"
+            class="h-8 px-2 text-xs font-bold border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+            @change="aturUkuran"
+          >
+            <option v-for="u in UKURAN_TEKS" :key="u.kunci" :value="u.kunci">
+              {{ u.label }}
             </option>
           </select>
           <span class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></span>
