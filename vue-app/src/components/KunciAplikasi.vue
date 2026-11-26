@@ -87,6 +87,8 @@ async function keluar() {
     var(--pola-berlian) 0 0 / 28px 28px,
     linear-gradient(180deg, #0f766e 0%, #134e4a 100%);
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: calc(2 * env(safe-area-inset-bottom, 0px));
+  /* Turun melewati dasar viewport: menutup celah bug iOS 26 PWA (lihat main.css). */
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
 }
 </style>

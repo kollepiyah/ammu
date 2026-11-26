@@ -159,6 +159,8 @@ function alihkan(k) {
 .baca-penuh {
   position: fixed;
   inset: 0;
+  /* Turun melewati dasar viewport: menutup celah bug iOS 26 (lihat main.css, html.native-shell). */
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
   z-index: 250;
   overflow-y: auto;
   background: var(--bg-page);

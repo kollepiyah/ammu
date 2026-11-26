@@ -1145,6 +1145,15 @@ html.native-shell body {
     var(--pola-berlian) 0 0 / 28px 28px,
     #0f766e !important;
 }
+/* Kyai 26 Nov 2026 — PWA iOS 26 "bocor" di bawah: bug WebKit membuat 100dvh & fixed inset-0
+   lebih pendek setinggi garis-gerak, celahnya memperlihatkan kanvas (dulu hijau warisan body).
+   Kanvas <html> diberi warna menu bawah agar celah menyatu; body tetap hijau untuk status bar. */
+html.native-shell {
+  background: color-mix(in srgb, #fff 90%, var(--bg-page));
+}
+html.native-shell.dark {
+  background: color-mix(in srgb, #0f172a 90%, var(--bg-page));
+}
 .topbar-hijau {
   background:
     var(--pola-berlian) 0 calc(-1 * env(safe-area-inset-top, 0px)) / 28px 28px,

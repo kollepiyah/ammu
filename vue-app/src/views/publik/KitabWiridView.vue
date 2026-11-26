@@ -39,19 +39,10 @@
       class="w-full flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 text-left cursor-pointer"
       @click="router.push(`${awalan}/wirid/${a.id}`)"
     >
-      <span
-        class="w-10 h-10 shrink-0 rounded-full bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center"
-      >
-        <i class="fas fa-book-open"></i>
-      </span>
-      <span class="min-w-0 flex-1">
-        <span class="block text-sm font-bold text-[var(--text-primary)] truncate">{{
-          a.judul
-        }}</span>
-        <span class="block text-[11px] text-[var(--text-secondary)]">{{
-          labelKategori(a.kategori)
-        }}</span>
-      </span>
+      <!-- Kyai 26 Nov: daftar cukup judul, tanpa ikon & label kategori (sudah ada chip di atas). -->
+      <span class="min-w-0 flex-1 text-sm font-bold text-[var(--text-primary)] truncate">{{
+        a.judul
+      }}</span>
       <i class="fas fa-chevron-right text-xs text-[var(--text-secondary)]"></i>
     </button>
   </div>
@@ -62,7 +53,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDataTamu } from '@/composables/useDataTamu'
 import { ambilDaftarAmalan } from '@/services/amalan'
-import { KATEGORI_AMALAN, labelKategori, susunDaftarAmalan } from '@/utils/amalan'
+import { KATEGORI_AMALAN, susunDaftarAmalan } from '@/utils/amalan'
 
 const PILIHAN = [{ kunci: 'semua', label: 'Semua' }, ...KATEGORI_AMALAN]
 
