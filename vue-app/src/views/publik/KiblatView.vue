@@ -150,11 +150,13 @@ const jarak = computed(() =>
 const arah = ref(null) // arah HP (derajat dari utara), null = sensor belum/tidak ada
 const arahTampil = ref(0) // dihaluskan, kontinu (boleh > 360) supaya piringan tak berputar balik
 const perluIzin = ref(false)
+const menungguSensor = ref(true) // 1,5 detik pertama: belum tentu tak ada sensor
 const adaSensor = computed(() => arah.value !== null)
 const selisih = computed(() => (adaSensor.value ? selisihSudut(arah.value, azimut.value) : null))
 const pas = computed(() => selisih.value !== null && Math.abs(selisih.value) <= TOLERANSI_DERAJAT)
 const pesan = computed(() => {
   if (!adaSensor.value) {
+    if (menungguSensor.value) return 'Membaca kompas…'
     return perluIzin.value
       ? 'Ketuk "Aktifkan kompas" untuk memakai sensor arah'
       : 'Kompas HP tidak terbaca — pakai sudut di bawah dengan kompas biasa'
@@ -187,6 +189,7 @@ function terima(e) {
 
 let jenisEvent = ''
 function pasang() {
+  if (jenisEvent) return
   if ('ondeviceorientationabsolute' in window) jenisEvent = 'deviceorientationabsolute'
   else if ('ondeviceorientation' in window) jenisEvent = 'deviceorientation'
   if (jenisEvent) window.addEventListener(jenisEvent, terima)
@@ -201,14 +204,26 @@ async function mintaIzinSensor() {
   }
 }
 
+let jedaIzin = null
 onMounted(() => {
-  // iOS 13+ butuh izin dari ketukan pengguna; Android langsung jalan.
-  if (typeof window.DeviceOrientationEvent?.requestPermission === 'function') perluIzin.value = true
-  else pasang()
+  // Kyai 26 Nov 2026: kompas langsung jalan tanpa tombol. Android & kebanyakan browser tak
+  //   butuh izin. iOS hanya mau meminta izin dari ketukan — tapi bila izin pernah diberikan,
+  //   sensor langsung mengalir; tombol baru muncul bila 1,5 detik tak ada data sama sekali.
+  pasang()
+  const butuhIzin = typeof window.DeviceOrientationEvent?.requestPermission === 'function'
+  if (butuhIzin)
+    window.DeviceOrientationEvent.requestPermission()
+      .then((r) => r === 'granted' && pasang())
+      .catch(() => {})
+  jedaIzin = setTimeout(() => {
+    menungguSensor.value = false
+    if (butuhIzin && arah.value === null) perluIzin.value = true
+  }, 1500)
   // Kiblat butuh lokasi yang tepat — minta di sini (boleh memunculkan dialog izin).
   perbaruiLokasi({ paksa: lokasi.value.sumber !== 'kota' })
 })
 onUnmounted(() => {
+  clearTimeout(jedaIzin)
   if (jenisEvent) window.removeEventListener(jenisEvent, terima)
 })
 

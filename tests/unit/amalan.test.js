@@ -10,7 +10,9 @@ import {
   barisSyair,
   labelHalaman,
   modeBerikut,
-  halamanAwal
+  halamanAwal,
+  kelasRata,
+  kelasWarna
 } from '@/utils/amalan'
 
 describe('susunDaftarAmalan', () => {
@@ -150,5 +152,40 @@ describe('bab & halaman (Kyai 26 Nov 2026)', () => {
     expect(halamanAwal('berbab', 5, '9')).toBe(-1)
     expect(halamanAwal('berbab', 1, undefined)).toBe(0)
     expect(halamanAwal('tunggal', 4, undefined)).toBe(0)
+  })
+})
+
+describe('rata & warna teks (Kyai 26 Nov 2026)', () => {
+  it('disimpan bila sah; syair tak punya rata; warna judul bab ikut', () => {
+    const r = bersihkanAmalan({
+      judul: 'X',
+      bentuk: 'berbab',
+      bab: [
+        {
+          judul: 'Pembuka',
+          warna: 'merah',
+          bagian: [
+            { arab: 'ا', rata: 'tengah', warna: 'biru' },
+            { jenis: 'syair', arab: 'ب', rata: 'kiri', warna: 'emas' },
+            { arab: 'ج', rata: 'miring', warna: 'pelangi' }
+          ]
+        },
+        { judul: 'Dua', warna: 'aneh', bagian: [{ arab: 'د' }] }
+      ]
+    })
+    expect(r.nilai.bab[0].warna).toBe('merah')
+    expect(r.nilai.bab[0].bagian).toEqual([
+      { arab: 'ا', rata: 'tengah', warna: 'biru' },
+      { jenis: 'syair', arab: 'ب', warna: 'emas' },
+      { arab: 'ج' }
+    ])
+    expect(r.nilai.bab[1].warna).toBeUndefined()
+  })
+  it('kelas bawaan: teks kanan, judul tengah, warna biasa', () => {
+    expect(kelasRata(undefined)).toBe('text-right')
+    expect(kelasRata('', 'tengah')).toBe('text-center')
+    expect(kelasRata('kiri')).toBe('text-left')
+    expect(kelasWarna('')).toBe('text-[var(--text-primary)]')
+    expect(kelasWarna('merah')).toContain('text-rose-700')
   })
 })

@@ -11,6 +11,9 @@ import { ambilSemuaAmalan, simpanAmalan, hapusAmalan } from '@/services/amalan'
 import {
   KATEGORI_AMALAN,
   JENIS_BLOK,
+  RATA_TEKS,
+  WARNA_TEKS,
+  kelasWarna,
   labelKategori,
   susunDaftarAmalan,
   bersihkanAmalan,
@@ -30,8 +33,17 @@ const teksTempel = ref('')
 const babAktif = ref(0)
 const form = reactive(kosong())
 
-const blokKosong = () => ({ jenis: 'teks', judul: '', arab: '', latin: '', arti: '', ulang: '' })
-const babKosong = () => ({ judul: '', bagian: [blokKosong()] })
+const blokKosong = () => ({
+  jenis: 'teks',
+  judul: '',
+  arab: '',
+  latin: '',
+  arti: '',
+  ulang: '',
+  rata: '',
+  warna: ''
+})
+const babKosong = () => ({ judul: '', warna: '', bagian: [blokKosong()] })
 function kosong() {
   return {
     id: '',
@@ -67,6 +79,7 @@ function buka(a = null) {
   if (a) {
     const bab = babAmalan(a).map((x) => ({
       judul: x.judul || '',
+      warna: x.warna || '',
       bagian: (x.bagian || []).map((b) => ({ ...blokKosong(), ...b }))
     }))
     Object.assign(form, {
@@ -191,6 +204,8 @@ async function hapus() {
   }
 }
 
+const kelasPilihKecil =
+  'px-2 py-1 text-xs border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900'
 const kelasIsian =
   'w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]'
 </script>
@@ -390,6 +405,20 @@ const kelasIsian =
             :placeholder="`Judul bab ${babAktif + 1}`"
             :class="[kelasIsian, 'flex-1 min-w-0']"
           />
+          <select
+            v-if="berbab"
+            v-model="babKini.warna"
+            title="Warna judul bab"
+            :class="[
+              kelasPilihKecil,
+              kelasWarna(babKini.warna, 'text-teal-700 dark:text-teal-300')
+            ]"
+          >
+            <option value="">Hijau</option>
+            <option v-for="w in WARNA_TEKS.slice(1)" :key="w.kunci" :value="w.kunci">
+              {{ w.label }}
+            </option>
+          </select>
           <span v-else class="flex-1 text-xs font-black text-[var(--text-secondary)]"
             >{{ satuan }} {{ babAktif + 1 }} dari {{ form.bab.length }}</span
           >
@@ -480,6 +509,27 @@ const kelasIsian =
             ***
           </p>
           <template v-else>
+            <!-- Kyai 26 Nov 2026: rata & warna teks per bagian (syair selalu kanan–kiri). -->
+            <div class="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+              <label v-if="b.jenis !== 'syair'" class="flex items-center gap-1">
+                <span class="text-[var(--text-secondary)]">Rata</span>
+                <select v-model="b.rata" :class="kelasPilihKecil">
+                  <option value="">Bawaan</option>
+                  <option v-for="r in RATA_TEKS" :key="r.kunci" :value="r.kunci">
+                    {{ r.label }}
+                  </option>
+                </select>
+              </label>
+              <label class="flex items-center gap-1">
+                <span class="text-[var(--text-secondary)]">Warna</span>
+                <select v-model="b.warna" :class="[kelasPilihKecil, kelasWarna(b.warna)]">
+                  <option value="">Bawaan</option>
+                  <option v-for="w in WARNA_TEKS" :key="w.kunci" :value="w.kunci">
+                    {{ w.label }}
+                  </option>
+                </select>
+              </label>
+            </div>
             <textarea
               v-model="b.arab"
               dir="rtl"

@@ -47,6 +47,33 @@ export const JENIS_BLOK = Object.freeze([
 const KUNCI_JENIS = new Set(JENIS_BLOK.map((j) => j.kunci))
 
 /** Satu blok bacaan bersih, atau null bila kosong. Blok "pemisah" tak butuh teks Arab. */
+// Kyai 26 Nov 2026: admin mengatur rata & warna teks per bagian, dan warna judul bab.
+export const RATA_TEKS = Object.freeze([
+  { kunci: 'kanan', label: 'Kanan', kelas: 'text-right' },
+  { kunci: 'tengah', label: 'Tengah', kelas: 'text-center' },
+  { kunci: 'kiri', label: 'Kiri', kelas: 'text-left' }
+])
+// Kelas ditulis utuh supaya terbaca Tailwind (tak boleh dirakit dari potongan).
+export const WARNA_TEKS = Object.freeze([
+  { kunci: 'hijau', label: 'Hijau', kelas: 'text-teal-700 dark:text-teal-300' },
+  { kunci: 'merah', label: 'Merah', kelas: 'text-rose-700 dark:text-rose-300' },
+  { kunci: 'biru', label: 'Biru', kelas: 'text-sky-700 dark:text-sky-300' },
+  { kunci: 'emas', label: 'Emas', kelas: 'text-amber-700 dark:text-amber-300' },
+  { kunci: 'ungu', label: 'Ungu', kelas: 'text-violet-700 dark:text-violet-300' }
+])
+const KUNCI_RATA = new Set(RATA_TEKS.map((r) => r.kunci))
+const KUNCI_WARNA = new Set(WARNA_TEKS.map((w) => w.kunci))
+
+/** Kelas rata; kunci kosong/asing → bawaan (teks Arab: kanan, judul: tengah). */
+export function kelasRata(kunci, bawaan = 'kanan') {
+  const r = RATA_TEKS.find((x) => x.kunci === kunci) || RATA_TEKS.find((x) => x.kunci === bawaan)
+  return r.kelas
+}
+/** Kelas warna; kunci kosong/asing → kelas `bawaan`. */
+export function kelasWarna(kunci, bawaan = 'text-[var(--text-primary)]') {
+  return WARNA_TEKS.find((w) => w.kunci === kunci)?.kelas || bawaan
+}
+
 function bersihkanBlok(b) {
   const jenis = KUNCI_JENIS.has(b?.jenis) ? b.jenis : 'teks'
   if (jenis === 'pemisah') return { jenis }
@@ -57,6 +84,8 @@ function bersihkanBlok(b) {
   if (rapi(b?.latin)) out.latin = rapi(b.latin)
   if (rapi(b?.arti)) out.arti = rapi(b.arti)
   if (ulang >= 2 && ulang <= 1000) out.ulang = ulang
+  if (jenis !== 'syair' && KUNCI_RATA.has(b?.rata)) out.rata = b.rata
+  if (KUNCI_WARNA.has(b?.warna)) out.warna = b.warna
   return out.arab ? out : null
 }
 
@@ -81,6 +110,7 @@ export function bersihkanAmalan(form) {
   const bab = babAmalan(form)
     .map((x) => ({
       judul: rapi(x?.judul),
+      ...(KUNCI_WARNA.has(x?.warna) ? { warna: x.warna } : {}),
       bagian: (Array.isArray(x?.bagian) ? x.bagian : []).map(bersihkanBlok).filter(Boolean)
     }))
     // Bab yang isinya hanya pemisah dianggap kosong.

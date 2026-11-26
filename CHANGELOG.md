@@ -49,7 +49,15 @@ rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biom
   FUNCTIONS-DEPLOY.md §11. Tes `doku.test.js` (tanda tangan vs HMAC node, Checkout, keranjang).
   **Belum diuji ke sandbox DOKU sungguhan.**
 
+- **Wirid: rata & warna teks per bagian** (Kyai 26 Nov 2026) — admin memilih Rata (kanan/tengah/
+  kiri; syair tetap bergantian) dan Warna (hijau, merah, biru, emas, ungu) tiap bagian, serta warna
+  judul bab. Judul bab tampil di tengah, lebih besar. Aturan & kelas di `utils/amalan`
+  (`RATA_TEKS`, `WARNA_TEKS`, `kelasRata`, `kelasWarna`) + tes.
+
 ### Changed
+- **Kiblat: kompas langsung jalan** tanpa tombol "Aktifkan kompas" — sensor dipasang saat layar
+  dibuka; di iPhone izin dicoba otomatis dan tombol baru muncul bila 1,5 detik tak ada data
+  (iOS hanya mau memunculkan dialog izin dari ketukan). Selama menunggu tertulis "Membaca kompas…".
 - **Falakiyah NU: ihtiyath minimal 2 menit** (Kyai 26 Nov 2026, saran LFNU Sidoarjo) — Subuh,
   Dhuha, Ashar, Maghrib, Isya +2, Dzuhur +3, Terbit −2 (Imsak ikut Subuh). Hasilnya = angka
   jadwalsholat.nu.or.id + 2 menit, sama dengan aplikasi NU Online; Maghrib Ramadhan tetap +1 lagi.

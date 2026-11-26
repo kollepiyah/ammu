@@ -171,7 +171,8 @@
       </button>
       <p
         v-if="berbab && babKini?.judul"
-        class="px-4 pt-4 text-center text-xs font-black text-teal-700 dark:text-teal-300"
+        class="px-4 pt-5 pb-1 text-center text-base font-black"
+        :class="kelasWarna(babKini.warna, KELAS_HIJAU)"
       >
         {{ babKini.judul }}
       </p>
@@ -180,19 +181,20 @@
         <p v-if="b.jenis === 'pemisah'" class="text-center text-slate-400 tracking-[0.5em] py-3">
           ***
         </p>
-        <section v-else-if="b.jenis === 'judul'" class="px-4 pt-5 pb-2 text-center">
+        <section
+          v-else-if="b.jenis === 'judul'"
+          class="px-4 pt-5 pb-2"
+          :class="[kelasRata(b.rata, 'tengah'), kelasWarna(b.warna, KELAS_HIJAU)]"
+        >
           <p
-            class="font-arabic text-teal-700 dark:text-teal-300 whitespace-pre-line"
+            class="font-arabic whitespace-pre-line"
             dir="rtl"
             lang="ar"
             :style="{ fontSize: Math.round(ukuran * 0.85) + 'px', lineHeight: 1.8 }"
           >
             {{ b.arab }}
           </p>
-          <p
-            v-if="mode !== 'arab' && b.latin"
-            class="mt-1 text-sm font-bold text-teal-700 dark:text-teal-300 whitespace-pre-line"
-          >
+          <p v-if="mode !== 'arab' && b.latin" class="mt-1 text-sm font-bold whitespace-pre-line">
             {{ b.latin }}
           </p>
         </section>
@@ -208,7 +210,8 @@
           <!-- Syair (Diba', Barzanji): baris bergantian kanan–kiri seperti cetakan kitab. -->
           <div
             v-if="b.jenis === 'syair'"
-            class="font-arabic text-[var(--text-primary)]"
+            class="font-arabic"
+            :class="kelasWarna(b.warna)"
             dir="rtl"
             lang="ar"
             :style="{ fontSize: ukuran + 'px', lineHeight: 2.1 }"
@@ -223,7 +226,8 @@
           </div>
           <p
             v-else
-            class="font-arabic text-right text-[var(--text-primary)] whitespace-pre-line"
+            class="font-arabic whitespace-pre-line"
+            :class="[kelasRata(b.rata), kelasWarna(b.warna)]"
             dir="rtl"
             lang="ar"
             :style="{ fontSize: ukuran + 'px', lineHeight: 2 }"
@@ -289,12 +293,15 @@ import {
   labelHalaman,
   halamanAwal,
   modeBerikut,
-  LABEL_MODE
+  LABEL_MODE,
+  kelasRata,
+  kelasWarna
 } from '@/utils/amalan'
 import { useModeBaca } from '@/composables/useModeBaca'
 
 const KUNCI_SETELAN = 'ammu_baca_amalan'
 const KUNCI_PENANDA = 'ammu_penanda_amalan'
+const KELAS_HIJAU = 'text-teal-700 dark:text-teal-300' // warna bawaan judul
 
 const route = useRoute()
 const router = useRouter()
