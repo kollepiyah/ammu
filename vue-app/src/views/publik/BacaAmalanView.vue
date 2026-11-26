@@ -177,77 +177,16 @@
         {{ babKini.judul }}
       </p>
 
-      <template v-for="(b, i) in babKini?.bagian || []" :key="`${hal}-${i}`">
-        <p v-if="b.jenis === 'pemisah'" class="text-center text-slate-400 tracking-[0.5em] py-3">
-          ***
-        </p>
-        <section
-          v-else-if="b.jenis === 'judul'"
-          class="px-4 pt-5 pb-2"
-          :class="[kelasRata(b.rata, 'tengah'), kelasWarna(b.warna, KELAS_HIJAU)]"
-        >
-          <p
-            class="font-arabic whitespace-pre-line"
-            dir="rtl"
-            lang="ar"
-            :style="{ fontSize: Math.round(ukuran * 0.85) + 'px', lineHeight: 1.8 }"
-          >
-            {{ b.arab }}
-          </p>
-          <p v-if="mode !== 'arab' && b.latin" class="mt-1 text-sm font-bold whitespace-pre-line">
-            {{ b.latin }}
-          </p>
-        </section>
-        <section v-else class="px-4 py-4 border-b border-slate-100 dark:border-slate-800">
-          <div v-if="b.judul || b.ulang" class="flex items-center justify-between gap-2 mb-3">
-            <p class="text-xs font-black text-teal-700 dark:text-teal-300">{{ b.judul }}</p>
-            <span
-              v-if="b.ulang"
-              class="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-              >{{ b.ulang }}×</span
-            >
-          </div>
-          <!-- Syair (Diba', Barzanji): baris bergantian kanan–kiri seperti cetakan kitab. -->
-          <div
-            v-if="b.jenis === 'syair'"
-            class="font-arabic"
-            :class="kelasWarna(b.warna)"
-            dir="rtl"
-            lang="ar"
-            :style="{ fontSize: ukuran + 'px', lineHeight: 2.1 }"
-          >
-            <p
-              v-for="(s, j) in barisSyair(b.arab)"
-              :key="j"
-              :class="s.sisi === 'awal' ? 'text-right pl-[12%]' : 'text-left pr-[12%]'"
-            >
-              {{ s.teks }}
-            </p>
-          </div>
-          <p
-            v-else
-            class="font-arabic whitespace-pre-line"
-            :class="[kelasRata(b.rata), kelasWarna(b.warna)]"
-            dir="rtl"
-            lang="ar"
-            :style="{ fontSize: ukuran + 'px', lineHeight: 2 }"
-          >
-            {{ b.arab }}
-          </p>
-          <p
-            v-if="mode !== 'arab' && b.latin"
-            class="mt-3 text-sm italic text-teal-800 dark:text-teal-200 leading-relaxed whitespace-pre-line"
-          >
-            {{ b.latin }}
-          </p>
-          <p
-            v-if="mode === 'lengkap' && b.arti"
-            class="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-line"
-          >
-            {{ b.arti }}
-          </p>
-        </section>
-      </template>
+      <!-- Kyai 26 Nov 2026: isi teks kaya dari editor (bentuk lama dikonversi htmlBab). Disaring
+           saringHtmlAmalan SEBELUM v-html; ع/A menyembunyikan baris Latin/Arti lewat kelas mode-*. -->
+      <!-- eslint-disable vue/no-v-html -->
+      <div
+        class="isi-amalan px-4 py-3 text-[var(--text-primary)]"
+        :class="'mode-' + mode"
+        :style="{ '--ukuran-arab': ukuran + 'px' }"
+        v-html="htmlTampil"
+      ></div>
+      <!-- eslint-enable vue/no-v-html -->
 
       <div
         v-if="bab.length > 1"
@@ -289,14 +228,13 @@ import { ambilAmalan } from '@/services/amalan'
 import {
   ukuranArab,
   babAmalan,
-  barisSyair,
   labelHalaman,
   halamanAwal,
   modeBerikut,
   LABEL_MODE,
-  kelasRata,
   kelasWarna
 } from '@/utils/amalan'
+import { htmlBab, rapikanTampilan, saringHtmlAmalan } from '@/utils/isiAmalan'
 import { useModeBaca } from '@/composables/useModeBaca'
 
 const KUNCI_SETELAN = 'ammu_baca_amalan'
@@ -330,6 +268,9 @@ const bentuk = computed(() => (amalan.value?.bentuk === 'berbab' ? 'berbab' : 't
 const berbab = computed(() => bentuk.value === 'berbab' && bab.value.length > 1)
 const hal = computed(() => halamanAwal(bentuk.value, bab.value.length, route.query.hal))
 const babKini = computed(() => (hal.value >= 0 ? bab.value[hal.value] : null))
+const htmlTampil = computed(() =>
+  babKini.value ? rapikanTampilan(saringHtmlAmalan(htmlBab(babKini.value))) : ''
+)
 const judulKepala = computed(() => {
   if (!amalan.value) return 'Memuat…'
   return berbab.value && babKini.value?.judul ? babKini.value.judul : amalan.value.judul

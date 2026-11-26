@@ -54,6 +54,21 @@ rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biom
   judul bab. Judul bab tampil di tengah, lebih besar. Aturan & kelas di `utils/amalan`
   (`RATA_TEKS`, `WARNA_TEKS`, `kelasRata`, `kelasWarna`) + tes.
 
+- **Editor Kitab & Wirid teks kaya di halaman sendiri** (Kyai 26 Nov 2026, contoh editor SIAKAD) —
+  `/master-data/wirid/:id` (AmalanEditorView, Tiptap 3 MIT). Per kata: tebal, miring, garis bawah,
+  coret, warna (kelas `warna-*`, terbaca di terang & gelap); per baris: rata kiri/tengah/kanan/
+  kanan-kiri dan gaya Arab/Latin/Arti/Judul/Syair; garis pemisah ***; urungkan/ulangi; bab/halaman
+  sebagai tab. Tempelan Word/WhatsApp disaring (gambar hiasan & gaya asing dibuang, baris Arab
+  langsung bergaya Arab). Satu bab = HTML `{ judul, warna?, html }`, disaring DOMPurify
+  (`utils/isiAmalan.saringHtmlAmalan`) saat disimpan DAN sebelum `v-html` di layar baca. Bacaan
+  bentuk lama dikonversi otomatis (`htmlBab`) — tanpa migrasi. Master Data → Kitab & Wirid kini
+  daftar saja. Tombol ع/A tetap menyembunyikan baris Latin/Arti. Tes `isiAmalan.test.js` (XSS,
+  konversi, syair).
+
+### Fixed
+- Ikon panah di daftar Pengaturan (Android/PWA) tak tampil: `content: '\f054'` di main.css rusak
+  jadi karakter kontrol (peringatan "Unterminated string token" saat build).
+
 ### Changed
 - **Warna disatukan ke palet hijau Ammu** (Kyai 26 Nov 2026) — di `tailwind.config.js`, bukan
   menyunting ribuan kelas: `cyan` (1.501 kelas di 71 layar), `sky`, `blue` = teal persis; `indigo`

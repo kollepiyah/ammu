@@ -1,6 +1,8 @@
 // Kitab & Wirid (blueprint F7) — aturan data, fungsi murni + tes. Satu bacaan = { judul, kategori,
 // urutan, aktif, keterangan, bentuk:'tunggal'|'berbab', bab:[{ judul, bagian:[blok] }] } dengan
 // blok = { jenis?:'teks'|'judul'|'syair'|'pemisah', judul?, arab, latin?, arti?, ulang? }.
+// Sejak 26 Nov 2026 bab dari editor teks kaya berbentuk { judul, warna?, html } (utils/isiAmalan).
+import { saringHtmlAmalan, teksPolos } from './isiAmalan'
 
 export const KATEGORI_AMALAN = Object.freeze([
   { kunci: 'wirid', label: 'Wirid' },
@@ -108,13 +110,22 @@ export function bersihkanAmalan(form) {
   const judul = rapi(form?.judul)
   const bentuk = form?.bentuk === 'berbab' ? 'berbab' : 'tunggal'
   const bab = babAmalan(form)
-    .map((x) => ({
-      judul: rapi(x?.judul),
-      ...(KUNCI_WARNA.has(x?.warna) ? { warna: x.warna } : {}),
-      bagian: (Array.isArray(x?.bagian) ? x.bagian : []).map(bersihkanBlok).filter(Boolean)
-    }))
-    // Bab yang isinya hanya pemisah dianggap kosong.
-    .filter((x) => x.bagian.some((b) => b.jenis !== 'pemisah'))
+    .map((x) => {
+      const dasar = {
+        judul: rapi(x?.judul),
+        ...(KUNCI_WARNA.has(x?.warna) ? { warna: x.warna } : {})
+      }
+      // Kyai 26 Nov 2026: isi teks kaya dari editor — disaring di sini, sebelum disimpan.
+      if (typeof x?.html === 'string') return { ...dasar, html: saringHtmlAmalan(x.html) }
+      return {
+        ...dasar,
+        bagian: (Array.isArray(x?.bagian) ? x.bagian : []).map(bersihkanBlok).filter(Boolean)
+      }
+    })
+    // Bab kosong (atau isinya hanya pemisah) dibuang.
+    .filter((x) =>
+      'html' in x ? !!teksPolos(x.html) : x.bagian.some((b) => b.jenis !== 'pemisah')
+    )
     .map((x, i) => ({ ...x, judul: x.judul || (bentuk === 'berbab' ? `Bab ${i + 1}` : '') }))
   if (!judul) return { ok: false, galat: 'Judul wajib diisi.' }
   if (!bab.length) return { ok: false, galat: 'Minimal satu bagian berisi teks Arab.' }

@@ -536,6 +536,13 @@ const routes = [
         component: MasterDataView,
         meta: { admin: true, roleSistem: 'super_admin' }
       },
+      // Kyai 26 Nov 2026: edit Kitab & Wirid di halaman sendiri (editor teks kaya). 'baru' = tambah.
+      {
+        path: 'master-data/wirid/:id',
+        name: 'edit-wirid',
+        component: () => import('@/views/AmalanEditorView.vue'),
+        meta: { admin: true, roleSistem: 'super_admin', noSantri: true }
+      },
       // F3 (migrasi Supabase): alat impor master Excel -> Supabase (super_admin)
       {
         path: 'impor-supabase',

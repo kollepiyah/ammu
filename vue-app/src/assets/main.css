@@ -489,7 +489,7 @@ button,
     margin: 0 !important;
   }
   html.native-shell .daftar-pengaturan > button::after {
-    content: '054';
+    content: '\f054';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
     font-size: 0.7rem;
@@ -1257,4 +1257,105 @@ html.native-shell .tarik-segar i {
    (mis. "← Arah Kiblat", "Notifikasi") disembunyikan supaya tak dobel. Web & Electron tetap. */
 html.native-shell .judul-ganda {
   display: none !important;
+}
+
+/* Kyai 26 Nov 2026 — isi Kitab & Wirid teks kaya (editor & layar baca memakai kelas yang SAMA).
+   Huruf Latin dulu lalu Scheherazade: huruf Arab otomatis jatuh ke Scheherazade di baris mana pun. */
+.isi-amalan {
+  font-family: 'Plus Jakarta Sans', 'Scheherazade New', serif;
+  --ukuran-arab: 28px;
+}
+.isi-amalan p {
+  margin: 0.35em 0;
+  line-height: 1.7;
+}
+.isi-amalan .gaya-arab,
+.isi-amalan .gaya-syair {
+  font-family: 'Scheherazade New', serif;
+  font-size: var(--ukuran-arab);
+  line-height: 2;
+}
+.isi-amalan .gaya-latin {
+  font-style: italic;
+  font-size: 0.875rem;
+  color: #115e59;
+}
+.dark .isi-amalan .gaya-latin {
+  color: #99f6e4;
+}
+.isi-amalan .gaya-arti {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.isi-amalan .gaya-judul {
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #0f766e;
+}
+.dark .isi-amalan .gaya-judul {
+  color: #5eead4;
+}
+.isi-amalan .syair-awal {
+  text-align: right;
+  padding-left: 12%;
+}
+.isi-amalan .syair-akhir {
+  text-align: left;
+  padding-right: 12%;
+}
+.isi-amalan hr {
+  display: block;
+  height: 1.6em;
+  overflow: visible;
+  border: 0;
+  margin: 0.8em 0;
+  text-align: center;
+}
+.isi-amalan hr::after {
+  display: block;
+  content: '***';
+  color: #94a3b8;
+  letter-spacing: 0.5em;
+}
+.isi-amalan .warna-hijau {
+  color: #0f766e;
+}
+.isi-amalan .warna-merah {
+  color: #be123c;
+}
+.isi-amalan .warna-biru {
+  color: #0369a1;
+}
+.isi-amalan .warna-emas {
+  color: #b45309;
+}
+.isi-amalan .warna-ungu {
+  color: #6d28d9;
+}
+.dark .isi-amalan .warna-hijau {
+  color: #5eead4;
+}
+.dark .isi-amalan .warna-merah {
+  color: #fda4af;
+}
+.dark .isi-amalan .warna-biru {
+  color: #7dd3fc;
+}
+.dark .isi-amalan .warna-emas {
+  color: #fcd34d;
+}
+.dark .isi-amalan .warna-ungu {
+  color: #c4b5fd;
+}
+/* Tombol ع/A di layar baca */
+.isi-amalan.mode-arab .gaya-latin,
+.isi-amalan.mode-arab .gaya-arti,
+.isi-amalan.mode-latin .gaya-arti {
+  display: none;
+}
+/* Editor: kanvas tulis */
+.editor-amalan .ProseMirror {
+  outline: none;
+  min-height: 50vh;
 }

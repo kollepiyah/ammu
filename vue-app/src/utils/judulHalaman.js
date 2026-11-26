@@ -28,6 +28,7 @@ const JUDUL = {
   '/guru': 'Guru & Pegawai',
   '/lembaga': 'Lembaga',
   '/master-data': 'Master Data',
+  '/master-data/wirid': 'Edit Wirid',
   '/kelas': 'Kelas',
   '/rombel': 'Rombel',
   '/mapel-lembaga': 'Mapel',
