@@ -1,11 +1,18 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import { useAuthStore, ambilSebabGoogleGagal } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
-import { loginWithGoogle, GOOGLE_DIBATALKAN } from '@/services/authSupabase'
+import {
+  loginWithGoogle,
+  loginWithGoogleIdToken,
+  loadGoogleGsi,
+  sha256Hex,
+  GOOGLE_WEB_CLIENT_ID,
+  GOOGLE_DIBATALKAN
+} from '@/services/authSupabase'
 import loginBg from '@/assets/loginBg.js'
 import { useUnduhan, URL_PRIVASI } from '@/composables/useUnduhan'
 
@@ -26,6 +33,9 @@ onMounted(() => {
   }
   bacaSebabGoogleGagal()
   window.addEventListener('ammu-google-gagal', bacaSebabGoogleGagal)
+  if (pakaiGsiWeb.value) {
+    pasangTombolGoogleGsi()
+  }
 })
 onUnmounted(() => {
   window.removeEventListener('ammu-google-gagal', bacaSebabGoogleGagal)
@@ -153,7 +163,70 @@ async function handleLogin() {
   }
 }
 
-// Web: loginWithGoogle() me-REDIRECT ke Google; sesi dibangun saat kembali (initAuth Step 0).
+// Web browser (bukan Capacitor Android / Electron file://): pakai Google Identity Services
+// agar pop-up login Google tampil dengan domain sendiri (ammu.almanshur.id / ammuonline.web.app)
+// tanpa URL rzwefjilxzsqlokkwiyt.supabase.co.
+const isBrowserHttp = computed(() => {
+  if (typeof window === 'undefined') return false
+  const isCap = window.Capacitor?.isNativePlatform?.() === true
+  const isElectron =
+    window.location?.protocol === 'file:' || /Electron/i.test(navigator?.userAgent || '')
+  return !isCap && !isElectron && /^https?:$/i.test(window.location?.protocol || '')
+})
+const gsiFallback = ref(false)
+const pakaiGsiWeb = computed(() => isBrowserHttp.value && !gsiFallback.value)
+const googleBtnRef = ref(null)
+
+async function pasangTombolGoogleGsi() {
+  if (!pakaiGsiWeb.value) return
+  await nextTick()
+  if (!googleBtnRef.value) return
+  try {
+    await loadGoogleGsi()
+    const gsi = window.google?.accounts?.id
+    if (!gsi || !googleBtnRef.value) {
+      gsiFallback.value = true
+      return
+    }
+    const rawNonce = crypto.randomUUID() + crypto.randomUUID()
+    const hashedNonce = await sha256Hex(rawNonce)
+    gsi.initialize({
+      client_id: GOOGLE_WEB_CLIENT_ID,
+      nonce: hashedNonce,
+      use_fedcm_for_prompt: true,
+      callback: async (resp) => {
+        if (!resp?.credential) {
+          toast.error('Google tidak mengembalikan token login.')
+          return
+        }
+        isSubmitting.value = true
+        loginError.value = ''
+        try {
+          await loginWithGoogleIdToken(resp.credential, rawNonce)
+        } catch (e) {
+          toast.error(e?.message || 'Login Google gagal')
+          pasangTombolGoogleGsi()
+        } finally {
+          isSubmitting.value = false
+        }
+      }
+    })
+    googleBtnRef.value.innerHTML = ''
+    gsi.renderButton(googleBtnRef.value, {
+      type: 'standard',
+      theme: 'outline',
+      size: 'large',
+      shape: 'rectangular',
+      text: 'signin_with',
+      width: Math.min(336, Math.max(240, googleBtnRef.value.clientWidth || 320)),
+      locale: 'id'
+    })
+  } catch {
+    gsiFallback.value = true
+  }
+}
+
+// Web fallback / Android native: loginWithGoogle()
 // Android: pemilih akun HP langsung memberi sesi — watch isLoggedIn di atas yang berpindah
 //   layar; bila jalur native gagal, ia jatuh ke browser seperti dulu.
 async function handleGoogleLogin() {
@@ -257,8 +330,12 @@ function bukaWaAdmin() {
           </button>
         </div>
 
-        <!-- Login dengan Google -->
+        <!-- Login dengan Google (Web: Google Identity Services resmi; Android/Electron/Fallback: tombol custom) -->
+        <div v-if="pakaiGsiWeb" class="w-full flex justify-center min-h-[42px]">
+          <div ref="googleBtnRef" class="w-full flex justify-center"></div>
+        </div>
         <button
+          v-else
           type="button"
           :disabled="isSubmitting"
           class="w-full bg-[var(--bg-card)] border border-[var(--border-default)] hover:bg-[var(--bg-card-elevated)] disabled:opacity-50 text-[var(--text-primary)] font-bold py-2.5 rounded-xl shadow-sm cursor-pointer flex justify-center items-center gap-2 transition text-sm"

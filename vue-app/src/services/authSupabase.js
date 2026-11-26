@@ -478,6 +478,50 @@ export const GOOGLE_WEB_CLIENT_ID =
 // Galat yang menandai pengguna sendiri menutup pemilih akun — bukan kegagalan.
 export const GOOGLE_DIBATALKAN = 'GOOGLE_DIBATALKAN'
 
+let _gsiPromise = null
+
+/** Muat Google Identity Services (gsi/client) di web browser sekali saja. */
+export function loadGoogleGsi() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Hanya tersedia di browser.'))
+  if (window.google?.accounts?.id) return Promise.resolve()
+  if (_gsiPromise) return _gsiPromise
+  _gsiPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true })
+      existing.addEventListener('error', () => reject(new Error('Gagal memuat Google Sign-In.')), {
+        once: true
+      })
+      return
+    }
+    const sc = document.createElement('script')
+    sc.src = 'https://accounts.google.com/gsi/client'
+    sc.async = true
+    sc.defer = true
+    sc.onload = () => resolve()
+    sc.onerror = () => {
+      _gsiPromise = null
+      reject(new Error('Gagal memuat Google Sign-In.'))
+    }
+    document.head.appendChild(sc)
+  })
+  return _gsiPromise
+}
+
+export async function sha256Hex(teks) {
+  return _sha256Hex(teks)
+}
+
+/** Web: login Google via Google Identity Services (ID Token) — langsung di domain sendiri tanpa URL supabase.co. */
+export async function loginWithGoogleIdToken(token, nonce) {
+  _ensure()
+  if (!token) throw new Error('Google tak memberi ID token.')
+  // Samakan dengan jalur Android native agar stores/auth.js mengenali kondisi "akun belum tertaut".
+  window.dispatchEvent(new CustomEvent('ammu-google-masuk'))
+  const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token, nonce })
+  if (error) throw error
+}
+
 let _socialSiap = null
 async function _socialLogin() {
   const { SocialLogin } = await import('@capgo/capacitor-social-login')
