@@ -46,18 +46,20 @@ export function namaTempatPanjang(l) {
  */
 export const METODE = Object.freeze({
   // Kyai 25 Nov 2026 — acuan jadwalsholat.nu.or.id ("metode hisab Lembaga Falakiyah NU, Subuh -20°
-  // & Isya -18°", Sidoarjo ketinggian 5 m). Angka web itu TANPA ihtiyath 2 menit kecuali Zuhur +1;
-  // aplikasi NU Online menambah ±2 menit lagi (setelan ihtiyath-nya). Selama Ramadhan Maghrib +1.
+  // & Isya -18°", Sidoarjo ketinggian 5 m). Angka web itu TANPA ihtiyath kecuali Zuhur +1.
+  // Kyai 26 Nov 2026 (saran LFNU Sidoarjo): ihtiyath minimal 2 menit → jadwal web + 2 menit
+  // (Terbit −2), sama dengan aplikasi NU Online. Selama Ramadhan Maghrib +1 lagi.
+  // Data matahari dicek ke ephemeris LFNU 26 Nov 2026: deklinasi ±9", perata waktu < 1 detik.
   nu: {
     kunci: 'nu',
     label: 'Falakiyah NU',
-    keterangan: 'Subuh 20°, Isya 18°, ihtiyath Zuhur 1 menit',
+    keterangan: 'Subuh 20°, Isya 18°, ihtiyath 2 menit (Dzuhur 3)',
     subuh: 20,
     isya: 18,
     terbit: 0.8333 + 0.0347 * Math.sqrt(5), // kerendahan ufuk ketinggian 5 m
     dhuha: 4.5,
     imsakMenit: 10,
-    ihtiyath: { subuh: 0, terbit: 0, dhuha: 0, dzuhur: 1, ashar: 0, maghrib: 0, isya: 0 },
+    ihtiyath: { subuh: 2, terbit: -2, dhuha: 2, dzuhur: 3, ashar: 2, maghrib: 2, isya: 2 },
     ramadhanMaghrib: 1,
     bulat: 'atas',
     bulatTerbit: 'terdekat'

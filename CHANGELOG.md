@@ -37,6 +37,14 @@ jadi nomor tetap. **Gelombang ini butuh DUA migrasi** (`20261125150000_kegiatan_
 kolom `kegiatan.publik`, dan menyimpan agenda akan galat bila kolomnya belum ada. Lalu deploy web,
 rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biometric`).
 
+### Changed
+- **Falakiyah NU: ihtiyath minimal 2 menit** (Kyai 26 Nov 2026, saran LFNU Sidoarjo) — Subuh,
+  Dhuha, Ashar, Maghrib, Isya +2, Dzuhur +3, Terbit −2 (Imsak ikut Subuh). Hasilnya = angka
+  jadwalsholat.nu.or.id + 2 menit, sama dengan aplikasi NU Online; Maghrib Ramadhan tetap +1 lagi.
+  Posisi matahari aplikasi dicocokkan dengan ephemeris LFNU 26 Nov 2026: deklinasi selisih ±9",
+  perata waktu < 1 detik — rumusnya sudah setara, yang berubah hanya ihtiyath. Widget & notifikasi
+  adzan ikut otomatis (satu sumber `utils/waktuSholat`). Tes 17 tanggal diperbarui.
+
 ### Added
 - **Kitab & Wirid berbab dan berhalaman** (Kyai 26 Nov 2026, pola NU Online & aplikasi Pak Alwi)
   — bacaan kini `{ bentuk:'tunggal'|'berbab', bab:[{ judul, bagian }] }`. "Berbab" dibuka di

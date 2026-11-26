@@ -83,15 +83,27 @@ const NU_SIDOARJO = [
 // Koordinat yang tertulis di situs NU untuk Kab. Sidoarjo: 7°27'1" LS 112°42'45" BT.
 const NU_TITIK = { lat: -(7 + 27 / 60 + 1 / 3600), lon: 112 + 42 / 60 + 45 / 3600 }
 
+// Kyai 26 Nov 2026 (saran LFNU): ihtiyath minimal 2 menit di atas angka web (Terbit 2 menit lebih awal).
+const TAMBAH_IHTIYATH = {
+  imsak: 2,
+  subuh: 2,
+  terbit: -2,
+  dhuha: 2,
+  dzuhur: 2,
+  ashar: 2,
+  maghrib: 2,
+  isya: 2
+}
+
 describe('hitungWaktuSholat — Falakiyah NU vs jadwalsholat.nu.or.id', () => {
-  it('17 tanggal 4 musim: semua ≤ 1 menit, ≥ 95% persis (termasuk Maghrib Ramadhan)', () => {
+  it('17 tanggal 4 musim: web + ihtiyath 2 menit, semua ≤ 1 menit, ≥ 95% persis (termasuk Maghrib Ramadhan)', () => {
     let persis = 0
     let total = 0
     for (const [tanggal, baris] of NU_SIDOARJO) {
       const ref = baris.split(' ')
       const { menit } = hitungWaktuSholat({ tanggal, ...NU_TITIK, tz: 7, metode: 'nu' })
       KOLOM.forEach((k, i) => {
-        const selisih = menit[k] - keMenit(ref[i])
+        const selisih = menit[k] - keMenit(ref[i]) - TAMBAH_IHTIYATH[k]
         expect(Math.abs(selisih), `${tanggal} ${k}`).toBeLessThanOrEqual(1)
         total++
         if (selisih === 0) persis++

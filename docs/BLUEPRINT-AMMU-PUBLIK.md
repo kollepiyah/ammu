@@ -166,6 +166,9 @@ Kegiatan (sky). **Hanya agenda yang ditandai admin "tampil di publik".**
   Kab. Sidoarjo (12 tanggal, ≤1 menit). **Falakiyah NU belum dibuat** — butuh tabel jadwal
   LFNU/NU Online untuk Sidoarjo/Surabaya (min. 3 tanggal beda musim) dari Kyai; jadwalsholat.nu.or.id
   menolak akses otomatis (429). Begitu ada, tambahkan entri di `METODE` + baris tes.
+  **26 Nov:** saran LFNU Sidoarjo — ihtiyath Falakiyah NU minimal 2 menit (Dzuhur 3, Terbit −2) =
+  jadwal web NU + 2 menit, sama dengan aplikasi NU Online. Posisi matahari dicek ke ephemeris LFNU
+  26 Nov 2026: deklinasi selisih ±9", perata waktu < 1 detik.
   Lokasi memakai `navigator.geolocation` (WebView Capacitor), **bukan** `@capacitor/geolocation`
   — tak perlu plugin baru.
 - Lokasi: `@capacitor/geolocation` (izin **perkiraan/coarse** cukup). Ditolak → koordinat
