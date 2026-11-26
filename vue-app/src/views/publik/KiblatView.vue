@@ -1,7 +1,8 @@
 <template>
   <!-- Arah Kiblat (blueprint F2) — kompas dari sensor arah HP. Sama untuk /umum & /ibadah. -->
   <div class="p-3 space-y-4 max-w-xl mx-auto">
-    <div class="flex items-center gap-2">
+    <!-- judul-ganda: di Android/PWA judul sudah di top bar (Kyai 26 Nov 2026) -->
+    <div class="judul-ganda flex items-center gap-2">
       <button
         type="button"
         class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)] hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"

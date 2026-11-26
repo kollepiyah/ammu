@@ -8,10 +8,12 @@
     <!-- Kyai 25 Nov 2026: top bar hijau tetap (terang & gelap), menyambung kartu Hijriah -->
     <header class="topbar-hijau shrink-0 flex items-center justify-between gap-3 px-4 text-white">
       <!-- Kyai 25 Nov 2026: cukup tulisan nama aplikasi seperti header Portal, tanpa logo -->
+      <!-- Kyai 26 Nov 2026: di luar Beranda cukup judul halaman (tanpa tombol Masuk/nama). -->
       <h2 class="text-base font-black text-white tracking-tight truncate">
-        {{ namaApp }}
+        {{ beranda ? namaApp : judulHalaman(route.path) || namaApp }}
       </h2>
       <button
+        v-if="beranda"
         v-haptic
         type="button"
         class="shrink-0 flex items-center gap-1.5 text-sm font-bold px-1 py-1 text-white hover:opacity-80 transition cursor-pointer max-w-[45%]"
@@ -57,6 +59,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import { halamanBeranda, judulHalaman } from '@/utils/judulHalaman'
 
 const TABS = [
   { nama: 'Beranda', to: '/umum', ikon: 'fa-house' },
@@ -68,6 +71,7 @@ const TABS = [
 ]
 
 const route = useRoute()
+const beranda = computed(() => halamanBeranda(route.path))
 const router = useRouter()
 const auth = useAuthStore()
 const settings = useSettingsStore()

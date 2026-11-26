@@ -55,6 +55,19 @@ rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biom
   (`RATA_TEKS`, `WARNA_TEKS`, `kelasRata`, `kelasWarna`) + tes.
 
 ### Changed
+- **Warna disatukan ke palet hijau Ammu** (Kyai 26 Nov 2026) — di `tailwind.config.js`, bukan
+  menyunting ribuan kelas: `cyan` (1.501 kelas di 71 layar), `sky`, `blue` = teal persis; `indigo`
+  = teal satu tingkat lebih tua; `violet` = abu netral (kategori yang dulu dibedakan warna, mis.
+  kolom Cuti di Absensi, tetap terbedakan). Merah/kuning/hijau-sukses (makna status) tetap.
+  `--color-info` ikut teal. Grafik berwarna kode hex tak disentuh (warna = pembeda seri data).
+- **Gaya kaca ("liquid glass")** — kelas `.kaca` & `.tab-kaca` di main.css: kaca keputihan dengan
+  tulisan hijau/hitam pekat di mode terang, kaca gelap kehijauan dengan tulisan terang di mode
+  gelap. Dipakai pertama di tab Notifikasi (dulu kotak biru).
+- **Top bar ringkas di luar Beranda** (Android/PWA, seperti NU Online) — Beranda tetap lengkap;
+  halaman lain ☰ · judul singkat · cari (foto profil & "Ammu Online" disembunyikan; di wilayah
+  publik tombol Masuk hanya di Beranda). Judul dari satu peta `utils/judulHalaman.js` + tes; judul
+  ganda di dalam halaman (Kiblat, Notifikasi) disembunyikan lewat `.judul-ganda`. Web & Electron
+  tak berubah.
 - **Kiblat: kompas langsung jalan** tanpa tombol "Aktifkan kompas" — sensor dipasang saat layar
   dibuka; di iPhone izin dicoba otomatis dan tombol baru muncul bila 1,5 detik tak ada data
   (iOS hanya mau memunculkan dialog izin dari ketukan). Selama menunggu tertulis "Membaca kompas…".

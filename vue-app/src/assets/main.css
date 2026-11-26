@@ -76,9 +76,9 @@ html {
   --color-danger-soft: #fee2e2;
   --color-danger-text: #7f1d1d;
 
-  --color-info: #2563eb;
-  --color-info-soft: #dbeafe;
-  --color-info-text: #1e3a8a;
+  --color-info: #0d9488; /* Kyai 26 Nov 2026: info ikut palet hijau Ammu (dulu biru) */
+  --color-info-soft: #ccfbf1;
+  --color-info-text: #134e4a;
 
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
   --shadow-md: 0 2px 4px rgba(15, 23, 42, 0.05), 0 10px 24px -6px rgba(15, 23, 42, 0.09);
@@ -144,9 +144,9 @@ html {
   --color-danger-soft: rgba(239, 68, 68, 0.18);
   --color-danger-text: #fca5a5;
 
-  --color-info: #60a5fa;
-  --color-info-soft: rgba(59, 130, 246, 0.18);
-  --color-info-text: #bfdbfe;
+  --color-info: #2dd4bf;
+  --color-info-soft: rgba(45, 212, 191, 0.16);
+  --color-info-text: #99f6e4;
 
   --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-md: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 28px -8px rgba(0, 0, 0, 0.45);
@@ -1205,4 +1205,56 @@ html.native-shell .tarik-segar {
 }
 html.native-shell .tarik-segar i {
   color: #fff !important;
+}
+
+/* Kyai 26 Nov 2026 — "liquid glass" selaras palet Ammu. Tulisan SELALU kontras: hijau/hitam pekat
+   di kaca terang, terang di kaca gelap (bukan teks gelap di atas latar gelap). */
+.kaca {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  color: #134e4a;
+}
+.dark .kaca {
+  background: rgba(45, 212, 191, 0.08);
+  border-color: rgba(94, 234, 212, 0.22);
+  color: #ccfbf1;
+}
+/* Tab bersegmen kaca: wadah kaca, tab aktif "terangkat". */
+.tab-kaca {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+}
+.tab-kaca > button {
+  flex: 1;
+  padding: 8px 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #475569;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.dark .tab-kaca > button {
+  color: #94a3b8;
+}
+.tab-kaca > button.aktif {
+  background: #fff;
+  color: #115e59;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+.dark .tab-kaca > button.aktif {
+  background: rgba(255, 255, 255, 0.14);
+  color: #f0fdfa;
+  box-shadow: none;
+}
+
+/* Kyai 26 Nov 2026: di Android/PWA judul halaman pindah ke top bar — judul di dalam halaman
+   (mis. "← Arah Kiblat", "Notifikasi") disembunyikan supaya tak dobel. Web & Electron tetap. */
+html.native-shell .judul-ganda {
+  display: none !important;
 }

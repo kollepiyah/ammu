@@ -8,10 +8,10 @@
         v-if="!isDesktop"
         class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2"
       >
-        <h2 class="text-base font-black text-[var(--text-primary)]">
+        <h2 class="judul-ganda text-base font-black text-[var(--text-primary)]">
           <i class="fas fa-bell mr-1.5 text-cyan-600"></i>Notifikasi
         </h2>
-        <div class="flex gap-3">
+        <div class="flex gap-3 ml-auto">
           <button
             v-if="unreadCount > 0"
             class="text-[11px] font-bold text-cyan-600 hover:underline"
@@ -30,30 +30,28 @@
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="flex gap-1 px-3 py-2 border-b border-[var(--border-subtle)]">
-        <button
-          :class="[
-            'flex-1 py-2 text-xs font-black rounded-lg transition',
-            activeTab === 'unread'
-              ? 'bg-cyan-600 text-white'
-              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
-          ]"
-          @click="activeTab = 'unread'"
-        >
-          Belum dibaca ({{ unreadCount }})
-        </button>
-        <button
-          :class="[
-            'flex-1 py-2 text-xs font-black rounded-lg transition',
-            activeTab === 'all'
-              ? 'bg-cyan-600 text-white'
-              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)]'
-          ]"
-          @click="activeTab = 'all'"
-        >
-          Semua ({{ items.length }})
-        </button>
+      <!-- Tabs — Kyai 26 Nov 2026: kaca netral selaras palet, bukan kotak biru -->
+      <div class="px-3 py-2 border-b border-[var(--border-subtle)]">
+        <div class="tab-kaca kaca" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === 'unread'"
+            :class="{ aktif: activeTab === 'unread' }"
+            @click="activeTab = 'unread'"
+          >
+            Belum dibaca ({{ unreadCount }})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === 'all'"
+            :class="{ aktif: activeTab === 'all' }"
+            @click="activeTab = 'all'"
+          >
+            Semua ({{ items.length }})
+          </button>
+        </div>
       </div>
 
       <!-- List -->

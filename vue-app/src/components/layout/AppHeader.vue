@@ -17,11 +17,15 @@
         <i class="fas fa-bars"></i>
       </button>
       <!-- v.20.5.0526: app name dari settings.txtAppName (sync Pengaturan Web) -->
-      <h2 class="text-sm md:text-base font-black text-slate-800 dark:text-white tracking-tight">
-        {{ appName }}
+      <!-- Kyai 26 Nov 2026: di luar Beranda (Android/PWA) cukup judul halaman singkat. -->
+      <h2
+        class="text-sm md:text-base font-black text-slate-800 dark:text-white tracking-tight truncate"
+      >
+        {{ ringkas ? judulHalaman(route.path) || appName : appName }}
       </h2>
       <!-- v.91.0626: indikator koneksi — LED kecil (hijau=online / merah=offline), SELALU tampil -->
       <span
+        v-if="!ringkas"
         class="relative inline-flex items-center justify-center w-2.5 h-2.5 flex-shrink-0"
         :title="isOnline ? 'Terhubung ke internet' : 'Tidak ada koneksi internet'"
         role="status"
@@ -136,8 +140,9 @@
         <i :class="['fas', ui.isDark ? 'fa-sun text-cyan-400' : 'fa-moon text-slate-600']"></i>
       </button>
 
-      <!-- Profil avatar dropdown — v.21.115.0528: w-9 → w-10 (40px) -->
-      <div ref="dropdownRef" class="relative">
+      <!-- Profil avatar dropdown — v.21.115.0528: w-9 → w-10 (40px). Kyai 26 Nov 2026: hanya di
+           Beranda pada Android/PWA (profil tetap di tab Pengaturan). -->
+      <div v-if="!ringkas" ref="dropdownRef" class="relative">
         <button
           class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-700 dark:to-cyan-700 hover:ring-2 hover:ring-teal-300 dark:hover:ring-teal-500 flex items-center justify-center transition cursor-pointer overflow-hidden border border-slate-200 dark:border-slate-600"
           aria-label="Menu profil"
@@ -216,6 +221,7 @@ import { useWaliChildren } from '@/composables/useWaliChildren'
 import { useMobileShell } from '@/composables/useMobileShell'
 import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 const topbarHijau = pakaiWilayahPublik()
+import { halamanBeranda, judulHalaman } from '@/utils/judulHalaman'
 const { showBottomNav } = useMobileShell()
 // v.91.0626: Global search (admin/guru saja)
 import GlobalSearch from '@/components/layout/GlobalSearch.vue'
@@ -228,6 +234,8 @@ const confirm = useConfirm()
 const toast = useToast()
 const route = useRoute()
 const router = useRouter()
+// Top bar ringkas (☰ · judul · cari) di Android/PWA selain Beranda.
+const ringkas = computed(() => topbarHijau && !halamanBeranda(route.path))
 
 // v.20.58.0526: prioritas txtHeaderBar (admin set "Teks Header Bar") > txtAppName > default
 const appName = computed(
