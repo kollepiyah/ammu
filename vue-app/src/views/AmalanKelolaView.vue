@@ -31,7 +31,6 @@ const menyimpan = ref(false)
 const terbuka = ref(false)
 const teksTempel = ref('')
 const babAktif = ref(0)
-const form = reactive(kosong())
 
 const blokKosong = () => ({
   jenis: 'teks',
@@ -56,6 +55,8 @@ function kosong() {
     bab: [babKosong()]
   }
 }
+// Dibuat SESUDAH blokKosong/babKosong: const panah tak ter-hoist — dulu galat "Cannot access before initialization".
+const form = reactive(kosong())
 
 const terurut = computed(() => susunDaftarAmalan(daftar.value, 'semua'))
 const berbab = computed(() => form.bentuk === 'berbab')
