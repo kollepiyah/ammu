@@ -37,6 +37,18 @@ jadi nomor tetap. **Gelombang ini butuh DUA migrasi** (`20261125150000_kegiatan_
 kolom `kegiatan.publik`, dan menyimpan agenda akan galat bila kolomnya belum ada. Lalu deploy web,
 rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biometric`).
 
+### Added
+- **DOKU sebagai gerbang pembayaran kedua** (Kyai 26 Nov 2026) — selama akun Midtrans yayasan
+  menunggu pembaruan Kemenkumham. Midtrans tetap utuh; gerbang dipilih di Pengaturan Keuangan
+  (`gerbang_bayar`). Fungsi baru `doku-charge` (DOKU Checkout, tanda tangan HMACSHA256 non-SNAP) &
+  `doku-webhook` (tanda tangan dicek, status dibaca ulang dari API DOKU, dicatat lewat
+  `apply_bmt_payment`, ref `dk-…`). Aturan jepit keranjang dipindah ke `_shared/keranjangBayar.ts`
+  dan dipakai KEDUA fungsi (midtrans-charge kini memakainya juga, perilaku sama). Wali dengan DOKU
+  diarahkan ke halaman bayar DOKU; "Lanjutkan bayar" & "Batalkan" di daftar Kode Bayar ikut
+  gerbangnya. Label uang saku "(Midtrans)" → "pembayaran online". Pemasangan: docs/SUPABASE-EDGE-
+  FUNCTIONS-DEPLOY.md §11. Tes `doku.test.js` (tanda tangan vs HMAC node, Checkout, keranjang).
+  **Belum diuji ke sandbox DOKU sungguhan.**
+
 ### Changed
 - **Falakiyah NU: ihtiyath minimal 2 menit** (Kyai 26 Nov 2026, saran LFNU Sidoarjo) — Subuh,
   Dhuha, Ashar, Maghrib, Isya +2, Dzuhur +3, Terbit −2 (Imsak ikut Subuh). Hasilnya = angka

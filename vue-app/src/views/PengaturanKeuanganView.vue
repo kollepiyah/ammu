@@ -2786,8 +2786,41 @@
       <h3
         class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
-        <i class="fas fa-building-columns text-cyan-600 mr-1"></i>Pembayaran Online (Midtrans)
+        <i class="fas fa-building-columns text-cyan-600 mr-1"></i>Pembayaran Online
       </h3>
+      <!-- v.1.5.5 (Kyai 26 Nov 2026): DOKU sebagai gerbang kedua selama akun Midtrans yayasan
+           menunggu pembaruan Kemenkumham. Kanal & biaya di bawah berlaku untuk keduanya. -->
+      <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1">
+        Gerbang pembayaran
+      </p>
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label
+          v-for="g in GERBANG_BAYAR"
+          :key="g.id"
+          :class="[
+            'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-bold cursor-pointer',
+            form.gerbang_bayar === g.id
+              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/30'
+              : 'border-[var(--border-default)]'
+          ]"
+        >
+          <input
+            v-model="form.gerbang_bayar"
+            type="radio"
+            :value="g.id"
+            class="accent-cyan-600"
+          />{{ g.label }}
+        </label>
+      </div>
+      <InfoLipat
+        v-if="form.gerbang_bayar === 'doku'"
+        class="text-[10px] text-[var(--text-tertiary)] italic mb-3"
+      >
+        DOKU: wali diarahkan ke halaman bayar DOKU (nomor VA / QR tampil di sana), status di Ammu
+        berubah sendiri begitu dana masuk. Kunci dipasang sebagai secret fungsi server
+        (DOKU_CLIENT_ID, DOKU_SECRET_KEY, DOKU_ENV); alamat notifikasi dikirim otomatis per
+        transaksi — tak perlu diisi di dasbor DOKU. Sesuaikan biaya layanan dengan tarif DOKU.
+      </InfoLipat>
       <InfoLipat class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
         Wali memilih Virtual Account bank atau QRIS di halaman Pembayaran; nomor VA / kode QR
         beserta nominalnya tampil di halaman Midtrans, dan tagihan terisi otomatis begitu dana
@@ -4031,6 +4064,8 @@ import { useExcel } from '@/composables/useExcel'
 import { useGedungScope } from '@/composables/useGedungScope'
 import {
   KANAL_MIDTRANS,
+  GERBANG_BAYAR,
+  gerbangBayar,
   BIAYA_VA_BAWAAN,
   BIAYA_QRIS_PERSEN_BAWAAN,
   kanalAktif,
@@ -5424,7 +5459,8 @@ const form = reactive({
   midtrans_kanal: KANAL_MIDTRANS.map((k) => k.id),
   midtrans_biaya_va: BIAYA_VA_BAWAAN,
   midtrans_biaya_qris_persen: BIAYA_QRIS_PERSEN_BAWAAN,
-  midtrans_client_key: ''
+  midtrans_client_key: '',
+  gerbang_bayar: 'midtrans'
 })
 
 function slugId(s) {
@@ -5665,6 +5701,7 @@ function loadFromSettings() {
   form.midtrans_biaya_va = s.midtrans_biaya_va ?? BIAYA_VA_BAWAAN
   form.midtrans_biaya_qris_persen = s.midtrans_biaya_qris_persen ?? BIAYA_QRIS_PERSEN_BAWAAN
   form.midtrans_client_key = s.midtrans_client_key || ''
+  form.gerbang_bayar = gerbangBayar(s)
 
   hidrasiKeu.value = sidikJariKeu(s) // Kyai 7 Agu: bekal penjaga simpan (lihat simpan())
 }
@@ -6278,7 +6315,8 @@ async function simpan() {
       midtrans_biaya_va: Math.max(0, Math.round(Number(form.midtrans_biaya_va) || 0)),
       midtrans_biaya_qris_persen: Math.max(0, Number(form.midtrans_biaya_qris_persen) || 0),
       // Client Key memang publik (dipakai snap.js di peramban) — aman di general/web.
-      midtrans_client_key: String(form.midtrans_client_key || '').trim()
+      midtrans_client_key: String(form.midtrans_client_key || '').trim(),
+      gerbang_bayar: form.gerbang_bayar === 'doku' ? 'doku' : 'midtrans'
     }
     // A1 (audit 29 Jul): kunci keuangan SENSITIF → settings/keuangan (finance-only),
     //   JANGAN ke general/web yang anon-readable (PSB+login). Sinkron dgn KEUANGAN_KEYS

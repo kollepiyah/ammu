@@ -1,10 +1,15 @@
 // midtrans.js — v.1.4.9 gel. 2: pintu layar ke fungsi server `midtrans-charge`.
 // Server Key Midtrans hanya ada di fungsi server; dari sini cuma meminta kode bayar.
+// v.1.5.5: gerbang kedua DOKU (fungsi doku-charge) — dipilih lewat `gerbang` (utils/biayaMidtrans).
 import { supabase } from '@/services/supabase'
 
-async function panggil(body) {
+const FUNGSI = { midtrans: 'midtrans-charge', doku: 'doku-charge' }
+
+async function panggil(body, gerbang = 'midtrans') {
   if (!supabase) throw new Error('Supabase belum siap.')
-  const { data, error } = await supabase.functions.invoke('midtrans-charge', { body })
+  const { data, error } = await supabase.functions.invoke(FUNGSI[gerbang] || FUNGSI.midtrans, {
+    body
+  })
   if (error) {
     // Non-2xx: pesan yang bisa dibaca wali ada di badan respons.
     let msg = error.message || 'Gagal menghubungi server pembayaran.'
@@ -31,13 +36,13 @@ export function ambilTitipan(id) {
 }
 
 /** Buat kode bayar. items = [{tipe:'tagihan', tagihan_id, nominal} | {tipe:'uang_saku', nominal}]. */
-export function buatKodeBayar({ santriId, kanal, items }) {
-  return panggil({ aksi: 'buat', santri_id: String(santriId), kanal, items })
+export function buatKodeBayar({ santriId, kanal, items, gerbang = 'midtrans' }) {
+  return panggil({ aksi: 'buat', santri_id: String(santriId), kanal, items }, gerbang)
 }
 
-/** Batalkan kode bayar yang belum dibayar (juga dibatalkan di Midtrans). */
-export function batalKodeBayar(intentId) {
-  return panggil({ aksi: 'batal', intent_id: String(intentId) })
+/** Batalkan kode bayar yang belum dibayar (Midtrans: dibatalkan juga di sana; DOKU: di Ammu saja). */
+export function batalKodeBayar(intentId, gerbang = 'midtrans') {
+  return panggil({ aksi: 'batal', intent_id: String(intentId) }, gerbang)
 }
 
 // ── BSI (Snap): jendela Midtrans DI DALAM Ammu lewat snap.js — butuh Client Key (publik,
@@ -78,9 +83,14 @@ export async function bayarLewatSnap({ token, redirectUrl, clientKey }) {
   return bukaHalamanBayar(redirectUrl) ? 'browser' : ''
 }
 
-/** Buka halaman bayar Midtrans. Capacitor & Electron meneruskannya ke browser sistem. */
+/** Buka halaman bayar Midtrans / DOKU. Capacitor & Electron meneruskannya ke browser sistem.
+ *  Hanya domain penyedia — tautan lain dari data tak pernah dibuka. */
 export function bukaHalamanBayar(url) {
-  if (!/^https:\/\/app(\.sandbox)?\.midtrans\.com\//.test(String(url || ''))) return false
+  const u = String(url || '')
+  const sah =
+    /^https:\/\/app(\.sandbox)?\.midtrans\.com\//.test(u) ||
+    /^https:\/\/([a-z0-9-]+\.)*doku\.com\//.test(u)
+  if (!sah) return false
   try {
     window.open(url, '_blank')
   } catch {

@@ -456,10 +456,10 @@
           </button>
           <InfoLipat class="text-[10px] text-[var(--text-tertiary)] mt-2 leading-relaxed">
             {{ selectedMethod === 'qris' ? 'Kode QR' : 'Nomor Virtual Account' }} beserta nominalnya
-            tampil di sini<template v-if="kanalMidtrans === 'bsi'">
-              (lewat jendela Midtrans)</template
-            >
-            — tinggal bayar dari m-banking<template v-if="selectedMethod === 'qris'">
+            tampil di sini<template v-if="gerbangOnline === 'doku'">
+              (di halaman bayar DOKU)</template
+            ><template v-else-if="kanalMidtrans === 'bsi'"> (lewat jendela Midtrans)</template> —
+            tinggal bayar dari m-banking<template v-if="selectedMethod === 'qris'">
               / e-wallet</template
             >. Biaya layanan ditanggung pembayar. Status berubah sendiri begitu dana masuk.
           </InfoLipat>
@@ -625,9 +625,15 @@ import { kunciTransaksi } from '@/utils/trxStruk'
 import { computeVaSantri, formatVa } from '@/utils/bmtVa'
 import { metodeBayarWali } from '@/utils/metodeBayarWali'
 // v.1.4.9 gel. 2: pembayaran online Midtrans (VA bank / QRIS), biaya layanan ditanggung wali.
-import { kanalAktif, cariKanal, rincianBayar } from '@/utils/biayaMidtrans'
+import { kanalAktif, cariKanal, rincianBayar, gerbangBayar } from '@/utils/biayaMidtrans'
 import { labelKanal } from '@/utils/caraBayarMidtrans'
-import { buatKodeBayar, batalKodeBayar, bayarLewatSnap, titipKode } from '@/services/midtrans'
+import {
+  buatKodeBayar,
+  batalKodeBayar,
+  bayarLewatSnap,
+  bukaHalamanBayar,
+  titipKode
+} from '@/services/midtrans'
 import { SUMBER_BAYAR_SANTRI } from '@/utils/cocokBayarTagihan'
 
 // v.82.0526: deep-link dari TagihanView — tagihan terpilih terisi otomatis
@@ -730,6 +736,8 @@ const bolehBayarMidtrans = computed(
   () => !!vaSantri.value && cartTotal.value > 0 && !rincianMidtrans.value.galat
 )
 const membuatKode = ref(false)
+// v.1.5.5: gerbang pembayaran online yang dipilih admin (Midtrans / DOKU).
+const gerbangOnline = computed(() => gerbangBayar(settings.settings))
 // v.1.4.9 gel. 2: kode bayar Core API tampil di halaman sendiri (/pembayaran/kode/:id).
 //   Jawaban server dititip (services/midtrans.titipKode) supaya tampil seketika, sebelum baris
 //   realtime tiba.
@@ -738,6 +746,11 @@ function bukaKode(id, kode = null) {
   router.push({ path: `/pembayaran/kode/${encodeURIComponent(id)}` })
 }
 function lanjutSnap(i) {
+  // v.1.5.5: tautan DOKU Checkout dibuka di browser (tanpa snap.js).
+  if (i.gerbang === 'doku') {
+    bukaHalamanBayar(i.redirect_url)
+    return
+  }
   bayarLewatSnap({
     token: i.snap_token,
     redirectUrl: i.redirect_url,
@@ -759,7 +772,8 @@ async function bayarMidtrans() {
     const r = await buatKodeBayar({
       santriId: s.id,
       kanal: kanalMidtrans.value,
-      items: cartItems.value
+      items: cartItems.value,
+      gerbang: gerbangOnline.value
     })
     cartSel.value = {}
     cartUangSaku.value = 0
@@ -775,6 +789,12 @@ async function bayarMidtrans() {
         gross: r.total,
         biaya_layanan: r.biaya
       })
+      return
+    }
+    if (r.mode === 'tautan') {
+      // DOKU Checkout: nomor VA / QR tampil di halaman DOKU; status di Ammu berubah lewat webhook.
+      if (!bukaHalamanBayar(r.redirect_url))
+        toast.info('Buka lewat "Lanjutkan bayar" di daftar Kode Bayar.')
       return
     }
     const cara = await bayarLewatSnap({
@@ -935,7 +955,8 @@ async function batalIntent(i) {
   batalId.value = i.id
   try {
     // Kode Midtrans dibatalkan juga di Midtrans (lewat server) supaya tak bisa dibayar lagi.
-    if (i.sumber === 'midtrans') await batalKodeBayar(i.id)
+    if (i.sumber === 'midtrans')
+      await batalKodeBayar(i.id, i.gerbang === 'doku' ? 'doku' : 'midtrans')
     else await updateOne('keuangan_va_intent', i.id, { status: 'dibatalkan' })
     toast.success('Kode bayar dibatalkan.')
   } catch (e) {

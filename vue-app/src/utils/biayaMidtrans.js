@@ -26,6 +26,16 @@ export const MIN_BAYAR = { va: 10000, qris: 1000 }
 // Batas per transaksi QRIS (Bank Indonesia).
 export const MAKS_QRIS = 10000000
 
+// v.1.5.5 (Kyai 26 Nov 2026): gerbang pembayaran online. `midtrans_aktif`, kanal, dan biaya layanan
+//   berlaku untuk gerbang mana pun; `gerbang_bayar` hanya menentukan fungsi server yang dipanggil.
+export const GERBANG_BAYAR = Object.freeze([
+  { id: 'midtrans', label: 'Midtrans' },
+  { id: 'doku', label: 'DOKU' }
+])
+export function gerbangBayar(settings) {
+  return settings?.gerbang_bayar === 'doku' ? 'doku' : 'midtrans'
+}
+
 export function midtransAktif(settings) {
   return !!settings && settings.midtrans_aktif === true
 }

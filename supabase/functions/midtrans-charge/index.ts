@@ -31,20 +31,12 @@ import {
   urlMidtrans,
   type ItemBayar
 } from '../_shared/midtrans.ts'
+import { ambilSetelan, susunKeranjang } from '../_shared/keranjangBayar.ts'
 
 const SERVER_KEY = Deno.env.get('MIDTRANS_SERVER_KEY') || ''
 
 function authMidtrans(): string {
   return 'Basic ' + btoa(SERVER_KEY + ':')
-}
-
-// deno-lint-ignore no-explicit-any
-async function fetchSettings(db: any): Promise<Record<string, unknown>> {
-  const [g, w] = await Promise.all([
-    db.from('settings').select('value').eq('key', 'general').maybeSingle(),
-    db.from('settings').select('value').eq('key', 'web').maybeSingle()
-  ])
-  return { ...(w.data?.value || {}), ...(g.data?.value || {}) }
 }
 
 Deno.serve(async (req) => {
@@ -103,7 +95,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Buat
-    const settings = await fetchSettings(db)
+    const settings = await ambilSetelan(db)
     if (!midtransAktif(settings)) return json({ ok: false, error: 'Pembayaran online belum aktif.' }, 403)
     const kanal = cariKanal(body.kanal)
     if (!kanal || !kanalAktif(settings).some((k) => k.id === kanal.id)) {
@@ -120,42 +112,7 @@ Deno.serve(async (req) => {
 
     // Item dijepit ke sisa tagihan yang SEKARANG (bukan yang dilihat layar beberapa menit lalu).
     const minta = Array.isArray(body.items) ? body.items : []
-    const idTagihan = [
-      ...new Set(
-        // deno-lint-ignore no-explicit-any
-        minta.filter((x: any) => x?.tipe === 'tagihan' && x?.tagihan_id).map((x: any) => String(x.tagihan_id))
-      )
-    ]
-    const peta = new Map<string, { kategori: string; periode: string; sisa: number }>()
-    if (idTagihan.length) {
-      const { data: rows, error } = await db
-        .from('keuangan_tagihan')
-        .select('id, santri_id, nominal, terbayar, kategori, periode')
-        .in('id', idTagihan)
-        .eq('santri_id', santriId)
-      if (error) throw error
-      for (const t of rows || []) {
-        peta.set(String(t.id), {
-          kategori: String(t.kategori || 'Tagihan'),
-          periode: String(t.periode || ''),
-          sisa: Math.max(0, Math.round(Number(t.nominal || 0) - Number(t.terbayar || 0)))
-        })
-      }
-    }
-    const items: ItemBayar[] = []
-    for (const x of minta) {
-      const n = Math.round(Number(x?.nominal) || 0)
-      if (n <= 0) continue
-      if (x?.tipe === 'tagihan') {
-        const t = peta.get(String(x.tagihan_id))
-        if (!t || t.sisa <= 0) continue
-        const pakai = Math.min(n, t.sisa)
-        t.sisa -= pakai // tagihan yang sama dua kali di keranjang tak bisa melebihi sisanya
-        items.push({ tipe: 'tagihan', tagihan_id: String(x.tagihan_id), kategori: t.kategori, periode: t.periode, nominal: pakai })
-      } else if (x?.tipe === 'uang_saku') {
-        items.push({ tipe: 'uang_saku', nominal: n })
-      }
-    }
+    const items: ItemBayar[] = await susunKeranjang(db, santriId, minta)
     const net = items.reduce((s, i) => s + i.nominal, 0)
     const rinci = rincianBayar(net, kanal.id, settings)
     if (!items.length) return json({ ok: false, error: 'Tidak ada yang perlu dibayar.' }, 400)

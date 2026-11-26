@@ -451,3 +451,47 @@ select id, status, detail, updated_at from public.wa_kirim_log order by updated_
 - Satu penugasan (sel × guru) hanya dikirim sekali; yang `gagal` dicoba lagi pada simpan berikutnya.
 - Jadwal yang tersimpan SEBELUM fitur ini tak dikirim otomatis.
 - Token salah / kuota habis → pengiriman berhenti (tak diulang ke semua guru); lihat kolom `detail`.
+
+---
+
+## 11. Pembayaran online wali — DOKU (gerbang kedua) — v.1.5.5
+
+Kyai, 26 Nov 2026: dipakai selama akun Midtrans yayasan menunggu pembaruan Kemenkumham. Midtrans
+TIDAK dihapus — pilih gerbangnya di **Pengaturan Keuangan → Bank → Pembayaran Online → Gerbang
+pembayaran**. Kanal, biaya layanan, dan sakelar "Aktifkan pembayaran online" berlaku untuk keduanya.
+
+Jalur: **DOKU Checkout** — wali diarahkan ke halaman bayar DOKU (nomor VA / QR tampil di sana).
+Status di Ammu berubah sendiri lewat webhook. Intent tercatat dengan `sumber: 'midtrans'`
+(= "pembayaran online" bagi semua layar & RPC) plus `gerbang: 'doku'`; ref pembayaran berawalan `dk-`.
+
+### 11a. Pasang (sekali)
+1. Dasbor DOKU → **Integrations → API Keys**: salin **Client ID** dan **Secret Key** (sandbox dulu).
+2. Secret fungsi:
+   ```bash
+   npx supabase secrets set DOKU_CLIENT_ID="BRN-…" DOKU_SECRET_KEY="SK-…" DOKU_ENV="sandbox"
+   ```
+3. Deploy:
+   ```bash
+   npx supabase functions deploy doku-charge
+   npx supabase functions deploy doku-webhook --no-verify-jwt
+   ```
+4. Cek: buka `https://<ref-proyek>.supabase.co/functions/v1/doku-webhook` → `{"siap":true}`.
+5. Pengaturan Keuangan: gerbang **DOKU**, sesuaikan biaya layanan VA/QRIS dengan tarif DOKU,
+   centang kanal, nyalakan "Aktifkan pembayaran online", simpan.
+
+Notification URL **tak perlu** diisi di dasbor DOKU — dikirim per transaksi lewat
+`additional_info.override_notification_url`.
+
+### 11b. Pindah ke production
+`DOKU_ENV="production"` + Client ID & Secret Key production (keduanya bersamaan). Lingkungan TIDAK
+bisa ditebak dari kuncinya (beda dengan Midtrans `SB-`), jadi `DOKU_ENV` wajib benar.
+
+### 11c. Catatan
+- **Uji sandbox = database PRODUKSI** (sama seperti Midtrans): bayar lewat simulator DOKU tercatat
+  nyata. Pakai santri uji lalu hapus baris pembayarannya di Buku Induk.
+- Batal kode bayar DOKU hanya menutupnya di Ammu (Checkout tak punya API batal). Bila wali tetap
+  membayar tautan lama, uangnya tercatat ke uang saku santri (penadah RPC) — tak hilang.
+- Webhook memercayai **API status DOKU** (`GET /orders/v1/status/{invoice}`), bukan badan
+  notifikasi; tanda tangan yang tak cocok hanya dicatat di log.
+- Akun DOKU **perorangan**: dana masuk rekening pribadi — tanyakan ke DOKU apakah boleh menerima
+  pembayaran atas nama yayasan, dan batas transaksinya (layar review: Rp10 juta / 5 transaksi).
