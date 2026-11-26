@@ -8,9 +8,11 @@
       class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-emerald-100 dark:border-slate-700 shadow-sm"
     >
       <div class="flex items-start gap-3 mb-4">
-        <i class="fas fa-clipboard-check text-emerald-600 text-2xl"></i>
+        <i class="judul-ganda fas fa-clipboard-check text-emerald-600 text-2xl"></i>
         <div>
-          <h2 class="text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight">
+          <h2
+            class="judul-ganda text-lg md:text-xl font-black text-slate-800 dark:text-white leading-tight"
+          >
             Absensi Santri
           </h2>
           <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">

@@ -94,6 +94,11 @@ Deno.serve(async (req) => {
     const data = it.data || {}
 
     if (putusan === 'lunas') {
+      const dibayar = Math.round(Number(st?.order?.amount || 0))
+      const gross = Math.round(Number(data.gross || 0))
+      if (gross > 0 && dibayar !== gross) {
+        console.warn('[doku-webhook] selisih nominal vs intent:', invoice, { dibayar, gross })
+      }
       const bersih = nominalBersih(st?.order?.amount, data.biaya_layanan)
       if (bersih <= 0) return json({ ok: true, abaikan: 'nominal 0' })
       const nomorVa = String(st?.virtual_account_info?.virtual_account_number || '')

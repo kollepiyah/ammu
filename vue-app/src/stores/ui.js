@@ -11,7 +11,10 @@ export const useUiStore = defineStore('ui', () => {
   // Kyai req: jangan auto-hide. Drop localStorage — refresh selalu reset ke default per viewport.
   // User toggle via hamburger tetap work in-session.
   function _initialSidebar() {
-    return typeof window !== 'undefined' && window.innerWidth >= 768
+    if (typeof window === 'undefined') return false
+    // Di HP landscape (tinggi <= 540, lebar <= 1024) sidebar tetap default tertutup sebagai drawer.
+    if (window.innerHeight <= 540 && window.innerWidth <= 1024) return false
+    return window.innerWidth >= 768
   }
   const sidebarOpen = ref(_initialSidebar())
   function openSidebar() {

@@ -3,9 +3,11 @@
     <div
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
-      <!-- Header + aksi — v.98: di Electron judul+aksi pindah ke pita "Aksi Halaman" -->
+      <!-- Header + aksi — v.98: di Electron judul+aksi pindah ke pita "Aksi Halaman".
+           Batch 3 (Kyai 26 Nov 2026): di Android/PWA (topbarHijau), aksi pindah ke menu titik
+           tiga di top bar agar tidak ada ruang renggang di atas tab. -->
       <div
-        v-if="!isDesktop"
+        v-if="!isDesktop && !topbarHijau"
         class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2"
       >
         <h2 class="judul-ganda text-base font-black text-[var(--text-primary)]">
@@ -106,8 +108,10 @@ import { useRouter } from 'vue-router'
 import { useNotifications } from '@/composables/useNotifications'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 
 const router = useRouter()
+const topbarHijau = pakaiWilayahPublik()
 const { items, itemsUnread, unreadCount, markAllRead, clearAll } = useNotifications()
 
 const activeTab = ref('unread')

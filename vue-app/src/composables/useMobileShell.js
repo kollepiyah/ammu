@@ -18,12 +18,20 @@ const _isNative = detectNative()
 
 export function useMobileShell() {
   const isMobile = ref(false)
+  const isCompactLandscape = ref(false)
   const isStandalone = ref(false)
   function sync() {
     try {
       isMobile.value = window.matchMedia('(max-width: 767px)').matches
+      // HP diputar landscape: lebar melewati 767px (800-930px), tapi tinggi tetap rendah (<= 540px).
+      // isMobile sengaja tetap berbasis lebar agar tabel/kartu layar lebar tak ikut menyempit;
+      // showBottomNav tetap aktif di HP landscape supaya shell native tidak pecah ke mode desktop.
+      isCompactLandscape.value = window.matchMedia(
+        '(max-height: 540px) and (max-width: 1024px)'
+      ).matches
     } catch {
       isMobile.value = false
+      isCompactLandscape.value = false
     }
     try {
       isStandalone.value =
@@ -38,13 +46,19 @@ export function useMobileShell() {
   onMounted(() => {
     sync()
     window.addEventListener('resize', sync)
+    window.addEventListener('orientationchange', sync)
   })
-  onUnmounted(() => window.removeEventListener('resize', sync))
+  onUnmounted(() => {
+    window.removeEventListener('resize', sync)
+    window.removeEventListener('orientationchange', sync)
+  })
 
-  // (Android native ATAU PWA standalone) DAN mobile.
+  // (Android native ATAU PWA standalone) DAN (HP portrait ATAU HP landscape).
   // v.103: ?shell=mobile -> paksa bottom nav di lebar HP (uji UI Android di browser).
-  const showBottomNav = computed(() =>
-    isMobile.value && (forceMobileShell || _isNative || isStandalone.value)
+  const showBottomNav = computed(
+    () =>
+      (isMobile.value || isCompactLandscape.value) &&
+      (forceMobileShell || _isNative || isStandalone.value)
   )
-  return { isMobile, isStandalone, isNative: _isNative, showBottomNav }
+  return { isMobile, isCompactLandscape, isStandalone, isNative: _isNative, showBottomNav }
 }

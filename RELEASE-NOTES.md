@@ -11,11 +11,12 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 
 - **Jadwal Sholat** (Android & aplikasi web terpasang): Imsak sampai Isya untuk lokasi HP,
   hitung mundur ke waktu sholat berikutnya, dan jadwal hari-hari lain. Dihitung langsung di HP —
-  tetap jalan tanpa internet. Metode Kemenag RI (bawaan) atau Umm al-Qura; lokasi otomatis atau
-  pilih kota. Kartu jadwal juga tampil di Beranda.
-- **Arah Kiblat** dengan kompas HP: piringan berputar mengikuti HP dan memberi tahu "putar ke
-  kanan/kiri" sampai menghadap kiblat.
-- Ikon Kiblat dan Jadwal Sholat di dashboard kini terbuka (Al-Qur'an masih menyusul).
+  tetap jalan tanpa internet. Metode **Falakiyah NU** (bawaan, ihtiyath 2 menit sesuai saran LFNU
+  Sidoarjo), Kemenag RI, atau Umm al-Qura; lokasi otomatis atau pilih kota. Kartu jadwal juga
+  tampil di Beranda.
+- **Arah Kiblat** dengan kompas HP yang langsung aktif saat dibuka: piringan berputar mengikuti HP
+  dan memberi tahu "putar ke kanan/kiri" sampai menghadap kiblat.
+- Ikon Kiblat, Kitab & Wirid, dan Jadwal Sholat di dashboard kini terbuka (Al-Qur'an menyusul).
 - **Kunci dengan sidik jari / Face ID:** aktifkan di Pengaturan, Portal terkunci saat aplikasi
   dibuka atau ditinggal lebih dari 3 menit. Jadwal sholat & kiblat tetap bisa dibuka.
 - **Widget Jadwal Sholat** di layar utama HP Android: waktu sholat berikutnya dengan hitung mundur,
@@ -24,14 +25,23 @@ Rinciannya untuk pengembang ada di `CHANGELOG.md` — jangan disalin ke sana, te
 - **Pengingat waktu sholat** (Android): nyalakan di Pengaturan → Ibadah, pilih waktu mana saja,
   bisa juga diingatkan 5–15 menit sebelumnya.
 - **Agenda pondok** di Beranda tanpa masuk: daftar kegiatan, ujian, dan libur yang dipilih admin.
-- **Kitab & Wirid:** bacaan wirid, doa, tahlil, dan maulid dengan teks Arab, bacaan Latin, dan
-  arti; ukuran huruf bisa diatur. Isinya ditambah admin kapan saja tanpa memperbarui aplikasi.
+- **Kitab & Wirid:** bacaan wirid, doa, tahlil, dan maulid berbab/berhalaman dengan teks Arab,
+  bacaan Latin, arti, mode baca layar penuh, penanda halaman, serta pengaturan ukuran huruf. Admin
+  mengelolanya lewat editor teks kaya (tebal, miring, warna, rata teks, gaya baris) kapan saja
+  tanpa memperbarui aplikasi.
+- **DOKU sebagai pilihan pembayaran online kedua** di samping Midtrans (dipilih admin di
+  Pengaturan Keuangan).
 
 **Perubahan**
 
-- **Tampilan baru di Android:** bilah atas kini hijau, menyambung dengan kartu tanggal Hijriah yang
-  menampilkan waktu sholat berikutnya dan nama desa Anda. Kartu ini juga ada di beranda setelah
-  masuk, paling atas.
+- **Tampilan baru di Android & PWA:** bilah atas hijau menyambung mulus dengan kartu tanggal
+  Hijriah dan waktu sholat berikutnya; di luar Beranda bilah atas ringkas menampilkan judul halaman
+  tanpa judul ganda di dalam halaman; warna seluruh aplikasi disatukan ke palet hijau Ammu; aksi
+  Notifikasi (Tandai Semua Telah Dibaca & Bersihkan) pindah ke menu titik tiga di pojok kanan atas.
+- **Tampilan landscape HP & layar pembuka (splash) dirapikan:** orientasi miring tetap utuh tanpa
+  bingkai hijau bocor di samping; di Android aplikasi langsung tampil ke splash screen berlogo
+  sejak detik pertama (tanpa layar biru gelap kosong), dan status bar atas di PWA iOS tak lagi
+  bocor hijau saat splash tampil.
 - **Layar Jadwal Sholat lebih rapi** seperti NU Online, lengkap dengan hitung mundur.
 - Tab bawah **Profil** kini bernama **Pengaturan**; pilihan tema terang/gelap ada di sana.
 - **Aplikasi lebih cepat terbuka dan lebih hemat kuota.** Data santri, guru, tes, dan keuangan

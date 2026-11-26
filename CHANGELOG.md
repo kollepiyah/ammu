@@ -66,6 +66,28 @@ rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biom
   konversi, syair).
 
 ### Fixed
+- **Tampilan landscape HP (Android & PWA)** (Batch 1, 26 Nov 2026): `useMobileShell` kini menjaga
+  `showBottomNav` pada HP landscape (`max-height: 540px` & `max-width: 1024px`) dan `main.css`
+  memperluas gaya `html.native-shell` ke landscape; `safe-area-inset-left/right` dipindah dari
+  `body` ke topbar/konten/bottom-nav agar tak bocor bingkai hijau di kiri-kanan; teks nama/role
+  desktop & lonceng tak lagi tampil gelap di atas `.topbar-hijau`.
+- **Judul halaman ganda di Android & PWA** (Batch 1, 26 Nov 2026): `h1` judul halaman disembunyikan
+  terpusat di `html.native-shell` (beserta pembungkus kosong `:has(> h1:only-child)` seperti
+  GlondonganView), pengecualian `.tetap-tampil` di 5 view detail/form, dan `.judul-ganda` di 10
+  view `h2`/header. Label top bar & ikon menu diseragamkan menjadi **Kitab & Wirid** (`judulHalaman`,
+  `MenuIbadah`).
+- **Splash screen Android & status bar PWA iOS** (Batch 2, 26 Nov 2026): `values-night/colors.xml`
+  `#1E293B` → `#0C0E12`, `styles.xml` memakai `@drawable/splash_icon` sejak detik 0, penahanan
+  kosong 450 ms di `MainActivity` & delay 2,4 dtk di `main.js` dipangkas; di PWA iOS `theme-color`
+  dan latar `body` mengikuti warna splash sampai `hideSplash()` agar status bar atas tak bocor
+  gradasi hijau.
+- **Notifikasi top bar titik tiga & perapian audit** (Batch 3, 26 Nov 2026): di `/notifikasi`
+  (Android & PWA), baris tombol lama di dalam halaman disembunyikan dan dipindah ke menu titik tiga
+  (`⋮`) paling kanan `AppHeader` (Tandai Semua Telah Dibaca & Bersihkan); warna judul bab Biru &
+  Ungu di `utils/amalan` memakai kelas hex `.warna-teks-biru`/`.warna-teks-ungu` agar tak terseret
+  remap `sky`/`violet` di Tailwind; teks kosong tab "Semua" di `AgendaPublikView` diperbaiki; hook
+  `DOMPurify` di `utils/isiAmalan` dilepas di `finally`; `doku-webhook` & `_shared/doku` ditambah
+  pembanding konstan & peringatan selisih nominal; `RELEASE-NOTES.md` diselaraskan.
 - Ikon panah di daftar Pengaturan (Android/PWA) tak tampil: `content: '\f054'` di main.css rusak
   jadi karakter kontrol (peringatan "Unterminated string token" saat build).
 

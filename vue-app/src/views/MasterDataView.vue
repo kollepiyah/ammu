@@ -898,7 +898,7 @@ async function simpanPengaturanRekap() {
     <!-- v.21.14.0526: Tighter header — v.100: sembunyikan di Electron (aksi → pita) -->
     <header
       v-if="!isDesktop"
-      class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
+      class="judul-ganda bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
     >
       <div class="flex items-baseline gap-2 flex-wrap">
         <h1

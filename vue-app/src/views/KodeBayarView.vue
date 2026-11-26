@@ -5,7 +5,7 @@
   <div class="min-h-full bg-[var(--bg-page)] pb-24">
     <!-- Kepala -->
     <div
-      class="sticky top-0 z-10 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] flex items-center gap-2 px-2 py-2"
+      class="judul-ganda sticky top-0 z-10 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] flex items-center gap-2 px-2 py-2"
     >
       <button
         class="w-10 h-10 rounded-full hover:bg-[var(--bg-muted)] flex items-center justify-center text-[var(--text-primary)] cursor-pointer"

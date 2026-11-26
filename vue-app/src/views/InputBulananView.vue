@@ -5,7 +5,7 @@
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
     >
       <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
-        <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
+        <h2 class="judul-ganda text-base md:text-lg font-black text-[var(--text-primary)]">
           <i class="fas fa-pen-fancy text-teal-600 mr-2"></i>Input Prestasi Bulanan
         </h2>
         <div class="flex items-center gap-2">

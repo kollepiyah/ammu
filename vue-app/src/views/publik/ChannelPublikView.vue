@@ -1,12 +1,12 @@
 <template>
   <div class="p-3 space-y-3 max-w-xl mx-auto">
     <div class="flex items-center justify-between px-1">
-      <h2 class="text-base font-black text-[var(--text-primary)]">
+      <h2 class="judul-ganda text-base font-black text-[var(--text-primary)]">
         <i class="fas fa-play-circle text-teal-600 mr-1.5"></i>{{ namaChannel }}
       </h2>
       <button
         type="button"
-        class="text-xs font-bold text-teal-700 dark:text-teal-300 cursor-pointer disabled:opacity-50"
+        class="ml-auto text-xs font-bold text-teal-700 dark:text-teal-300 cursor-pointer disabled:opacity-50"
         :disabled="loading"
         @click="segarkan(true)"
       >

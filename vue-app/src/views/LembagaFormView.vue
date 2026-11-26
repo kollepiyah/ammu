@@ -5,7 +5,7 @@
       class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm flex items-center justify-between gap-3"
     >
       <div>
-        <h1 class="text-lg md:text-xl font-black text-[var(--text-primary)]">
+        <h1 class="tetap-tampil text-lg md:text-xl font-black text-[var(--text-primary)]">
           <i
             :class="editingId ? 'fas fa-edit text-cyan-500' : 'fas fa-building text-teal-500'"
             class="mr-2"

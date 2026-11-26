@@ -114,8 +114,9 @@
           </div>
         </transition>
       </div>
-      <!-- Info nama + role (desktop) — non multi-anak -->
-      <div v-else class="text-right hidden md:block mr-2">
+      <!-- Info nama + role (desktop) — non multi-anak; sembunyikan di topbarHijau (Android/PWA)
+           supaya di HP landscape tak muncul teks gelap di atas top bar hijau. -->
+      <div v-else-if="!topbarHijau" class="text-right hidden md:block mr-2">
         <p class="text-xs font-black text-slate-800 dark:text-white leading-tight">
           {{ namaUser }}
         </p>
@@ -126,8 +127,9 @@
         </p>
       </div>
 
-      <!-- v.21.111.0527: Notif Center — v.91.0626: sembunyi di mobile (pindah ke bottom nav) -->
-      <AppNotifBell v-if="!showBottomNav" />
+      <!-- v.21.111.0527: Notif Center — v.91.0626: sembunyi di mobile (pindah ke bottom nav)
+           dan sembunyi saat top bar ringkas (Android/PWA di luar Beranda). -->
+      <AppNotifBell v-if="!showBottomNav && !ringkas" />
 
       <!-- v.21.115.0528: tap target w-9 → w-10 (40px) — mobile-friendly per design-tokens -->
       <button
@@ -199,12 +201,57 @@
           </div>
         </transition>
       </div>
+      <!-- Batch 3 (Kyai 26 Nov 2026): di halaman Notifikasi (Android/PWA), tombol pencarian
+           bergeser ke kiri dan paling kanan tampil titik tiga berisi dua aksi notifikasi. -->
+      <div v-if="isNotifPage" ref="notifMenuRef" class="relative">
+        <button
+          type="button"
+          class="th-titik-tiga w-10 h-10 -mr-1 rounded-full flex items-center justify-center transition cursor-pointer"
+          aria-label="Menu notifikasi"
+          :aria-expanded="notifMenuOpen"
+          @click="notifMenuOpen = !notifMenuOpen"
+        >
+          <i class="fas fa-ellipsis-vertical text-base"></i>
+        </button>
+        <transition
+          enter-active-class="transition duration-150"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-100"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+        >
+          <div
+            v-if="notifMenuOpen"
+            class="absolute right-0 top-full mt-2 w-60 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-1.5 z-50"
+          >
+            <button
+              type="button"
+              class="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2.5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="notifUnread === 0"
+              @click="onTandaiSemuaNotif"
+            >
+              <i class="fas fa-check-double text-teal-600 dark:text-teal-300 w-4"></i>
+              <span>Tandai Semua Telah Dibaca</span>
+            </button>
+            <button
+              type="button"
+              class="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center gap-2.5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="notifItems.length === 0"
+              @click="onBersihkanNotif"
+            >
+              <i class="fas fa-broom w-4"></i>
+              <span>Bersihkan</span>
+            </button>
+          </div>
+        </transition>
+      </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -219,6 +266,7 @@ import AppNotifBell from '@/components/layout/AppNotifBell.vue'
 import { useWaliChildren } from '@/composables/useWaliChildren'
 // v.91.0626: sembunyikan bell saat bottom nav aktif (notif pindah ke bottom nav)
 import { useMobileShell } from '@/composables/useMobileShell'
+import { useNotifications } from '@/composables/useNotifications'
 import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 const topbarHijau = pakaiWilayahPublik()
 import { halamanBeranda, judulHalaman } from '@/utils/judulHalaman'
@@ -236,6 +284,29 @@ const route = useRoute()
 const router = useRouter()
 // Top bar ringkas (☰ · judul · cari) di Android/PWA selain Beranda.
 const ringkas = computed(() => topbarHijau && !halamanBeranda(route.path))
+const isNotifPage = computed(() => topbarHijau && route.path === '/notifikasi')
+const {
+  items: notifItems,
+  unreadCount: notifUnread,
+  markAllRead: tandaiSemuaNotif,
+  clearAll: bersihkanSemuaNotif
+} = useNotifications()
+const notifMenuOpen = ref(false)
+const notifMenuRef = ref(null)
+watch(
+  () => route.path,
+  () => {
+    notifMenuOpen.value = false
+  }
+)
+function onTandaiSemuaNotif() {
+  notifMenuOpen.value = false
+  tandaiSemuaNotif()
+}
+function onBersihkanNotif() {
+  notifMenuOpen.value = false
+  bersihkanSemuaNotif()
+}
 
 // v.20.58.0526: prioritas txtHeaderBar (admin set "Teks Header Bar") > txtAppName > default
 const appName = computed(
@@ -348,6 +419,9 @@ function handleClickOutside(e) {
   }
   if (childRef.value && !childRef.value.contains(e.target)) {
     childOpen.value = false
+  }
+  if (notifMenuRef.value && !notifMenuRef.value.contains(e.target)) {
+    notifMenuOpen.value = false
   }
 }
 onMounted(() => {

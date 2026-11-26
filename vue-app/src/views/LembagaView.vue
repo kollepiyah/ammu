@@ -18,7 +18,7 @@
         class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
       >
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div class="flex items-baseline gap-2 flex-wrap">
+          <div class="judul-ganda flex items-baseline gap-2 flex-wrap">
             <h1
               class="text-base md:text-lg font-black text-[var(--text-primary)] whitespace-nowrap"
             >

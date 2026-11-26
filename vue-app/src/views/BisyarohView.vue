@@ -17,7 +17,7 @@
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
       >
-        <h2 class="text-base md:text-lg font-black text-[var(--text-primary)]">
+        <h2 class="judul-ganda text-base md:text-lg font-black text-[var(--text-primary)]">
           <i class="fas fa-money-check-alt text-emerald-600 mr-2"></i>Bisyaroh Guru/Pegawai
         </h2>
         <!-- v.103b: tab strip 1-baris scroll-samping, scrollbar disembunyikan -->

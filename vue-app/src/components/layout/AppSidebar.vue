@@ -2,20 +2,34 @@
   <!-- v.21.84.0527: Sidebar match legacy - cream mint bg, flat menu, left accent active -->
   <aside
     :class="[
-      'bg-white dark:bg-slate-900 text-slate-700 dark:text-white flex-shrink-0 flex flex-col fixed inset-y-0 left-0 transform transition-all duration-300 z-50 shadow-xl border-r border-emerald-100 dark:border-white/5 md:relative overflow-hidden',
+      'bg-white dark:bg-slate-900 text-slate-700 dark:text-white flex-shrink-0 flex flex-col fixed inset-y-0 left-0 transform transition-all duration-300 z-50 shadow-xl border-r border-emerald-100 dark:border-white/5 overflow-hidden',
+      isDrawer ? '' : 'md:relative',
       ui.sidebarOpen
         ? 'translate-x-0 w-72'
-        : '-translate-x-full w-72 md:translate-x-0 md:w-0 md:border-0 md:shadow-none'
+        : isDrawer
+          ? '-translate-x-full w-72'
+          : '-translate-x-full w-72 md:translate-x-0 md:w-0 md:border-0 md:shadow-none'
     ]"
+    :style="isDrawer ? { paddingLeft: 'env(safe-area-inset-left, 0px)' } : null"
     aria-label="Sidebar navigasi"
   >
     <div
-      class="px-6 pt-8 pb-6 flex flex-col items-center gap-3 relative bg-emerald-50/60 dark:bg-black/20"
-      style="padding-top: calc(2rem + env(safe-area-inset-top))"
+      :class="[
+        'flex relative bg-emerald-50/60 dark:bg-black/20',
+        isCompactLandscape
+          ? 'px-4 py-3 flex-row items-center gap-3'
+          : 'px-6 pt-8 pb-6 flex-col items-center gap-3'
+      ]"
+      :style="
+        isCompactLandscape
+          ? { paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }
+          : { paddingTop: 'calc(2rem + env(safe-area-inset-top))' }
+      "
     >
       <button
-        class="md:hidden absolute top-4 right-4 text-slate-500 hover:text-slate-700 dark:text-white/70 dark:hover:text-white text-xl"
-        style="top: calc(1rem + env(safe-area-inset-top))"
+        v-if="isDrawer"
+        class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 dark:text-white/70 dark:hover:text-white text-lg cursor-pointer"
+        :style="{ top: 'calc(0.75rem + env(safe-area-inset-top))' }"
         aria-label="Tutup sidebar"
         @click="ui.closeSidebar()"
       >
@@ -23,19 +37,30 @@
       </button>
       <img
         :src="logoUrl"
-        class="w-24 h-24 object-contain drop-shadow-md hover:scale-105 transition-transform"
+        :class="[
+          'object-contain drop-shadow-md transition-transform shrink-0',
+          isCompactLandscape ? 'w-11 h-11' : 'w-24 h-24 hover:scale-105'
+        ]"
         alt="Logo Mambaul Ulum"
         @error="onLogoError"
       />
-      <div class="text-center w-full mt-1">
+      <div :class="isCompactLandscape ? 'text-left min-w-0 pr-7' : 'text-center w-full mt-1'">
         <h1
-          class="text-[19px] font-black text-slate-800 dark:text-white leading-tight tracking-tight"
+          :class="[
+            'font-black text-slate-800 dark:text-white leading-tight tracking-tight',
+            isCompactLandscape ? 'text-sm truncate' : 'text-[19px]'
+          ]"
         >
-          <span class="block">{{ namaLine1 }}</span>
-          <span v-if="namaLine2" class="block">{{ namaLine2 }}</span>
+          <span :class="isCompactLandscape ? 'inline mr-1' : 'block'">{{ namaLine1 }}</span>
+          <span v-if="namaLine2" :class="isCompactLandscape ? 'inline' : 'block'">{{
+            namaLine2
+          }}</span>
         </h1>
         <p
-          class="text-[10px] text-teal-700 dark:text-teal-300 font-bold uppercase tracking-widest mt-3 bg-teal-100/60 dark:bg-white/10 px-3 py-1 rounded-full inline-block truncate"
+          :class="[
+            'text-[10px] text-teal-700 dark:text-teal-300 font-bold uppercase tracking-widest bg-teal-100/60 dark:bg-white/10 px-2.5 py-0.5 rounded-full inline-block truncate',
+            isCompactLandscape ? 'mt-1' : 'mt-3 px-3 py-1'
+          ]"
         >
           {{ periodeHijri }}
         </p>
@@ -113,8 +138,8 @@
   </aside>
 
   <div
-    v-if="ui.sidebarOpen"
-    class="md:hidden fixed inset-0 bg-slate-900/50 z-40 backdrop-blur-sm"
+    v-if="ui.sidebarOpen && isDrawer"
+    class="fixed inset-0 bg-slate-900/50 z-40 backdrop-blur-sm"
     @click="ui.closeSidebar()"
   ></div>
 </template>
@@ -128,6 +153,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { labelVersi } from '@/utils/appVersion'
 import { useUiStore } from '@/stores/ui'
 import { useMenus } from '@/composables/useMenus'
+import { useMobileShell } from '@/composables/useMobileShell'
 import { useToast } from '@/composables/useToast'
 import { masehiToHijri, getKalibrasi, NAMA_BULAN_HIJRI } from '@/utils/hijri'
 
@@ -138,6 +164,10 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { groupedMenus } = useMenus()
+const { isMobile, isCompactLandscape } = useMobileShell()
+// Di HP portrait & HP landscape, sidebar selalu drawer melayang agar tidak mendorong konten &
+// BottomNav saat HP diputar miring.
+const isDrawer = computed(() => isMobile.value || isCompactLandscape.value)
 
 const GROUP_ICONS = {
   Menu: 'fa-th-large',
@@ -221,9 +251,9 @@ function handleClick(menu) {
   }
   const { pathOnly, query } = _parseMenuPath(menu.path)
   router.push({ path: pathOnly, query }).catch(() => {})
-  // v.21.84.0527: kyai req — hanya close sidebar di MOBILE setelah klik menu.
+  // v.21.84.0527: kyai req — tutup sidebar otomatis di HP (portrait maupun landscape) setelah klik menu.
   // Desktop tetap open kecuali user explicit klik hamburger.
-  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+  if (isDrawer.value) {
     ui.closeSidebar()
   }
 }

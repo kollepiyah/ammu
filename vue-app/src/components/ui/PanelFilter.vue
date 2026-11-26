@@ -6,9 +6,9 @@
     <div class="flex gap-2">
       <div class="relative flex-1 min-w-0"><slot name="cari"></slot></div>
       <button
-        v-if="$slots.default"
+        v-if="$slots.default && lipat"
         type="button"
-        class="md:hidden relative shrink-0 w-11 rounded-xl border transition cursor-pointer"
+        class="relative shrink-0 w-11 rounded-xl border transition cursor-pointer"
         :class="
           terbuka || jumlahAktif
             ? 'border-teal-500 text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30'
@@ -26,9 +26,9 @@
         >
       </button>
     </div>
-    <div v-if="$slots.default" class="panel-filter" :class="terbuka ? 'block' : 'hidden md:block'">
+    <div v-if="$slots.default" class="panel-filter" :class="!lipat || terbuka ? 'block' : 'hidden'">
       <slot></slot>
-      <div v-if="jumlahAktif" class="md:hidden flex justify-end mt-2">
+      <div v-if="lipat && jumlahAktif" class="flex justify-end mt-2">
         <button
           type="button"
           class="text-xs font-bold text-rose-600 dark:text-rose-300 px-2 py-1 cursor-pointer"
@@ -42,19 +42,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useMobileShell } from '@/composables/useMobileShell'
 
 defineProps({
   // Banyaknya penyaring yang tidak bernilai bawaan (tanpa kotak cari).
   jumlahAktif: { type: Number, default: 0 }
 })
 defineEmits(['reset'])
+const { isMobile, isCompactLandscape } = useMobileShell()
+// Di HP portrait DAN HP landscape, deretan penyaring tetap dilipat di balik tombol supaya tak
+// menghabiskan tinggi layar; di tablet/desktop tetap terbuka.
+const lipat = computed(() => isMobile.value || isCompactLandscape.value)
 const terbuka = ref(false)
 </script>
 
 <style>
 /* Di HP penyaring berjejer dua kolom: huruf & ruang tepi dirapatkan supaya label tak terpotong. */
-@media (max-width: 767px) {
+@media (max-width: 767px), (max-height: 540px) and (max-width: 1024px) {
   .panel-filter select {
     font-size: 12px;
     padding-left: 0.65rem;

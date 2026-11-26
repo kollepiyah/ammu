@@ -56,12 +56,14 @@ export const RATA_TEKS = Object.freeze([
   { kunci: 'kiri', label: 'Kiri', kelas: 'text-left' }
 ])
 // Kelas ditulis utuh supaya terbaca Tailwind (tak boleh dirakit dari potongan).
+// Biru & Ungu memakai kelas hex khusus (.warna-teks-biru / .warna-teks-ungu di main.css) karena
+// palet sky & violet di tailwind.config.js disatukan ke teal & zinc.
 export const WARNA_TEKS = Object.freeze([
   { kunci: 'hijau', label: 'Hijau', kelas: 'text-teal-700 dark:text-teal-300' },
   { kunci: 'merah', label: 'Merah', kelas: 'text-rose-700 dark:text-rose-300' },
-  { kunci: 'biru', label: 'Biru', kelas: 'text-sky-700 dark:text-sky-300' },
+  { kunci: 'biru', label: 'Biru', kelas: 'warna-teks-biru' },
   { kunci: 'emas', label: 'Emas', kelas: 'text-amber-700 dark:text-amber-300' },
-  { kunci: 'ungu', label: 'Ungu', kelas: 'text-violet-700 dark:text-violet-300' }
+  { kunci: 'ungu', label: 'Ungu', kelas: 'warna-teks-ungu' }
 ])
 const KUNCI_RATA = new Set(RATA_TEKS.map((r) => r.kunci))
 const KUNCI_WARNA = new Set(WARNA_TEKS.map((w) => w.kunci))

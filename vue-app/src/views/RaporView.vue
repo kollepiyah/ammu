@@ -6,9 +6,13 @@
       class="bg-emerald-50/40 dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-emerald-100 dark:border-slate-700 shadow-sm"
     >
       <div class="flex items-start gap-3 mb-4">
-        <i class="fas fa-graduation-cap text-emerald-700 dark:text-emerald-300 text-2xl"></i>
+        <i
+          class="judul-ganda fas fa-graduation-cap text-emerald-700 dark:text-emerald-300 text-2xl"
+        ></i>
         <div>
-          <h2 class="text-lg md:text-xl font-black text-[var(--text-primary)] leading-tight">
+          <h2
+            class="judul-ganda text-lg md:text-xl font-black text-[var(--text-primary)] leading-tight"
+          >
             Rapor Semester
           </h2>
           <p class="text-xs md:text-sm text-[var(--text-secondary)] mt-0.5">

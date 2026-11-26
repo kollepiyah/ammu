@@ -31,42 +31,42 @@ const KELAS_SAH = new Set([
 const RATA_SAH = /^text-align:\s*(left|center|right|justify)\s*;?$/i
 export const ARAB = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/
 
-let _kaitTerpasang = false
-function pasangKait() {
-  if (_kaitTerpasang) return
-  _kaitTerpasang = true
-  // Hanya kelas gaya/warna kita & rata teks yang boleh lewat — warna/ukuran tempelan Word dibuang.
-  DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
-    if (data.attrName === 'class') {
-      const sah = String(data.attrValue)
-        .split(/\s+/)
-        .filter((k) => KELAS_SAH.has(k))
-      if (sah.length) data.attrValue = sah.join(' ')
-      else data.keepAttr = false
-    } else if (data.attrName === 'style') {
-      const rata = String(data.attrValue)
-        .split(';')
-        .map((x) => x.trim())
-        .find((x) => RATA_SAH.test(x))
-      if (rata && node.nodeName === 'P') data.attrValue = rata.replace(/;?$/, ';')
-      else data.keepAttr = false
-    } else if (data.attrName === 'dir') {
-      if (!/^(rtl|ltr|auto)$/.test(String(data.attrValue))) data.keepAttr = false
-    }
-  })
+// Hanya kelas gaya/warna kita & rata teks yang boleh lewat — warna/ukuran tempelan Word dibuang.
+function saringAtributAmalan(node, data) {
+  if (data.attrName === 'class') {
+    const sah = String(data.attrValue)
+      .split(/\s+/)
+      .filter((k) => KELAS_SAH.has(k))
+    if (sah.length) data.attrValue = sah.join(' ')
+    else data.keepAttr = false
+  } else if (data.attrName === 'style') {
+    const rata = String(data.attrValue)
+      .split(';')
+      .map((x) => x.trim())
+      .find((x) => RATA_SAH.test(x))
+    if (rata && node.nodeName === 'P') data.attrValue = rata.replace(/;?$/, ';')
+    else data.keepAttr = false
+  } else if (data.attrName === 'dir') {
+    if (!/^(rtl|ltr|auto)$/.test(String(data.attrValue))) data.keepAttr = false
+  }
 }
 
 /**
  * SATU-SATUNYA pintu sebelum isi bacaan ditampilkan / disimpan. Tag tak dikenal (gambar hiasan,
- * tabel, skrip) dibuang, teksnya tetap.
+ * tabel, skrip) dibuang, teksnya tetap. Hook dipasang lokal lalu dilepas di finally agar tidak
+ * memengaruhi pemanggil DOMPurify lain di masa depan.
  */
 export function saringHtmlAmalan(html) {
-  pasangKait()
-  return DOMPurify.sanitize(String(html || ''), {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'span', 'hr'],
-    ALLOWED_ATTR: ['class', 'style', 'dir', 'data-gaya'],
-    KEEP_CONTENT: true
-  })
+  DOMPurify.addHook('uponSanitizeAttribute', saringAtributAmalan)
+  try {
+    return DOMPurify.sanitize(String(html || ''), {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'span', 'hr'],
+      ALLOWED_ATTR: ['class', 'style', 'dir', 'data-gaya'],
+      KEEP_CONTENT: true
+    })
+  } finally {
+    DOMPurify.removeHook('uponSanitizeAttribute')
+  }
 }
 
 /** Teks polos (untuk cek kosong & pratinjau). */

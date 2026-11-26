@@ -4,20 +4,20 @@
   "webDir": "dist",
   "bundledWebRuntime": false,
   "android": {
-    "backgroundColor": "#0F766E",
+    "backgroundColor": "#0C0E12",
     "allowMixedContent": false,
     "captureInput": true
   },
   "ios": {
-    "backgroundColor": "#0F766E",
+    "backgroundColor": "#0C0E12",
     "contentInset": "always",
     "scrollEnabled": true
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 2000,
-      "launchAutoHide": true,
-      "launchFadeOutDuration": 300,
+      "launchShowDuration": 0,
+      "launchAutoHide": false,
+      "launchFadeOutDuration": 200,
       "backgroundColor": "#F2FEF9",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER",

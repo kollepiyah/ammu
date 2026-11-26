@@ -8,7 +8,7 @@
       <div class="flex items-center justify-between gap-2">
         <div>
           <h2
-            class="text-lg md:text-xl font-black text-[var(--text-primary)] flex items-center gap-2"
+            class="judul-ganda text-lg md:text-xl font-black text-[var(--text-primary)] flex items-center gap-2"
           >
             <i class="fas fa-cash-register text-teal-600"></i>POS Santri
           </h2>

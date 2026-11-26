@@ -4,7 +4,7 @@
     <div
       class="bg-[var(--bg-card)] rounded-2xl p-5 md:p-6 border border-[var(--border-subtle)] shadow-sm"
     >
-      <h2 class="text-lg md:text-xl font-black text-[var(--text-primary)]">
+      <h2 class="judul-ganda text-lg md:text-xl font-black text-[var(--text-primary)]">
         <i class="fas fa-sliders-h text-cyan-600 mr-2"></i>{{ sectionMeta.t }}
       </h2>
       <p class="text-xs text-[var(--text-secondary)] mt-1">

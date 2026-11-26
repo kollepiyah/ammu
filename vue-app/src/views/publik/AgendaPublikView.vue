@@ -23,7 +23,13 @@
       <i class="fas fa-spinner fa-spin mr-1.5"></i>Memuat agenda…
     </p>
     <p v-else-if="!kelompok.length" class="text-center text-sm text-[var(--text-secondary)] py-10">
-      Belum ada agenda {{ saring === 'akan' ? 'yang akan datang' : 'bulan ini' }}.
+      {{
+        saring === 'akan'
+          ? 'Belum ada agenda yang akan datang.'
+          : saring === 'bulan'
+            ? 'Belum ada agenda bulan ini.'
+            : 'Belum ada agenda.'
+      }}
     </p>
 
     <section v-for="g in kelompok" :key="g.kunci" class="pb-2">

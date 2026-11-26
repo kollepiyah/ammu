@@ -10,9 +10,10 @@
       @click="buka(m)"
     >
       <IkonIbadah :jenis="m.kunci" />
-      <span class="text-[11px] font-bold text-[var(--text-primary)] leading-none">{{
-        m.label
-      }}</span>
+      <span
+        class="text-[11px] font-bold text-[var(--text-primary)] leading-tight text-center px-0.5"
+        >{{ m.label }}</span
+      >
     </button>
   </div>
 </template>
@@ -38,7 +39,7 @@ const MENU = {
   },
   wirid: {
     kunci: 'wirid',
-    label: 'Wirid',
+    label: 'Kitab & Wirid',
     ikon: 'fa-book-open',
     warna: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
   },

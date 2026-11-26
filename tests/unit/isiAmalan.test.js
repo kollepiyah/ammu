@@ -1,5 +1,6 @@
 // Isi wirid teks kaya (Kyai 26 Nov 2026). Penyaring = satu-satunya pintu sebelum v-html.
 import { describe, it, expect } from 'vitest'
+import DOMPurify from '../../vue-app/node_modules/dompurify'
 import {
   saringHtmlAmalan,
   teksPolos,
@@ -27,6 +28,12 @@ describe('saringHtmlAmalan', () => {
   it('tebal, miring, garis bawah, pemisah dipertahankan', () => {
     expect(saringHtmlAmalan('<p><strong>a</strong><em>b</em><u>c</u></p><hr>')).toBe(
       '<p><strong>a</strong><em>b</em><u>c</u></p><hr>'
+    )
+  })
+  it('hook DOMPurify dilepas sesudah menyaring (tidak bocor ke pemanggil lain)', () => {
+    saringHtmlAmalan('<p class="asing">x</p>')
+    expect(DOMPurify.sanitize('<div class="kelas-lain">ok</div>')).toBe(
+      '<div class="kelas-lain">ok</div>'
     )
   })
 })

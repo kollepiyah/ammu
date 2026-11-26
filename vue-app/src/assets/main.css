@@ -255,8 +255,9 @@ button,
 }
 
 /* Kyai 25 Nov 2026: di HP angka statistik = kotak sejajar (.ph-stat) dan deretan tombol aksi =
-   ikon saja satu baris sama lebar (.ph-aksi). Dipakai PageHeader dan toolbar halaman lain. */
-@media (max-width: 767px) {
+   ikon saja satu baris sama lebar (.ph-aksi). Dipakai PageHeader dan toolbar halaman lain.
+   Mencakup HP portrait (<= 767px) dan HP landscape (tinggi <= 540px, lebar <= 1024px). */
+@media (max-width: 767px), (max-height: 540px) and (max-width: 1024px) {
   .ph-stat > * {
     display: flex;
     flex-direction: column;
@@ -325,8 +326,9 @@ button,
 /* ===== Gaya native (Kyai 25 Nov 2026, mengacu NU Online) — HANYA Android & PWA di layar HP =====
    html.native-shell dipasang App.vue (pakaiWilayahPublik). Isi halaman selebar layar: kartu tingkat
    atas jadi "bagian" tanpa sudut/bingkai/bayangan, antarbagian dipisah pita 8px warna latar.
-   Kartu di dalam kartu, dialog melayang (.fixed), dan kertas cetak tak disentuh. */
-@media (max-width: 767px) {
+   Kartu di dalam kartu, dialog melayang (.fixed), dan kertas cetak tak disentuh.
+   Tetap aktif di HP landscape (tinggi <= 540px) supaya tidak pecah ke mode setengah-desktop. */
+@media (max-width: 767px), (max-height: 540px) and (max-width: 1024px) {
   html.native-shell .akar-halaman > * {
     padding-left: 0 !important;
     padding-right: 0 !important;
@@ -1139,19 +1141,37 @@ button:not(:disabled):active {
   --pola-berlian: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2728%27%3E%3Cpath d=%27M14 0 L28 14 L14 28 L0 14 Z%27 fill=%27none%27 stroke=%27%235EEAD4%27 stroke-opacity=%270.1%27/%3E%3C/svg%3E');
   --tinggi-topbar: 64px;
 }
-/* !important: <body> memakai kelas dark:bg-slate-900 yang lebih kuat (mode gelap → status bar hitam). */
+/* !important: <body> memakai kelas dark:bg-slate-900 yang lebih kuat (mode gelap → status bar hitam).
+   Inset kiri/kanan TIDAK dipasang di body (membuat cat hijau body bocor jadi bingkai di luar halaman
+   putih saat HP diputar landscape) — dipindah ke topbar, konten halaman, dan bottom-nav.
+   Batch 2 (26 Nov 2026): saat splash masih tampil (belum .splash-selesai / .app-running), warna
+   body & html mengikuti warna splash (#f2fef9 / #0c0e12) supaya status bar PWA iOS tidak bocor hijau. */
 html.native-shell body {
+  background: #f2fef9 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+html.native-shell.dark body {
+  background: #0c0e12 !important;
+}
+html.native-shell body:is(.splash-selesai, .app-running) {
   background:
     var(--pola-berlian) 0 0 / 28px 28px,
     #0f766e !important;
 }
 /* Kyai 26 Nov 2026 — PWA iOS 26 "bocor" di bawah: bug WebKit membuat 100dvh & fixed inset-0
    lebih pendek setinggi garis-gerak, celahnya memperlihatkan kanvas (dulu hijau warisan body).
-   Kanvas <html> diberi warna menu bawah agar celah menyatu; body tetap hijau untuk status bar. */
+   Kanvas <html> diberi warna menu bawah agar celah menyatu; saat splash ikut warna splash. */
 html.native-shell {
-  background: color-mix(in srgb, #fff 90%, var(--bg-page));
+  background: #f2fef9;
 }
 html.native-shell.dark {
+  background: #0c0e12;
+}
+html.native-shell:has(body:is(.splash-selesai, .app-running)) {
+  background: color-mix(in srgb, #fff 90%, var(--bg-page));
+}
+html.native-shell.dark:has(body:is(.splash-selesai, .app-running)) {
   background: color-mix(in srgb, #0f172a 90%, var(--bg-page));
 }
 .topbar-hijau {
@@ -1159,6 +1179,8 @@ html.native-shell.dark {
     var(--pola-berlian) 0 calc(-1 * env(safe-area-inset-top, 0px)) / 28px 28px,
     #0f766e !important;
   height: var(--tinggi-topbar);
+  padding-left: max(1rem, env(safe-area-inset-left, 0px)) !important;
+  padding-right: max(1rem, env(safe-area-inset-right, 0px)) !important;
   border-bottom-color: transparent !important;
   box-shadow: none !important;
   /* iOS Safari memakai versi -webkit-: tanpa ini top bar PWA tetap ngeblur. */
@@ -1172,13 +1194,81 @@ html.native-shell.dark {
       28px,
     linear-gradient(180deg, #0f766e 0%, #134e4a 100%);
 }
+html.native-shell .lanjut-topbar {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px)) !important;
+  padding-right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+}
+html.native-shell .app-bottom-nav {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+/* HP landscape: latar kartu/bagian tetap penuh edge-to-edge (tanpa celah hitam di kiri-kanan
+   seperti di Beranda), sementara teks/isi di dalamnya aman dari notch kiri-kanan.
+   Bottom-nav juga dirampingkan agar ruang gulir vertikal tetap lega. */
+@media (max-height: 540px) and (max-width: 1024px) {
+  html.native-shell
+    .akar-halaman
+    > *
+    > :not(.lanjut-topbar):not(.selebar-layar):not(button):not(a):not(.fixed):not(
+      :has(> * > :is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white, .menu-ibadah))
+    ):not(
+      :has(> :is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white, .menu-ibadah))
+    ) {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px)) !important;
+  }
+  /* Kartu tingkat atas di dalam grid/wrapper (mis. Ahlan, MenuIbadah, Tugas Saya, Sub-kartu Master
+     Data): latar tetap penuh sampai tepi, isi di dalamnya diberi padding aman dari notch. */
+  html.native-shell
+    .akar-halaman
+    :is(
+      [class*='bg-[var(--bg-card)]'],
+      [class*='bg-[var(--bg-card-elevated)]'],
+      .bg-white,
+      .menu-ibadah,
+      .kepala-polos
+    ):not(
+      :is(
+          [class*='bg-[var(--bg-card)]'],
+          [class*='bg-[var(--bg-card-elevated)]'],
+          .bg-white,
+          .menu-ibadah,
+          .kepala-polos
+        )
+        *
+    ) {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+  }
+  html.native-shell .akar-halaman > * > :is(button, a):not(.selebar-layar) {
+    margin-left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
+    margin-right: max(0.75rem, env(safe-area-inset-right, 0px)) !important;
+  }
+  html.native-shell .akar-halaman > * > :is(button, a).w-full:not(.selebar-layar) {
+    width: calc(
+      100% - max(0.75rem, env(safe-area-inset-left, 0px)) - max(
+          0.75rem,
+          env(safe-area-inset-right, 0px)
+        )
+    ) !important;
+  }
+  html.native-shell .app-bottom-nav > a,
+  html.native-shell .app-bottom-nav > button {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+  }
+}
 .topbar-hijau > div:first-child > :is(button, h2),
 .topbar-hijau .gs-pemicu i,
-.topbar-hijau .th-anak :is(span, i) {
+.topbar-hijau .th-anak :is(span, i),
+.topbar-hijau .th-titik-tiga,
+.topbar-hijau [data-notif-bell] > button > i {
   color: #fff !important;
 }
 .topbar-hijau > div:first-child > button:hover,
-.topbar-hijau .gs-pemicu:hover {
+.topbar-hijau .gs-pemicu:hover,
+.topbar-hijau .th-titik-tiga:hover,
+.topbar-hijau [data-notif-bell] > button:hover {
   background: rgba(255, 255, 255, 0.12) !important;
 }
 
@@ -1254,8 +1344,22 @@ html.native-shell .tarik-segar i {
 }
 
 /* Kyai 26 Nov 2026: di Android/PWA judul halaman pindah ke top bar — judul di dalam halaman
-   (mis. "← Arah Kiblat", "Notifikasi") disembunyikan supaya tak dobel. Web & Electron tetap. */
+   disembunyikan supaya tak dobel. Web & Electron tetap (tak memakai kelas native-shell). */
 html.native-shell .judul-ganda {
+  display: none !important;
+}
+/* Semua h1 judul halaman (Personal, Glondongan, Pondok Laju, PageHeader, Keuangan, dll.) sudah
+   diwakili top bar ringkas; kecualikan area cetak, dialog melayang (.fixed), dan judul spesifik
+   detail/form (.tetap-tampil). */
+html.native-shell
+  .akar-halaman
+  h1:not(.print-area h1):not(#rapor-print-area h1):not(.fixed h1):not(.tetap-tampil) {
+  display: none !important;
+}
+/* Bila kartu/kotak header isinya HANYA judul yang disembunyikan (mis. GlondonganView, Ceremonial),
+   hilangkan kartu pembungkusnya sekalian agar tak menyisakan pita kosong di atas halaman. */
+html.native-shell .akar-halaman > * > div:has(> h1:only-child:not(.tetap-tampil)),
+html.native-shell .akar-halaman > * > div:has(> div:only-child > h1:only-child:not(.tetap-tampil)) {
   display: none !important;
 }
 
@@ -1324,13 +1428,15 @@ html.native-shell .judul-ganda {
 .isi-amalan .warna-merah {
   color: #be123c;
 }
-.isi-amalan .warna-biru {
+.isi-amalan .warna-biru,
+.warna-teks-biru {
   color: #0369a1;
 }
 .isi-amalan .warna-emas {
   color: #b45309;
 }
-.isi-amalan .warna-ungu {
+.isi-amalan .warna-ungu,
+.warna-teks-ungu {
   color: #6d28d9;
 }
 .dark .isi-amalan .warna-hijau {
@@ -1339,13 +1445,15 @@ html.native-shell .judul-ganda {
 .dark .isi-amalan .warna-merah {
   color: #fda4af;
 }
-.dark .isi-amalan .warna-biru {
+.dark .isi-amalan .warna-biru,
+.dark .warna-teks-biru {
   color: #7dd3fc;
 }
 .dark .isi-amalan .warna-emas {
   color: #fcd34d;
 }
-.dark .isi-amalan .warna-ungu {
+.dark .isi-amalan .warna-ungu,
+.dark .warna-teks-ungu {
   color: #c4b5fd;
 }
 /* Tombol ع/A di layar baca */

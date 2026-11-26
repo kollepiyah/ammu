@@ -102,13 +102,18 @@
       fetchpriority="low"
     ></script>
     <script>
-      // v.84.0526: Apply dark mode EARLY supaya splash gradient ikut tema user
+      // v.84.0526: Apply dark mode EARLY supaya splash ikut tema user.
+      // Batch 2 (26 Nov 2026): samakan meta theme-color dengan warna splash sejak detik 0
+      // supaya status bar atas di PWA iOS (iOS 26 edge tint) tak bocor warna hijau #0f766e
+      // di atas splash gelap/terang. Dikembalikan ke #0f766e di main.js saat splash mulai hilang.
       ;(function () {
         try {
           var otomatis = localStorage.getItem('portalMu_temaMode') === 'otomatis'
           var gelap = otomatis
             ? window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
             : localStorage.getItem('portalMu_darkMode') === '1'
+          var metaTema = document.querySelector('meta[name="theme-color"]')
+          if (metaTema) metaTema.setAttribute('content', gelap ? '#0c0e12' : '#f2fef9')
           if (gelap) {
             document.documentElement.classList.add('dark')
             document.addEventListener('DOMContentLoaded', function () {
@@ -126,6 +131,8 @@
       #splash-screen {
         position: fixed;
         inset: 0;
+        /* Turun melewati dasar viewport: menutup celah bug iOS 26 PWA saat splash tampil. */
+        bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
         z-index: 99999;
         display: flex;
         flex-direction: column;
@@ -136,10 +143,13 @@
         /* v.1.5.2: JANGAN pakai animation splashFadeIn (opacity 0 -> 1) di tirai luar #splash-screen,
            karena 0.4s pertama bikin teks statis Google OAuth di #app tembus berkedip saat hard refresh.
            Animasi cukup pada .splash-logo & .splash-brand di dalamnya. */
-        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-          env(safe-area-inset-left);
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          calc(2 * env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left);
         box-sizing: border-box;
       }
+      /* Batch 2 (26 Nov 2026): logo & footer LANGSUNG tampil sejak HTML diterima (tanpa menunggu
+         JS menambahkan .reveal), sehingga saat WebView/jaringan sedang memuat, pengguna langsung
+         melihat splash berlogo — bukan layar kosong polos. */
       #splash-screen .splash-logo {
         position: absolute;
         top: 45%;
@@ -152,25 +162,20 @@
         object-fit: contain;
         -webkit-user-drag: none;
         user-select: none;
-        opacity: 0;
-      }
-      /* v.91.0626: animasi logo ala NETFLIX — zoom-in halus 2 detik (push-in) */
-      #splash-screen.reveal .splash-logo {
-        animation: splashLogoIn 2s cubic-bezier(0.33, 0, 0.2, 1) forwards;
+        opacity: 1;
+        animation: splashLogoIn 0.65s cubic-bezier(0.33, 0, 0.2, 1) forwards;
       }
       #splash-screen .splash-brand {
         position: absolute;
         left: 0;
         right: 0;
-        bottom: calc(env(safe-area-inset-bottom) + 22px);
+        bottom: calc(2 * env(safe-area-inset-bottom, 0px) + 22px);
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 4px;
         opacity: 0;
-      }
-      #splash-screen.reveal .splash-brand {
-        animation: splashFadeIn 0.8s 1.25s ease-out forwards;
+        animation: splashFadeIn 0.45s 0.2s ease-out forwards;
       }
       #splash-screen .splash-brand-by {
         font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -201,9 +206,9 @@
       html.dark #splash-screen .splash-brand-img {
         filter: brightness(1.12);
       }
-      /* v.87.0526: fade-out pakai animation forwards supaya MENANG atas fill-mode 'both' splashFadeIn. */
+      /* v.87.0526: fade-out pakai animation forwards supaya MENANG atas fill-mode 'both'. */
       #splash-screen.fade-out {
-        animation: splashFadeOut 0.5s ease-out forwards;
+        animation: splashFadeOut 0.35s ease-out forwards;
         pointer-events: none;
       }
       @keyframes splashFadeIn {
@@ -224,11 +229,8 @@
       }
       @keyframes splashLogoIn {
         0% {
-          opacity: 0;
-          transform: translate(-50%, -50%) scale(0.72);
-        }
-        30% {
-          opacity: 1;
+          opacity: 0.92;
+          transform: translate(-50%, -50%) scale(0.92);
         }
         100% {
           opacity: 1;

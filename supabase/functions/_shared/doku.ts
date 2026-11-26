@@ -111,6 +111,14 @@ export async function headerDoku(p: {
   return h
 }
 
+/** Pembanding waktu-konstan untuk tanda tangan HMAC (cegah timing side-channel). */
+function samaKonstan(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let beda = 0
+  for (let i = 0; i < a.length; i++) beda |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return beda === 0
+}
+
 /** Bandingkan tanda tangan notifikasi DOKU dengan hitungan sendiri. */
 export async function notifikasiSah(p: {
   headers: { clientId: string; requestId: string; timestamp: string; signature: string }
@@ -128,7 +136,7 @@ export async function notifikasiSah(p: {
     target: p.target,
     digest: await digestDoku(p.badanMentah)
   })
-  return (await tandaTanganDoku(teks, p.secretKey)) === h.signature
+  return samaKonstan(await tandaTanganDoku(teks, p.secretKey), h.signature)
 }
 
 /**

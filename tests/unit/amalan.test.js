@@ -187,5 +187,8 @@ describe('rata & warna teks (Kyai 26 Nov 2026)', () => {
     expect(kelasRata('kiri')).toBe('text-left')
     expect(kelasWarna('')).toBe('text-[var(--text-primary)]')
     expect(kelasWarna('merah')).toContain('text-rose-700')
+    // Biru & ungu memakai kelas hex khusus (bukan sky/violet yang ter-remap di tailwind.config.js)
+    expect(kelasWarna('biru')).toBe('warna-teks-biru')
+    expect(kelasWarna('ungu')).toBe('warna-teks-ungu')
   })
 })

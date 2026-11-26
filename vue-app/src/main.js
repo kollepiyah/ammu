@@ -60,23 +60,30 @@ const IS_NATIVE = (() => {
   }
 })()
 
-// v.20.4.0526: Defensive mount + splash auto-hide (web/PWA)
+// Batch 2 (26 Nov 2026): kembalikan warna status bar / theme-color ke hijau brand tepat saat
+// splash mulai menghilang (sebelumnya selalu #0f766e sehingga status bar PWA iOS bocor hijau).
+function aktifkanTemaBarHijau() {
+  try {
+    document.body.classList.add('splash-selesai')
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', '#0f766e')
+  } catch {
+    /* noop */
+  }
+}
+
+// v.20.4.0526: Defensive mount + splash auto-hide (web/PWA/native)
 function hideSplash() {
+  aktifkanTemaBarHijau()
   const splash = document.getElementById('splash-screen')
   if (splash && !splash.classList.contains('fade-out')) {
     splash.classList.add('fade-out')
     setTimeout(() => {
       document.body.classList.add('app-running')
-    }, 600)
+    }, 400)
   } else if (!document.body.classList.contains('app-running')) {
     document.body.classList.add('app-running')
   }
-}
-
-// v.91.0626: picu animasi "muncul" logo (class .reveal di #splash-screen). Idempotent.
-function revealSplash() {
-  const s = document.getElementById('splash-screen')
-  if (s) s.classList.add('reveal')
 }
 
 try {
@@ -86,42 +93,39 @@ try {
 }
 
 if (IS_NATIVE) {
-  // v.91.0626 IN-APP ANIM (final): splash native = jembatan LATAR mint singkat. Tutup overlay
-  // Capacitor ASAP -> web splash terlihat -> MAINKAN animasi logo (reveal, ~2s ala Netflix) +
-  // footer (gambar HTML, anti-gepeng). Tak dobel: splash sistem tak menampilkan logo.
+  // Batch 2 (26 Nov 2026): splash native Android sudah menampilkan logo sejak detik 0 saat
+  // WebView & Vue loading. Begitu app.mount selesai, tutup splash native & fade-out splash HTML
+  // singkat tanpa menahan 2,4 detik lagi seperti dulu.
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       import('@capacitor/splash-screen')
-        .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 200 }))
+        .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 180 }))
         .catch(() => {})
         .then(() => {
-          revealSplash()
-          setTimeout(hideSplash, 2400)
+          setTimeout(hideSplash, 350)
         })
     })
   )
-  // FALLBACK: kalau plugin tak tersedia/gagal -> tetap reveal + fade-out
-  setTimeout(revealSplash, 900)
+  // FALLBACK: kalau plugin tak tersedia/gagal -> tetap tutup splash
   setTimeout(() => {
     if (!document.body.classList.contains('app-running')) hideSplash()
-  }, 6000)
+  }, 4000)
 } else {
-  // v.91.0626: Web/PWA — logo di-reveal (animasi Netflix ~2 detik), lalu fade-out.
-  requestAnimationFrame(revealSplash)
-  const SPLASH_MIN_MS = 2400
+  // Web/PWA — logo sudah langsung tampil dari HTML; begitu app siap, tahan singkat agar mulus.
+  const SPLASH_MIN_MS = 700
   const splashStart = performance.now()
   requestAnimationFrame(() => {
     const elapsed = performance.now() - splashStart
     const remaining = Math.max(0, SPLASH_MIN_MS - elapsed)
     setTimeout(hideSplash, remaining)
   })
-  // FALLBACK: kalau ada apa-apa yg block, force-hide splash max 6 detik
+  // FALLBACK: kalau ada apa-apa yg block, force-hide splash max 5 detik
   setTimeout(() => {
     if (!document.body.classList.contains('app-running')) {
-      console.warn('[main.js] Splash fallback hide @ 6s — Vue mount mungkin stuck')
+      console.warn('[main.js] Splash fallback hide @ 5s — Vue mount mungkin stuck')
       hideSplash()
     }
-  }, 6000)
+  }, 5000)
 }
 
 // v.100h: Init Sentry — DSN dari build-time env (VITE_SENTRY_DSN) ATAU default project,

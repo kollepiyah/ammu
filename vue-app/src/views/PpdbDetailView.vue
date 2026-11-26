@@ -12,7 +12,7 @@
           >
             <i class="fas fa-arrow-left mr-1"></i>Kembali ke Daftar PSB
           </RouterLink>
-          <h1 class="text-base md:text-lg font-black text-[var(--text-primary)] mt-1">
+          <h1 class="tetap-tampil text-base md:text-lg font-black text-[var(--text-primary)] mt-1">
             <i class="fas fa-user-graduate text-teal-500 mr-2"></i>{{ pendaftar.nama || '...' }}
           </h1>
           <InfoLipat class="text-xs text-[var(--text-secondary)] mt-0.5">
