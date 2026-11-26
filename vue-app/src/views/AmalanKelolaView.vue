@@ -1,7 +1,8 @@
 <script setup>
 // Kelola Kitab & Wirid — Master Data > Kitab & Wirid (Kyai 25 Nov 2026: data induk di Master
 // Data, bukan menu pita baru). Isi berupa TEKS (Arab + Latin + arti); tambah bacaan tanpa rilis
-// aplikasi. Aturan bersih-bersih & pemecah teks di utils/amalan (murni + tes).
+// aplikasi. Sejak 26 Nov: bacaan dipecah jadi bab/halaman, blok punya jenis (teks, judul, syair,
+// pemisah). Aturan bersih-bersih & pemecah teks di utils/amalan (murni + tes).
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -9,10 +10,12 @@ import { useAuthStore } from '@/stores/auth'
 import { ambilSemuaAmalan, simpanAmalan, hapusAmalan } from '@/services/amalan'
 import {
   KATEGORI_AMALAN,
+  JENIS_BLOK,
   labelKategori,
   susunDaftarAmalan,
   bersihkanAmalan,
-  pecahTeksAmalan
+  babAmalan,
+  pecahTeksBab
 } from '@/utils/amalan'
 
 const toast = useToast()
@@ -24,8 +27,11 @@ const memuat = ref(true)
 const menyimpan = ref(false)
 const terbuka = ref(false)
 const teksTempel = ref('')
+const babAktif = ref(0)
 const form = reactive(kosong())
 
+const blokKosong = () => ({ jenis: 'teks', judul: '', arab: '', latin: '', arti: '', ulang: '' })
+const babKosong = () => ({ judul: '', bagian: [blokKosong()] })
 function kosong() {
   return {
     id: '',
@@ -34,11 +40,15 @@ function kosong() {
     urutan: 0,
     aktif: true,
     keterangan: '',
-    bagian: [{ judul: '', arab: '', latin: '', arti: '', ulang: '' }]
+    bentuk: 'tunggal',
+    bab: [babKosong()]
   }
 }
 
 const terurut = computed(() => susunDaftarAmalan(daftar.value, 'semua'))
+const berbab = computed(() => form.bentuk === 'berbab')
+const satuan = computed(() => (berbab.value ? 'Bab' : 'Halaman'))
+const babKini = computed(() => form.bab[babAktif.value] || form.bab[0])
 
 async function muat() {
   memuat.value = true
@@ -55,6 +65,10 @@ onMounted(muat)
 function buka(a = null) {
   Object.assign(form, kosong())
   if (a) {
+    const bab = babAmalan(a).map((x) => ({
+      judul: x.judul || '',
+      bagian: (x.bagian || []).map((b) => ({ ...blokKosong(), ...b }))
+    }))
     Object.assign(form, {
       id: a.id,
       judul: a.judul || '',
@@ -62,42 +76,80 @@ function buka(a = null) {
       urutan: a.urutan || 0,
       aktif: a.aktif !== false,
       keterangan: a.keterangan || '',
-      bagian: (a.bagian || []).map((b) => ({ judul: '', latin: '', arti: '', ulang: '', ...b }))
+      bentuk: a.bentuk === 'berbab' ? 'berbab' : 'tunggal',
+      bab: bab.length ? bab : [babKosong()]
     })
-    if (!form.bagian.length)
-      form.bagian.push({ judul: '', arab: '', latin: '', arti: '', ulang: '' })
   }
+  babAktif.value = 0
   teksTempel.value = ''
   terbuka.value = true
 }
 
+// --- bab / halaman ---
+function tambahBab() {
+  form.bab.push(babKosong())
+  babAktif.value = form.bab.length - 1
+}
+function hapusBab() {
+  if (form.bab.length <= 1) {
+    form.bab = [babKosong()]
+    babAktif.value = 0
+    return
+  }
+  form.bab.splice(babAktif.value, 1)
+  babAktif.value = Math.min(babAktif.value, form.bab.length - 1)
+}
+function geserBab(arah) {
+  const i = babAktif.value
+  const j = i + arah
+  if (j < 0 || j >= form.bab.length) return
+  const [b] = form.bab.splice(i, 1)
+  form.bab.splice(j, 0, b)
+  babAktif.value = j
+}
+
+// --- blok di bab yang sedang dibuka ---
 function tambahBagian() {
-  form.bagian.push({ judul: '', arab: '', latin: '', arti: '', ulang: '' })
+  babKini.value.bagian.push(blokKosong())
 }
 function hapusBagian(i) {
-  form.bagian.splice(i, 1)
-  if (!form.bagian.length) tambahBagian()
+  babKini.value.bagian.splice(i, 1)
+  if (!babKini.value.bagian.length) tambahBagian()
 }
 function geserBagian(i, arah) {
+  const daftarBlok = babKini.value.bagian
   const j = i + arah
-  if (j < 0 || j >= form.bagian.length) return
-  const [b] = form.bagian.splice(i, 1)
-  form.bagian.splice(j, 0, b)
+  if (j < 0 || j >= daftarBlok.length) return
+  const [b] = daftarBlok.splice(i, 1)
+  daftarBlok.splice(j, 0, b)
 }
+
+const berisi = (bab) => bab.bagian.some((b) => String(b.arab || '').trim())
 function terapkanTempel() {
-  const baru = pecahTeksAmalan(teksTempel.value)
-  if (!baru.length) {
+  const hasil = pecahTeksBab(teksTempel.value)
+  if (!hasil.length) {
     toast.error('Tak ada teks Arab yang terbaca. Pisahkan tiap bagian dengan satu baris kosong.')
     return
   }
-  // Baris kosong bawaan form diganti, bukan ditambah di belakangnya.
-  const sudahAda = form.bagian.filter((b) => String(b.arab || '').trim())
-  form.bagian = [
-    ...sudahAda,
-    ...baru.map((b) => ({ judul: '', latin: '', arti: '', ulang: '', ...b }))
-  ]
+  const lengkapi = (x) => ({
+    judul: x.judul,
+    bagian: x.bagian.map((b) => ({ ...blokKosong(), ...b }))
+  })
+  if (hasil.length === 1 && !hasil[0].judul) {
+    // Tanpa penanda "===": tambahkan ke bab/halaman yang sedang dibuka.
+    const kini = babKini.value
+    kini.bagian = [
+      ...kini.bagian.filter((b) => String(b.arab || '').trim()),
+      ...lengkapi(hasil[0]).bagian
+    ]
+    toast.success(`${hasil[0].bagian.length} bagian ditambahkan`)
+  } else {
+    // Bab kosong bawaan form diganti, bukan ditambah di belakangnya.
+    form.bab = [...form.bab.filter(berisi), ...hasil.map(lengkapi)]
+    babAktif.value = 0
+    toast.success(`${hasil.length} ${satuan.value.toLowerCase()} ditambahkan`)
+  }
   teksTempel.value = ''
-  toast.success(`${baru.length} bagian ditambahkan`)
 }
 
 async function simpan() {
@@ -138,6 +190,9 @@ async function hapus() {
     toast.error('Gagal menghapus: ' + (e?.message || e))
   }
 }
+
+const kelasIsian =
+  'w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]'
 </script>
 
 <template>
@@ -182,8 +237,8 @@ async function hapus() {
             a.judul
           }}</span>
           <span class="block text-[11px] text-[var(--text-secondary)]">
-            {{ labelKategori(a.kategori) }} · urutan {{ a.urutan || 0 }} ·
-            {{ (a.bagian || []).length }} bagian
+            {{ labelKategori(a.kategori) }} · urutan {{ a.urutan || 0 }} · {{ babAmalan(a).length }}
+            {{ a.bentuk === 'berbab' ? 'bab' : 'halaman' }}
           </span>
         </span>
         <span
@@ -224,16 +279,13 @@ async function hapus() {
             v-model="form.judul"
             type="text"
             placeholder="Wirid ba'da sholat fardhu"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+            :class="kelasIsian"
           />
         </label>
         <div class="grid grid-cols-3 gap-2">
           <label class="block col-span-2">
             <span class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Kategori</span>
-            <select
-              v-model="form.kategori"
-              class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
-            >
+            <select v-model="form.kategori" :class="kelasIsian">
               <option v-for="k in KATEGORI_AMALAN" :key="k.kunci" :value="k.kunci">
                 {{ k.label }}
               </option>
@@ -241,12 +293,7 @@ async function hapus() {
           </label>
           <label class="block">
             <span class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Urutan</span>
-            <input
-              v-model.number="form.urutan"
-              type="number"
-              min="0"
-              class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
-            />
+            <input v-model.number="form.urutan" type="number" min="0" :class="kelasIsian" />
           </label>
         </div>
         <label class="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
@@ -261,9 +308,35 @@ async function hapus() {
             v-model="form.keterangan"
             rows="2"
             placeholder="Dibaca setiap selesai sholat fardhu"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+            :class="kelasIsian"
           ></textarea>
         </label>
+
+        <div>
+          <span class="block text-xs font-bold text-[var(--text-secondary)] mb-1">Bentuk</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              v-for="opsi in [
+                { kunci: 'tunggal', label: 'Satu bacaan', ket: 'Langsung dibaca, halaman digeser' },
+                { kunci: 'berbab', label: 'Berbab', ket: 'Ada daftar bab lebih dulu' }
+              ]"
+              :key="opsi.kunci"
+              type="button"
+              class="rounded-xl border p-2.5 text-left cursor-pointer"
+              :class="
+                form.bentuk === opsi.kunci
+                  ? 'border-teal-600 bg-teal-50 dark:bg-teal-900/30'
+                  : 'border-slate-200 dark:border-slate-700'
+              "
+              @click="form.bentuk = opsi.kunci"
+            >
+              <span class="block text-xs font-black text-[var(--text-primary)]">{{
+                opsi.label
+              }}</span>
+              <span class="block text-[11px] text-[var(--text-secondary)]">{{ opsi.ket }}</span>
+            </button>
+          </div>
+        </div>
 
         <details class="rounded-lg border border-dashed border-teal-300 dark:border-teal-700 p-3">
           <summary class="text-xs font-bold text-teal-700 dark:text-teal-300 cursor-pointer">
@@ -272,12 +345,10 @@ async function hapus() {
           <p class="text-[11px] text-[var(--text-secondary)] mt-2 leading-relaxed">
             Tempel dari Word/WhatsApp. Pisahkan tiap bagian dengan <b>satu baris kosong</b>. Dalam
             satu bagian: baris Arab → teks Arab; baris Latin pertama → bacaan Latin; sisanya → arti.
+            Baris <b>=== Judul</b> memulai {{ satuan.toLowerCase() }} baru; blok berisi
+            <b>***</b> menjadi garis pemisah.
           </p>
-          <textarea
-            v-model="teksTempel"
-            rows="5"
-            class="w-full mt-2 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
-          ></textarea>
+          <textarea v-model="teksTempel" rows="5" :class="[kelasIsian, 'mt-2']"></textarea>
           <button
             type="button"
             class="mt-2 px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-600 text-teal-700 dark:text-teal-300 cursor-pointer"
@@ -287,20 +358,92 @@ async function hapus() {
           </button>
         </details>
 
+        <!-- Pemilih bab / halaman -->
+        <div class="flex gap-1.5 overflow-x-auto pb-1">
+          <button
+            v-for="(b, i) in form.bab"
+            :key="i"
+            type="button"
+            class="shrink-0 max-w-[10rem] truncate px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer"
+            :class="
+              babAktif === i
+                ? 'bg-teal-600 border-teal-600 text-white'
+                : 'border-slate-200 dark:border-slate-700 text-[var(--text-primary)]'
+            "
+            @click="babAktif = i"
+          >
+            {{ berbab && b.judul ? `${i + 1}. ${b.judul}` : `${satuan} ${i + 1}` }}
+          </button>
+          <button
+            type="button"
+            class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border border-dashed border-slate-300 dark:border-slate-600 text-[var(--text-secondary)] cursor-pointer"
+            @click="tambahBab"
+          >
+            <i class="fas fa-plus mr-1"></i>{{ satuan }}
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <input
+            v-if="berbab"
+            v-model="babKini.judul"
+            type="text"
+            :placeholder="`Judul bab ${babAktif + 1}`"
+            :class="[kelasIsian, 'flex-1 min-w-0']"
+          />
+          <span v-else class="flex-1 text-xs font-black text-[var(--text-secondary)]"
+            >{{ satuan }} {{ babAktif + 1 }} dari {{ form.bab.length }}</span
+          >
+          <button
+            type="button"
+            class="w-8 h-8 rounded cursor-pointer text-[var(--text-secondary)]"
+            :aria-label="`Geser ${satuan} ke kiri`"
+            @click="geserBab(-1)"
+          >
+            <i class="fas fa-arrow-left text-xs"></i>
+          </button>
+          <button
+            type="button"
+            class="w-8 h-8 rounded cursor-pointer text-[var(--text-secondary)]"
+            :aria-label="`Geser ${satuan} ke kanan`"
+            @click="geserBab(1)"
+          >
+            <i class="fas fa-arrow-right text-xs"></i>
+          </button>
+          <button
+            type="button"
+            class="w-8 h-8 rounded cursor-pointer text-rose-500"
+            :aria-label="`Hapus ${satuan}`"
+            @click="hapusBab"
+          >
+            <i class="fas fa-trash text-xs"></i>
+          </button>
+        </div>
+
         <div
-          v-for="(b, i) in form.bagian"
-          :key="i"
+          v-for="(b, i) in babKini.bagian"
+          :key="`${babAktif}-${i}`"
           class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2"
         >
           <div class="flex items-center gap-2">
-            <span class="text-xs font-black text-[var(--text-secondary)]">Bagian {{ i + 1 }}</span>
+            <span class="text-xs font-black text-[var(--text-secondary)]">{{ i + 1 }}</span>
+            <select
+              v-model="b.jenis"
+              class="px-2 py-1 text-xs border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+            >
+              <option v-for="j in JENIS_BLOK" :key="j.kunci" :value="j.kunci">
+                {{ j.label }}
+              </option>
+            </select>
             <input
+              v-if="b.jenis === 'teks' || b.jenis === 'syair'"
               v-model="b.judul"
               type="text"
               placeholder="Subjudul (opsional)"
               class="flex-1 min-w-0 px-2 py-1 text-xs border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
             />
+            <span v-else class="flex-1"></span>
             <input
+              v-if="b.jenis === 'teks' || b.jenis === 'syair'"
               v-model="b.ulang"
               type="number"
               min="1"
@@ -333,33 +476,49 @@ async function hapus() {
               <i class="fas fa-trash text-xs"></i>
             </button>
           </div>
-          <textarea
-            v-model="b.arab"
-            dir="rtl"
-            lang="ar"
-            rows="3"
-            placeholder="Teks Arab berharakat"
-            class="font-arabic w-full px-3 py-2 text-2xl leading-loose border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
-          ></textarea>
-          <textarea
-            v-model="b.latin"
-            rows="2"
-            placeholder="Bacaan Latin (opsional)"
-            class="w-full px-3 py-2 text-sm italic border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
-          ></textarea>
-          <textarea
-            v-model="b.arti"
-            rows="2"
-            placeholder="Arti / terjemahan (opsional)"
-            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
-          ></textarea>
+          <p v-if="b.jenis === 'pemisah'" class="text-center text-slate-400 tracking-[0.5em]">
+            ***
+          </p>
+          <template v-else>
+            <textarea
+              v-model="b.arab"
+              dir="rtl"
+              lang="ar"
+              rows="3"
+              :placeholder="
+                b.jenis === 'syair'
+                  ? 'Satu baris syair per baris (bergantian kanan–kiri)'
+                  : b.jenis === 'judul'
+                    ? 'Judul berbahasa Arab'
+                    : 'Teks Arab berharakat'
+              "
+              class="font-arabic w-full px-3 py-2 text-2xl leading-loose border border-[var(--border-default)] rounded-lg bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+            ></textarea>
+            <textarea
+              v-model="b.latin"
+              rows="2"
+              :placeholder="
+                b.jenis === 'judul'
+                  ? 'Judul Latin di bawahnya (opsional)'
+                  : 'Bacaan Latin (opsional)'
+              "
+              :class="[kelasIsian, b.jenis === 'judul' ? '' : 'italic']"
+            ></textarea>
+            <textarea
+              v-if="b.jenis !== 'judul'"
+              v-model="b.arti"
+              rows="2"
+              placeholder="Arti / terjemahan (opsional)"
+              :class="kelasIsian"
+            ></textarea>
+          </template>
         </div>
         <button
           type="button"
           class="w-full py-2 rounded-xl text-xs font-bold border border-dashed border-slate-300 dark:border-slate-600 text-[var(--text-secondary)] cursor-pointer"
           @click="tambahBagian"
         >
-          <i class="fas fa-plus mr-1"></i>Tambah bagian
+          <i class="fas fa-plus mr-1"></i>Tambah bagian di {{ satuan.toLowerCase() }} ini
         </button>
 
         <div class="flex gap-2 pt-1">

@@ -1,5 +1,6 @@
 // Kitab & Wirid (blueprint F7) — aturan data, fungsi murni + tes. Satu bacaan = { judul, kategori,
-// urutan, aktif, keterangan, bagian:[{ judul?, arab, latin?, arti?, ulang? }] }.
+// urutan, aktif, keterangan, bentuk:'tunggal'|'berbab', bab:[{ judul, bagian:[blok] }] } dengan
+// blok = { jenis?:'teks'|'judul'|'syair'|'pemisah', judul?, arab, latin?, arti?, ulang? }.
 
 export const KATEGORI_AMALAN = Object.freeze([
   { kunci: 'wirid', label: 'Wirid' },
@@ -37,25 +38,56 @@ const rapi = (s) =>
     .replace(/[ \t]+\n/g, '\n')
     .trim()
 
+export const JENIS_BLOK = Object.freeze([
+  { kunci: 'teks', label: 'Teks' },
+  { kunci: 'judul', label: 'Judul' },
+  { kunci: 'syair', label: 'Syair' },
+  { kunci: 'pemisah', label: 'Pemisah ***' }
+])
+const KUNCI_JENIS = new Set(JENIS_BLOK.map((j) => j.kunci))
+
+/** Satu blok bacaan bersih, atau null bila kosong. Blok "pemisah" tak butuh teks Arab. */
+function bersihkanBlok(b) {
+  const jenis = KUNCI_JENIS.has(b?.jenis) ? b.jenis : 'teks'
+  if (jenis === 'pemisah') return { jenis }
+  const ulang = Math.floor(Number(b?.ulang))
+  const out = { arab: rapi(b?.arab) }
+  if (jenis !== 'teks') out.jenis = jenis
+  if (rapi(b?.judul)) out.judul = rapi(b.judul)
+  if (rapi(b?.latin)) out.latin = rapi(b.latin)
+  if (rapi(b?.arti)) out.arti = rapi(b.arti)
+  if (ulang >= 2 && ulang <= 1000) out.ulang = ulang
+  return out.arab ? out : null
+}
+
 /**
- * Bersihkan isian form admin sebelum disimpan. Bagian tanpa teks Arab dibuang; `ulang` hanya
- * bilangan bulat 2..1000 (1 = tak perlu ditulis). Hasil { ok, galat?, nilai }.
+ * Daftar bab sebuah bacaan. Bacaan lama (sebelum 26 Nov 2026) hanya punya `bagian` datar →
+ * dianggap satu bab tanpa judul, jadi tetap terbaca tanpa migrasi data.
+ */
+export function babAmalan(a) {
+  if (Array.isArray(a?.bab) && a.bab.length) return a.bab
+  if (Array.isArray(a?.bagian) && a.bagian.length) return [{ judul: '', bagian: a.bagian }]
+  return []
+}
+
+/**
+ * Bersihkan isian form admin sebelum disimpan. Bentuk "tunggal" = satu bacaan yang halamannya
+ * digeser; "berbab" = ada daftar bab lebih dulu. Bab tanpa blok berisi dibuang; bab tak berjudul
+ * pada bentuk berbab diberi "Bab n". Hasil { ok, galat?, nilai }.
  */
 export function bersihkanAmalan(form) {
   const judul = rapi(form?.judul)
-  const bagian = (Array.isArray(form?.bagian) ? form.bagian : [])
-    .map((b) => {
-      const ulang = Math.floor(Number(b?.ulang))
-      const out = { arab: rapi(b?.arab) }
-      if (rapi(b?.judul)) out.judul = rapi(b.judul)
-      if (rapi(b?.latin)) out.latin = rapi(b.latin)
-      if (rapi(b?.arti)) out.arti = rapi(b.arti)
-      if (ulang >= 2 && ulang <= 1000) out.ulang = ulang
-      return out
-    })
-    .filter((b) => b.arab)
+  const bentuk = form?.bentuk === 'berbab' ? 'berbab' : 'tunggal'
+  const bab = babAmalan(form)
+    .map((x) => ({
+      judul: rapi(x?.judul),
+      bagian: (Array.isArray(x?.bagian) ? x.bagian : []).map(bersihkanBlok).filter(Boolean)
+    }))
+    // Bab yang isinya hanya pemisah dianggap kosong.
+    .filter((x) => x.bagian.some((b) => b.jenis !== 'pemisah'))
+    .map((x, i) => ({ ...x, judul: x.judul || (bentuk === 'berbab' ? `Bab ${i + 1}` : '') }))
   if (!judul) return { ok: false, galat: 'Judul wajib diisi.' }
-  if (!bagian.length) return { ok: false, galat: 'Minimal satu bagian berisi teks Arab.' }
+  if (!bab.length) return { ok: false, galat: 'Minimal satu bagian berisi teks Arab.' }
   return {
     ok: true,
     nilai: {
@@ -64,7 +96,8 @@ export function bersihkanAmalan(form) {
       urutan: Math.max(0, Math.floor(Number(form?.urutan) || 0)),
       aktif: form?.aktif !== false,
       keterangan: rapi(form?.keterangan),
-      bagian
+      bentuk,
+      bab
     }
   }
 }
@@ -84,6 +117,8 @@ export function pecahTeksAmalan(teks) {
         .split('\n')
         .map((x) => x.trim())
         .filter(Boolean)
+      // Blok berisi bintang/titik saja ("***") = garis pemisah antarbagian.
+      if (baris.length && baris.every((x) => /^[*•·\s]+$/.test(x))) return { jenis: 'pemisah' }
       const arab = baris.filter((x) => ARAB.test(x))
       const lain = baris.filter((x) => !ARAB.test(x))
       const b = { arab: arab.join('\n') }
@@ -93,11 +128,66 @@ export function pecahTeksAmalan(teks) {
       } else if (lain.length === 1) b.arti = lain[0]
       return b
     })
-    .filter((b) => b.arab)
+    .filter((b) => b.arab || b.jenis === 'pemisah')
 }
 
 /** Ukuran huruf Arab layar baca (A−/A+): batas aman 20–48 px, langkah 2. */
 export function ukuranArab(sekarang, arah) {
   const n = (Number(sekarang) || 28) + (arah > 0 ? 2 : -2)
   return Math.min(48, Math.max(20, n))
+}
+
+/**
+ * Tempel massal berbab: baris "=== Judul bab" memulai bab baru (judul boleh kosong). Teks sebelum
+ * penanda pertama jadi bab pertama. Isi tiap bab dipecah dengan pecahTeksAmalan.
+ */
+export function pecahTeksBab(teks) {
+  const hasil = []
+  let kini = { judul: '', baris: [] }
+  for (const baris of String(teks || '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')) {
+    const m = baris.match(/^\s*={3,}\s*(.*)$/)
+    if (m) {
+      hasil.push(kini)
+      kini = { judul: m[1].trim(), baris: [] }
+    } else kini.baris.push(baris)
+  }
+  hasil.push(kini)
+  return hasil
+    .map((x) => ({ judul: x.judul, bagian: pecahTeksAmalan(x.baris.join('\n')) }))
+    .filter((x) => x.bagian.length)
+}
+
+/** Baris syair: tiap baris Arab bergantian rata kanan (awal) dan rata kiri (akhir). */
+export function barisSyair(arab) {
+  return String(arab || '')
+    .split('\n')
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map((t, i) => ({ teks: t, sisi: i % 2 === 0 ? 'awal' : 'akhir' }))
+}
+
+/** Label penunjuk halaman: bacaan berbab dihitung per bab, tunggal per halaman. */
+export function labelHalaman(bentuk, i, n) {
+  return `${bentuk === 'berbab' ? 'Bab' : 'Halaman'} ${i + 1} dari ${n}`
+}
+
+/** Tombol ع/A: Arab saja → Arab + Latin → lengkap (dengan arti) → kembali ke Arab saja. */
+export const MODE_TAMPIL = Object.freeze(['lengkap', 'arab', 'latin'])
+export const LABEL_MODE = Object.freeze({
+  lengkap: 'Arab, Latin & arti',
+  arab: 'Arab saja',
+  latin: 'Arab & Latin'
+})
+export function modeBerikut(m) {
+  const i = MODE_TAMPIL.indexOf(m)
+  return MODE_TAMPIL[(i + 1) % MODE_TAMPIL.length]
+}
+
+/** Halaman yang dibuka: dari ?hal= di URL bila sah; bacaan berbab tanpa ?hal → daftar bab (-1). */
+export function halamanAwal(bentuk, n, hal) {
+  const h = Math.floor(Number(hal))
+  if (hal !== undefined && hal !== null && hal !== '' && h >= 0 && h < n) return h
+  return bentuk === 'berbab' && n > 1 ? -1 : 0
 }

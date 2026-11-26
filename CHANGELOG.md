@@ -38,6 +38,17 @@ kolom `kegiatan.publik`, dan menyimpan agenda akan galat bila kolomnya belum ada
 rilis Electron, rebuild AAB (plugin biometrik baru `@capgo/capacitor-native-biometric`).
 
 ### Added
+- **Kitab & Wirid berbab dan berhalaman** (Kyai 26 Nov 2026, pola NU Online & aplikasi Pak Alwi)
+  — bacaan kini `{ bentuk:'tunggal'|'berbab', bab:[{ judul, bagian }] }`. "Berbab" dibuka di
+  daftar bab (tombol *Lanjutkan* dari penanda); "tunggal" langsung di halaman 1. Halaman digeser
+  kiri-kanan atau lewat tombol ‹ ›, penunjuk "Bab/Halaman n dari N"; halaman disimpan di `?hal=`
+  sehingga tombol kembali HP menuju daftar bab. Blok punya jenis: teks, **judul** (Arab + Latin di
+  tengah), **syair** (baris bergantian kanan–kiri seperti cetakan Diba'/Barzanji), **pemisah ***.
+  Tombol ع/A berputar: lengkap → Arab saja → Arab & Latin. Penanda per bacaan disimpan di HP.
+  Ukuran huruf & layar penuh disatukan di menu titik tiga. Form admin: pilihan bentuk, pemilih
+  bab/halaman, jenis blok; tempel massal mengenali `=== Judul` (bab baru) dan `***` (pemisah).
+  Bacaan lama (bagian datar) tetap terbaca lewat `babAmalan` — tanpa migrasi. Aturan di
+  `utils/amalan` + tes.
 - **Mode baca layar penuh** (blueprint §3.6/§4.10, F8) — `composables/useModeBaca` SATU untuk
   Kitab & Wirid sekarang dan Al-Qur'an nanti: tombol ⤢ di layar baca, akar layar jadi lapisan
   fixed menutupi header & menu bawah (safe-area untuk lubang kamera), ketuk tengah layar =
