@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { bacaModeTema, temaGelapAktif } from '@/utils/tema'
+import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 
 let _toastSeq = 0
 const _toastTimers = new Map()
@@ -12,6 +13,14 @@ export const useUiStore = defineStore('ui', () => {
   // User toggle via hamburger tetap work in-session.
   function _initialSidebar() {
     if (typeof window === 'undefined') return false
+    // Di aplikasi Android & PWA perangkat sentuh (HP maupun tablet, portrait maupun landscape),
+    // sidebar selalu drawer tertutup (navigasi utama pakai BottomNav + tombol ☰).
+    const isNative = window.Capacitor?.isNativePlatform?.() === true
+    const isTouch =
+      isNative ||
+      window.matchMedia?.('(pointer: coarse)')?.matches ||
+      (navigator.maxTouchPoints || 0) > 0
+    if (pakaiWilayahPublik() && isTouch) return false
     // Di HP landscape (tinggi <= 540, lebar <= 1024) sidebar tetap default tertutup sebagai drawer.
     if (window.innerHeight <= 540 && window.innerWidth <= 1024) return false
     return window.innerWidth >= 768

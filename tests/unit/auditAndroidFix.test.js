@@ -73,4 +73,13 @@ describe('pagar perbaikan audit Android v.1.5.5 & migrasi domain', () => {
     const css = baca('vue-app/src/assets/main.css')
     expect(css).toContain(".aksi-kartu > :is(button, a):not([class*='bg-'])")
   })
+
+  it('gaya native-shell & BottomNav berlaku di tablet (portrait & landscape) tanpa batas max-width 767px', () => {
+    const css = baca('vue-app/src/assets/main.css')
+    expect(css).not.toMatch(
+      /@media\s*\(max-width:\s*767px\)[^{]*\{\s*html\.native-shell\s+\.akar-halaman/
+    )
+    expect(baca('vue-app/src/composables/useMobileShell.js')).toContain('isTouchShell')
+    expect(baca('vue-app/src/components/layout/AppSidebar.vue')).toContain('showBottomNav.value')
+  })
 })

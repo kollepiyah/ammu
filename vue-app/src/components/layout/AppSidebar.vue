@@ -164,10 +164,10 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { groupedMenus } = useMenus()
-const { isMobile, isCompactLandscape } = useMobileShell()
-// Di HP portrait & HP landscape, sidebar selalu drawer melayang agar tidak mendorong konten &
-// BottomNav saat HP diputar miring.
-const isDrawer = computed(() => isMobile.value || isCompactLandscape.value)
+const { isMobile, isCompactLandscape, showBottomNav } = useMobileShell()
+// Di HP & tablet Android/PWA (portrait maupun landscape), sidebar selalu drawer melayang agar
+// konsisten dengan BottomNav & top bar hijau (tidak menabrak status bar hijau di sisi kiri).
+const isDrawer = computed(() => showBottomNav.value || isMobile.value || isCompactLandscape.value)
 
 const GROUP_ICONS = {
   Menu: 'fa-th-large',

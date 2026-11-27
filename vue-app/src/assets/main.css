@@ -354,214 +354,40 @@ button,
   }
 }
 
-/* ===== Gaya native (Kyai 25 Nov 2026, mengacu NU Online) — HANYA Android & PWA di layar HP =====
-   html.native-shell dipasang App.vue (pakaiWilayahPublik). Isi halaman selebar layar: kartu tingkat
-   atas jadi "bagian" tanpa sudut/bingkai/bayangan, antarbagian dipisah pita 8px warna latar.
-   Kartu di dalam kartu, dialog melayang (.fixed), dan kertas cetak tak disentuh.
-   Tetap aktif di HP landscape (tinggi <= 540px) supaya tidak pecah ke mode setengah-desktop. */
-@media (max-width: 767px), (max-height: 540px) and (max-width: 1024px) {
-  html.native-shell .akar-halaman > *:not(.baca-penuh) {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    padding-top: 0 !important;
-    max-width: none !important;
-  }
-  html.native-shell .akar-halaman > [class*='space-y'] > * + *,
-  html.native-shell .akar-halaman > * > [class*='space-y'] > * + * {
-    margin-top: 8px !important;
-  }
-  html.native-shell .akar-halaman > * > :is(.grid, [class*='gap-']) {
-    gap: 8px !important;
-  }
-  html.native-shell
-    .akar-halaman
+/* ===== Gaya native (Kyai 25–27 Nov 2026, mengacu NU Online) — Android & PWA di SEMUA layar =====
+   html.native-shell dipasang App.vue hanya untuk Android native & PWA terpasang (web desktop &
+   Electron tidak memakainya). Berlaku konsisten di HP portrait, HP landscape, Tablet portrait,
+   maupun Tablet landscape: isi halaman selebar layar penuh (edge-to-edge), kartu Hijriah
+   menyambung mulus ke top bar hijau, tanpa kolom 576px sempit mengambang di tengah tablet. */
+html.native-shell .akar-halaman > *:not(.baca-penuh) {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  max-width: none !important;
+}
+html.native-shell .akar-halaman > [class*='space-y'] > * + *,
+html.native-shell .akar-halaman > * > [class*='space-y'] > * + * {
+  margin-top: 8px !important;
+}
+html.native-shell .akar-halaman > * > :is(.grid, [class*='gap-']) {
+  gap: 8px !important;
+}
+html.native-shell
+  .akar-halaman
+  :is(
+    .rounded-2xl,
+    .rounded-xl,
+    .rounded-3xl,
+    [class*='rounded-[2rem]'],
+    [class*='rounded-[var(--radius-lg)]'],
+    [class*='rounded-[var(--radius-xl)]']
+  ):is(
+    [class*='bg-[var(--bg-card)]'],
+    [class*='bg-[var(--bg-card-elevated)]'],
+    .bg-white,
+    .kepala-polos
+  ):not(
     :is(
-      .rounded-2xl,
-      .rounded-xl,
-      .rounded-3xl,
-      [class*='rounded-[2rem]'],
-      [class*='rounded-[var(--radius-lg)]'],
-      [class*='rounded-[var(--radius-xl)]']
-    ):is(
-      [class*='bg-[var(--bg-card)]'],
-      [class*='bg-[var(--bg-card-elevated)]'],
-      .bg-white,
-      .kepala-polos
-    ):not(
-      :is(
-          .rounded-2xl,
-          .rounded-xl,
-          .rounded-3xl,
-          [class*='rounded-[2rem]'],
-          [class*='rounded-[var(--radius-lg)]'],
-          [class*='rounded-[var(--radius-xl)]']
-        ):is(
-          [class*='bg-[var(--bg-card)]'],
-          [class*='bg-[var(--bg-card-elevated)]'],
-          .bg-white,
-          .kepala-polos
-        )
-        *
-    ):not(.fixed *):not(.print-area):not(.print-area *):not(#rapor-print-area):not(
-      #rapor-print-area *
-    ) {
-    border-radius: 0 !important;
-    border-left-width: 0 !important;
-    border-right-width: 0 !important;
-    border-top-width: 0 !important;
-    border-bottom-width: 0 !important;
-    box-shadow: none !important;
-  }
-  /* Angka jumlah: tanpa kotak, dipisah garis tegak tipis (seperti mock-up). */
-  html.native-shell .ph-stat > * {
-    border: 0 !important;
-    background: transparent !important;
-  }
-  html.native-shell .ph-stat > * + * {
-    border-left: 1px solid var(--border-subtle) !important;
-    border-radius: 0 !important;
-  }
-  /* Profil (Kyai 25 Nov 2026, mock-up): spanduk gradasi -> kepala ringkas (foto kiri, nama &
-     peran kanan); kartu info geser-samping -> bertumpuk; Pengaturan Profil -> daftar baris. */
-  html.native-shell .profil-banner {
-    background: var(--bg-card) !important;
-    padding: 1rem !important;
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  html.native-shell .profil-banner > img {
-    display: none !important;
-  }
-  html.native-shell .profil-banner > div {
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 0.9rem !important;
-  }
-  html.native-shell .profil-banner > div > div:first-child {
-    width: 4rem !important;
-    height: 4rem !important;
-    border-width: 0 !important;
-    box-shadow: none !important;
-    background: var(--bg-muted) !important;
-  }
-  html.native-shell .profil-banner > div > div:first-child > i {
-    font-size: 1.5rem !important;
-    color: var(--text-tertiary) !important;
-  }
-  html.native-shell .profil-banner > div > div:last-child {
-    text-align: left !important;
-  }
-  html.native-shell .profil-banner :is(h2, p, span) {
-    color: var(--text-primary) !important;
-    text-shadow: none !important;
-    filter: none !important;
-  }
-  html.native-shell .profil-banner h2 {
-    font-size: 1.1rem !important;
-  }
-  html.native-shell .profil-banner p {
-    color: var(--text-secondary) !important;
-    font-size: 0.75rem !important;
-    margin-top: 0.15rem !important;
-  }
-  html.native-shell .profil-banner span {
-    margin-top: 0.4rem !important;
-    padding: 0.1rem 0.6rem !important;
-    font-size: 10px !important;
-    background: transparent !important;
-    border-color: var(--border-default) !important;
-    box-shadow: none !important;
-  }
-  html.native-shell .profil-geser {
-    display: block !important;
-    overflow: visible !important;
-  }
-  html.native-shell .profil-geser > * {
-    width: 100% !important;
-    border-radius: 0 !important;
-    border-width: 0 !important;
-    background: transparent !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-  html.native-shell .profil-geser > * + * {
-    border-top: 1px solid var(--border-subtle) !important;
-  }
-  html.native-shell .profil-geser ~ div {
-    border-radius: 0 !important;
-    border-width: 1px 0 0 0 !important;
-    border-color: var(--border-subtle) !important;
-    background: transparent !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-  html.native-shell .daftar-pengaturan {
-    display: block !important;
-  }
-  html.native-shell .daftar-pengaturan > button {
-    display: grid !important;
-    grid-template-columns: 1.75rem 1fr 1rem;
-    column-gap: 0.75rem;
-    align-items: center;
-    width: 100%;
-    padding: 0.8rem 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-  }
-  html.native-shell .daftar-pengaturan > button + button {
-    border-top: 1px solid var(--border-subtle) !important;
-  }
-  html.native-shell .daftar-pengaturan > button > i {
-    grid-row: span 2;
-    font-size: 1.15rem !important;
-    margin: 0 !important;
-    text-align: center;
-  }
-  html.native-shell .daftar-pengaturan > button > p {
-    grid-column: 2;
-    margin: 0 !important;
-  }
-  html.native-shell .daftar-pengaturan > button::after {
-    content: '\f054';
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-    font-size: 0.7rem;
-    color: var(--text-tertiary);
-    grid-column: 3;
-    grid-row: 1 / span 2;
-  }
-  /* Kartu jam ikut selebar layar (gradiennya tetap). */
-  html.native-shell .akar-halaman .jam-ringkas {
-    border-radius: 0 !important;
-  }
-  /* Ikon ibadah: lingkaran tanpa kotak (seperti menu NU Online). */
-  html.native-shell .menu-ibadah {
-    background: var(--bg-card);
-    padding: 0.75rem 0.5rem;
-  }
-  html.native-shell .menu-ibadah > button {
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    padding: 0.25rem 0 !important;
-  }
-  /* Kembali cukup lewat tombol/geser kembali HP (Kyai 25 Nov 2026); langkah dalam halaman
-     dicatat di riwayat (useLangkahRiwayat) supaya kembali HP mundur satu langkah. */
-  html.native-shell .tombol-kembali {
-    display: none !important;
-  }
-  /* Bilah tombol melayang di bawah (Simpan/Bayar) jangan menutupi menu bawah. */
-  html.native-shell .bilah-simpan {
-    bottom: calc(4.25rem + env(safe-area-inset-bottom)) !important;
-  }
-  /* Isi tingkat atas yang BUKAN bagian berlatar (deret tab, petak menu, baris penyaring, judul)
-     tetap diberi jarak tepi supaya tak menempel ke tepi layar. Layar baca penuh (.baca-penuh)
-     mengatur jarak tepinya sendiri agar .kepala-baca & .pager-baca tetap selebar layar penuh. */
-  html.native-shell
-    .akar-halaman
-    > *:not(.baca-penuh)
-    > :not(
-      :is(
         .rounded-2xl,
         .rounded-xl,
         .rounded-3xl,
@@ -574,49 +400,239 @@ button,
         .bg-white,
         .kepala-polos
       )
-    ):not(
-      :has(
-        > :is(
-            .rounded-2xl,
-            .rounded-xl,
-            .rounded-3xl,
-            [class*='rounded-[2rem]'],
-            [class*='rounded-[var(--radius-lg)]'],
-            [class*='rounded-[var(--radius-xl)]']
-          ):is(
-            [class*='bg-[var(--bg-card)]'],
-            [class*='bg-[var(--bg-card-elevated)]'],
-            .bg-white,
-            .kepala-polos
-          )
-      )
-    ):not(.daftar-baris):not(.fixed):not(button):not(a) {
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
+      *
+  ):not(.fixed *):not(.print-area):not(.print-area *):not(#rapor-print-area):not(
+    #rapor-print-area *
+  ) {
+  border-radius: 0 !important;
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
+  border-top-width: 0 !important;
+  border-bottom-width: 0 !important;
+  box-shadow: none !important;
+}
+/* Angka jumlah: tanpa kotak, dipisah garis tegak tipis (seperti mock-up). */
+html.native-shell .ph-stat > * {
+  border: 0 !important;
+  background: transparent !important;
+}
+html.native-shell .ph-stat > * + * {
+  border-left: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+}
+/* Profil (Kyai 25 Nov 2026, mock-up): spanduk gradasi -> kepala ringkas (foto kiri, nama &
+     peran kanan); kartu info geser-samping -> bertumpuk; Pengaturan Profil -> daftar baris. */
+html.native-shell .profil-banner {
+  background: var(--bg-card) !important;
+  padding: 1rem !important;
+  border-bottom: 1px solid var(--border-subtle);
+}
+html.native-shell .profil-banner > img {
+  display: none !important;
+}
+html.native-shell .profil-banner > div {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.9rem !important;
+}
+html.native-shell .profil-banner > div > div:first-child {
+  width: 4rem !important;
+  height: 4rem !important;
+  border-width: 0 !important;
+  box-shadow: none !important;
+  background: var(--bg-muted) !important;
+}
+html.native-shell .profil-banner > div > div:first-child > i {
+  font-size: 1.5rem !important;
+  color: var(--text-tertiary) !important;
+}
+html.native-shell .profil-banner > div > div:last-child {
+  text-align: left !important;
+}
+html.native-shell .profil-banner :is(h2, p, span) {
+  color: var(--text-primary) !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+html.native-shell .profil-banner h2 {
+  font-size: 1.1rem !important;
+}
+html.native-shell .profil-banner p {
+  color: var(--text-secondary) !important;
+  font-size: 0.75rem !important;
+  margin-top: 0.15rem !important;
+}
+html.native-shell .profil-banner span {
+  margin-top: 0.4rem !important;
+  padding: 0.1rem 0.6rem !important;
+  font-size: 10px !important;
+  background: transparent !important;
+  border-color: var(--border-default) !important;
+  box-shadow: none !important;
+}
+html.native-shell .profil-geser {
+  display: block !important;
+  overflow: visible !important;
+}
+html.native-shell .profil-geser > * {
+  width: 100% !important;
+  border-radius: 0 !important;
+  border-width: 0 !important;
+  background: transparent !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+html.native-shell .profil-geser > * + * {
+  border-top: 1px solid var(--border-subtle) !important;
+}
+html.native-shell .profil-geser ~ div {
+  border-radius: 0 !important;
+  border-width: 1px 0 0 0 !important;
+  border-color: var(--border-subtle) !important;
+  background: transparent !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+html.native-shell .daftar-pengaturan {
+  display: block !important;
+}
+html.native-shell .daftar-pengaturan > button {
+  display: grid !important;
+  grid-template-columns: 1.75rem 1fr 1rem;
+  column-gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.8rem 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+html.native-shell .daftar-pengaturan > button + button {
+  border-top: 1px solid var(--border-subtle) !important;
+}
+html.native-shell .daftar-pengaturan > button > i {
+  grid-row: span 2;
+  font-size: 1.15rem !important;
+  margin: 0 !important;
+  text-align: center;
+}
+html.native-shell .daftar-pengaturan > button > p {
+  grid-column: 2;
+  margin: 0 !important;
+}
+html.native-shell .daftar-pengaturan > button::after {
+  content: '\f054';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}
+/* Kartu jam ikut selebar layar (gradiennya tetap). */
+html.native-shell .akar-halaman .jam-ringkas {
+  border-radius: 0 !important;
+}
+/* Ikon ibadah: lingkaran tanpa kotak (seperti menu NU Online). */
+html.native-shell .menu-ibadah {
+  background: var(--bg-card);
+  padding: 0.75rem 0.5rem;
+}
+html.native-shell .menu-ibadah > button {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0.25rem 0 !important;
+}
+/* Kembali cukup lewat tombol/geser kembali HP (Kyai 25 Nov 2026); langkah dalam halaman
+     dicatat di riwayat (useLangkahRiwayat) supaya kembali HP mundur satu langkah. */
+html.native-shell .tombol-kembali {
+  display: none !important;
+}
+/* Bilah tombol melayang di bawah (Simpan/Bayar) jangan menutupi menu bawah. */
+html.native-shell .bilah-simpan {
+  bottom: calc(4.25rem + env(safe-area-inset-bottom)) !important;
+}
+/* Isi tingkat atas yang BUKAN bagian berlatar (deret tab, petak menu, baris penyaring, judul)
+     tetap diberi jarak tepi supaya tak menempel ke tepi layar. Layar baca penuh (.baca-penuh)
+     mengatur jarak tepinya sendiri agar .kepala-baca & .pager-baca tetap selebar layar penuh. */
+html.native-shell
+  .akar-halaman
+  > *:not(.baca-penuh)
+  > :not(
+    :is(
+      .rounded-2xl,
+      .rounded-xl,
+      .rounded-3xl,
+      [class*='rounded-[2rem]'],
+      [class*='rounded-[var(--radius-lg)]'],
+      [class*='rounded-[var(--radius-xl)]']
+    ):is(
+      [class*='bg-[var(--bg-card)]'],
+      [class*='bg-[var(--bg-card-elevated)]'],
+      .bg-white,
+      .kepala-polos
+    )
+  ):not(
+    :has(
+      > :is(
+          .rounded-2xl,
+          .rounded-xl,
+          .rounded-3xl,
+          [class*='rounded-[2rem]'],
+          [class*='rounded-[var(--radius-lg)]'],
+          [class*='rounded-[var(--radius-xl)]']
+        ):is(
+          [class*='bg-[var(--bg-card)]'],
+          [class*='bg-[var(--bg-card-elevated)]'],
+          .bg-white,
+          .kepala-polos
+        )
+    )
+  ):not(.daftar-baris):not(.fixed):not(button):not(a) {
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+}
+/* Tombol tingkat atas (mis. "Buat Postingan") tetap bentuk aslinya, berjarak dari tepi. */
+/* .selebar-layar = kecuali (kartu Hijriah yang menyambung top bar). */
+html.native-shell .akar-halaman > *:not(.baca-penuh) > :is(button, a):not(.selebar-layar) {
+  margin-left: 0.75rem !important;
+  margin-right: 0.75rem !important;
+}
+html.native-shell .akar-halaman > *:not(.baca-penuh) > :is(button, a).w-full:not(.selebar-layar) {
+  width: calc(100% - 1.5rem) !important;
+}
+/* Daftar berupa baris bergaris tipis (dipasang per halaman lewat .daftar-baris). */
+/* Daftar tingkat atas (bukan di dalam kartu) butuh latar bagian sendiri. */
+html.native-shell .latar-bagian {
+  background: var(--bg-card);
+}
+html.native-shell .daftar-baris > * {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+html.native-shell .daftar-baris > * + * {
+  border-top: 1px solid var(--border-subtle) !important;
+}
+
+/* Layar lebar (tablet portrait/landscape) di Android & PWA: beri ruang napas horizontal yang rapi
+   seperti NU Online, sementara latar hijau top bar & kartu Hijriah tetap menyambung penuh tepi-ke-tepi. */
+@media (min-width: 768px) {
+  html.native-shell .topbar-hijau,
+  html.native-shell .jam-ringkas,
+  html.native-shell .lanjut-topbar {
+    padding-left: max(1.5rem, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(1.5rem, env(safe-area-inset-right, 0px)) !important;
   }
-  /* Tombol tingkat atas (mis. "Buat Postingan") tetap bentuk aslinya, berjarak dari tepi. */
-  /* .selebar-layar = kecuali (kartu Hijriah yang menyambung top bar). */
-  html.native-shell .akar-halaman > * > :is(button, a):not(.selebar-layar) {
-    margin-left: 0.75rem !important;
-    margin-right: 0.75rem !important;
+  html.native-shell .menu-ibadah {
+    padding: 1rem 1.5rem;
+    gap: 1rem;
   }
-  html.native-shell .akar-halaman > * > :is(button, a).w-full:not(.selebar-layar) {
-    width: calc(100% - 1.5rem) !important;
-  }
-  /* Daftar berupa baris bergaris tipis (dipasang per halaman lewat .daftar-baris). */
-  /* Daftar tingkat atas (bukan di dalam kartu) butuh latar bagian sendiri. */
-  html.native-shell .latar-bagian {
-    background: var(--bg-card);
-  }
-  html.native-shell .daftar-baris > * {
-    border: 0 !important;
+  html.native-shell .akar-halaman .kepala-sholat {
     border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-  }
-  html.native-shell .daftar-baris > * + * {
-    border-top: 1px solid var(--border-subtle) !important;
   }
 }
 

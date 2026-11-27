@@ -131,12 +131,12 @@
 
     <!-- Daftar bab (bacaan berbab) -->
     <template v-else-if="hal < 0">
-      <div class="px-4 py-5 text-center border-b border-slate-100 dark:border-slate-800">
+      <div class="px-4 sm:px-6 py-5 text-center border-b border-slate-100 dark:border-slate-800">
         <p class="text-lg font-black text-teal-700 dark:text-teal-300">{{ amalan.judul }}</p>
         <p class="text-xs text-[var(--text-secondary)] mt-0.5">{{ bab.length }} bab</p>
         <p
           v-if="amalan.keterangan"
-          class="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed whitespace-pre-line"
+          class="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed whitespace-pre-line max-w-2xl mx-auto"
         >
           {{ amalan.keterangan }}
         </p>
@@ -155,13 +155,15 @@
         :key="i"
         v-haptic
         type="button"
-        class="w-full flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 text-left cursor-pointer"
+        class="w-full flex items-center gap-3 px-4 sm:px-6 py-3.5 border-b border-slate-100 dark:border-slate-800 text-left cursor-pointer"
         :class="
           penanda?.hal === i ? 'text-teal-700 dark:text-teal-300' : 'text-[var(--text-primary)]'
         "
         @click="bukaBab(i)"
       >
-        <span class="w-6 shrink-0 text-xs font-bold text-[var(--text-secondary)]">{{ i + 1 }}</span>
+        <span class="w-7 shrink-0 text-xs font-bold text-teal-700 dark:text-teal-300">{{
+          i + 1
+        }}</span>
         <span class="min-w-0 flex-1 text-sm font-bold truncate">{{
           b.judul || `Bab ${i + 1}`
         }}</span>
@@ -172,38 +174,40 @@
 
     <!-- Halaman bacaan -->
     <template v-else>
-      <p
-        v-if="hal === 0 && amalan.keterangan && !berbab"
-        class="px-4 pt-3 text-xs text-[var(--text-secondary)] leading-relaxed whitespace-pre-line"
-      >
-        {{ amalan.keterangan }}
-      </p>
-      <button
-        v-if="!berbab && hal === 0 && penanda?.hal > 0"
-        type="button"
-        class="mx-4 mt-3 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200 cursor-pointer"
-        @click.stop="pindah(penanda.hal)"
-      >
-        <i class="fas fa-bookmark mr-1.5"></i>Lanjutkan ke {{ labelBab(penanda.hal) }}
-      </button>
-      <p
-        v-if="berbab && babKini?.judul"
-        class="px-4 pt-5 pb-1 text-center text-base font-black"
-        :class="kelasWarna(babKini.warna, KELAS_HIJAU)"
-      >
-        {{ babKini.judul }}
-      </p>
+      <div class="baca-kolom">
+        <p
+          v-if="hal === 0 && amalan.keterangan && !berbab"
+          class="px-4 sm:px-6 pt-3 text-xs text-[var(--text-secondary)] leading-relaxed whitespace-pre-line"
+        >
+          {{ amalan.keterangan }}
+        </p>
+        <button
+          v-if="!berbab && hal === 0 && penanda?.hal > 0"
+          type="button"
+          class="mx-4 sm:mx-6 mt-3 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200 cursor-pointer"
+          @click.stop="pindah(penanda.hal)"
+        >
+          <i class="fas fa-bookmark mr-1.5"></i>Lanjutkan ke {{ labelBab(penanda.hal) }}
+        </button>
+        <p
+          v-if="berbab && babKini?.judul"
+          class="px-4 sm:px-6 pt-5 pb-1 text-center text-base font-black"
+          :class="kelasWarna(babKini.warna, KELAS_HIJAU)"
+        >
+          {{ babKini.judul }}
+        </p>
 
-      <!-- Kyai 26 Nov 2026: isi teks kaya dari editor (bentuk lama dikonversi htmlBab). Disaring
-           saringHtmlAmalan SEBELUM v-html; ع/A menyembunyikan baris Latin/Arti lewat kelas mode-*. -->
-      <!-- eslint-disable vue/no-v-html -->
-      <div
-        class="isi-amalan px-4 py-3 text-[var(--text-primary)]"
-        :class="'mode-' + mode"
-        :style="{ '--ukuran-arab': ukuran + 'px' }"
-        v-html="htmlTampil"
-      ></div>
-      <!-- eslint-enable vue/no-v-html -->
+        <!-- Kyai 26 Nov 2026: isi teks kaya dari editor (bentuk lama dikonversi htmlBab). Disaring
+             saringHtmlAmalan SEBELUM v-html; ع/A menyembunyikan baris Latin/Arti lewat kelas mode-*. -->
+        <!-- eslint-disable vue/no-v-html -->
+        <div
+          class="isi-amalan px-4 sm:px-6 py-3 text-[var(--text-primary)]"
+          :class="'mode-' + mode"
+          :style="{ '--ukuran-arab': ukuran + 'px' }"
+          v-html="htmlTampil"
+        ></div>
+        <!-- eslint-enable vue/no-v-html -->
+      </div>
 
       <div
         v-if="bab.length > 1"
@@ -481,8 +485,10 @@ function gantiMode() {
   background: var(--bg-page);
   touch-action: pan-y;
 }
-.baca-penuh > * {
-  max-width: 36rem;
+/* Kepala bacaan, daftar bab, & pager melebar penuh seperti NU Online (termasuk di tablet
+   landscape); hanya kolom teks bacaan (.baca-kolom) yang diberi lebar baca nyaman (48rem). */
+.baca-penuh .baca-kolom {
+  max-width: 48rem;
   margin-left: auto;
   margin-right: auto;
 }
@@ -491,11 +497,15 @@ function gantiMode() {
 }
 .baca-penuh .kepala-baca {
   padding-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
 }
 .baca-penuh .ujung-baca {
   height: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
 }
 .baca-penuh .pager-baca {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
 }
 </style>

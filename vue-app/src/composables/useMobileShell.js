@@ -19,19 +19,26 @@ const _isNative = detectNative()
 export function useMobileShell() {
   const isMobile = ref(false)
   const isCompactLandscape = ref(false)
+  const isTouchShell = ref(_isNative)
   const isStandalone = ref(false)
   function sync() {
     try {
       isMobile.value = window.matchMedia('(max-width: 767px)').matches
       // HP diputar landscape: lebar melewati 767px (800-930px), tapi tinggi tetap rendah (<= 540px).
       // isMobile sengaja tetap berbasis lebar agar tabel/kartu layar lebar tak ikut menyempit;
-      // showBottomNav tetap aktif di HP landscape supaya shell native tidak pecah ke mode desktop.
+      // showBottomNav tetap aktif di HP & tablet (portrait/landscape) supaya shell native konsisten
+      // seperti NU Online dan tidak pecah ke mode setengah-desktop.
       isCompactLandscape.value = window.matchMedia(
         '(max-height: 540px) and (max-width: 1024px)'
       ).matches
+      isTouchShell.value =
+        _isNative ||
+        window.matchMedia('(pointer: coarse)').matches ||
+        (navigator.maxTouchPoints || 0) > 0
     } catch {
       isMobile.value = false
       isCompactLandscape.value = false
+      isTouchShell.value = _isNative
     }
     try {
       isStandalone.value =
@@ -53,12 +60,19 @@ export function useMobileShell() {
     window.removeEventListener('orientationchange', sync)
   })
 
-  // (Android native ATAU PWA standalone) DAN (HP portrait ATAU HP landscape).
-  // v.103: ?shell=mobile -> paksa bottom nav di lebar HP (uji UI Android di browser).
+  // (Android native ATAU PWA standalone) pada HP/tablet (portrait maupun landscape).
+  // v.103: ?shell=mobile -> paksa bottom nav (uji UI Android di browser).
   const showBottomNav = computed(
     () =>
-      (isMobile.value || isCompactLandscape.value) &&
-      (forceMobileShell || _isNative || isStandalone.value)
+      (forceMobileShell || _isNative || isStandalone.value) &&
+      (isMobile.value || isCompactLandscape.value || isTouchShell.value || forceMobileShell)
   )
-  return { isMobile, isCompactLandscape, isStandalone, isNative: _isNative, showBottomNav }
+  return {
+    isMobile,
+    isCompactLandscape,
+    isTouchShell,
+    isStandalone,
+    isNative: _isNative,
+    showBottomNav
+  }
 }
