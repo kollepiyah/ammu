@@ -2,6 +2,31 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Alihkan otomatis URL lama Firebase (.web.app / .firebaseapp.com) ke domain resmi ammu.almanshur.id.
+      // Aman: tidak berjalan di Capacitor Android, Electron, file statis (privacy.html/app-version.json),
+      // maupun saat sedang menyelesaikan callback OAuth (?code=).
+      ;(function () {
+        try {
+          var h = (window.location.hostname || '').toLowerCase()
+          if (h !== 'ammuonline.web.app' && h !== 'ammuonline.firebaseapp.com') return
+          if (
+            window.Capacitor &&
+            window.Capacitor.isNativePlatform &&
+            window.Capacitor.isNativePlatform()
+          )
+            return
+          if (/Electron/i.test(navigator.userAgent || '')) return
+          if (/[?&]code=/.test(window.location.search || '')) return
+          window.location.replace(
+            'https://ammu.almanshur.id' +
+              (window.location.pathname || '/') +
+              (window.location.search || '') +
+              (window.location.hash || '')
+          )
+        } catch (e) {}
+      })()
+    </script>
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta
       name="viewport"
@@ -14,7 +39,7 @@
       content="Ammu Online — sistem manajemen Pondok Pesantren Mambaul Ulum: data santri, guru, rapor, keuangan, jadwal & kegiatan dalam satu portal."
     />
     <!-- v.100h SEO/AEO: canonical + Open Graph + structured data -->
-    <link rel="canonical" href="https://ammuonline.web.app/" />
+    <link rel="canonical" href="https://ammu.almanshur.id/" />
     <meta name="robots" content="index, follow" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ammu Online" />
@@ -23,8 +48,8 @@
       property="og:description"
       content="Sistem manajemen Pondok Pesantren Mambaul Ulum: data santri, guru, rapor, keuangan, jadwal & kegiatan dalam satu portal."
     />
-    <meta property="og:url" content="https://ammuonline.web.app/" />
-    <meta property="og:image" content="https://ammuonline.web.app/logo.png" />
+    <meta property="og:url" content="https://ammu.almanshur.id/" />
+    <meta property="og:image" content="https://ammu.almanshur.id/logo.png" />
     <meta property="og:locale" content="id_ID" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Ammu Online — Pondok Pesantren Mambaul Ulum" />
@@ -32,7 +57,7 @@
       name="twitter:description"
       content="Sistem manajemen Pondok Pesantren Mambaul Ulum dalam satu portal."
     />
-    <meta name="twitter:image" content="https://ammuonline.web.app/logo.png" />
+    <meta name="twitter:image" content="https://ammu.almanshur.id/logo.png" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
