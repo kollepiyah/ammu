@@ -89,9 +89,18 @@ export function useModeBaca({ otomatis = false } = {}) {
     }
   }
 
+  function setKelasRoot(nyala) {
+    try {
+      document.documentElement.classList.toggle('layar-baca-penuh', !!nyala)
+    } catch {
+      /* noop */
+    }
+  }
+
   async function masuk({ mintaBrowserFullscreen = !otomatis } = {}) {
     aktif.value = true
     kontrol.value = true
+    setKelasRoot(true)
     if (android) {
       await terapkanNative(true)
       return
@@ -107,6 +116,7 @@ export function useModeBaca({ otomatis = false } = {}) {
   }
 
   async function keluar() {
+    setKelasRoot(false)
     if (!aktif.value && !sudahMasukNative) return
     aktif.value = false
     kontrol.value = true

@@ -13,6 +13,7 @@
     @touchstart.passive="mulaiGeser"
     @touchend.passive="akhirGeser"
   >
+    <div v-if="hal >= 0 && !kontrol" class="aman-atas-baca" aria-hidden="true"></div>
     <div
       v-show="hal < 0 || kontrol"
       class="kepala-baca sticky top-0 z-10 flex items-center gap-1 px-2 py-2 bg-[var(--bg-page)] border-b border-slate-100 dark:border-slate-800"
@@ -385,7 +386,7 @@ function kembaliKeDaftar() {
 watch(hal, async (v) => {
   if (v < 0) kontrol.value = true
   await nextTick()
-  const wadah = aktif.value ? akarRef.value : document.getElementById('app-scroll')
+  const wadah = document.getElementById('app-scroll') || akarRef.value
   wadah?.scrollTo?.({ top: 0 })
 })
 
@@ -471,29 +472,30 @@ function gantiMode() {
 </script>
 
 <style scoped>
-/* Mode layar penuh: lapisan di atas header & menu bawah; isi tak tertutup lubang kamera/garis
-   navigasi (safe-area). */
+/* Mode layar penuh otomatis: mengalir normal di dalam #app-scroll (satu-satunya scroller)
+   supaya gulir vertikal selalu mulus di iOS PWA maupun Android tanpa jebakan fixed-in-scroll.
+   Top bar master, navigasi bawah, & strip status bar hijau sudah disembunyikan lewat
+   meta.layarBacaPenuh + html.layar-baca-penuh. */
 .baca-penuh {
-  position: fixed;
-  inset: 0;
-  /* Turun melewati dasar viewport: menutup celah bug iOS 26 (lihat main.css, html.native-shell). */
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
-  z-index: 250;
-  overflow-y: auto;
+  min-height: 100%;
   background: var(--bg-page);
+  touch-action: pan-y;
 }
 .baca-penuh > * {
   max-width: 36rem;
   margin-left: auto;
   margin-right: auto;
 }
+.baca-penuh .aman-atas-baca {
+  height: env(safe-area-inset-top, 0px);
+}
 .baca-penuh .kepala-baca {
-  padding-top: calc(env(safe-area-inset-top) + 0.5rem);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
 }
 .baca-penuh .ujung-baca {
-  height: calc(env(safe-area-inset-bottom) * 2 + 1.5rem);
+  height: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
 }
 .baca-penuh .pager-baca {
-  padding-bottom: calc(env(safe-area-inset-bottom) * 2 + 0.5rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
 }
 </style>

@@ -240,6 +240,37 @@ html,
     height: calc(100dvh - env(safe-area-inset-top));
   }
 }
+/* PWA standalone (iOS dengan viewport-fit=cover + black-translucent): tidak ada address bar
+   browser, sedangkan 100dvh di WebKit iOS menyusut ±34–44 px saat baru dibuka sampai layar
+   ditarik dulu. Pakai 100vh / 100lvh agar langsung penuh sejak detik pertama. */
+@media (display-mode: standalone) {
+  @supports (padding: env(safe-area-inset-top)) {
+    .h-screen {
+      height: calc(100vh - env(safe-area-inset-top));
+      height: calc(100lvh - env(safe-area-inset-top));
+    }
+  }
+}
+/* Layar baca penuh (Kitab & Wirid, Al-Qur'an): konten mengalir normal di dalam #app-scroll
+   dari tepi paling atas (y=0) sampai dasar layar — tanpa position:fixed bersarang yang bikin
+   scroll macet di iOS/Android WebKit, dan tanpa strip status bar hijau di atas. */
+html.layar-baca-penuh body {
+  padding-top: 0 !important;
+  background: var(--bg-page) !important;
+}
+html.layar-baca-penuh body::before {
+  display: none !important;
+}
+html.layar-baca-penuh .h-screen {
+  height: 100vh !important;
+  height: 100dvh !important;
+}
+@media (display-mode: standalone) {
+  html.layar-baca-penuh .h-screen {
+    height: 100vh !important;
+    height: 100lvh !important;
+  }
+}
 
 /* Native feel di mobile */
 img {
@@ -724,10 +755,14 @@ button,
   gap: 0.2rem;
   padding: 0.4rem 0.25rem;
   border-radius: 0.6rem;
-  background: var(--bg-muted);
   text-align: center;
   line-height: 1.1;
   text-decoration: none !important;
+}
+/* Latar abu bawaan hanya untuk tombol polos (Santri/Guru) tanpa kelas bg-*;
+   jangan menimpa tombol berwarna solid (Lulus hijau, Belum Lulus kuning, dsb.) yang berteks putih. */
+.aksi-kartu > :is(button, a):not([class*='bg-']) {
+  background: var(--bg-muted);
 }
 .aksi-kartu > :is(button, a) > i {
   margin: 0 !important;
@@ -1155,14 +1190,29 @@ html.native-shell body {
 html.native-shell.dark body {
   background: #0c0e12 !important;
 }
+/* Kyai 27 Nov 2026: jangan mengecat seluruh <body> hijau (di PWA iOS celah bawah saat
+   rubber-band / transisi viewport ikut memperlihatkan pita hijau di bawah menu bawah).
+   Warna hijau + motif berlian khusus untuk strip status bar atas via body::before (pola
+   Maktaba POS), sementara <body> & <html> mengikuti warna menu bawah. */
 html.native-shell body:is(.splash-selesai, .app-running) {
+  background: color-mix(in srgb, #fff 90%, var(--bg-page)) !important;
+}
+html.native-shell.dark body:is(.splash-selesai, .app-running) {
+  background: color-mix(in srgb, #0f172a 90%, var(--bg-page)) !important;
+}
+html.native-shell body:is(.splash-selesai, .app-running)::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
   background:
     var(--pola-berlian) 0 0 / 28px 28px,
-    #0f766e !important;
+    #0f766e;
+  z-index: 40;
+  pointer-events: none;
 }
-/* Kyai 26 Nov 2026 — PWA iOS 26 "bocor" di bawah: bug WebKit membuat 100dvh & fixed inset-0
-   lebih pendek setinggi garis-gerak, celahnya memperlihatkan kanvas (dulu hijau warisan body).
-   Kanvas <html> diberi warna menu bawah agar celah menyatu; saat splash ikut warna splash. */
 html.native-shell {
   background: #f2fef9;
 }

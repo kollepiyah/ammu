@@ -38,6 +38,12 @@ describe('pagar perbaikan audit Android v.1.5.5 & migrasi domain', () => {
     expect(baca('vue-app/src/views/publik/BacaAmalanView.vue')).toContain(
       'useModeBaca({ otomatis: true })'
     )
+    // Layar baca mengalir normal di #app-scroll (bukan position:fixed bersarang yg mengunci scroll).
+    expect(baca('vue-app/src/views/publik/BacaAmalanView.vue')).not.toMatch(
+      /\.baca-penuh\s*\{[^}]*position:\s*fixed/
+    )
+    // Tombol kembali Beranda di halaman login sudah dihapus sesuai permintaan Kyai.
+    expect(baca('vue-app/src/views/LoginView.vue')).not.toContain("router.replace('/umum')")
   })
 
   it('AndroidManifest tidak memotong ACCESS_FINE_LOCATION di SDK 30 & ikon notif pakai ic_stat_ammu', () => {
@@ -52,5 +58,19 @@ describe('pagar perbaikan audit Android v.1.5.5 & migrasi domain', () => {
     expect(baca('vue-app/src/services/biometrik.js')).toMatch(/maxAttempts:\s*[3-9]/)
     expect(baca('vue-app/src/components/KunciAplikasi.vue')).toContain('android-back')
     expect(baca('vue-app/src/views/KodeBayarView.vue')).toContain("gerbang === 'doku'")
+  })
+
+  it('toast tampil dari state reaktif sendiri di pojok kanan bawah & semi-transparan', () => {
+    const toastSrc = baca('vue-app/src/components/ui/ToastStack.vue')
+    expect(toastSrc).toContain('<Teleport to="body">')
+    expect(toastSrc).toContain('ui.toasts')
+    expect(toastSrc).toContain('backdrop-filter')
+    expect(toastSrc).toContain('bottom:')
+    expect(toastSrc).toContain('right:')
+  })
+
+  it('.aksi-kartu tidak menimpa latar tombol berwarna solid (Lulus/Belum Lulus)', () => {
+    const css = baca('vue-app/src/assets/main.css')
+    expect(css).toContain(".aksi-kartu > :is(button, a):not([class*='bg-'])")
   })
 })

@@ -1,10 +1,10 @@
-// UI store — dark mode, toast notifications (vue-sonner), confirm dialog
+// UI store — dark mode, toast notifications, confirm dialog
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { toast as sonnerToast } from 'vue-sonner'
 import { bacaModeTema, temaGelapAktif } from '@/utils/tema'
 
 let _toastSeq = 0
+const _toastTimers = new Map()
 
 export const useUiStore = defineStore('ui', () => {
   // v.20.74.4.0526: Sidebar — desktop ALWAYS default OPEN, mobile ALWAYS default CLOSED.
@@ -110,17 +110,40 @@ export const useUiStore = defineStore('ui', () => {
     setDark(false)
   }
 
-  // Toast queue (didukung vue-sonner untuk animasi stackable & swipe-to-dismiss di HP)
-  const toasts = ref([]) // tetap dipertahankan untuk kompatibilitas pembaca legacy
+  // Toast queue reaktif sendiri (Kyai 27 Nov 2026): selalu tampil instan & andal di Android
+  // WebView/iOS PWA tanpa tergantung lifecycle vue-sonner; dirender oleh ToastStack di pojok bawah.
+  const toasts = ref([])
+
+  function dismissToast(id) {
+    const t = _toastTimers.get(id)
+    if (t) {
+      clearTimeout(t)
+      _toastTimers.delete(id)
+    }
+    toasts.value = toasts.value.filter((x) => x.id !== id)
+  }
 
   function pushToast(type, msg, ttl = 3000) {
+    const text = String(msg ?? '').trim()
+    if (!text) return 0
     const id = ++_toastSeq
-    const text = String(msg ?? '')
-    const opts = { duration: ttl }
-    if (type === 'success') sonnerToast.success(text, opts)
-    else if (type === 'error') sonnerToast.error(text, opts)
-    else if (type === 'warning') sonnerToast.warning(text, opts)
-    else sonnerToast.info(text, opts)
+    const item = { id, type: type || 'info', message: text }
+    // Batasi maksimal 3 toast agar tidak menumpuk tinggi di layar HP.
+    const next = [...toasts.value, item]
+    while (next.length > 3) {
+      const buang = next.shift()
+      if (buang) {
+        const tm = _toastTimers.get(buang.id)
+        if (tm) {
+          clearTimeout(tm)
+          _toastTimers.delete(buang.id)
+        }
+      }
+    }
+    toasts.value = next
+    const durasi = Number(ttl) > 0 ? Number(ttl) : 3000
+    const timer = setTimeout(() => dismissToast(id), durasi)
+    _toastTimers.set(id, timer)
     return id
   }
 
@@ -187,6 +210,7 @@ export const useUiStore = defineStore('ui', () => {
     // toasts
     toasts,
     toast,
+    dismissToast,
     // confirm
     confirmState,
     confirm,

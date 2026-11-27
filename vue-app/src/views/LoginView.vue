@@ -278,16 +278,6 @@ function bukaWaAdmin() {
       aria-hidden="true"
     ></div>
 
-    <button
-      v-if="wilayahPublik"
-      type="button"
-      class="absolute left-3 z-20 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-white/85 dark:bg-slate-800/85 text-teal-700 dark:text-teal-300 shadow cursor-pointer"
-      style="top: calc(env(safe-area-inset-top, 0px) + 0.75rem)"
-      @click="router.replace('/umum')"
-    >
-      <i class="fas fa-arrow-left"></i>Beranda
-    </button>
-
     <!-- CARD LOGIN — v.86.0526: dark mode card slate-800 + border teal-400 -->
     <div
       class="w-full max-w-sm bg-[#F9F6EE] dark:bg-slate-800 rounded-3xl shadow-2xl border-t-8 border-teal-600 dark:border-teal-400 overflow-hidden relative z-10"

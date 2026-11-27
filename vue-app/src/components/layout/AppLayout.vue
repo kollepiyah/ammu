@@ -7,7 +7,7 @@
     class="h-screen flex overflow-hidden relative bg-[var(--bg-page)] text-[var(--text-primary)]"
   >
     <AppSidebar v-if="!layarBacaPenuh" />
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
       <AppHeader v-if="!layarBacaPenuh" />
       <!-- v.91.0626: saat TANPA bottom-nav (browser/Electron/desktop) main yang own inset bawah
            supaya konten terakhir tak ketutup gesture bar; saat ADA bottom-nav, nav yang own inset. -->
@@ -17,7 +17,7 @@
       <main
         id="app-scroll"
         ref="mainRef"
-        class="flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-page)]"
+        class="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-[var(--bg-page)]"
         :style="
           showBottomNav || layarBacaPenuh ? null : { paddingBottom: 'env(safe-area-inset-bottom)' }
         "

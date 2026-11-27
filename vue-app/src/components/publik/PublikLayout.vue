@@ -28,8 +28,8 @@
       </button>
     </header>
 
-    <main id="app-scroll" class="flex-1 overflow-y-auto custom-scrollbar">
-      <div class="akar-halaman"><router-view /></div>
+    <main id="app-scroll" class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+      <div class="akar-halaman min-h-full"><router-view /></div>
     </main>
 
     <nav
