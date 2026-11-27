@@ -2,8 +2,9 @@
   <!-- v.91.0626 FIX posisi ikon search mobile: flex-1 + justify-end -> ikon mengelompok ke kanan
        (bersama dark-toggle & profil), bukan mengambang di tengah header. Desktop tetap bar md:max-w-md. -->
   <div class="relative flex flex-1 md:max-w-md md:mx-3 justify-end" data-global-search>
-    <!-- Desktop: bar memanjang -->
+    <!-- Desktop: bar memanjang (sembunyikan di mobile shell termasuk HP landscape) -->
     <div
+      v-if="!showBottomNav"
       ref="deskBar"
       class="hidden md:flex items-center w-full bg-[var(--bg-muted)] rounded-xl px-3 h-9 border border-transparent focus-within:border-teal-400 transition"
     >
@@ -18,9 +19,10 @@
       />
     </div>
 
-    <!-- Mobile: ikon -->
+    <!-- Mobile (termasuk HP landscape): ikon -->
     <button
-      class="gs-pemicu md:hidden w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+      class="gs-pemicu w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+      :class="{ 'md:hidden': !showBottomNav }"
       aria-label="Cari"
       @click="openMobile"
     >
@@ -98,11 +100,12 @@
       </div>
     </Teleport>
 
-    <!-- Mobile: overlay penuh -->
+    <!-- Mobile: overlay penuh (tetap tampil di HP landscape saat showBottomNav aktif) -->
     <Teleport to="body">
       <div
         v-if="mobileOpen"
-        class="md:hidden fixed inset-0 z-[100] bg-[var(--bg-page)] flex flex-col"
+        class="fixed inset-0 z-[100] bg-[var(--bg-page)] flex flex-col"
+        :class="{ 'md:hidden': !showBottomNav }"
         style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom)"
       >
         <div
@@ -198,10 +201,12 @@ import { useRouter } from 'vue-router'
 import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 import { useAuthStore } from '@/stores/auth'
+import { useMobileShell } from '@/composables/useMobileShell'
 import { isAdminKeuangan } from '@/utils/roleScope'
 
 const router = useRouter()
 const auth = useAuthStore()
+const { showBottomNav } = useMobileShell()
 // v.98 ANTI-BOCOR: pakai list TER-SCOPE (santri/guru), bukan *Raw (mentah).
 // Guru hanya menemukan santri ampuannya; daftar guru kosong utk non-admin (useGuru.guru => []).
 const { santri: santriScoped } = useSantri()
@@ -238,6 +243,10 @@ function reposition() {
 }
 watch([open, q], () => {
   if (open.value) nextTick(reposition)
+})
+watch(showBottomNav, (mobile) => {
+  if (mobile) open.value = false
+  else mobileOpen.value = false
 })
 
 const kw = computed(() => q.value.trim().toLowerCase())

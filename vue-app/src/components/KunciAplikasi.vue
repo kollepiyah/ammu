@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useKunciAplikasiStore } from '@/stores/kunciAplikasi'
 import { useAuthStore } from '@/stores/auth'
@@ -57,6 +57,14 @@ const namaApp = computed(
 const tampil = computed(() =>
   tampilkanKunci({ terkunci: kunci.terkunci, rutePublik: !!route.meta?.public })
 )
+
+// Tahan tombol kembali Android selama layar kunci tampil agar halaman Portal di belakang
+// tak ikut berpindah atau keluar dari aplikasi.
+function tahanKembali(ev) {
+  if (tampil.value) ev.preventDefault()
+}
+onMounted(() => window.addEventListener('android-back', tahanKembali))
+onUnmounted(() => window.removeEventListener('android-back', tahanKembali))
 
 async function coba() {
   gagal.value = !(await kunci.buka())

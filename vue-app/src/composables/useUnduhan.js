@@ -10,7 +10,7 @@ import {
   urlInstallerWin7
 } from '@/utils/unduhan'
 
-export const URL_PRIVASI = 'https://ammuonline.web.app/privacy.html'
+export const URL_PRIVASI = 'https://ammu.almanshur.id/privacy.html'
 
 export function useUnduhan() {
   const settings = useSettingsStore()

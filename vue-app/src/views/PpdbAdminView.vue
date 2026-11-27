@@ -369,7 +369,7 @@ const filterLembaga = ref('')
 const filterTahun = ref('')
 let _unsubPpdb = null
 
-const publicFormUrl = computed(() => 'https://ammuonline-psb.web.app')
+const publicFormUrl = computed(() => 'https://psb.almanshur.id')
 
 function copyLink() {
   try {

@@ -326,7 +326,8 @@ async function batal() {
   if (!confirm('Batalkan kode bayar ini? Nomornya tak bisa dipakai lagi.')) return
   membatalkan.value = true
   try {
-    await batalKodeBayar(id.value)
+    const gerbang = kode.value?.gerbang === 'doku' ? 'doku' : 'midtrans'
+    await batalKodeBayar(id.value, gerbang)
     toast.success('Kode bayar dibatalkan.')
     kembali()
   } catch (e) {

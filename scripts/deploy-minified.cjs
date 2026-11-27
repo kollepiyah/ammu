@@ -133,8 +133,8 @@ try {
   run('firebase deploy --only hosting:main,hosting:psb')
 
   log('✓ Deploy selesai.')
-  log('   Vue (utama)  → https://ammuonline.web.app')
-  log('   PSB          → https://ammuonline-psb.web.app')
+  log('   Vue (utama)  → https://ammu.almanshur.id')
+  log('   PSB          → https://psb.almanshur.id')
   log('')
   log('💡 Rebuild AAB (Play Store): npm run build:aab')
   log('   AAB versionCode/Name ikut vue-app/android/app/build.gradle (cek sebelum rilis)')

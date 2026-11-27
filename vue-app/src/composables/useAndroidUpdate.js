@@ -40,13 +40,13 @@ const SUMBER_RELATIF = '/app-version.json'
 // terdeteksi dan fiturnya mati tanpa satu pun galat. Native karena itu wajib menembak
 // hosting. (Domain sengaja hardcode: kalau ikut origin, ia jadi https://localhost lagi.)
 //
-// KARENA ITU pembacaannya LINTAS-ORIGIN (https://localhost -> ammuonline.web.app), dan
+// KARENA ITU pembacaannya LINTAS-ORIGIN (https://localhost -> ammu.almanshur.id), dan
 // CapacitorHttp tidak diaktifkan di capacitor.config, jadi fetch di sini tunduk CORS
 // persis seperti di peramban. Hosting WAJIB mengirim Access-Control-Allow-Origin untuk
 // /app-version.json — aturannya ada di firebase.json (headers hosting target `main`).
 // Tanpa header itu WebView menolak respons, fetch melempar, dan seluruh fitur ini mati
 // tanpa satu pun galat yang terlihat pengguna. Jangan hapus aturan header itu.
-const SUMBER_HOSTING = 'https://ammuonline.web.app/app-version.json'
+const SUMBER_HOSTING = 'https://ammu.almanshur.id/app-version.json'
 
 /** Sumber berkas versi. `native` = berjalan di dalam aplikasi (bukan peramban). */
 export function sumberVersi(native) {

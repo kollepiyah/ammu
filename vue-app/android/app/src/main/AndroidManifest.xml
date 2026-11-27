@@ -150,10 +150,9 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- @capacitor/local-notifications — re-schedule notifikasi setelah HP reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- v.1.5.5 (F2 Jadwal Sholat & Kiblat): lokasi PERKIRAAN, hanya saat layar dibuka (tanpa
-         lokasi latar). Dibaca lewat navigator.geolocation; BridgeWebChromeClient Capacitor
-         meminta COARSE+FINE dan menerima COARSE saja di Android 12+. Android 11 ke bawah tak
-         mengenal pilihan "perkiraan", jadi FINE dideklarasikan hanya sampai SDK 30. -->
+    <!-- v.1.5.5 (F2 Jadwal Sholat & Kiblat): lokasi hanya saat layar dibuka (tanpa lokasi latar).
+         BridgeWebChromeClient Capacitor 8 memeriksa COARSE & FINE bersama via hasPermissions;
+         di Android 12+ OS tetap menampilkan pilihan "Perkiraan / Tepat" kepada pengguna. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 </manifest>

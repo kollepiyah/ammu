@@ -6,7 +6,11 @@
          sengaja DI DALAM akar: di luar, mode dev menjadikannya fragment dan <transition> App
          macet saat meninggalkan layar ini. -->
     <!-- Kyai 25 Nov 2026: top bar hijau tetap (terang & gelap), menyambung kartu Hijriah -->
-    <header class="topbar-hijau shrink-0 flex items-center justify-between gap-3 px-4 text-white">
+    <!-- Kyai 27 Nov 2026: otomatis tersembunyi di layar baca penuh (Kitab & Wirid / Al-Qur'an) -->
+    <header
+      v-if="!layarBacaPenuh"
+      class="topbar-hijau shrink-0 flex items-center justify-between gap-3 px-4 text-white"
+    >
       <!-- Kyai 25 Nov 2026: cukup tulisan nama aplikasi seperti header Portal, tanpa logo -->
       <!-- Kyai 26 Nov 2026: di luar Beranda cukup judul halaman (tanpa tombol Masuk/nama). -->
       <h2 class="text-base font-black text-white tracking-tight truncate">
@@ -29,6 +33,7 @@
     </main>
 
     <nav
+      v-if="!layarBacaPenuh"
       class="app-bottom-nav shrink-0 flex items-stretch border-t border-[var(--border-subtle)] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-[0_-4px_18px_rgba(15,23,42,0.07)]"
       style="padding-bottom: env(safe-area-inset-bottom)"
       aria-label="Navigasi bawah"
@@ -73,6 +78,7 @@ const TABS = [
 
 const route = useRoute()
 const beranda = computed(() => halamanBeranda(route.path))
+const layarBacaPenuh = computed(() => !!route.meta?.layarBacaPenuh)
 const router = useRouter()
 const auth = useAuthStore()
 const settings = useSettingsStore()

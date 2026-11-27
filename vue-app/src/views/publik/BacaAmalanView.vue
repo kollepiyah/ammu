@@ -3,30 +3,30 @@
        bacaan "berbab" dibuka di daftar bab, bacaan "tunggal" langsung di halaman 1; halaman digeser
        kiri-kanan. Halaman disimpan di ?hal= sehingga tombol kembali HP menuju daftar bab.
        Isi disimpan di HP 24 jam — dibaca ulang tanpa internet. -->
-  <!-- Layar penuh (useModeBaca): akar jadi lapisan fixed yang menutupi header & menu bawah;
-       ketuk tengah layar = sembunyikan/tampilkan kontrol. -->
+  <!-- Layar penuh otomatis (Kyai 27 Nov 2026): top bar master & navigasi bawah disembunyikan
+       otomatis lewat meta.layarBacaPenuh + useModeBaca({ otomatis: true }). Ketuk tengah layar
+       menyembunyikan/menampilkan bilah bacaan tipis (kepala + pager). -->
   <div
     ref="akarRef"
-    :class="aktif ? 'baca-penuh' : 'max-w-xl mx-auto'"
+    class="baca-penuh"
     @click="klikAkar"
     @touchstart.passive="mulaiGeser"
     @touchend.passive="akhirGeser"
   >
     <div
-      v-show="!aktif || kontrol"
+      v-show="hal < 0 || kontrol"
       class="kepala-baca sticky top-0 z-10 flex items-center gap-1 px-2 py-2 bg-[var(--bg-page)] border-b border-slate-100 dark:border-slate-800"
     >
       <button
-        v-if="berbab && hal >= 0"
         type="button"
         class="w-9 h-9 shrink-0 rounded-full text-[var(--text-primary)] cursor-pointer"
-        aria-label="Ke daftar bab"
-        @click.stop="keDaftar"
+        :aria-label="berbab && hal >= 0 ? 'Ke daftar bab' : 'Kembali ke daftar bacaan'"
+        @click.stop="berbab && hal >= 0 ? keDaftar() : kembaliKeDaftar()"
       >
         <i class="fas fa-chevron-left"></i>
       </button>
       <h2 class="flex-1 min-w-0 px-1 text-sm font-black text-teal-700 dark:text-teal-300 truncate">
-        {{ tampilJudulKepala ? judulKepala : '' }}
+        {{ judulKepala }}
       </h2>
       <button
         type="button"
@@ -49,7 +49,7 @@
       >
         <i class="fas fa-bookmark"></i>
       </button>
-      <!-- Kyai 26 Nov: ukuran huruf & layar penuh disatukan di menu titik tiga agar kepala rapi. -->
+      <!-- Kyai 26 Nov: ukuran huruf & setelan baca disatukan di menu titik tiga agar kepala rapi. -->
       <div class="relative shrink-0">
         <button
           type="button"
@@ -62,7 +62,7 @@
         </button>
         <div
           v-if="menuBuka"
-          class="absolute right-0 top-full mt-1 w-56 rounded-xl bg-[var(--bg-card)] border border-slate-200 dark:border-slate-700 shadow-lg py-1 z-20"
+          class="absolute right-0 top-full mt-1 w-60 rounded-xl bg-[var(--bg-card)] border border-slate-200 dark:border-slate-700 shadow-lg py-1 z-20"
           @click.stop
         >
           <div class="flex items-center gap-2 px-3 py-2">
@@ -89,11 +89,27 @@
           </div>
           <button
             type="button"
-            class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-sm font-bold text-[var(--text-primary)] cursor-pointer"
-            @click="pilihLayarPenuh"
+            class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs font-bold text-[var(--text-primary)] cursor-pointer border-t border-slate-100 dark:border-slate-800"
+            @click="setTetapMenyala(!setelanBaca.tetapMenyala)"
           >
-            <i :class="['fas w-4 text-teal-600', aktif ? 'fa-compress' : 'fa-expand']"></i>
-            {{ aktif ? 'Keluar dari layar penuh' : 'Layar penuh' }}
+            <i class="fas fa-sun w-4 text-teal-600"></i>
+            <span class="flex-1">Layar tetap menyala</span>
+            <span
+              class="text-[11px] font-black"
+              :class="
+                setelanBaca.tetapMenyala ? 'text-teal-600 dark:text-teal-300' : 'text-slate-400'
+              "
+              >{{ setelanBaca.tetapMenyala ? 'Aktif' : 'Mati' }}</span
+            >
+          </button>
+          <button
+            v-if="hal >= 0"
+            type="button"
+            class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs font-bold text-[var(--text-primary)] cursor-pointer border-t border-slate-100 dark:border-slate-800"
+            @click="sembunyikanBilah"
+          >
+            <i class="fas fa-eye-slash w-4 text-teal-600"></i>
+            Sembunyikan bilah atas
           </button>
         </div>
       </div>
@@ -221,11 +237,9 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDataTamu } from '@/composables/useDataTamu'
 import { useUiStore } from '@/stores/ui'
-import { pakaiWilayahPublik } from '@/utils/wilayahPublik'
 import { ambilAmalan } from '@/services/amalan'
 import {
   ukuranArab,
@@ -237,18 +251,19 @@ import {
   kelasWarna
 } from '@/utils/amalan'
 import { htmlBab, rapikanTampilan, saringHtmlAmalan } from '@/utils/isiAmalan'
-import { useModeBaca } from '@/composables/useModeBaca'
+import { useModeBaca, setelanBaca, setTetapMenyala } from '@/composables/useModeBaca'
 
 const KUNCI_SETELAN = 'ammu_baca_amalan'
 const KUNCI_PENANDA = 'ammu_penanda_amalan'
+const KUNCI_CACHE_AWALAN = 'ammu_tamu_amalan_'
+const UMUR_CACHE_MS = 24 * 60 * 60 * 1000
 const KELAS_HIJAU = 'text-teal-700 dark:text-teal-300' // warna bawaan judul
 
 const route = useRoute()
 const router = useRouter()
 const ui = useUiStore()
-const topbarHijau = pakaiWilayahPublik()
 const akarRef = ref(null)
-const { aktif, kontrol, ketuk, alihkan: alihkanLayar } = useModeBaca()
+const { aktif, kontrol, ketuk } = useModeBaca({ otomatis: true })
 const menuBuka = ref(false)
 // Ketukan di luar menu menutup menu dulu (tanpa ikut menyembunyikan kontrol layar penuh).
 function klikAkar(e) {
@@ -256,16 +271,64 @@ function klikAkar(e) {
     menuBuka.value = false
     return
   }
-  ketuk(e)
+  if (hal.value >= 0) ketuk(e)
 }
-function pilihLayarPenuh() {
+function sembunyikanBilah() {
   menuBuka.value = false
-  alihkanLayar()
+  kontrol.value = false
 }
-const id = String(route.params.id || '')
-const { data, loading } = useDataTamu(`amalan_${id}`, () => ambilAmalan(id), {
-  umurMs: 24 * 60 * 60 * 1000
-})
+function tutupMenuSaatKembali(ev) {
+  if (menuBuka.value) {
+    ev.preventDefault()
+    menuBuka.value = false
+  }
+}
+onMounted(() => window.addEventListener('android-back', tutupMenuSaatKembali))
+onUnmounted(() => window.removeEventListener('android-back', tutupMenuSaatKembali))
+
+// Reaktif terhadap perubahan parameter :id (mis. pindah antar kitab tanpa unmount komponen).
+const id = computed(() => String(route.params.id || ''))
+const data = ref(null)
+const loading = ref(true)
+async function muatBacaan(targetId) {
+  data.value = null
+  loading.value = true
+  if (!targetId) {
+    loading.value = false
+    return
+  }
+  let diambilPada = 0
+  try {
+    const simpan = JSON.parse(localStorage.getItem(KUNCI_CACHE_AWALAN + targetId) || 'null')
+    if (simpan && simpan.isi) {
+      data.value = simpan.isi
+      diambilPada = simpan.waktu || 0
+      loading.value = false
+    }
+  } catch {
+    /* salinan rusak -> muat ulang */
+  }
+  if (data.value != null && Date.now() - diambilPada < UMUR_CACHE_MS) return
+  try {
+    const isi = await ambilAmalan(targetId)
+    if (id.value !== targetId) return
+    data.value = isi
+    try {
+      localStorage.setItem(
+        KUNCI_CACHE_AWALAN + targetId,
+        JSON.stringify({ isi, waktu: Date.now() })
+      )
+    } catch {
+      /* kuota penuh */
+    }
+  } catch {
+    /* tetap tampilkan salinan lokal bila ada */
+  } finally {
+    if (id.value === targetId) loading.value = false
+  }
+}
+watch(id, (v) => muatBacaan(v), { immediate: true })
+
 const amalan = computed(() => data.value || null)
 const bab = computed(() => babAmalan(amalan.value))
 const bentuk = computed(() => (amalan.value?.bentuk === 'berbab' ? 'berbab' : 'tunggal'))
@@ -279,18 +342,12 @@ const judulKepala = computed(() => {
   if (!amalan.value) return 'Memuat…'
   return berbab.value && babKini.value?.judul ? babKini.value.judul : amalan.value.judul
 })
-// Di Android/PWA, judul kitab tampil langsung di top bar hijau (mis. "Ratib Al-Haddad").
-// Sub-judul di kepala bacaan hanya perlu tampil bila layar penuh, di web biasa, atau saat
-// menampilkan nama bab yang berbeda dari judul kitab di top bar.
 watch(
   () => amalan.value?.judul,
   (j) => ui.setJudulTopBar(j || ''),
   { immediate: true }
 )
 onUnmounted(() => ui.setJudulTopBar(''))
-const tampilJudulKepala = computed(
-  () => !topbarHijau || aktif.value || (berbab.value && hal.value >= 0 && !!babKini.value?.judul)
-)
 
 function labelBab(i) {
   return berbab.value ? bab.value[i]?.judul || `Bab ${i + 1}` : `Halaman ${i + 1}`
@@ -298,6 +355,7 @@ function labelBab(i) {
 
 // Membuka bab = push (tombol kembali HP kembali ke daftar); geser halaman = replace.
 function bukaBab(i) {
+  kontrol.value = true
   router.push({ query: { ...route.query, hal: String(i) } })
 }
 function pindah(i) {
@@ -305,11 +363,27 @@ function pindah(i) {
   router.replace({ query: { ...route.query, hal: String(i) } })
 }
 function keDaftar() {
+  kontrol.value = true
+  const back = String(window.history.state?.back || '')
+  if (back && back.startsWith(route.path) && !back.includes('hal=')) {
+    router.back()
+    return
+  }
   const q = { ...route.query }
   delete q.hal
   router.replace({ query: q })
 }
-watch(hal, async () => {
+function kembaliKeDaftar() {
+  const tujuan = route.path.startsWith('/umum') ? '/umum/wirid' : '/ibadah/wirid'
+  const back = String(window.history.state?.back || '')
+  if (back && back.startsWith(tujuan)) {
+    router.back()
+    return
+  }
+  router.replace(tujuan)
+}
+watch(hal, async (v) => {
+  if (v < 0) kontrol.value = true
   await nextTick()
   const wadah = aktif.value ? akarRef.value : document.getElementById('app-scroll')
   wadah?.scrollTo?.({ top: 0 })
@@ -339,13 +413,16 @@ function muatPenanda() {
     return {}
   }
 }
-const penanda = ref(muatPenanda()[id] || null)
+const penanda = ref(muatPenanda()[id.value] || null)
+watch(id, (v) => {
+  penanda.value = muatPenanda()[v] || null
+})
 const ditandai = computed(() => penanda.value?.hal === hal.value)
 function alihkanPenanda() {
   const peta = muatPenanda()
-  if (ditandai.value) delete peta[id]
-  else peta[id] = { hal: hal.value, waktu: Date.now() }
-  penanda.value = peta[id] || null
+  if (ditandai.value) delete peta[id.value]
+  else peta[id.value] = { hal: hal.value, waktu: Date.now() }
+  penanda.value = peta[id.value] || null
   try {
     localStorage.setItem(KUNCI_PENANDA, JSON.stringify(peta))
   } catch {

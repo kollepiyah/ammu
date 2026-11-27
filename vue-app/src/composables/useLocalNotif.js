@@ -7,11 +7,17 @@
 function getPlugin() {
   try {
     return window.Capacitor?.Plugins?.LocalNotifications || null
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
 function isNative() {
-  try { return !!(window.Capacitor?.isNativePlatform?.()) } catch { return false }
+  try {
+    return !!window.Capacitor?.isNativePlatform?.()
+  } catch {
+    return false
+  }
 }
 
 let _granted = false
@@ -41,17 +47,19 @@ export async function showLocal(opts) {
   try {
     const id = Number(opts.id) || Math.floor(Math.random() * 1e6)
     await plugin.schedule({
-      notifications: [{
-        id,
-        title: String(opts.title || 'Ammu Online'),
-        body: String(opts.body || ''),
-        smallIcon: 'ic_stat_icon',
-        largeIcon: 'ic_launcher',
-        iconColor: '#0F766E',
-        autoCancel: true,
-        ongoing: false,
-        extra: { link: opts.link || '' }
-      }]
+      notifications: [
+        {
+          id,
+          title: String(opts.title || 'Ammu Online'),
+          body: String(opts.body || ''),
+          smallIcon: 'ic_stat_ammu',
+          largeIcon: 'ic_launcher',
+          iconColor: '#0F766E',
+          autoCancel: true,
+          ongoing: false,
+          extra: { link: opts.link || '' }
+        }
+      ]
     })
   } catch (e) {
     console.warn('[useLocalNotif] schedule gagal:', e?.message || e)
@@ -65,7 +73,11 @@ export async function listenForNotificationAction(routerInstance) {
     await plugin.addListener('localNotificationActionPerformed', (action) => {
       const link = action?.notification?.extra?.link
       if (link && routerInstance) {
-        try { routerInstance.push(link) } catch { /* ignore */ }
+        try {
+          routerInstance.push(link)
+        } catch {
+          /* ignore */
+        }
       }
     })
   } catch (e) {
@@ -106,7 +118,7 @@ export async function pushFromItems(items) {
 function hashCode(str) {
   let h = 0
   for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h) + str.charCodeAt(i)
+    h = (h << 5) - h + str.charCodeAt(i)
     h |= 0
   }
   return h

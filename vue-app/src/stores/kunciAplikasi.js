@@ -54,16 +54,31 @@ export const useKunciAplikasiStore = defineStore('kunciAplikasi', () => {
       adaSesi: !!auth.sesiAktif,
       dibukaUlang: true
     })
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        _tersembunyiSejak = Date.now()
-        return
-      }
+    function catatTersembunyi() {
+      if (!_tersembunyiSejak) _tersembunyiSejak = Date.now()
+    }
+    function cekKembali() {
       const lama = _tersembunyiSejak ? Date.now() - _tersembunyiSejak : 0
       _tersembunyiSejak = 0
       if (perluDikunci({ aktif: aktif.value, adaSesi: !!auth.sesiAktif, tersembunyiMs: lama }))
         terkunci.value = true
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) catatTersembunyi()
+      else cekKembali()
     })
+    // Android WebView kadang tidak selalu menembakkan visibilitychange saat pindah app singkat;
+    // pasang juga appStateChange dari @capacitor/app agar status latar tercatat andal.
+    if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() === true) {
+      import('@capacitor/app')
+        .then(({ App }) =>
+          App.addListener('appStateChange', ({ isActive } = {}) => {
+            if (isActive) cekKembali()
+            else catatTersembunyi()
+          })
+        )
+        .catch(() => {})
+    }
   }
 
   async function buka() {

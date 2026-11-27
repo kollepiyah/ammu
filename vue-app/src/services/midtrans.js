@@ -91,10 +91,19 @@ export function bukaHalamanBayar(url) {
     /^https:\/\/app(\.sandbox)?\.midtrans\.com\//.test(u) ||
     /^https:\/\/([a-z0-9-]+\.)*doku\.com\//.test(u)
   if (!sah) return false
+  // Di Android/iOS Capacitor: window.open() setelah await sering diblokir WebView (return null
+  // tanpa melempar). Navigasi langsung dicegat Bridge.shouldOverrideUrlLoading -> Intent.ACTION_VIEW
+  // (browser sistem) tanpa mengeluarkan WebView dari aplikasi.
+  const isNative = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() === true
+  if (isNative) {
+    window.location.href = u
+    return true
+  }
   try {
-    window.open(url, '_blank')
+    const w = window.open(u, '_blank')
+    if (!w) window.location.href = u
   } catch {
-    window.location.href = url
+    window.location.href = u
   }
   return true
 }

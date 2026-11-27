@@ -6,9 +6,9 @@
   <div
     class="h-screen flex overflow-hidden relative bg-[var(--bg-page)] text-[var(--text-primary)]"
   >
-    <AppSidebar />
+    <AppSidebar v-if="!layarBacaPenuh" />
     <div class="flex-1 flex flex-col overflow-hidden">
-      <AppHeader />
+      <AppHeader v-if="!layarBacaPenuh" />
       <!-- v.91.0626: saat TANPA bottom-nav (browser/Electron/desktop) main yang own inset bawah
            supaya konten terakhir tak ketutup gesture bar; saat ADA bottom-nav, nav yang own inset. -->
       <!-- v.1.4.1: id dipakai router.scrollBehavior. Jendela browser sendiri TAK PERNAH
@@ -18,11 +18,13 @@
         id="app-scroll"
         ref="mainRef"
         class="flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-page)]"
-        :style="showBottomNav ? null : { paddingBottom: 'env(safe-area-inset-bottom)' }"
+        :style="
+          showBottomNav || layarBacaPenuh ? null : { paddingBottom: 'env(safe-area-inset-bottom)' }
+        "
       >
         <!-- v.91.0626: pull-to-refresh indikator (mobile shell) — tinggi ikut tarikan, dorong konten -->
         <div
-          v-if="showBottomNav"
+          v-if="showBottomNav && !layarBacaPenuh"
           class="tarik-segar overflow-hidden flex items-end justify-center"
           :style="{ height: pullDist + 'px' }"
           aria-hidden="true"
@@ -48,7 +50,7 @@
         </div>
       </main>
       <!-- v.91.0626: bottom nav hanya di Android/PWA + mobile -->
-      <BottomNav v-if="showBottomNav" />
+      <BottomNav v-if="showBottomNav && !layarBacaPenuh" />
     </div>
     <ConfirmDialog />
   </div>
@@ -56,7 +58,7 @@
 
 <script setup>
 import { ref, computed, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import BottomNav from './BottomNav.vue'
@@ -65,8 +67,12 @@ import { useMobileShell } from '@/composables/useMobileShell'
 import { usePullToRefresh } from '@/composables/usePullToRefresh'
 import { useEdgeSwipeBack } from '@/composables/useEdgeSwipeBack'
 
+const route = useRoute()
 const router = useRouter()
 const { showBottomNav } = useMobileShell()
+// Kyai 27 Nov 2026: layar baca (Kitab & Wirid, Al-Qur'an) otomatis layar penuh — top bar master
+// & navigasi bawah disembunyikan, pull-to-refresh & swipe-back tepi dimatikan agar geser halaman mulus.
+const layarBacaPenuh = computed(() => !!route.meta?.layarBacaPenuh)
 
 // v.91.0626: pull-to-refresh -> re-mount view (re-subscribe data) via nonce key
 const mainRef = ref(null)
@@ -82,10 +88,12 @@ const {
   distance: pullDist,
   refreshing: pullBusy,
   ready: pullReady
-} = usePullToRefresh(mainRef, doRefresh, { enabled: () => showBottomNav.value })
+} = usePullToRefresh(mainRef, doRefresh, {
+  enabled: () => showBottomNav.value && !layarBacaPenuh.value
+})
 
 // v.91.0626: gesture back universal (swipe tepi kiri) — hanya di mobile shell (PWA/Capacitor)
-useEdgeSwipeBack(router, () => showBottomNav.value)
+useEdgeSwipeBack(router, () => showBottomNav.value && !layarBacaPenuh.value)
 </script>
 
 <style>

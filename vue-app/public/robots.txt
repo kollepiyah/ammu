@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ammuonline.web.app/sitemap.xml
+Sitemap: https://ammu.almanshur.id/sitemap.xml

@@ -121,6 +121,8 @@ async function setupNativeIntegration() {
     // re-apply melewati durasi splash (~1.8s) + jaga2
     ;[600, 1400, 2200, 3200].forEach((ms) => setTimeout(applyStatusBar, ms))
     watch(() => ui.isDark, applyStatusBar)
+    // Setelah keluar dari mode baca layar penuh (LayarBaca.keluar), kembalikan kontras ikon StatusBar.
+    window.addEventListener('ammu:reapply-statusbar', applyStatusBar)
   } catch (e) {
     console.warn('[StatusBar] plugin tidak tersedia:', e?.message || e)
   }
@@ -128,10 +130,13 @@ async function setupNativeIntegration() {
   // 2. Android back: tutup sidebar/overlay dulu -> back di SEMUA halaman -> di home tekan 2x utk keluar.
   try {
     const { App } = await import('@capacitor/app')
-    // resume sering reset appearance -> apply ulang status bar
-    App.addListener('resume', () => applyStatusBar())
+    // resume sering reset appearance -> apply ulang status bar (kecuali saat di layar baca penuh)
+    const applyJikaBukanBaca = () => {
+      if (!router.currentRoute?.value?.meta?.layarBacaPenuh) applyStatusBar()
+    }
+    App.addListener('resume', applyJikaBukanBaca)
     App.addListener('appStateChange', ({ isActive } = {}) => {
-      if (isActive) applyStatusBar()
+      if (isActive) applyJikaBukanBaca()
     })
 
     // v.103b (kyai 18 Jun): back pola NATIVE back-stack — mundur ke layar SEBELUMNYA di mana pun
@@ -289,6 +294,9 @@ th {
 input,
 textarea,
 [contenteditable],
+[contenteditable] *,
+.ProseMirror,
+.ProseMirror *,
 pre,
 code,
 .selectable {

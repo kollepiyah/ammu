@@ -176,7 +176,8 @@ const routes = [
         path: 'wirid/:id',
         name: 'umum-baca-wirid',
         component: BacaAmalanView,
-        meta: { public: true }
+        // layarBacaPenuh: otomatis sembunyikan top bar master & navigasi bawah (Kitab & Wirid / Al-Qur'an).
+        meta: { public: true, layarBacaPenuh: true }
       }
     ]
   },
@@ -193,7 +194,13 @@ const routes = [
       { path: 'ibadah/sholat', name: 'ibadah-sholat', component: JadwalSholatView },
       { path: 'ibadah/kiblat', name: 'ibadah-kiblat', component: KiblatView },
       { path: 'ibadah/wirid', name: 'ibadah-wirid', component: KitabWiridView },
-      { path: 'ibadah/wirid/:id', name: 'ibadah-baca-wirid', component: BacaAmalanView },
+      {
+        path: 'ibadah/wirid/:id',
+        name: 'ibadah-baca-wirid',
+        component: BacaAmalanView,
+        // layarBacaPenuh: otomatis sembunyikan top bar master & navigasi bawah (Kitab & Wirid / Al-Qur'an).
+        meta: { layarBacaPenuh: true }
+      },
       // v.98: ribbon-native — Home desktop (dua dasbor) + Bantuan + placeholder modul
       { path: 'beranda', name: 'beranda', component: BerandaDesktopView, meta: { noSantri: true } },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },

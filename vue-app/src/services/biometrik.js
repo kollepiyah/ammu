@@ -90,7 +90,8 @@ export async function verifikasiBiometrik(uid) {
         title: 'Buka Ammu Online',
         subtitle: 'Pakai sidik jari atau wajah',
         reason: 'Buka Portal Ammu Online',
-        negativeButtonText: 'Batal'
+        negativeButtonText: 'Batal',
+        maxAttempts: 5
       })
       return true
     } catch {

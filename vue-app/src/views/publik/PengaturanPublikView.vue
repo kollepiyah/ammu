@@ -47,8 +47,8 @@
       <PilihTema />
       <p v-if="isAndroid" class="text-[11px] text-[var(--text-secondary)] mt-3 leading-relaxed">
         <i class="fas fa-mobile-screen mr-1 text-teal-600"></i>Widget Android: tekan lama layar
-        utama HP → <b>Widget</b> → cari <b>Ammu Online</b>, lalu seret widget Jam Hijriah atau
-        Kalender ke layar.
+        utama HP → <b>Widget</b> → cari <b>Ammu Online</b>, lalu seret widget Jam Hijriah, Jadwal
+        Sholat, atau Tugas Saya ke layar.
       </p>
     </section>
 

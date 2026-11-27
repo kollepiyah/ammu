@@ -329,7 +329,7 @@ button,
    Kartu di dalam kartu, dialog melayang (.fixed), dan kertas cetak tak disentuh.
    Tetap aktif di HP landscape (tinggi <= 540px) supaya tidak pecah ke mode setengah-desktop. */
 @media (max-width: 767px), (max-height: 540px) and (max-width: 1024px) {
-  html.native-shell .akar-halaman > * {
+  html.native-shell .akar-halaman > *:not(.baca-penuh) {
     padding-left: 0 !important;
     padding-right: 0 !important;
     padding-top: 0 !important;
@@ -524,10 +524,11 @@ button,
     bottom: calc(4.25rem + env(safe-area-inset-bottom)) !important;
   }
   /* Isi tingkat atas yang BUKAN bagian berlatar (deret tab, petak menu, baris penyaring, judul)
-     tetap diberi jarak tepi supaya tak menempel ke tepi layar. */
+     tetap diberi jarak tepi supaya tak menempel ke tepi layar. Layar baca penuh (.baca-penuh)
+     mengatur jarak tepinya sendiri agar .kepala-baca & .pager-baca tetap selebar layar penuh. */
   html.native-shell
     .akar-halaman
-    > *
+    > *:not(.baca-penuh)
     > :not(
       :is(
         .rounded-2xl,
@@ -1210,9 +1211,24 @@ html.native-shell .app-bottom-nav {
     .akar-halaman
     > *
     > :not(.lanjut-topbar):not(.selebar-layar):not(button):not(a):not(.fixed):not(
-      :has(> * > :is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white, .menu-ibadah))
+      :has(
+        > *
+          > :is(
+            [class*='bg-[var(--bg-card)]'],
+            [class*='bg-[var(--bg-card-elevated)]'],
+            .bg-white,
+            .menu-ibadah
+          )
+      )
     ):not(
-      :has(> :is([class*='bg-[var(--bg-card)]'], [class*='bg-[var(--bg-card-elevated)]'], .bg-white, .menu-ibadah))
+      :has(
+        > :is(
+          [class*='bg-[var(--bg-card)]'],
+          [class*='bg-[var(--bg-card-elevated)]'],
+          .bg-white,
+          .menu-ibadah
+        )
+      )
     ) {
     padding-left: max(0.75rem, env(safe-area-inset-left, 0px)) !important;
     padding-right: max(0.75rem, env(safe-area-inset-right, 0px)) !important;
@@ -1246,10 +1262,8 @@ html.native-shell .app-bottom-nav {
   }
   html.native-shell .akar-halaman > * > :is(button, a).w-full:not(.selebar-layar) {
     width: calc(
-      100% - max(0.75rem, env(safe-area-inset-left, 0px)) - max(
-          0.75rem,
-          env(safe-area-inset-right, 0px)
-        )
+      100% - max(0.75rem, env(safe-area-inset-left, 0px)) -
+        max(0.75rem, env(safe-area-inset-right, 0px))
     ) !important;
   }
   html.native-shell .app-bottom-nav > a,

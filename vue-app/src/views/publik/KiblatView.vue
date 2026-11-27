@@ -82,7 +82,7 @@
       </p>
       <p class="text-xs text-[var(--text-secondary)]">dari arah utara, searah jarum jam</p>
       <p v-if="adaSensor" class="text-xs text-[var(--text-secondary)] mt-1">
-        HP menghadap {{ Math.round(arahTampil) }}°
+        HP menghadap {{ arahBulat }}°
       </p>
       <button
         v-if="perluIzin"
@@ -150,6 +150,7 @@ const jarak = computed(() =>
 
 const arah = ref(null) // arah HP (derajat dari utara), null = sensor belum/tidak ada
 const arahTampil = ref(0) // dihaluskan, kontinu (boleh > 360) supaya piringan tak berputar balik
+const arahBulat = computed(() => ((Math.round(arahTampil.value) % 360) + 360) % 360)
 const perluIzin = ref(false)
 const menungguSensor = ref(true) // 1,5 detik pertama: belum tentu tak ada sensor
 const adaSensor = computed(() => arah.value !== null)
@@ -189,11 +190,29 @@ function terima(e) {
 }
 
 let jenisEvent = ''
+let jedaFallback = null
+function pasangEvent(nama) {
+  if (jenisEvent) window.removeEventListener(jenisEvent, terima)
+  jenisEvent = nama
+  if (jenisEvent) window.addEventListener(jenisEvent, terima)
+}
 function pasang() {
   if (jenisEvent) return
-  if ('ondeviceorientationabsolute' in window) jenisEvent = 'deviceorientationabsolute'
-  else if ('ondeviceorientation' in window) jenisEvent = 'deviceorientation'
-  if (jenisEvent) window.addEventListener(jenisEvent, terima)
+  if ('ondeviceorientationabsolute' in window) {
+    pasangEvent('deviceorientationabsolute')
+    // Sebagian HP Android mendeklarasikan ondeviceorientationabsolute tapi tak pernah mengirim
+    // datanya — bila 900 ms masih kosong, jatuh ke deviceorientation standar.
+    if ('ondeviceorientation' in window) {
+      clearTimeout(jedaFallback)
+      jedaFallback = setTimeout(() => {
+        if (arah.value === null && jenisEvent === 'deviceorientationabsolute') {
+          pasangEvent('deviceorientation')
+        }
+      }, 900)
+    }
+  } else if ('ondeviceorientation' in window) {
+    pasangEvent('deviceorientation')
+  }
 }
 async function mintaIzinSensor() {
   try {
@@ -225,6 +244,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   clearTimeout(jedaIzin)
+  clearTimeout(jedaFallback)
   if (jenisEvent) window.removeEventListener(jenisEvent, terima)
 })
 

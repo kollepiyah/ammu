@@ -334,7 +334,8 @@ export function drawTitle(doc, text, opts = {}) {
  * v.71.0526: Async — pakai saveBlob (native Filesystem + share di Capacitor, browser download di web).
  */
 export async function savePdf(doc, filename = 'document.pdf', { preview = false } = {}) {
-  if (preview) {
+  const isNative = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() === true
+  if (preview && !isNative) {
     const blob = doc.output('blob')
     // v.94.0626: di Electron Desktop, window.open(blob) TIDAK bisa render PDF
     //   (muncul dialog cetak "tidak mendukung pratinjau"). Pakai printPdfPreview ->
@@ -354,6 +355,7 @@ export async function savePdf(doc, filename = 'document.pdf', { preview = false 
   }
   const { saveBlob } = await import('@/composables/useNativeDownload')
   await saveBlob(doc.output('blob'), filename)
+  return ''
 }
 
 /**

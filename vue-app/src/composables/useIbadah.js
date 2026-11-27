@@ -101,7 +101,16 @@ function tersedia() {
 async function izinSudahAda() {
   try {
     const r = await navigator.permissions?.query?.({ name: 'geolocation' })
-    return r ? r.state === 'granted' : null
+    if (!r) return null
+    if (r.state === 'granted') return true
+    if (r.state === 'denied') return false
+    // Di Android WebView (Capacitor), permissions.query sering tetap mengembalikan 'prompt'
+    // meski izin lokasi sudah pernah diberikan ke OS. Bila sebelumnya sudah pernah mendapat
+    // lokasi GPS, izinkan penyegaran otomatis tanpa memblokir; tamu baru tetap tidak diganggu.
+    const isNative =
+      typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() === true
+    if (isNative && lokasi.value.sumber === 'gps') return true
+    return false
   } catch {
     return null
   }

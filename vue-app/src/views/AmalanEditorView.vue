@@ -165,6 +165,15 @@ watch(
 )
 muat()
 
+function bersihkanCacheAmalan(idTarget) {
+  try {
+    localStorage.removeItem('ammu_tamu_amalan_daftar')
+    if (idTarget) localStorage.removeItem(`ammu_tamu_amalan_${idTarget}`)
+  } catch {
+    /* noop */
+  }
+}
+
 async function simpan() {
   simpanBabKini()
   const r = bersihkanAmalan(form)
@@ -175,6 +184,7 @@ async function simpan() {
   menyimpan.value = true
   try {
     await simpanAmalan(form.id, r.nilai)
+    bersihkanCacheAmalan(form.id)
     toast.success(form.id ? 'Diperbarui' : 'Tersimpan')
     router.push({ path: '/master-data', query: { tab: 'amalan' } })
   } catch (e) {
@@ -195,6 +205,7 @@ async function hapus() {
   if (!ok) return
   try {
     await hapusAmalan(form.id, auth.sesiAktif)
+    bersihkanCacheAmalan(form.id)
     toast.success('Dihapus')
     router.push({ path: '/master-data', query: { tab: 'amalan' } })
   } catch (e) {

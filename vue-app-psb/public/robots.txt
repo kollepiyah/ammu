@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ammuonline-psb.web.app/sitemap.xml
+Sitemap: https://psb.almanshur.id/sitemap.xml

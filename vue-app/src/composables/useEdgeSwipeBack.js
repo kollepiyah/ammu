@@ -14,10 +14,10 @@ export function useEdgeSwipeBack(router, enabled = () => true, opts = {}) {
   let tracking = false
 
   function blockedByOverlay() {
-    // Jangan back kalau ada overlay full-screen / dialog terbuka (biar back nutup itu dulu via handler lain)
+    // Jangan back kalau ada overlay full-screen / dialog / kunci / layar baca terbuka
     try {
       return !!document.querySelector(
-        '[data-global-search] .fixed.inset-0, .modal-overlay, .confirm-dialog-overlay'
+        '.kunci-aplikasi, .baca-penuh, [data-global-search] .fixed.inset-0, .modal-overlay, .confirm-dialog-overlay, [role="dialog"][aria-modal="true"], .fixed.inset-0.z-50'
       )
     } catch {
       return false
@@ -25,10 +25,16 @@ export function useEdgeSwipeBack(router, enabled = () => true, opts = {}) {
   }
 
   function onStart(e) {
-    if (!enabled()) { tracking = false; return }
+    if (!enabled()) {
+      tracking = false
+      return
+    }
     const t = e.touches && e.touches[0]
     if (!t) return
-    if (t.clientX > edge) { tracking = false; return } // harus mulai dari tepi kiri
+    if (t.clientX > edge) {
+      tracking = false
+      return
+    } // harus mulai dari tepi kiri
     startX = t.clientX
     startY = t.clientY
     t0 = Date.now()

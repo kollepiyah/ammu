@@ -2765,8 +2765,12 @@ async function kirimRekapGsheet() {
   }
 }
 
-// CETAK HTML (print preview newwindow)
+// CETAK HTML (print preview newwindow; di aplikasi Android native alihkan ke ekspor PDF)
 function cetakHTML() {
+  if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.() === true) {
+    exportPdf()
+    return
+  }
   // v.1.4.1: kop LEMBAGA, sumber yang sama dengan PDF & Excel — lihat catatan di kopEkspor.
   const barisKop = kopBaris.value
   const judul = `REKAPITULASI PRESTASI QIRAATI BULAN ${String(bulan.value).toUpperCase()} ${tahun.value}`
