@@ -481,16 +481,21 @@ function gantiMode() {
    Top bar master, navigasi bawah, & strip status bar hijau sudah disembunyikan lewat
    meta.layarBacaPenuh + html.layar-baca-penuh. */
 .baca-penuh {
-  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-page);
   touch-action: pan-y;
 }
-/* Kepala bacaan, daftar bab, & pager melebar penuh seperti NU Online (termasuk di tablet
-   landscape); hanya kolom teks bacaan (.baca-kolom) yang diberi lebar baca nyaman (48rem). */
+@media (display-mode: standalone) {
+  .baca-penuh {
+    min-height: 100vh;
+    min-height: 100lvh;
+  }
+}
+/* Kepala bacaan, daftar bab, isi bacaan (berbab maupun tanpa bab), & pager melebar penuh
+   tepi-ke-tepi di semua layar (HP maupun tablet landscape). */
 .baca-penuh .baca-kolom {
-  max-width: 48rem;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
 }
 .baca-penuh .aman-atas-baca {
   height: env(safe-area-inset-top, 0px);

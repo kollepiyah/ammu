@@ -91,7 +91,22 @@ export function useModeBaca({ otomatis = false } = {}) {
 
   function setKelasRoot(nyala) {
     try {
-      document.documentElement.classList.toggle('layar-baca-penuh', !!nyala)
+      const root = document.documentElement
+      root.classList.toggle('layar-baca-penuh', !!nyala)
+      // Di PWA iOS, meta theme-color ikut menentukan warna status bar atas. Saat membaca layar
+      // penuh samakan dengan latar halaman; saat keluar kembalikan ke hijau top bar.
+      const meta = document.querySelector('meta[name="theme-color"]')
+      if (meta) {
+        if (nyala) {
+          const bg = getComputedStyle(root).getPropertyValue('--bg-page').trim()
+          meta.setAttribute(
+            'content',
+            bg || (root.classList.contains('dark') ? '#0c0e12' : '#f9f6ee')
+          )
+        } else {
+          meta.setAttribute('content', '#0f766e')
+        }
+      }
     } catch {
       /* noop */
     }

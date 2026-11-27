@@ -253,14 +253,8 @@ html,
 }
 /* Layar baca penuh (Kitab & Wirid, Al-Qur'an): konten mengalir normal di dalam #app-scroll
    dari tepi paling atas (y=0) sampai dasar layar — tanpa position:fixed bersarang yang bikin
-   scroll macet di iOS/Android WebKit, dan tanpa strip status bar hijau di atas. */
-html.layar-baca-penuh body {
-  padding-top: 0 !important;
-  background: var(--bg-page) !important;
-}
-html.layar-baca-penuh body::before {
-  display: none !important;
-}
+   scroll macet di iOS/Android WebKit. Aturan warna body ada di bawah blok native-shell agar
+   selalu menang di cascade. */
 html.layar-baca-penuh .h-screen {
   height: 100vh !important;
   height: 100dvh !important;
@@ -1206,28 +1200,56 @@ html.native-shell body {
 html.native-shell.dark body {
   background: #0c0e12 !important;
 }
-/* Kyai 27 Nov 2026: jangan mengecat seluruh <body> hijau (di PWA iOS celah bawah saat
-   rubber-band / transisi viewport ikut memperlihatkan pita hijau di bawah menu bawah).
-   Warna hijau + motif berlian khusus untuk strip status bar atas via body::before (pola
-   Maktaba POS), sementara <body> & <html> mengikuti warna menu bawah. */
+/* Kyai 27 Nov 2026: iOS 26 PWA mengambil warna status bar (liquid glass) langsung dari <body>,
+   bukan body::before. Jadi background-color <body> wajib #0f766e agar status bar atas tetap
+   hijau pekat tanpa kabut putih, sementara lapisan gradient bawah mengecat area di bawah top bar
+   dengan warna menu bawah agar tidak pernah bocor hijau di dasar layar. */
 html.native-shell body:is(.splash-selesai, .app-running) {
-  background: color-mix(in srgb, #fff 90%, var(--bg-page)) !important;
+  background-color: #0f766e !important;
+  background-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(env(safe-area-inset-top, 0px) + var(--tinggi-topbar)),
+      color-mix(in srgb, #fff 90%, var(--bg-page))
+        calc(env(safe-area-inset-top, 0px) + var(--tinggi-topbar))
+    ),
+    var(--pola-berlian) !important;
+  background-size:
+    100% 100%,
+    28px 28px !important;
+  background-repeat: no-repeat, repeat !important;
+  background-position:
+    0 0,
+    0 0 !important;
 }
 html.native-shell.dark body:is(.splash-selesai, .app-running) {
-  background: color-mix(in srgb, #0f172a 90%, var(--bg-page)) !important;
+  background-color: #0f766e !important;
+  background-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(env(safe-area-inset-top, 0px) + var(--tinggi-topbar)),
+      color-mix(in srgb, #0f172a 90%, var(--bg-page))
+        calc(env(safe-area-inset-top, 0px) + var(--tinggi-topbar))
+    ),
+    var(--pola-berlian) !important;
+  background-size:
+    100% 100%,
+    28px 28px !important;
+  background-repeat: no-repeat, repeat !important;
+  background-position:
+    0 0,
+    0 0 !important;
 }
-html.native-shell body:is(.splash-selesai, .app-running)::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top, 0px);
-  background:
-    var(--pola-berlian) 0 0 / 28px 28px,
-    #0f766e;
-  z-index: 40;
-  pointer-events: none;
+/* Layar baca penuh (Kitab & Wirid / Al-Qur'an): selalu menang atas aturan native-shell di atas,
+   melepas padding-top & motif hijau supaya bacaan (berbab maupun tanpa bab) penuh tepi-ke-tepi. */
+html.layar-baca-penuh body,
+html.native-shell.layar-baca-penuh body:is(.splash-selesai, .app-running),
+html.native-shell.dark.layar-baca-penuh body:is(.splash-selesai, .app-running) {
+  padding-top: 0 !important;
+  background-color: var(--bg-page) !important;
+  background-image: none !important;
 }
 html.native-shell {
   background: #f2fef9;
@@ -1240,6 +1262,9 @@ html.native-shell:has(body:is(.splash-selesai, .app-running)) {
 }
 html.native-shell.dark:has(body:is(.splash-selesai, .app-running)) {
   background: color-mix(in srgb, #0f172a 90%, var(--bg-page));
+}
+html.native-shell.layar-baca-penuh {
+  background: var(--bg-page) !important;
 }
 .topbar-hijau {
   background:

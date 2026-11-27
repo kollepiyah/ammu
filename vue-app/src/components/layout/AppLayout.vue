@@ -45,7 +45,7 @@
         <!-- v.98.0626 (layout full): cap 1600px DILEPAS (kyai minta full edge-to-edge di SEMUA
              halaman). Wrapper w-full saja; pelepasan cap per-halaman (max-w-Nxl mx-auto -> none)
              + densify kolom grid diatur TERPUSAT di assets/main.css. Form tetap nyaman via .page-narrow. -->
-        <div class="akar-halaman w-full">
+        <div class="akar-halaman w-full min-h-full">
           <router-view :key="rvKey" />
         </div>
       </main>
